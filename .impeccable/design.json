@@ -1,0 +1,67 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-23T23:05:00Z",
+  "title": "Design System: Rimal Interiors",
+  "extensions": {
+    "colorMeta": {
+      "sand-gold": { "role": "primary", "displayName": "Sand Gold", "tonalRamp": ["#e6cfa2", "#d9b272", "#c49652", "#a97a3a", "#85592a"] },
+      "walnut": { "role": "neutral", "displayName": "Walnut Board", "tonalRamp": ["#160f0b", "#1e1510", "#2a1d16", "#3b2a20", "#57402f"] },
+      "paper": { "role": "neutral", "displayName": "Specimen Paper", "tonalRamp": ["#f4efe9", "#ebe2d4", "#ddd0bc"] },
+      "ink": { "role": "neutral", "displayName": "Wordmark Ink", "tonalRamp": ["#3a2418", "#6b5040"] }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display (English)", "purpose": "Hero and section headings in English." },
+      "display-ar": { "displayName": "Display (Arabic)", "purpose": "Hero and section headings in Arabic." },
+      "body": { "displayName": "Text", "purpose": "All running text and UI in both scripts." }
+    },
+    "shadows": [
+      { "name": "pinned", "value": "0 2px 3px rgb(10 6 4 / 0.35), 0 12px 24px -8px rgb(10 6 4 / 0.55)", "purpose": "Paper pinned to the board at rest." },
+      { "name": "lifted", "value": "0 6px 10px rgb(10 6 4 / 0.3), 0 26px 40px -12px rgb(10 6 4 / 0.7)", "purpose": "Paper picked up on hover, focus or selection." }
+    ],
+    "motion": [
+      { "name": "ease-out", "value": "cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "All transitions: pin-in, lift, picked, language swap." },
+      { "name": "pin-in", "value": "900ms, 90ms stagger", "purpose": "Board specimens settle onto their pins on load; disabled for reduced motion." }
+    ],
+    "breakpoints": [
+      { "name": "stack-hero", "value": "880px" },
+      { "name": "stack-content", "value": "760px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The buy action and main calls to action, on walnut.",
+      "html": "<a class=\"ds-btn\" href=\"#\">Buy now</a>",
+      "css": ".ds-btn { display:inline-flex; align-items:center; gap:.6rem; min-height:48px; padding:.7rem 1.35rem; border-radius:4px; background:#c49652; color:#160f0b; font:500 1.0625rem/1 'Readex Pro Variable', system-ui, sans-serif; text-decoration:none; box-shadow:0 1px 0 rgb(255 255 255 / .25) inset, 0 6px 14px -6px rgb(0 0 0 / .6); transition:background-color .2s; } .ds-btn:hover { background:#d9b272; }"
+    },
+    {
+      "name": "Language Switch",
+      "kind": "nav",
+      "refersTo": "language-switch",
+      "description": "Pill naming the other language in that language.",
+      "html": "<a class=\"ds-lang\" href=\"/ar/\" lang=\"ar\">العربية</a>",
+      "css": ".ds-lang { display:inline-flex; padding:.45rem .95rem; border:1px solid rgb(196 150 82 / .55); border-radius:999px; color:#e6cfa2; text-decoration:none; font:450 .95rem/1.4 'Readex Pro Variable', sans-serif; } .ds-lang:hover { background:rgb(196 150 82 / .14); border-color:#d9b272; }"
+    },
+    {
+      "name": "Specimen",
+      "kind": "card",
+      "refersTo": "specimen",
+      "description": "Pinned paper card that carries one product.",
+      "html": "<div class=\"ds-spec\"><span class=\"ds-pin\"></span><div class=\"ds-art\"></div><p>Revit Families Library</p></div>",
+      "css": ".ds-spec { position:relative; padding:1.4rem .6rem .7rem; background:#f4efe9; color:#3a2418; border-radius:2px; box-shadow:0 2px 3px rgb(10 6 4 / .35), 0 12px 24px -8px rgb(10 6 4 / .55); transform:rotate(-2deg); text-align:center; font:500 .85rem/1.3 'Readex Pro Variable', sans-serif; transition:transform .45s cubic-bezier(.16,1,.3,1); } .ds-spec:hover { transform:translateY(-8px); } .ds-pin { position:absolute; top:10px; left:50%; translate:-50% 0; width:14px; height:14px; border-radius:50%; background:radial-gradient(circle at 35% 30%, #f6e2b6 0 18%, #c49652 45%, #85592a 100%); } .ds-art { height:90px; border-bottom:1px dashed #ddd0bc; margin-bottom:.5rem; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sample Board",
+    "overview": "A walnut board with paper specimens pinned to it: each digital tool is presented the way an interior designer presents materials. The palette, type and ornament come from the Rimal logo, and Arabic and English share one mirrored system.",
+    "keyCharacteristics": ["Walnut ground, paper specimens, brass pins", "Sand gold only for actions, pins and rules", "Marcellus + Reem Kufi display, Readex Pro text", "Logical properties throughout for RTL"],
+    "rules": [
+      { "name": "Paper carries ink", "body": "Text on paper is ink; text on walnut is board-text.", "section": "colors" },
+      { "name": "Gold is for acting and pinning", "body": "Gold marks controls, pins, rules and measured values only.", "section": "colors" }
+    ],
+    "dos": ["Put every product on a pinned specimen with a spec tag.", "Write every string in both languages."],
+    "donts": ["Don't invent prices, reviews or specs.", "Don't add eyebrow labels, gradient text or glass."]
+  }
+}

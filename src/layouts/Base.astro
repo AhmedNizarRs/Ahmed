@@ -1,0 +1,52 @@
+---
+import '../styles/global.css';
+import { dictionary, pathFor } from '../i18n/strings';
+import type { Lang } from '../data/products';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = dictionary[lang];
+const dir = lang === 'ar' ? 'rtl' : 'ltr';
+const base = Astro.site;
+const url = (l: Lang) => (base ? new URL(pathFor(l), base).href : pathFor(l));
+---
+
+<!doctype html>
+<html lang={lang} dir={dir}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{t['meta.title']}</title>
+    <meta name="description" content={t['meta.description']} />
+    <meta name="theme-color" content="#160f0b" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="alternate" hreflang="en" href={url('en')} />
+    <link rel="alternate" hreflang="ar" href={url('ar')} />
+    <link rel="alternate" hreflang="x-default" href={url('en')} />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content={t['meta.title']} />
+    <meta property="og:description" content={t['meta.description']} />
+    <meta property="og:locale" content={lang === 'ar' ? 'ar_AE' : 'en_AE'} />
+    <meta property="og:image" content={base ? new URL('/og.png', base).href : '/og.png'} />
+    <script is:inline>
+      // Visitors who chose Arabic last time land on the Arabic page. A direct
+      // link to a specific language is always honoured.
+      try {
+        if (location.pathname === '/' && localStorage.getItem('rimal-lang') === 'ar') {
+          location.replace('/ar/' + location.hash);
+        }
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <slot />
+    <script type="application/json" id="i18n" set:html={JSON.stringify(dictionary)} />
+    <script>
+      import { initLanguageSwitch } from '../scripts/lang';
+      initLanguageSwitch();
+    </script>
+  </body>
+</html>
