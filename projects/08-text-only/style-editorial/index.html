@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Text-only video</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Instrument Serif"; font-weight: 400; font-style: normal; src: url("fonts/InstrumentSerif-400.woff2") format("woff2"); }@font-face { font-family: "Instrument Serif"; font-weight: 400; font-style: italic; src: url("fonts/InstrumentSerif-400-italic.woff2") format("woff2"); }@font-face { font-family: "Inter"; font-weight: 400; font-style: normal; src: url("fonts/Inter-400.woff2") format("woff2"); }
+      body { margin: 0; background: #efe8dc; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #efe8dc; }
+      .clip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .scene > * { box-sizing: border-box; }
+      
+    #grain { position: absolute; inset: -200px; background-image: url("data:image/svg+xml,%3Csvg%20xmlns%3D'http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg'%20width%3D'400'%20height%3D'400'%3E%3Cfilter%20id%3D'n'%3E%3CfeTurbulence%20type%3D'fractalNoise'%20baseFrequency%3D'.9'%20numOctaves%3D'2'%20stitchTiles%3D'stitch'%2F%3E%3CfeColorMatrix%20values%3D'0%200%200%200%200%20%200%200%200%200%200%20%200%200%200%200%200%20%200%200%200%201.6%20-.2'%2F%3E%3C%2Ffilter%3E%3Crect%20width%3D'100%25'%20height%3D'100%25'%20filter%3D'url(%2523n)'%2F%3E%3C%2Fsvg%3E"); background-size: 400px 400px; opacity: .12; pointer-events: none; z-index: 50; }
+    .page { position: absolute; inset: 0; font-family: "Inter", sans-serif; color: #1a1a1a; }
+    .rule { position: absolute; left: 108px; right: 108px; height: 2px; background: #1a1a1a; transform-origin: 0 50%; }
+    .rule.t { top: 140px; } .rule.b { bottom: 140px; height: 1px; }
+    .corner { position: absolute; font-size: 22px; letter-spacing: .24em; text-transform: uppercase; }
+    .corner.tl { left: 108px; top: 96px; } .corner.br { right: 108px; bottom: 96px; }
+    .corner b { color: #1a1a1a; font-weight: 400; }
+    .col { position: absolute; left: 108px; right: 108px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; }
+    .dash { width: 64px; height: 4px; background: #c2412d; margin-bottom: 40px; transform-origin: 0 50%; }
+    .hd { font-family: "Instrument Serif", serif; font-size: 150px; line-height: 1.02; letter-spacing: -.01em; color: #1a1a1a; }
+    .hd .w { display: inline-block; margin-right: .22em; }
+    .hd .i { font-style: italic; }
+    .cut { background: #c2412d; color: #efe8dc; padding: 0 .12em; display: inline-block; transform: rotate(-2deg); }
+    .cut.r2 { transform: rotate(2deg); } .cut.r3 { transform: rotate(-1deg); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="15">
+      <div id="grain" data-layout-allow-overflow></div>
+      <section id="s0" class="clip scene" data-start="0" data-duration="2.5">
+        <div class="page"><div class="rule t"></div><div class="rule b"></div>
+          <div class="corner tl">No. <b>01</b></div><div class="corner br">01 / 06</div>
+          <div class="col"><div class="dash"></div><div class="hd"><span class="w">Most</span> <span class="w">product</span> <span class="w">videos</span> <span class="w i">lose</span> <span class="w">people</span> <span class="w">in</span> <span class="w"><span class="cut r1">2 seconds.</span></span></div></div></div>
+      </section>
+      <section id="s1" class="clip scene" data-start="2.5" data-duration="2.5">
+        <div class="page"><div class="rule t"></div><div class="rule b"></div>
+          <div class="corner tl">No. <b>02</b></div><div class="corner br">02 / 06</div>
+          <div class="col"><div class="dash"></div><div class="hd"><span class="w">Here's</span> <span class="w">how</span> <span class="w">to</span> <span class="w"><span class="cut r2">keep</span></span> <span class="w i">them.</span></div></div></div>
+      </section>
+      <section id="s2" class="clip scene" data-start="5" data-duration="2.5">
+        <div class="page"><div class="rule t"></div><div class="rule b"></div>
+          <div class="corner tl">No. <b>03</b></div><div class="corner br">03 / 06</div>
+          <div class="col"><div class="dash"></div><div class="hd"><span class="w">Show</span> <span class="w">the</span> <span class="w"><span class="cut r3">result</span></span> <span class="w">first.</span></div></div></div>
+      </section>
+      <section id="s3" class="clip scene" data-start="7.5" data-duration="2.5">
+        <div class="page"><div class="rule t"></div><div class="rule b"></div>
+          <div class="corner tl">No. <b>04</b></div><div class="corner br">04 / 06</div>
+          <div class="col"><div class="dash"></div><div class="hd"><span class="w">Cut</span> <span class="w">every</span> <span class="w"><span class="cut r1">pause.</span></span></div></div></div>
+      </section>
+      <section id="s4" class="clip scene" data-start="10" data-duration="2.5">
+        <div class="page"><div class="rule t"></div><div class="rule b"></div>
+          <div class="corner tl">No. <b>05</b></div><div class="corner br">05 / 06</div>
+          <div class="col"><div class="dash"></div><div class="hd"><span class="w">One</span> <span class="w"><span class="cut r2">idea</span></span> <span class="w">on</span> <span class="w">screen</span> <span class="w">at</span> <span class="w">a</span> <span class="w">time.</span></div></div></div>
+      </section>
+      <section id="s5" class="clip scene" data-start="12.5" data-duration="2.5">
+        <div class="page"><div class="rule t"></div><div class="rule b"></div>
+          <div class="corner tl">No. <b>06</b></div><div class="corner br">06 / 06</div>
+          <div class="col"><div class="dash"></div><div class="hd"><span class="w">Then</span> <span class="w">tell</span> <span class="w i">them</span> <span class="w"><span class="cut r3">what to do next.</span></span></div></div></div>
+      </section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const SCENE = 2.5;
+      // animated grain: jitter the noise layer to a new seeded offset every 0.1s
+      let seed = 7; const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+      for (let t = 0; t < 15; t += 0.1) tl.set("#grain", { x: Math.round(rnd() * 160 - 80), y: Math.round(rnd() * 160 - 80) }, t);
+      const OFF = [0, 0.14, 0.3, 0.37, 0.58, 0.66];
+      document.querySelectorAll(".scene").forEach((sc, i) => {
+        const t0 = i * SCENE;
+        tl.fromTo(sc.querySelectorAll(".rule"), { scaleX: 0 }, { scaleX: 1, duration: 0.9, ease: "power2.out", stagger: 0.12 }, t0);
+        tl.fromTo(sc.querySelectorAll(".corner"), { opacity: 0 }, { opacity: 1, duration: 0.6 }, t0 + 0.2);
+        tl.fromTo(sc.querySelector(".dash"), { scaleX: 0 }, { scaleX: 1, duration: 0.5, ease: "power2.out" }, t0 + 0.25);
+        sc.querySelectorAll(".hd .w").forEach((w, j) => {
+          tl.fromTo(w, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.7 + (j % 3) * 0.06, ease: "power2.out" }, t0 + 0.3 + OFF[j % 6] * 1.1 + (j % 2) * 0.04);
+        });
+        const cut = sc.querySelector(".cut");
+        if (cut) tl.fromTo(cut, { clipPath: "inset(0 100% 0 0)" }, { clipPath: "inset(0 0% 0 0)", duration: 0.6, ease: "power2.inOut" }, t0 + 0.9);
+        tl.to(sc.querySelector(".page"), { opacity: 0, duration: 0.35, ease: "power1.in" }, t0 + SCENE - 0.35);
+      });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

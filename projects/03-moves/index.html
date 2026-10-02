@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>10 moves demo</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("fonts/Inter-400.woff2") format("woff2"); }
+      @font-face { font-family: "Inter"; font-weight: 700; src: url("fonts/Inter-700.woff2") format("woff2"); }
+      body { margin: 0; background: #0b0b0f; font-family: Inter, sans-serif; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #0b0b0f; }
+      .clip { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 40px; }
+      .name { color: #b4b4c0; font-size: 30px; letter-spacing: .2em; text-transform: uppercase; }
+      .card { width: 760px; box-sizing: border-box; padding: 44px 48px; background: #fff; border-radius: 28px; color: #15151a; box-shadow: 0 30px 80px rgba(0,0,0,.5); }
+      .card h2 { margin: 0 0 12px; font-size: 54px; font-weight: 700; }
+      .card p { margin: 0; font-size: 30px; color: #6b6b78; }
+      .num { font-size: 190px; font-weight: 700; text-align: center; padding: 30px; font-variant-numeric: tabular-nums; }
+      .item { display: flex; align-items: center; gap: 24px; font-size: 44px; font-weight: 700; padding: 14px 0; }
+      .tick { width: 52px; height: 52px; border-radius: 50%; background: #34c759; color: #fff; display: grid; place-items: center; font-size: 34px; }
+      .tw { font-size: 52px; font-weight: 700; line-height: 1.25; min-height: 130px; }
+      .bar { height: 28px; border-radius: 14px; background: #e6e6ec; overflow: hidden; margin-top: 20px; }
+      .fill { height: 100%; width: 100%; background: #34c759; transform-origin: 0 50%; }
+      .panel { position: absolute; inset: 0; background: #6d4aff; border-radius: 0; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 70px; font-weight: 700; }
+      #s8 .stage { position: relative; width: 100%; flex: 1; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="14">
+      <section id="s0" class="clip" data-start="0" data-duration="1.4"><div class="name">01 · Rise</div><div class="card"><h2>Weekly report</h2><p>Updated just now</p></div></section>
+      <section id="s1" class="clip" data-start="1.4" data-duration="1.4"><div class="name">02 · Pop</div><div class="card"><h2>Weekly report</h2><p>Updated just now</p></div></section>
+      <section id="s2" class="clip" data-start="2.8" data-duration="1.4"><div class="name">03 · Count-up</div><div class="card"><div class="num">0</div></div></section>
+      <section id="s3" class="clip" data-start="4.2" data-duration="1.4"><div class="name">04 · Checklist tick</div><div class="card"><div class="item"><span class="tick">✓</span>Brief approved</div><div class="item"><span class="tick">✓</span>Assets ready</div><div class="item"><span class="tick">✓</span>Ship it</div></div></section>
+      <section id="s4" class="clip" data-start="5.6" data-duration="1.4"><div class="name">05 · Typewriter</div><div class="card"><div class="tw"></div></div></section>
+      <section id="s5" class="clip" data-start="7" data-duration="1.4"><div class="name">06 · Slide-in</div><div class="card"><h2>Weekly report</h2><p>Updated just now</p></div></section>
+      <section id="s6" class="clip" data-start="8.4" data-duration="1.4"><div class="name">07 · Blur-in</div><div class="card"><h2>Weekly report</h2><p>Updated just now</p></div></section>
+      <section id="s7" class="clip" data-start="9.8" data-duration="1.4"><div class="name">08 · Punch-in</div><div class="card" id="punch"><h2>Weekly report</h2><p>Updated just now</p></div></section>
+      <section id="s8" class="clip" data-start="11.2" data-duration="1.4"><div class="name" style="position:absolute;top:60px">09 · Reframe</div>
+        <div class="card" id="newcard" style="position:absolute;top:240px"><h2>Faster replies</h2><p>The new card appears on top</p></div>
+        <div class="panel" id="panel">Full-screen panel</div></section>
+      <section id="s9" class="clip" data-start="12.6" data-duration="1.4"><div class="name">10 · Bar fill</div><div class="card"><h2>Uploading</h2><div class="bar"><div class="fill"></div></div></div></section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const T = (i) => i * 1.4, $ = (s) => document.querySelector(s);
+      tl.fromTo("#s0 .card", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, T(0));
+      tl.fromTo("#s1 .card", { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: "back.out(2)" }, T(1));
+      const n = { v: 0 };
+      tl.to(n, { v: 500, duration: 1, ease: "power2.out", onUpdate: () => { $("#s2 .num").textContent = Math.round(n.v); } }, T(2));
+      document.querySelectorAll("#s3 .tick").forEach((t, k) => tl.fromTo(t, { scale: 0 }, { scale: 1, duration: 0.3, ease: "back.out(3)" }, T(3) + 0.1 + k * 0.3));
+      const text = "Type it once, ship it everywhere.", tw = { c: 0 };
+      tl.to(tw, { c: text.length, duration: 1.1, ease: "none", onUpdate: () => { $("#s4 .tw").textContent = text.slice(0, Math.round(tw.c)); } }, T(4) + 0.1);
+      tl.fromTo("#s5 .card", { x: 900 }, { x: 0, duration: 0.6, ease: "power3.out" }, T(5));
+      tl.fromTo("#s6 .card", { filter: "blur(30px)", opacity: 0 }, { filter: "blur(0px)", opacity: 1, duration: 0.7, ease: "power2.out" }, T(6));
+      tl.fromTo("#s7 .card", { scale: 1 }, { scale: 1.15, duration: 0.25, ease: "power4.out" }, T(7) + 0.2);
+      tl.fromTo("#panel", { clipPath: "inset(0px 0px 0px 0px round 0px)" }, { clipPath: "inset(960px 100px 160px 100px round 40px)", duration: 0.6, ease: "power3.inOut" }, T(8) + 0.2);
+      tl.fromTo("#newcard", { y: -60, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, T(8) + 0.5);
+      tl.fromTo("#s9 .fill", { scaleX: 0 }, { scaleX: 1, duration: 1, ease: "power1.inOut" }, T(9) + 0.1);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

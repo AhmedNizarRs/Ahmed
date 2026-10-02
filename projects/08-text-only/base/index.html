@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Text-only video</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; font-style: normal; src: url("fonts/Inter-400.woff2") format("woff2"); }@font-face { font-family: "Inter"; font-weight: 700; font-style: normal; src: url("fonts/Inter-700.woff2") format("woff2"); }
+      body { margin: 0; background: linear-gradient(160deg,#eef1fb,#f8f2f7); }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(160deg,#eef1fb,#f8f2f7); }
+      .clip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .scene > * { box-sizing: border-box; }
+      
+    #root { background: linear-gradient(160deg,#eef1fb 0%,#f6f3fb 55%,#f4f7f2 100%); }
+    .blob { position: absolute; border-radius: 50%; filter: blur(110px); opacity: .7; }
+    #b1 { width: 760px; height: 760px; left: -200px; top: 100px; background: #c4d4ff; }
+    #b2 { width: 700px; height: 700px; right: -200px; top: 700px; background: #ffd0ea; }
+    #b3 { width: 800px; height: 800px; left: 0; bottom: -250px; background: #c9f2de; }
+    .card { width: 864px; padding: 64px; border-radius: 32px; background: rgba(255,255,255,.75); backdrop-filter: blur(30px);
+            border: 2px solid rgba(255,255,255,.95); box-shadow: 0 24px 70px rgba(40,40,80,.14); font-family: Inter, sans-serif; color: #15151a; }
+    .h { font-weight: 700; font-size: 88px; line-height: 1.1; letter-spacing: -.02em; display: flex; flex-wrap: wrap; column-gap: 22px; }
+    .w { display: inline-block; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="15">
+      <div id="b1" class="blob" data-layout-allow-overflow></div><div id="b2" class="blob" data-layout-allow-overflow></div><div id="b3" class="blob" data-layout-allow-overflow></div>
+      <section id="s0" class="clip scene" data-start="0" data-duration="2.5">
+        <div class="card"><div class="h"><span class="w">Most</span><span class="w">product</span><span class="w">videos</span><span class="w">lose</span><span class="w">people</span><span class="w">in</span><span class="w">2</span><span class="w">seconds.</span></div></div>
+      </section>
+      <section id="s1" class="clip scene" data-start="2.5" data-duration="2.5">
+        <div class="card"><div class="h"><span class="w">Here's</span><span class="w">how</span><span class="w">to</span><span class="w">keep</span><span class="w">them.</span></div></div>
+      </section>
+      <section id="s2" class="clip scene" data-start="5" data-duration="2.5">
+        <div class="card"><div class="h"><span class="w">Show</span><span class="w">the</span><span class="w">result</span><span class="w">first.</span></div></div>
+      </section>
+      <section id="s3" class="clip scene" data-start="7.5" data-duration="2.5">
+        <div class="card"><div class="h"><span class="w">Cut</span><span class="w">every</span><span class="w">pause.</span></div></div>
+      </section>
+      <section id="s4" class="clip scene" data-start="10" data-duration="2.5">
+        <div class="card"><div class="h"><span class="w">One</span><span class="w">idea</span><span class="w">on</span><span class="w">screen</span><span class="w">at</span><span class="w">a</span><span class="w">time.</span></div></div>
+      </section>
+      <section id="s5" class="clip scene" data-start="12.5" data-duration="2.5">
+        <div class="card"><div class="h"><span class="w">Then</span><span class="w">tell</span><span class="w">them</span><span class="w">what</span><span class="w">to</span><span class="w">do</span><span class="w">next.</span></div></div>
+      </section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const SCENE = 2.5;
+      document.querySelectorAll(".scene").forEach((sc, i) => {
+        const t0 = i * SCENE, card = sc.querySelector(".card");
+        tl.fromTo(card, { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, t0);
+        tl.fromTo(sc.querySelectorAll(".w"), { y: 16, opacity: 0 }, { y: 0, opacity: 1, duration: 0.45, ease: "power3.out", stagger: 0.06 }, t0 + 0.2);
+        tl.to(card, { opacity: 0, y: -20, duration: 0.3 }, t0 + SCENE - 0.3);
+      });
+      tl.to("#b1", { x: 120, duration: 15, ease: "none" }, 0);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

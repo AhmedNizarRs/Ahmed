@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Text-only video</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Archivo Black"; font-weight: 400; font-style: normal; src: url("fonts/ArchivoBlack-400.woff2") format("woff2"); }
+      body { margin: 0; background: #000; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; }
+      .clip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      .scene > * { box-sizing: border-box; }
+      
+    .k { width: 864px; text-align: center; font-family: "Archivo Black", sans-serif; text-transform: uppercase;
+         font-size: 150px; line-height: .98; color: #fff; display: flex; flex-wrap: wrap; justify-content: center; column-gap: 28px; }
+    .w { display: inline-block; white-space: nowrap; }
+    .w.a { color: #c6ff3d; }
+    .ch { display: inline-block; }
+    .k.sm { font-size: 118px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="15">
+      <section id="s0" class="clip scene" data-start="0" data-duration="2.5">
+        <div class="k sm"><span class="w" data-m="0">Most</span><span class="w" data-m="1">product</span><span class="w" data-m="2"><span class="ch">V</span><span class="ch">I</span><span class="ch">D</span><span class="ch">E</span><span class="ch">O</span><span class="ch">S</span></span><span class="w" data-m="0">lose</span><span class="w" data-m="1">people</span><span class="w" data-m="2"><span class="ch">I</span><span class="ch">N</span></span><span class="w a" data-m="0">2</span><span class="w a" data-m="1">seconds.</span></div>
+      </section>
+      <section id="s1" class="clip scene" data-start="2.5" data-duration="2.5">
+        <div class="k"><span class="w" data-m="0">Here's</span><span class="w" data-m="1">how</span><span class="w" data-m="2"><span class="ch">T</span><span class="ch">O</span></span><span class="w a" data-m="0">keep</span><span class="w" data-m="1">them.</span></div>
+      </section>
+      <section id="s2" class="clip scene" data-start="5" data-duration="2.5">
+        <div class="k"><span class="w" data-m="0">Show</span><span class="w" data-m="1">the</span><span class="w a" data-m="2"><span class="ch">R</span><span class="ch">E</span><span class="ch">S</span><span class="ch">U</span><span class="ch">L</span><span class="ch">T</span></span><span class="w" data-m="0">first.</span></div>
+      </section>
+      <section id="s3" class="clip scene" data-start="7.5" data-duration="2.5">
+        <div class="k"><span class="w" data-m="0">Cut</span><span class="w" data-m="1">every</span><span class="w a" data-m="2"><span class="ch">P</span><span class="ch">A</span><span class="ch">U</span><span class="ch">S</span><span class="ch">E</span><span class="ch">.</span></span></div>
+      </section>
+      <section id="s4" class="clip scene" data-start="10" data-duration="2.5">
+        <div class="k sm"><span class="w" data-m="0">One</span><span class="w a" data-m="1">idea</span><span class="w" data-m="2"><span class="ch">O</span><span class="ch">N</span></span><span class="w" data-m="0">screen</span><span class="w" data-m="1">at</span><span class="w" data-m="2"><span class="ch">A</span></span><span class="w" data-m="0">time.</span></div>
+      </section>
+      <section id="s5" class="clip scene" data-start="12.5" data-duration="2.5">
+        <div class="k sm"><span class="w" data-m="0">Then</span><span class="w" data-m="1">tell</span><span class="w" data-m="2"><span class="ch">T</span><span class="ch">H</span><span class="ch">E</span><span class="ch">M</span></span><span class="w a" data-m="0">what</span><span class="w a" data-m="1">to</span><span class="w a" data-m="2"><span class="ch">D</span><span class="ch">O</span></span><span class="w a" data-m="0">next.</span></div>
+      </section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const SCENE = 2.5;
+      document.querySelectorAll(".scene").forEach((sc, i) => {
+        const t0 = i * SCENE;
+        sc.querySelectorAll(".w").forEach((w, j) => {
+          const at = t0 + 0.05 + j * 0.16, m = +w.dataset.m;
+          if (m === 0) tl.fromTo(w, { x: j % 2 ? 420 : -420, opacity: 0 }, { x: 0, opacity: 1, duration: 0.3, ease: "power4.out" }, at);
+          else if (m === 1) tl.fromTo(w, { scaleY: 0.1, transformOrigin: "50% 100%", opacity: 0 }, { scaleY: 1, opacity: 1, duration: 0.3, ease: "power4.out" }, at);
+          else { const cs = w.querySelectorAll(".ch"); cs.forEach((c, k) => tl.fromTo(c, { x: (k - cs.length / 2) * 70, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power4.out" }, at)); }
+        });
+        tl.to(sc.querySelector(".k"), { opacity: 0, scale: 1.06, duration: 0.15, ease: "power4.in" }, t0 + SCENE - 0.17);
+      });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
