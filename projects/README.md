@@ -12,3 +12,8 @@ Render any project: `cd projects/<name> && npx hyperframes render . -o renders/<
 | 08-text-only/style-glass | 08 + 05 | renders/glass.mp4 |
 | 08-text-only/style-editorial | 08 + 06 | renders/editorial.mp4 |
 | 08-text-only/style-pop | 08 + 07 | renders/pop.mp4 |
+| 09-product | 09 | renders/product.mp4 |
+| 10-saas-promo | 10 | renders/promo.mp4 (60s, kinetic style, uses practice screenshots) |
+| 14-transparent | 14 | renders/card.mov + renders/card-png (git-ignored: 80 MB; re-render with `--format mov` / `--format png-sequence`) |
+
+Not done yet: Prompts 11, 12, 13 (graphics on `clip.mp4` + sound effects) — they need whisper.cpp for transcription.

@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Tally launch video</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("fonts/Inter-400.woff2") format("woff2"); }
+      @font-face { font-family: "Inter"; font-weight: 700; src: url("fonts/Inter-700.woff2") format("woff2"); }
+      @font-face { font-family: "Instrument Serif"; font-style: italic; src: url("fonts/InstrumentSerif-400-italic.woff2") format("woff2"); }
+      body { margin: 0; font-family: Inter, sans-serif; color: #15151a; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: linear-gradient(150deg,#eef2fc,#f6f1fa 55%,#fbf3ee); }
+      .blob { position: absolute; border-radius: 50%; filter: blur(110px); opacity: .7; }
+      #b1 { width: 800px; height: 800px; left: -150px; top: -200px; background: #c4d6ff; }
+      #b2 { width: 800px; height: 800px; right: -150px; top: 300px; background: #e0cfff; }
+      #b3 { width: 900px; height: 900px; left: 400px; bottom: -450px; background: #ffd9c4; }
+      .clip { position: absolute; inset: 0; }
+      .center { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 28px; }
+      .logo { display: flex; align-items: center; gap: 28px; font-weight: 700; font-size: 150px; letter-spacing: -.03em; }
+      .mark { width: 130px; height: 130px; border-radius: 34px; background: #0f1020; display: flex; align-items: center; justify-content: center; gap: 12px; box-shadow: 0 20px 50px rgba(20,20,60,.3); }
+      .mark i { display: block; width: 12px; height: 62px; border-radius: 6px; background: #c6ff3d; }
+      .sub { font-size: 44px; color: #55556a; }
+      .feat { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 110px; padding: 0 160px; }
+      .pill { display: inline-flex; align-items: center; gap: 12px; font-size: 26px; font-weight: 700; background: #fff; border-radius: 999px; padding: 10px 24px 10px 10px; box-shadow: 0 6px 20px rgba(40,40,90,.1); margin-bottom: 28px; }
+      .pill b { width: 40px; height: 40px; border-radius: 50%; background: #0f1020; color: #fff; display: grid; place-items: center; font-size: 22px; }
+      .hl { font-size: 84px; font-weight: 700; line-height: 1.08; letter-spacing: -.025em; width: 700px; }
+      .hl em { font-family: "Instrument Serif", serif; font-style: italic; font-weight: 400; color: #0c8a4a; }
+      .card { width: 760px; box-sizing: border-box; padding: 38px 42px; border-radius: 32px; background: rgba(255,255,255,.82); backdrop-filter: blur(30px); border: 2px solid rgba(255,255,255,.95); box-shadow: 0 30px 80px rgba(40,40,90,.16); }
+      .row { display: flex; justify-content: space-between; align-items: center; font-size: 30px; padding: 16px 0; border-bottom: 2px solid #ececf3; }
+      .row:last-child { border: 0; }
+      .muted { color: #8a8a9a; }
+      .btn { display: flex; align-items: center; justify-content: center; gap: 12px; background: #0b9d58; color: #fff; font-weight: 700; font-size: 32px; border-radius: 16px; padding: 22px; margin: 18px 0 8px; }
+      .tk { width: 34px; height: 34px; border-radius: 50%; background: #34c759; color: #0b3d1b; display: grid; place-items: center; font-size: 22px; font-weight: 700; }
+      .bar { height: 14px; border-radius: 7px; background: #e9e9f1; overflow: hidden; width: 300px; }
+      .bar > div { height: 100%; transform-origin: 0 50%; }
+      .big { font-size: 120px; font-weight: 700; color: #0b7f48; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+      .notif { display: flex; gap: 22px; align-items: center; }
+      .app { width: 84px; height: 84px; border-radius: 22px; background: #0f1020; display: flex; gap: 7px; align-items: center; justify-content: center; flex: none; }
+      .app i { width: 8px; height: 38px; background: #c6ff3d; border-radius: 4px; display: block; }
+      .cta { font-weight: 700; font-size: 44px; background: #0f1020; color: #fff; padding: 26px 60px; border-radius: 999px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="12">
+      <div id="b1" class="blob" data-layout-allow-overflow></div><div id="b2" class="blob" data-layout-allow-overflow></div><div id="b3" class="blob" data-layout-allow-overflow></div>
+      <section id="intro" class="clip" data-start="0" data-duration="2">
+        <div class="center"><div class="logo"><span class="mark"><i></i><i></i><i></i><i></i></span><span id="wordmark">Tally</span></div></div>
+      </section>
+      <section id="f1" class="clip" data-start="2" data-duration="2.4">
+        <div class="feat"><div class="txt"><div class="pill"><b>1</b>Connect</div><div class="hl">Connect your store in <em>one click.</em></div></div>
+          <div class="card"><div class="row"><span style="font-weight:700;font-size:34px">Your online shop</span><span class="muted" style="font-size:24px">yourshop.com</span></div>
+            <div class="btn" id="f1btn"><span class="tk" style="background:#fff;color:#0b9d58">✓</span>Connected</div>
+            <div class="row r"><span class="muted">Orders</span><span>1,284 synced</span></div><div class="row r"><span class="muted">Payment fees</span><span>3 sources</span></div><div class="row r"><span class="muted">Refunds</span><span>linked</span></div></div></div>
+      </section>
+      <section id="f2" class="clip" data-start="4.4" data-duration="2.4">
+        <div class="feat"><div class="txt"><div class="pill"><b>2</b>Profit</div><div class="hl">Profit after fees, ads <em>and refunds.</em></div></div>
+          <div class="card"><div class="row"><span class="muted">Revenue</span><span class="bar"><div style="width:100%;background:#c9cde0"></div></span><b>$24,860</b></div>
+            <div class="row"><span class="muted">Fees</span><span class="bar"><div style="width:14%;background:#e5574a"></div></span><b>-$1,742</b></div>
+            <div class="row"><span class="muted">Ads</span><span class="bar"><div style="width:35%;background:#e5574a"></div></span><b>-$4,310</b></div>
+            <div class="row"><span class="muted">Refunds</span><span class="bar"><div style="width:8%;background:#e5574a"></div></span><b>-$986</b></div>
+            <div class="row" style="flex-direction:column;align-items:flex-start"><span class="muted" style="font-size:24px">What you really earned</span><span class="big" id="earn">$0</span></div></div></div>
+      </section>
+      <section id="f3" class="clip" data-start="6.8" data-duration="2.2">
+        <div class="feat"><div class="txt"><div class="pill"><b>3</b>Daily</div><div class="hl">One number, <em>every morning.</em></div></div>
+          <div class="card"><div class="notif"><span class="app"><i></i><i></i><i></i><i></i></span><div><div class="muted" style="font-size:24px">TALLY · 7:00 AM</div><div style="font-size:38px;font-weight:700;margin-top:6px">Yesterday you kept</div></div></div>
+            <div class="big" id="morning" style="margin-top:14px">$0</div></div></div>
+      </section>
+      <section id="end" class="clip" data-start="9" data-duration="3">
+        <div class="center"><div class="logo" style="font-size:120px"><span class="mark" style="width:110px;height:110px"><i></i><i></i><i></i><i></i></span><span>Tally</span></div>
+          <div class="sub">Know what your shop <em style="font-family:'Instrument Serif',serif;color:#0c8a4a">really</em> earns.</div><div class="cta" id="cta">Join the waitlist</div></div>
+      </section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.to("#b1", { x: 120, duration: 12, ease: "none" }, 0); tl.to("#b2", { x: -100, y: -60, duration: 12, ease: "none" }, 0);
+      tl.fromTo(".mark", { scale: 0, rotation: -20 }, { scale: 1, rotation: 0, duration: 0.6, ease: "back.out(2)" }, 0.1);
+      tl.fromTo("#wordmark", { x: -40, opacity: 0 }, { x: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, 0.4);
+      tl.to("#intro .logo", { opacity: 0, y: -20, duration: 0.3 }, 1.7);
+      const enter = (s, t0) => {
+        tl.fromTo(s + " .txt", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power3.out" }, t0);
+        tl.fromTo(s + " .card", { y: 40, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" }, t0 + 0.1);
+        tl.to(s + " .feat", { opacity: 0, duration: 0.25 }, t0 + 2.4 - 0.3 - (s === "#f3" ? 0.2 : 0));
+      };
+      enter("#f1", 2); enter("#f2", 4.4); enter("#f3", 6.8);
+      tl.fromTo("#f1btn", { scale: 0.9 }, { scale: 1, duration: 0.4, ease: "back.out(2.5)" }, 2.9);
+      tl.fromTo("#f1 .r", { x: 24, opacity: 0 }, { x: 0, opacity: 1, duration: 0.4, ease: "power3.out", stagger: 0.18 }, 3.2);
+      tl.fromTo("#f2 .bar > div", { scaleX: 0 }, { scaleX: 1, duration: 0.7, ease: "power3.out", stagger: 0.15 }, 4.9);
+      const e = { v: 0 }; tl.to(e, { v: 14284, duration: 1.1, ease: "power2.out", onUpdate: () => { document.getElementById("earn").textContent = "$" + Math.round(e.v).toLocaleString("en-US"); } }, 5.3);
+      const m = { v: 0 }; tl.to(m, { v: 482, duration: 0.9, ease: "power2.out", onUpdate: () => { document.getElementById("morning").textContent = "$" + Math.round(m.v); } }, 7.4);
+      tl.fromTo("#end .logo", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "power3.out" }, 9.1);
+      tl.fromTo("#end .sub", { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.5, ease: "power3.out" }, 9.6);
+      tl.fromTo("#cta", { scale: 0 }, { scale: 1, duration: 0.5, ease: "back.out(2.5)" }, 10.3);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

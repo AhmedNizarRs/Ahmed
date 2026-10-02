@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>Transparent card</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("fonts/Inter-400.woff2") format("woff2"); }
+      @font-face { font-family: "Inter"; font-weight: 700; src: url("fonts/Inter-700.woff2") format("woff2"); }
+      body { margin: 0; font-family: "Inter", system-ui, sans-serif; background: transparent; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden;
+        background: transparent; }
+      .clip { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+      #card { width: 760px; padding: 60px 40px 56px; box-sizing: border-box; border-radius: 36px;
+        background: #ffffff; border: 2px solid #e4e4ee; box-shadow: 0 30px 80px rgba(60,40,140,.25);
+        display: flex; flex-direction: column; align-items: center; gap: 18px; }
+      #label { font-weight: 700; font-size: 26px; letter-spacing: .22em; color: #7a7a8c; }
+      #num { font-weight: 700; font-size: 220px; line-height: 1; color: #1c1650; font-variant-numeric: tabular-nums; }
+      #pill { display: block; font-weight: 700; font-size: 30px; color: #06240f; background: #22c55e;
+        padding: 14px 34px; border-radius: 999px; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="6">
+      <section class="clip" data-start="0" data-duration="6">
+        <div id="card">
+          <div id="label">MY FIRST RENDER</div>
+          <div id="num">0</div>
+          <div id="pill">Made with Claude Code</div>
+        </div>
+      </section>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      tl.fromTo("#card", { y: 90, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: "power3.out" }, 0);
+      const n = { v: 0 };
+      tl.to(n, { v: 100, duration: 2, ease: "power2.out",
+        onUpdate: () => { document.getElementById("num").textContent = Math.round(n.v); } }, 0.5);
+      tl.fromTo("#pill", { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.5, ease: "back.out(2.5)" }, 4);
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
