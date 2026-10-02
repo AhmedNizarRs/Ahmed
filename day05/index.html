@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=1080, height=1920" />
+<title>RIMAL Day 05 · 3 أغلاط بمخطط الحمام</title>
+<script src="gsap.min.js"></script>
+<style>
+  @font-face { font-family: "El Messiri"; font-weight: 700; src: url("fonts/el-messiri-arabic-700-normal.woff2") format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC; }
+  @font-face { font-family: "El Messiri"; font-weight: 700; src: url("fonts/el-messiri-latin-700-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Cairo"; font-weight: 600; src: url("fonts/cairo-arabic-600-normal.woff2") format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC; }
+  @font-face { font-family: "Cairo"; font-weight: 600; src: url("fonts/cairo-latin-600-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Cairo"; font-weight: 700; src: url("fonts/cairo-arabic-700-normal.woff2") format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC; }
+  @font-face { font-family: "Cairo"; font-weight: 700; src: url("fonts/cairo-latin-700-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Cairo"; font-weight: 900; src: url("fonts/cairo-arabic-900-normal.woff2") format("woff2"); unicode-range: U+0600-06FF, U+0750-077F, U+0870-088E, U+0890-0891, U+0897-08E1, U+08E3-08FF, U+200C-200E, U+2010-2011, U+204F, U+2E41, U+FB50-FDFF, U+FE70-FE74, U+FE76-FEFC; }
+  @font-face { font-family: "Cairo"; font-weight: 900; src: url("fonts/cairo-latin-900-normal.woff2") format("woff2"); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: "Cormorant Garamond"; font-weight: 600; src: url("fonts/cormorant-garamond-latin-600-normal.woff2") format("woff2"); }
+
+  :root { --cream: #F4EFE8; --brown: #3A1F14; --brown2: #5C3A26; --gold: #B8863B; --sand: #E3C995; --red: #C2392B; --green: #2E7D4F; }
+  html, body { margin: 0; background: var(--cream); }
+  body { font-family: "Cairo", sans-serif; color: var(--brown); }
+  p { margin: 0; }
+  #root { direction: rtl; position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--cream); }
+  #bg { position: absolute; inset: 0; }
+  #grid { position: absolute; inset: -120px; opacity: .55;
+    background-image: linear-gradient(rgba(184,134,59,.16) 2px, transparent 2px), linear-gradient(90deg, rgba(184,134,59,.16) 2px, transparent 2px),
+      linear-gradient(rgba(184,134,59,.08) 1px, transparent 1px), linear-gradient(90deg, rgba(184,134,59,.08) 1px, transparent 1px);
+    background-size: 120px 120px, 120px 120px, 30px 30px, 30px 30px; }
+  #glow { position: absolute; inset: 0; background: radial-gradient(60% 45% at 50% 46%, rgba(227,201,149,.55), rgba(244,239,232,0) 70%); }
+  #vignette { position: absolute; inset: 0; background: radial-gradient(85% 70% at 50% 50%, rgba(0,0,0,0) 60%, rgba(58,31,20,.20) 100%); }
+  #stage { position: absolute; inset: 0; }
+  .ltr { direction: ltr; unicode-bidi: isolate; display: inline-block; }
+
+  /* persistent plan drawing */
+  #plan { position: absolute; left: 210px; top: 470px; width: 660px; height: 845px; transform-origin: 50% 50%; }
+  #plan svg { display: block; overflow: visible; }
+  .wall { fill: none; stroke: var(--brown); stroke-width: 7; stroke-linecap: square; stroke-linejoin: miter; }
+  .fx { fill: rgba(227,201,149,.45); stroke: var(--brown2); stroke-width: 2.2; stroke-linejoin: round; }
+  .fxl { fill: none; stroke: var(--brown2); stroke-width: 1.6; }
+  .dim { stroke-width: 1.6; fill: none; }
+  .dimt { font-family: "Cairo", sans-serif; font-weight: 900; font-size: 13px; }
+  .body { fill: none; stroke-width: 2.2; stroke-dasharray: 4 3; }
+
+  /* scenes */
+  .scene { position: absolute; inset: 0; display: none; }
+  .scene > * { flex-shrink: 0; }
+  .wm { position: absolute; left: 60px; top: 226px; width: 130px; }
+  .chip { position: absolute; top: 262px; right: 90px; font-family: "Cairo"; font-weight: 900; font-size: 34px; background: var(--brown); color: var(--sand);
+    padding: 4px 26px 8px; border-radius: 999px; }
+  .head { position: absolute; top: 334px; left: 60px; right: 90px; font-family: "El Messiri"; font-weight: 700; font-size: 70px; line-height: 1.2; color: var(--brown); white-space: nowrap; text-align: right; }
+  .line { position: absolute; left: 70px; right: 70px; text-align: center; font-family: "Cairo"; font-weight: 700; font-size: 46px; line-height: 1.3; color: var(--brown); white-space: nowrap; }
+  .line.l1 { top: 1332px; } .line.l2 { top: 1404px; font-weight: 600; color: var(--brown2); }
+  .line b { color: var(--green); font-weight: 900; }
+
+  #hook-title { position: absolute; top: 342px; left: 0; right: 0; text-align: center; font-family: "El Messiri"; font-weight: 700; font-size: 84px; line-height: 1.2; white-space: nowrap; color: var(--brown); }
+  #hook-title .n { color: #8E6427; font-family: "Cairo"; font-weight: 900; }
+  #hook-sub { position: absolute; top: 462px; left: 0; right: 0; text-align: center; font-family: "Cairo"; font-weight: 700; font-size: 40px; color: var(--brown2); white-space: nowrap; }
+  #hook-sub::before, #hook-sub::after { content: ""; display: inline-block; width: 60px; height: 3px; background: var(--gold); vertical-align: middle; margin: 0 22px; }
+
+  /* recap */
+  .panel { position: absolute; left: 110px; right: 110px; background: rgba(250,247,242,.94); border: 3px solid var(--gold); border-radius: 36px; box-shadow: 0 30px 70px rgba(58,31,20,.18); }
+  #recap-panel { top: 520px; padding: 46px 56px; }
+  .rrow { display: flex; align-items: center; gap: 30px; font-family: "El Messiri"; font-weight: 700; font-size: 58px; padding: 22px 0; border-bottom: 2px solid rgba(184,134,59,.35); }
+  .rrow:last-child { border: 0; }
+  .rrow .num { font-family: "Cairo"; font-weight: 900; color: var(--gold); font-size: 48px; width: 50px; text-align: center; }
+  .rrow .ck { margin-right: auto; }
+  #recap-line { top: 1180px; font-family: "El Messiri"; font-weight: 700; font-size: 58px; }
+
+  /* cta */
+  #bm { position: absolute; top: 272px; left: 490px; width: 100px; height: 124px; }
+  #cta1 { top: 420px; font-family: "El Messiri"; font-size: 64px; }
+  #cta2 { top: 530px; font-size: 46px; font-weight: 600; color: var(--brown2); }
+  #cta3 { top: 622px; font-size: 56px; font-weight: 900; }
+  .pill { background: var(--brown); color: var(--sand); border-radius: 18px; padding: 0 20px 6px; display: inline-block; }
+  #cbox { position: absolute; top: 790px; left: 110px; right: 110px; height: 120px; border-radius: 60px; background: #fff; border: 3px solid rgba(92,58,38,.35); box-shadow: 0 16px 40px rgba(58,31,20,.12);
+    display: flex; align-items: center; padding: 0 22px 0 40px; box-sizing: border-box; gap: 20px; }
+  #cav { width: 76px; height: 76px; border-radius: 50%; background: var(--sand); border: 3px solid var(--gold); flex: none; }
+  #ctext { flex: 1; font-family: "Cairo"; font-weight: 700; font-size: 48px; color: var(--brown); display: flex; align-items: center; height: 80px; }
+  #cph { color: #9a8a7e; font-weight: 600; }
+  #ccur { display: inline-block; width: 4px; height: 56px; background: var(--brown); margin-right: 4px; }
+  #csend { width: 84px; height: 84px; border-radius: 50%; background: var(--brown); flex: none; display: grid; place-items: center; }
+  .bub { position: absolute; font-family: "Cairo"; font-weight: 700; font-size: 46px; padding: 18px 36px 24px; border-radius: 40px; white-space: nowrap; }
+  #bub1 { top: 980px; right: 130px; background: #fff; border: 3px solid rgba(92,58,38,.3); color: var(--brown); border-bottom-right-radius: 10px; }
+  #bub2 { top: 1110px; left: 130px; background: var(--brown); color: var(--cream); border-bottom-left-radius: 10px; display: flex; align-items: center; gap: 18px; }
+  #bub2 img { width: 70px; }
+
+  /* end card */
+  #endlogo { position: absolute; top: 520px; left: 190px; width: 700px; }
+  #madeby { position: absolute; top: 1190px; left: 0; right: 0; text-align: center; direction: ltr; font-family: "Cormorant Garamond"; font-weight: 600; font-size: 66px; color: var(--brown); }
+  #madeby span { color: #8E6427; }
+  #follow { position: absolute; top: 1300px; left: 0; right: 0; text-align: center; font-family: "Cairo"; font-weight: 700; font-size: 46px; color: var(--brown2); white-space: nowrap; }
+  #fade { position: absolute; inset: 0; background: var(--cream); opacity: 0; pointer-events: none; }
+</style>
+</head>
+<body>
+<div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="39.6">
+  <div id="bg"><div id="grid"></div><div id="glow"></div><div id="vignette"></div></div>
+
+  <div id="stage">
+    <!-- ===== persistent bathroom plan (units = cm) ===== -->
+    <div id="plan">
+      <svg id="plansvg" viewBox="-15 -15 250 320" width="660" height="845">
+        <defs>
+          <pattern id="hatch" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" stroke="rgba(184,134,59,.55)" stroke-width="1.4"/></pattern>
+        </defs>
+        <rect id="flash" x="0" y="0" width="220" height="220" fill="#C2392B" opacity="0"/>
+        <!-- front clearance zone (mistake 1 fix) -->
+        <rect id="clear" x="10" y="65" width="60" height="60" fill="rgba(46,125,79,.12)" stroke="#2E7D4F" stroke-width="1.6" stroke-dasharray="4 3" opacity="0"/>
+        <!-- shower tray -->
+        <g id="shower">
+          <rect id="sh-rect" class="fx" x="150" y="0" width="70" height="70" pathLength="1" data-in="1.8" data-a="draw" data-d="0.6"/>
+          <line id="sh-d1" class="fxl" x1="150" y1="0" x2="220" y2="70" opacity=".5"/>
+          <line id="sh-d2" class="fxl" x1="150" y1="70" x2="220" y2="0" opacity=".5"/>
+          <circle id="sh-drain" cx="185" cy="35" r="4" fill="none" stroke="#5C3A26" stroke-width="1.6"/>
+          <text id="sh-lab" class="dimt" x="185" y="-4" text-anchor="middle" direction="ltr" fill="#C2392B" opacity="0">70×70 cm</text>
+          <circle id="sh-body" class="body" cx="185" cy="35" r="40" stroke="#C2392B" opacity="0"/>
+        </g>
+        <!-- toilet -->
+        <g id="toilet">
+          <rect id="wc-tank" class="fx" x="8" y="2" width="44" height="18" rx="4" pathLength="1" data-in="1.2" data-a="draw" data-d="0.5"/>
+          <ellipse id="wc-bowl" class="fx" cx="30" cy="42" rx="17" ry="23" pathLength="1" data-in="1.35" data-a="draw" data-d="0.5"/>
+          <ellipse id="wc-seat" class="fxl" cx="30" cy="44" rx="10" ry="15" pathLength="1" data-in="1.5" data-a="draw" data-d="0.4"/>
+          <circle id="wc-body" class="body" cx="30" cy="40" r="38" stroke="#C2392B" opacity="0"/>
+        </g>
+        <!-- toilet side dimension -->
+        <g id="dim1" opacity="0">
+          <line id="dim1-l" class="dim" x1="0" y1="80" x2="30" y2="80"/>
+          <line id="dim1-a" class="dim" x1="0" y1="74" x2="0" y2="86"/>
+          <line id="dim1-b" class="dim" x1="30" y1="74" x2="30" y2="86"/>
+          <line id="dim1-c" class="dim" x1="30" y1="20" x2="30" y2="86" stroke-dasharray="2 2"/>
+          <text id="dim1-t" class="dimt" x="15" y="96" text-anchor="middle" direction="ltr">30 cm</text>
+        </g>
+        <!-- front clearance dimension -->
+        <g id="dim2" opacity="0">
+          <line class="dim" x1="78" y1="65" x2="78" y2="125" stroke="#2E7D4F"/>
+          <line class="dim" x1="72" y1="65" x2="84" y2="65" stroke="#2E7D4F"/>
+          <line class="dim" x1="72" y1="125" x2="84" y2="125" stroke="#2E7D4F"/>
+          <text class="dimt" x="88" y="99" direction="ltr" fill="#22603C">60 cm</text>
+        </g>
+        <!-- vanity + sink -->
+        <g id="vanity">
+          <rect id="van-rect" class="fx" x="0" y="140" width="45" height="60" pathLength="1" data-in="1.5" data-a="draw" data-d="0.5"/>
+          <ellipse id="van-sink" class="fxl" cx="20" cy="170" rx="12" ry="17" pathLength="1" data-in="1.7" data-a="draw" data-d="0.4"/>
+          <circle cx="36" cy="170" r="2.2" fill="#5C3A26" id="van-tap" opacity="0"/>
+        </g>
+        <!-- door: inward swing (wrong) + outward swing (fix) -->
+        <path id="arc-in" d="M 100 220 A 80 80 0 0 0 20 140" fill="none" stroke="#5C3A26" stroke-width="1.5" stroke-dasharray="4 3" opacity="0"/>
+        <path id="arc-out" d="M 100 220 A 80 80 0 0 1 20 300" fill="none" stroke="#2E7D4F" stroke-width="1.8" stroke-dasharray="4 3" opacity="0"/>
+        <line id="leaf" x1="20" y1="220" x2="100" y2="220" stroke="#3A1F14" stroke-width="4" stroke-linecap="round" opacity="0"/>
+        <circle id="hinge" cx="20" cy="220" r="2.6" fill="#3A1F14" opacity="0"/>
+        <!-- walls (door opening x 20..100 in the bottom wall) -->
+        <path id="walls" class="wall" d="M 20 220 L 0 220 L 0 0 L 220 0 L 220 220 L 100 220" pathLength="1" data-in="0.1" data-a="draw" data-d="1.0"/>
+        <!-- wrong / right marks -->
+        <g id="mx1" opacity="0"><circle r="13" fill="#C2392B"/><path d="M -5 -5 L 5 5 M 5 -5 L -5 5" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+        <g id="mx2" opacity="0"><circle r="13" fill="#C2392B"/><path d="M -5 -5 L 5 5 M 5 -5 L -5 5" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+        <g id="mx3" opacity="0"><circle r="13" fill="#C2392B"/><path d="M -5 -5 L 5 5 M 5 -5 L -5 5" stroke="#fff" stroke-width="3" stroke-linecap="round"/></g>
+        <g id="mk1" opacity="0"><circle r="13" fill="#2E7D4F"/><path d="M -6 0 L -2 4.5 L 6 -4.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <g id="mk2" opacity="0"><circle r="13" fill="#2E7D4F"/><path d="M -6 0 L -2 4.5 L 6 -4.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <g id="mk3" opacity="0"><circle r="13" fill="#2E7D4F"/><path d="M -6 0 L -2 4.5 L 6 -4.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+      </svg>
+    </div>
+
+    <!-- ===== HOOK 0.0–3.4 ===== -->
+    <section class="scene" id="sc-hook" data-s="0" data-e="3.5">
+      <p id="hook-title" data-in="0.5" data-a="slam" data-d="0.35"><span class="n ltr">3</span> أغلاط بمخطط الحمام</p>
+      <p id="hook-sub" data-in="1.3" data-a="up" data-d="0.5">ما تنتبه لها إلا بعد التنفيذ</p>
+    </section>
+
+    <!-- ===== MISTAKE 1 3.6–11.2 ===== -->
+    <section class="scene" id="sc-m1" data-s="3.6" data-e="11.25">
+      <p class="chip" data-in="3.6" data-a="pop" data-d="0.4">الغلطة <span class="ltr">1</span></p>
+      <p class="head" data-in="3.8" data-a="up" data-d="0.5">كرسي الحمام ضيّق</p>
+      <p class="line l1" data-in="8.8" data-a="up" data-d="0.5">على الأقل <b><span class="ltr">40</span> سم</b> من منتصف الكرسي لأقرب جدار</p>
+      <p class="line l2" data-in="9.4" data-a="up" data-d="0.5">و <b><span class="ltr">60</span> سم</b> فراغ أمامه</p>
+    </section>
+
+    <!-- ===== MISTAKE 2 11.4–19.0 ===== -->
+    <section class="scene" id="sc-m2" data-s="11.4" data-e="19.05">
+      <p class="chip" data-in="11.4" data-a="pop" data-d="0.4">الغلطة <span class="ltr">2</span></p>
+      <p class="head" data-in="11.6" data-a="up" data-d="0.5">الباب يضرب بالتجهيزات</p>
+      <p class="line l1" data-in="13.6" data-a="up" data-d="0.5">قوس فتحة الباب لازم يكون فاضي</p>
+      <p class="line l2" data-in="16.2" data-a="up" data-d="0.5">وبالحمامات الصغيرة: باب سحّاب</p>
+    </section>
+
+    <!-- ===== MISTAKE 3 19.2–26.8 ===== -->
+    <section class="scene" id="sc-m3" data-s="19.2" data-e="26.85">
+      <p class="chip" data-in="19.2" data-a="pop" data-d="0.4">الغلطة <span class="ltr">3</span></p>
+      <p class="head" data-in="19.4" data-a="up" data-d="0.5">الشاور أصغر من اللازم</p>
+      <p class="line l1" data-in="24.2" data-a="up" data-d="0.5"><b><span class="ltr">90×90</span> سم</b> على الأقل</p>
+      <p class="line l2" data-in="24.8" data-a="up" data-d="0.5">عشان تتحرك براحتك</p>
+    </section>
+
+    <!-- ===== RECAP 27.0–30.0 ===== -->
+    <section class="scene" id="sc-recap" data-s="27.0" data-e="30.05">
+      <div class="panel" id="recap-panel" data-in="27.0" data-a="up" data-d="0.45">
+        <div class="rrow"><span class="num ltr">1</span><span>فراغ كرسي الحمام</span><svg class="ck" data-in="27.3" data-a="pop" data-d="0.35" width="66" height="66" viewBox="-15 -15 30 30"><circle r="14" fill="#2E7D4F"/><path d="M -6 0 L -2 4.5 L 6 -4.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="rrow"><span class="num ltr">2</span><span>قوس الباب</span><svg class="ck" data-in="27.9" data-a="pop" data-d="0.35" width="66" height="66" viewBox="-15 -15 30 30"><circle r="14" fill="#2E7D4F"/><path d="M -6 0 L -2 4.5 L 6 -4.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="rrow"><span class="num ltr">3</span><span>مقاس الشاور</span><svg class="ck" data-in="28.5" data-a="pop" data-d="0.35" width="66" height="66" viewBox="-15 -15 30 30"><circle r="14" fill="#2E7D4F"/><path d="M -6 0 L -2 4.5 L 6 -4.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      </div>
+      <p class="line" id="recap-line" data-in="29.1" data-a="up" data-d="0.45">راجع مخططك قبل التسليم</p>
+    </section>
+
+    <!-- ===== CTA 30.2–35.4 ===== -->
+    <section class="scene" id="sc-cta" data-s="30.2" data-e="35.5">
+      <svg id="bm" data-in="30.3" data-a="pop" data-d="0.45" viewBox="0 0 100 124"><path d="M 10 6 Q 10 2 14 2 L 86 2 Q 90 2 90 6 L 90 118 L 50 90 L 10 118 Z" fill="#B8863B" stroke="#3A1F14" stroke-width="4" stroke-linejoin="round"/><path d="M 30 30 L 70 30" stroke="#F4EFE8" stroke-width="5" stroke-linecap="round"/></svg>
+      <p class="line" id="cta1" data-in="30.5" data-a="up" data-d="0.45">احفظه قبل مشروعك الجاي</p>
+      <p class="line" id="cta2" data-in="31.2" data-a="up" data-d="0.45">تبي آلاف البلوكات الجاهزة لكل برامجك؟</p>
+      <p class="line" id="cta3" data-in="31.9" data-a="pop" data-d="0.45">اكتب <span class="pill">«حزمة»</span> بالتعليقات</p>
+      <div id="cbox" data-in="32.4" data-a="up" data-d="0.4">
+        <span id="cav"></span>
+        <span id="ctext"><span id="ctyped"></span><span id="ccur"></span><span id="cph">أضف تعليق…</span></span>
+        <span id="csend"><svg width="44" height="44" viewBox="0 0 24 24"><path d="M 20 12 L 4 4 L 7 12 L 4 20 Z" fill="#E3C995" transform="rotate(180 12 12)"/></svg></span>
+      </div>
+      <div class="bub" id="bub1" data-in="33.9" data-a="pop" data-d="0.4">حزمة</div>
+      <div class="bub" id="bub2" data-in="34.5" data-a="pop" data-d="0.4"><img src="assets/logo-bubble.png" alt="" />أرسلنا لك الرابط</div>
+    </section>
+
+    <!-- ===== END CARD 35.6–39.6 ===== -->
+    <section class="scene" id="sc-end" data-s="35.6" data-e="39.7">
+      <img id="endlogo" src="assets/logo-cutout.png" alt="RIMAL Interiors" data-in="35.7" data-a="blur" data-d="0.9" />
+      <p id="madeby" data-in="36.6" data-a="up" data-d="0.5">Made by <span>Ahmed Nazar</span></p>
+      <p id="follow" data-in="37.3" data-a="up" data-d="0.5">تابعنا… كل يوم معلومة جديدة للمصممين</p>
+    </section>
+  </div>
+
+  <img class="wm" id="wm" src="assets/logo-wm.png" alt="" />
+  <div id="fade"></div>
+  <audio id="sfx" src="sfx.wav" data-start="0" data-duration="39.6" data-track-index="1" data-volume="1"></audio>
+</div>
+
+<script>
+(() => {
+  const DUR = 39.6;
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const prog = (t, a, d) => clamp((t - a) / d);
+  const E = {
+    out3: (p) => 1 - Math.pow(1 - p, 3),
+    out4: (p) => 1 - Math.pow(1 - p, 4),
+    in2: (p) => p * p,
+    inout: (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2),
+    back: (p, s = 2.2) => { const c = s + 1; return 1 + c * Math.pow(p - 1, 3) + s * Math.pow(p - 1, 2); },
+  };
+  const $ = (id) => document.getElementById(id);
+  const RED = "#C2392B", GREEN = "#2E7D4F", RED_T = "#A32B1F", GREEN_T = "#22603C", BROWN = "#3A1F14", BROWN2 = "#5C3A26";
+  const SHAKES = [5.6, 12.9, 21.4];          // every WRONG state: buzz + bonk + 150 ms shake
+  const animated = [...document.querySelectorAll("[data-in]")];
+  const scenes = [...document.querySelectorAll(".scene")];
+
+  function animate(el, t) {
+    const tin = +el.dataset.in, d = +(el.dataset.d || 0.5), a = el.dataset.a || "fade";
+    const tout = el.dataset.out !== undefined ? +el.dataset.out : null;
+    let p = prog(t, tin, d), o = 1, tr = "", f = "none";
+    if (t < tin) p = 0;
+    if (a === "draw") {
+      el.style.strokeDasharray = "1 1";
+      el.style.strokeDashoffset = String(1 - E.out3(p));
+      el.style.opacity = p > 0 ? 1 : 0;
+      return;
+    }
+    if (a === "up") { const e = E.out3(p); o = e; tr = `translateY(${(1 - e) * 40}px)`; }
+    else if (a === "pop") { o = clamp(p * 3); tr = `scale(${lerp(0.5, 1, E.back(p))})`; }
+    else if (a === "slam") { const e = E.out4(p); o = clamp(p * 2.5); tr = `scale(${lerp(1.7, 1, e)})`; }
+    else if (a === "blur") { const e = E.out3(p); o = e; f = `blur(${(1 - e) * 24}px)`; tr = `scale(${lerp(1.06, 1, e)})`; }
+    else { o = E.out3(p); }
+    if (tout !== null) o *= 1 - prog(t, tout, 0.25);
+    el.style.opacity = o;
+    el.style.transform = tr;
+    el.style.filter = f;
+  }
+
+  function setMark(id, x, y, t, t0, t1) {
+    const g = $(id);
+    if (t < t0 || t >= t1) { g.setAttribute("opacity", 0); return; }
+    const p = prog(t, t0, 0.35), s = lerp(0.3, 1, E.back(p)), o = clamp(p * 3) * (1 - prog(t, t1 - 0.2, 0.2));
+    g.setAttribute("opacity", o);
+    g.setAttribute("transform", `translate(${x} ${y}) scale(${s})`);
+  }
+
+  function planUpdate(t) {
+    // ---------- MISTAKE 1: toilet clearance ----------
+    const mv = E.inout(prog(t, 7.0, 0.8));
+    const cx = lerp(30, 40, mv);
+    const wrong1 = t >= 4.6 && t < 7.0;
+    $("wc-tank").setAttribute("x", cx - 22);
+    $("wc-bowl").setAttribute("cx", cx);
+    $("wc-seat").setAttribute("cx", cx);
+    ["wc-tank", "wc-bowl"].forEach((id) => { $(id).style.stroke = wrong1 ? RED : BROWN2; $(id).style.fill = wrong1 ? "rgba(194,57,43,.18)" : "rgba(227,201,149,.45)"; });
+    const inS1 = t >= 4.6 && t < 11.2;
+    const d1 = $("dim1");
+    d1.setAttribute("opacity", inS1 ? clamp(prog(t, 4.6, 0.3)) * (1 - prog(t, 10.95, 0.25)) : 0);
+    const dc = t < 7.0 ? RED : GREEN;
+    ["dim1-l", "dim1-a", "dim1-b", "dim1-c"].forEach((id) => $(id).style.stroke = dc);
+    $("dim1-l").setAttribute("x2", cx); $("dim1-b").setAttribute("x1", cx); $("dim1-b").setAttribute("x2", cx);
+    $("dim1-c").setAttribute("x1", cx); $("dim1-c").setAttribute("x2", cx);
+    $("dim1-t").setAttribute("x", cx / 2 + 6);
+    $("dim1-t").textContent = Math.round(cx) + " cm";
+    $("dim1-t").style.fill = t < 7.0 ? RED_T : GREEN_T;
+    const b1 = $("wc-body");
+    b1.setAttribute("cx", cx);
+    b1.setAttribute("opacity", t >= 5.2 && t < 11.2 ? clamp(prog(t, 5.2, 0.3)) * (1 - prog(t, 10.95, 0.25)) : 0);
+    b1.setAttribute("r", 38 * lerp(0.6, 1, E.back(prog(t, 5.2, 0.35))));
+    b1.style.stroke = t < 7.8 ? RED : GREEN;
+    const cl = $("clear");
+    cl.setAttribute("x", cx - 30);
+    cl.setAttribute("opacity", t >= 8.0 && t < 11.2 ? clamp(prog(t, 8.0, 0.4)) * (1 - prog(t, 10.95, 0.25)) : 0);
+    const d2 = $("dim2");
+    d2.setAttribute("opacity", t >= 8.0 && t < 11.2 ? clamp(prog(t, 8.1, 0.4)) * (1 - prog(t, 10.95, 0.25)) : 0);
+    d2.setAttribute("transform", `translate(${cx - 40} 0)`);
+    setMark("mx1", -2, 40, t, 5.6, 7.0);
+    setMark("mk1", cx + 44, 22, t, 8.6, 11.2);
+
+    // ---------- MISTAKE 2: door swing ----------
+    const deg = Math.PI / 180;
+    let ang = 15, outward = false;                  // resting: slightly open, inward
+    if (t >= 12.2 && t < 12.9) ang = lerp(15, 38.7, E.in2(prog(t, 12.2, 0.7)));
+    else if (t >= 12.9 && t < 14.6) { const b = prog(t, 12.9, 0.25); ang = 38.7 - 3.5 * Math.sin(b * Math.PI); }
+    else if (t >= 14.6 && t < 14.9) ang = lerp(38.7, 0, E.inout(prog(t, 14.6, 0.3)));
+    else if (t >= 14.9) { outward = true; ang = lerp(0, 90, E.out3(prog(t, 14.9, 0.7))); }
+    const lx = 20 + 80 * Math.cos(ang * deg), ly = 220 + (outward ? 1 : -1) * 80 * Math.sin(ang * deg);
+    const leaf = $("leaf");
+    leaf.setAttribute("x2", lx); leaf.setAttribute("y2", ly);
+    const hit = t >= 12.9 && t < 14.6;
+    leaf.style.stroke = hit ? RED : BROWN;
+    const doorIn = prog(t, 0.9, 0.4);
+    leaf.setAttribute("opacity", doorIn); $("hinge").setAttribute("opacity", doorIn);
+    const ai = $("arc-in");
+    ai.setAttribute("opacity", t < 14.6 ? clamp(prog(t, 1.0, 0.4)) * 0.9 : 1 - prog(t, 14.6, 0.3));
+    ai.style.stroke = hit ? RED : BROWN2;
+    const ao = $("arc-out");
+    ao.setAttribute("opacity", t >= 15.0 ? clamp(prog(t, 15.0, 0.5)) : 0);
+    ao.style.stroke = t < 19.0 ? GREEN : BROWN2;
+    $("van-rect").style.stroke = hit ? RED : BROWN2;
+    $("van-rect").style.fill = hit ? "rgba(194,57,43,.22)" : "rgba(227,201,149,.45)";
+    $("van-tap").setAttribute("opacity", prog(t, 1.9, 0.3));
+    setMark("mx2", 62, 172, t, 13.0, 14.6);
+    setMark("mk2", 112, 262, t, 15.6, 19.0);
+
+    // ---------- MISTAKE 3: shower size ----------
+    const gp = E.inout(prog(t, 22.8, 1.0));
+    const S = lerp(70, 90, gp);
+    const wrong3 = t >= 20.2 && t < 23.8;
+    const r = $("sh-rect");
+    r.setAttribute("x", 220 - S); r.setAttribute("width", S); r.setAttribute("height", S);
+    r.style.stroke = wrong3 ? RED : (t >= 23.8 && t < 26.8 ? GREEN : BROWN2);
+    r.style.fill = wrong3 ? "rgba(194,57,43,.14)" : "rgba(227,201,149,.45)";
+    $("sh-d1").setAttribute("x1", 220 - S); $("sh-d1").setAttribute("y2", S);
+    $("sh-d2").setAttribute("x1", 220 - S); $("sh-d2").setAttribute("y1", S);
+    const shOn = prog(t, 2.0, 0.4);
+    ["sh-d1", "sh-d2", "sh-drain"].forEach((id) => $(id).setAttribute("opacity", 0.55 * shOn));
+    $("sh-drain").setAttribute("cx", 220 - S / 2); $("sh-drain").setAttribute("cy", S / 2);
+    const lab = $("sh-lab"), n = Math.round(S);
+    lab.textContent = `${n}×${n} cm`;
+    lab.setAttribute("x", 220 - S / 2);
+    lab.setAttribute("opacity", t >= 20.2 && t < 26.8 ? clamp(prog(t, 20.2, 0.3)) * (1 - prog(t, 26.55, 0.25)) : 0);
+    lab.style.fill = t < 23.8 ? RED_T : GREEN_T;
+    const sb = $("sh-body");
+    sb.setAttribute("cx", 220 - S / 2); sb.setAttribute("cy", S / 2);
+    sb.setAttribute("r", 40 * lerp(0.6, 1, E.back(prog(t, 20.8, 0.35))));
+    sb.setAttribute("opacity", t >= 20.8 && t < 26.8 ? clamp(prog(t, 20.8, 0.3)) * (1 - prog(t, 26.55, 0.25)) : 0);
+    sb.style.stroke = t < 23.8 ? RED : GREEN;
+    setMark("mx3", 220 - S - 16, S / 2, t, 21.4, 22.8);
+    setMark("mk3", 220 - S - 16, S / 2, t, 24.0, 26.8);
+
+    // red flash on every wrong state
+    let fl = 0;
+    SHAKES.forEach((s) => { if (t >= s && t < s + 0.35) fl = Math.max(fl, 0.22 * (1 - (t - s) / 0.35)); });
+    $("flash").setAttribute("opacity", fl);
+
+    // plan steps back for recap / CTA, leaves for the end card
+    const back = E.inout(prog(t, 26.9, 0.5));
+    const gone = prog(t, 35.45, 0.3);
+    const pl = $("plan");
+    pl.style.opacity = lerp(1, 0.13, back) * (1 - gone);
+    const hookOff = lerp(110, 0, E.inout(prog(t, 3.35, 0.45)));   // extra room under the hook title
+    pl.style.transform = `translateY(${hookOff}px) scale(${lerp(1, 0.92, back)})`;
+  }
+
+  window.render = function (t) {
+    t = clamp(t, 0, DUR);
+    // background: slow grid drift
+    $("grid").style.transform = `translate(${(t * 6) % 120}px, ${(t * 10) % 120}px)`;
+    // scenes
+    scenes.forEach((sc) => {
+      const s = +sc.dataset.s, e = +sc.dataset.e;
+      if (t < s || t >= e) { sc.style.display = "none"; return; }
+      sc.style.display = "block";
+      sc.style.opacity = clamp((t - s) / 0.15) * (1 - prog(t, e - 0.2, 0.2));
+    });
+    animated.forEach((el) => animate(el, t));
+    planUpdate(t);
+    // watermark from 0.4 until the end card
+    $("wm").style.opacity = prog(t, 0.4, 0.4) * (1 - prog(t, 35.3, 0.3));
+    // typing «حزمة» in the comment box
+    const word = "حزمة", keys = [32.7, 32.9, 33.1, 33.3];
+    const typed = keys.filter((k) => t >= k).length;
+    $("ctyped").textContent = word.slice(0, typed);
+    $("cph").style.display = typed > 0 ? "none" : "inline";
+    const sent = t >= 33.6;
+    $("ccur").style.opacity = !sent && Math.floor(t * 2.5) % 2 === 0 ? 1 : 0;
+    if (sent) $("ctyped").textContent = "";
+    if (sent) $("cph").style.display = "inline";
+    const sp = prog(t, 33.6, 0.4);
+    $("csend").style.transform = `scale(${1 + 0.22 * Math.sin(sp * Math.PI)})`;
+    // screen shake (150 ms) on every wrong state
+    let dx = 0, dy = 0;
+    SHAKES.forEach((s) => { const k = t - s; if (k >= 0 && k < 0.15) { const a = 12 * (1 - k / 0.15); dx = a * Math.sin(k * 2 * Math.PI * 38); dy = a * 0.6 * Math.cos(k * 2 * Math.PI * 31); } });
+    $("stage").style.transform = `translate(${dx}px, ${dy}px)`;
+    // final fade
+    $("fade").style.opacity = prog(t, 39.1, 0.5);
+  };
+
+  // HyperFrames: one paused timeline; every seek calls render(t) — the whole frame is a pure function of t.
+  const tl = gsap.timeline({ paused: true });
+  const clock = { t: 0 };
+  tl.to(clock, { t: DUR, duration: DUR, ease: "none", onUpdate: () => window.render(clock.t) });
+  window.render(0);
+  window.__timelines["main"] = tl;
+})();
+</script>
+</body>
+</html>

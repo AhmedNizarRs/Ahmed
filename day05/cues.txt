@@ -1,0 +1,90 @@
+  0.100  pencil walls
+  0.500  title thump
+  0.520  title impact
+  1.200  pencil fixtures
+  1.300  subtitle pop
+  3.450  whoosh scene 1
+  3.600  chip pop
+  3.800  heading pop
+  4.600  dim pop
+  5.200  body circle pop
+  5.600  WRONG bonk
+  5.600  WRONG buzz
+  7.000  tick
+  7.080  tick
+  7.160  tick
+  7.240  tick
+  7.320  tick
+  7.400  tick
+  7.480  tick
+  7.560  tick
+  7.640  tick
+  7.720  tick
+  8.000  clearance pop
+  8.600  RIGHT chime
+  8.800  line pop
+  9.400  line pop
+ 11.250  whoosh scene 2
+ 11.400  chip pop
+ 11.600  heading pop
+ 12.200  door swing
+ 12.900  WRONG bonk
+ 12.920  WRONG buzz
+ 13.600  line pop
+ 14.900  door swing out
+ 15.600  RIGHT chime
+ 16.200  line pop
+ 19.050  whoosh scene 3
+ 19.200  chip pop
+ 19.400  heading pop
+ 20.200  label pop
+ 20.800  body circle pop
+ 21.400  WRONG bonk
+ 21.400  WRONG buzz
+ 22.800  tick
+ 22.850  tick
+ 22.900  tick
+ 22.950  tick
+ 23.000  tick
+ 23.050  tick
+ 23.100  tick
+ 23.150  tick
+ 23.200  tick
+ 23.250  tick
+ 23.300  tick
+ 23.350  tick
+ 23.400  tick
+ 23.450  tick
+ 23.500  tick
+ 23.550  tick
+ 23.600  tick
+ 23.650  tick
+ 23.700  tick
+ 23.750  tick
+ 24.000  RIGHT chime
+ 24.200  line pop
+ 24.800  line pop
+ 26.850  whoosh recap
+ 27.000  panel pop
+ 27.300  check pop 1
+ 27.900  check pop 2
+ 28.500  check pop 3
+ 29.100  line pop
+ 30.050  whoosh cta
+ 30.300  bookmark pop
+ 30.500  line pop
+ 31.200  line pop
+ 31.900  keyword pop
+ 32.400  box pop
+ 32.700  key click
+ 32.900  key click
+ 33.100  key click
+ 33.300  key click
+ 33.600  send swipe
+ 33.900  bubble chime
+ 34.500  bubble chime
+ 35.450  whoosh end
+ 35.700  logo chime
+ 35.700  logo impact
+ 36.600  made-by pop
+ 37.300  follow pop
