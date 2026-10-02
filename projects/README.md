@@ -16,4 +16,6 @@ Render any project: `cd projects/<name> && npx hyperframes render . -o renders/<
 | 10-saas-promo | 10 | renders/promo.mp4 (60s, kinetic style, uses practice screenshots) |
 | 14-transparent | 14 | renders/card.mov + renders/card-png (git-ignored: 80 MB; re-render with `--format mov` / `--format png-sequence`) |
 
-Not done yet: Prompts 11, 12, 13 (graphics on `clip.mp4` + sound effects) — they need whisper.cpp for transcription.
+
+Prompts 11–13 are done in `11-own-video` (transcript in `transcript.json`; renders/with-cards.mp4 = graphics + screenshots + sound effects).
+Note: whisper-cli was built from ggml-org/whisper.cpp inside the cloud container (not in this repo) and the `ggml-small.en.bin` model sits in ~/.cache/hyperframes/whisper/models.

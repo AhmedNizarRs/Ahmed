@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1080, height=1920" />
+    <title>Graphics on clip.mp4</title>
+    <script src="gsap.min.js"></script>
+    <style>
+      @font-face { font-family: "Inter"; font-weight: 400; src: url("fonts/Inter-400.woff2") format("woff2"); }
+      @font-face { font-family: "Inter"; font-weight: 700; src: url("fonts/Inter-700.woff2") format("woff2"); }
+      body { margin: 0; background: #000; font-family: Inter, sans-serif; }
+      #root { position: relative; width: 100%; height: 100%; overflow: hidden; background: #000; }
+      #a-roll { position: absolute; left: 0; top: 0; width: 1080px; height: 1920px; object-fit: cover; }
+      /* all graphics live inside x 108..972 (middle 80%), off the face (face ends ~y 810) */
+      .card { position: absolute; left: 190px; width: 700px; box-sizing: border-box; border-radius: 32px; padding: 34px 40px;
+        background: rgba(255,255,255,.86); backdrop-filter: blur(30px); border: 2px solid rgba(255,255,255,.95);
+        box-shadow: 0 24px 60px rgba(0,0,0,.28); color: #1d1d1f; }
+      #list { top: 930px; }
+      #cmp { top: 960px; }
+      .lbl { font-weight: 400; font-size: 22px; letter-spacing: .16em; text-transform: uppercase; color: #45454d; }
+      .lbl .n { float: right; }
+      .item { display: flex; align-items: center; gap: 22px; font-weight: 700; font-size: 44px; margin-top: 16px; }
+      .chk { position: relative; width: 46px; height: 46px; border-radius: 50%; border: 3px solid #c9c9d1; box-sizing: border-box; flex: none; }
+      .chk b { position: absolute; inset: -3px; border-radius: 50%; background: #34c759; color: #0b3d1b; display: grid; place-items: center; font-size: 28px; }
+      .row { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 10px; }
+      .col .t { font-weight: 400; font-size: 20px; letter-spacing: .16em; text-transform: uppercase; color: #45454d; }
+      .col .v { font-weight: 700; font-size: 120px; line-height: 1.05; letter-spacing: -.03em; font-variant-numeric: tabular-nums; }
+      .arr { font-size: 70px; font-weight: 700; color: #45454d; padding-bottom: 20px; }
+      #now .v { color: #0b7f48; }
+      .track { height: 16px; border-radius: 8px; background: #e3e3ea; margin-top: 14px; overflow: hidden; }
+      #fill { height: 100%; width: 100%; background: #34c759; transform-origin: 0 50%; }
+      #shots { position: absolute; left: 330px; top: 1330px; width: 420px; height: 440px; }
+      .shot { position: absolute; inset: 0; border-radius: 26px; overflow: hidden; background: #f5f6fa; box-shadow: 0 24px 60px rgba(0,0,0,.35); border: 3px solid #fff; }
+      .shot img { display: block; width: 100%; height: auto; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1080" data-height="1920" data-duration="18.08">
+      <video id="a-roll" src="clip.mp4" playsinline data-has-audio="true" data-start="0" data-duration="18.08" data-track-index="0"></video>
+
+      <div id="list" class="card">
+        <div class="lbl">3 things that doubled sales <span class="n" id="cnt">0 / 3</span></div>
+        <div class="item"><span class="chk"><b>✓</b></span>Better photos</div>
+        <div class="item"><span class="chk"><b>✓</b></span>Faster replies</div>
+        <div class="item"><span class="chk"><b>✓</b></span>Real reviews</div>
+      </div>
+
+      <div id="cmp" class="card">
+        <div class="lbl">Sales per week</div>
+        <div class="row">
+          <div class="col" id="was"><div class="t">Before</div><div class="v">40</div></div>
+          <div class="arr" id="arr">→</div>
+          <div class="col" id="now"><div class="t">Now</div><div class="v" id="nowv">40</div></div>
+        </div>
+        <div class="track"><div id="fill"></div></div>
+      </div>
+
+      <div id="shots">
+        <div class="shot"><img src="screenshots/sales1.png" /></div>
+        <div class="shot"><img src="screenshots/sales2.png" /></div>
+        <div class="shot"><img src="screenshots/sales3.png" /></div>
+        <div class="shot"><img src="screenshots/sales4.png" /></div>
+        <div class="shot"><img src="screenshots/sales5.png" /></div>
+      </div>
+
+      <audio id="sfx-tick-1" src="sfx/tick.wav" data-start="4.4" data-duration="0.09" data-track-index="1" data-volume="1"></audio>
+      <audio id="sfx-tick-2" src="sfx/tick.wav" data-start="6.1" data-duration="0.09" data-track-index="2" data-volume="1"></audio>
+      <audio id="sfx-tick-3" src="sfx/tick.wav" data-start="9.5" data-duration="0.09" data-track-index="3" data-volume="1"></audio>
+      <audio id="sfx-counter" src="sfx/counter.wav" data-start="16.8" data-duration="1.05" data-track-index="4" data-volume="0.35"></audio>
+      <audio id="sfx-chime" src="sfx/chime.wav" data-start="17.2" data-duration="0.88" data-track-index="5" data-volume="0.2"></audio>
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      const $ = (s) => document.querySelector(s);
+      const rise = (el, t) => tl.fromTo(el, { y: 36, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.6, ease: "power3.out" }, t);
+
+      // ---- 1. checklist: appears after the 3 s hook, ticks land on the exact words ----
+      rise("#list", 3.9);
+      [4.36, 6.08, 9.47].forEach((t, i) => {
+        const chk = document.querySelectorAll("#list .chk b")[i];
+        tl.fromTo(chk, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: "back.out(3)" }, t);
+        tl.set("#cnt", { textContent: (i + 1) + " / 3" }, t);
+      });
+      tl.to("#list", { opacity: 0, y: -20, duration: 0.35, ease: "power2.in" }, 11.7);
+
+      // ---- 2. comparison: Sales (13.68) ... 40 (15.23) ... over 90 (16.78) ----
+      rise("#cmp", 13.55);
+      tl.fromTo("#was", { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.4, ease: "power3.out" }, 15.23);
+      tl.fromTo(".track", { opacity: 0 }, { opacity: 1, duration: 0.4 }, 15.23);
+      tl.fromTo("#arr", { opacity: 0, x: -14 }, { opacity: 1, x: 0, duration: 0.4, ease: "power3.out" }, 16.5);
+      tl.fromTo("#now", { opacity: 0 }, { opacity: 1, duration: 0.3 }, 16.7);
+      const n = { v: 40 };
+      tl.to(n, { v: 90, duration: 1.0, ease: "power2.out", onUpdate: () => { $("#nowv").textContent = Math.round(n.v) + (n.v >= 89.5 ? "+" : ""); } }, 16.8);
+      tl.fromTo("#fill", { scaleX: 0.4 }, { scaleX: 1, duration: 1.0, ease: "power2.out" }, 16.8);
+      tl.set("#fill", { scaleX: 0.4 }, 0);
+
+      // ---- 3. prompt 12: five screenshots pop up one after another, in order, on the voice ----
+      const shots = document.querySelectorAll(".shot");
+      [14.26, 15.23, 16.23, 16.78, 17.24].forEach((t, i) => {
+        tl.fromTo(shots[i], { scale: 0.7, opacity: 0, y: 30 }, { scale: 1, opacity: 1, y: 0, duration: 0.4, ease: "back.out(2)" }, t);
+      });
+      shots.forEach((s) => tl.set(s, { opacity: 0 }, 0));
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
