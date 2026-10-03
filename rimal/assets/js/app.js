@@ -136,7 +136,8 @@
     const word = $("#about-word");
     word.textContent = d["about.word"];
     word.lang = d["about.wordLang"];
-    $('meta[name="description"]').setAttribute("content", d["meta.desc"]);
+    const meta = $('meta[name="description"]');
+    if (meta) meta.setAttribute("content", d["meta.desc"]);
     langListeners.forEach((f) => f());
   }
   $("[data-lang-toggle]").addEventListener("click", () => {
@@ -1034,15 +1035,17 @@
   }
 
   /* ---------------- Boot ---------------- */
+  // Start each part on its own, so a failure in one never blocks the others.
+  const safely = (name, fn) => { try { fn(); } catch (err) { console.warn(`${name} failed to start`, err); } };
   const boot = () => {
-    readPalette();
-    applyLang();
-    syncToggle();
-    try { initDunes(); } catch (err) { console.warn("Dunes unavailable", err); }
-    renderProducts();
-    initLab();
-    initInsta();
-    initReveal();
+    safely("palette", readPalette);
+    safely("language", applyLang);
+    safely("theme", syncToggle);
+    safely("dunes", initDunes);
+    safely("products", renderProducts);
+    safely("pattern lab", initLab);
+    safely("instagram", initInsta);
+    safely("reveal", initReveal);
   };
   (document.fonts ? document.fonts.ready : Promise.resolve()).then(boot, boot);
 })();
