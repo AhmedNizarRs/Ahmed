@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Dr Li 3D</title>
+  <meta name="description" content="Dr Li 3D prints the designs people keep asking for, and models custom parts from your idea, sketch or file.">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="preload" href="assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Dr Li 3D, back to top">
+        <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+        <span class="brand-name">Dr Li 3D</span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#shop">Shop</a>
+        <a href="#custom">Custom design</a>
+        <a href="#process">How it works</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <button class="cart-btn" type="button" id="cart-open" aria-label="Open cart, 0 items">
+        <i class="ph ph-shopping-cart-simple" aria-hidden="true"></i>
+        <span class="cart-label">Cart</span>
+        <span class="cart-count" id="cart-count" aria-hidden="true">0</span>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero -->
+    <section class="hero wrap" id="top">
+      <div class="hero-copy">
+        <h1 class="hero-title">Made to order, one layer at a time.</h1>
+        <p class="hero-sub">Dr Li 3D prints the designs people keep asking for, and models custom parts from your idea, sketch or file.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-solid" href="#shop">Shop prints</a>
+          <a class="btn" href="#custom">Custom design <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+        </div>
+      </div>
+      <figure class="hero-stage">
+        <canvas id="hero-canvas" aria-label="A 3D printer building an object layer by layer. Drag to turn the build plate." role="img"></canvas>
+        <figcaption class="readout" aria-hidden="true">
+          <span id="hero-job">Twist Vase</span>
+          <span id="hero-layer">Layer 0 of 240</span>
+          <span class="readout-bar"><span id="hero-progress"></span></span>
+        </figcaption>
+      </figure>
+    </section>
+
+    <!-- Shop -->
+    <section class="shop wrap" id="shop" aria-labelledby="shop-title">
+      <div class="shop-head">
+        <div class="stacked">
+          <p class="eyebrow">In demand</p>
+          <h2 id="shop-title">Popular prints</h2>
+        </div>
+        <div class="filters" role="group" aria-label="Filter products">
+          <button type="button" class="chip is-active" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-filter="Home" aria-pressed="false">Home</button>
+          <button type="button" class="chip" data-filter="Desk" aria-pressed="false">Desk</button>
+          <button type="button" class="chip" data-filter="Toys" aria-pressed="false">Toys</button>
+        </div>
+      </div>
+      <ul class="product-grid" id="product-grid" aria-live="polite">
+        <!-- Skeletons shown until the 3D thumbnails render -->
+        <li class="product is-loading" aria-hidden="true"><div class="product-media"></div><div class="product-body"><span class="sk sk-title"></span><span class="sk sk-meta"></span></div></li>
+        <li class="product is-loading" aria-hidden="true"><div class="product-media"></div><div class="product-body"><span class="sk sk-title"></span><span class="sk sk-meta"></span></div></li>
+        <li class="product is-loading" aria-hidden="true"><div class="product-media"></div><div class="product-body"><span class="sk sk-title"></span><span class="sk sk-meta"></span></div></li>
+        <li class="product is-loading" aria-hidden="true"><div class="product-media"></div><div class="product-body"><span class="sk sk-title"></span><span class="sk sk-meta"></span></div></li>
+      </ul>
+    </section>
+
+    <!-- Custom design studio -->
+    <section class="custom wrap" id="custom" aria-labelledby="custom-title">
+      <div class="custom-head">
+        <h2 id="custom-title">Custom design</h2>
+        <p>Shape a piece here or upload your own model. The price updates as you go, and we confirm the final quote before anything prints.</p>
+      </div>
+
+      <div class="studio">
+        <div class="studio-stage">
+          <canvas id="studio-canvas" role="img" aria-label="Live 3D preview of your custom design. Drag to rotate."></canvas>
+          <div class="studio-overlay" aria-hidden="true">
+            <span id="studio-dims">120 × 120 × 180 mm</span>
+            <span class="studio-drag"><i class="ph ph-hand-grabbing"></i> Drag to rotate</span>
+          </div>
+        </div>
+
+        <div class="studio-panel">
+          <fieldset class="field">
+            <legend>Start from</legend>
+            <div class="segmented" id="shape-group">
+              <label><input type="radio" name="shape" value="vase" checked><span>Vase</span></label>
+              <label><input type="radio" name="shape" value="planter"><span>Planter</span></label>
+              <label><input type="radio" name="shape" value="shade"><span>Lamp shade</span></label>
+              <label><input type="radio" name="shape" value="upload"><span>Your file</span></label>
+            </div>
+          </fieldset>
+
+          <div class="upload" id="upload-zone" hidden>
+            <label class="dropzone" for="file-input" id="dropzone">
+              <i class="ph ph-upload-simple" aria-hidden="true"></i>
+              <span class="dropzone-title" id="dropzone-title">Drop a file or browse</span>
+              <span class="dropzone-hint" id="dropzone-hint">STL previews live here. OBJ, 3MF, STEP, sketches and photos are welcome too.</span>
+            </label>
+            <input type="file" id="file-input" accept=".stl,.obj,.3mf,.step,.stp,.png,.jpg,.jpeg,.pdf" class="sr-only">
+            <p class="field-error" id="file-error" role="alert" hidden></p>
+          </div>
+
+          <div class="sliders" id="shape-controls">
+            <div class="range">
+              <label for="in-height">Height</label>
+              <output id="out-height" for="in-height">180 mm</output>
+              <input type="range" id="in-height" min="60" max="240" step="5" value="180">
+            </div>
+            <div class="range">
+              <label for="in-width">Width</label>
+              <output id="out-width" for="in-width">120 mm</output>
+              <input type="range" id="in-width" min="40" max="200" step="5" value="120">
+            </div>
+            <div class="range">
+              <label for="in-twist">Twist</label>
+              <output id="out-twist" for="in-twist">90°</output>
+              <input type="range" id="in-twist" min="0" max="180" step="5" value="90">
+            </div>
+            <div class="range">
+              <label for="in-ribs">Ribs</label>
+              <output id="out-ribs" for="in-ribs">8</output>
+              <input type="range" id="in-ribs" min="0" max="24" step="1" value="8">
+            </div>
+            <fieldset class="field field-inline">
+              <legend>Sides</legend>
+              <div class="segmented segmented-sm">
+                <label><input type="radio" name="sides" value="96" checked><span>Round</span></label>
+                <label><input type="radio" name="sides" value="8"><span>Octagon</span></label>
+                <label><input type="radio" name="sides" value="6"><span>Hexagon</span></label>
+              </div>
+            </fieldset>
+          </div>
+
+          <div class="sliders" id="upload-controls" hidden>
+            <div class="range">
+              <label for="in-scale">Longest side</label>
+              <output id="out-scale" for="in-scale">120 mm</output>
+              <input type="range" id="in-scale" min="20" max="240" step="5" value="120">
+            </div>
+            <div class="range">
+              <label for="in-infill">Infill</label>
+              <output id="out-infill" for="in-infill">20%</output>
+              <input type="range" id="in-infill" min="10" max="100" step="5" value="20">
+            </div>
+          </div>
+
+          <fieldset class="field">
+            <legend>Material</legend>
+            <div class="segmented" id="material-group">
+              <label><input type="radio" name="material" value="PLA" checked><span>PLA</span></label>
+              <label><input type="radio" name="material" value="PETG"><span>PETG</span></label>
+              <label><input type="radio" name="material" value="TPU"><span>TPU</span></label>
+              <label><input type="radio" name="material" value="Resin"><span>Resin</span></label>
+            </div>
+            <p class="field-note" id="material-note">Rigid with crisp detail. The best all-rounder.</p>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>Colour <span class="legend-value" id="color-name">Bone</span></legend>
+            <div class="swatches" id="studio-swatches"></div>
+          </fieldset>
+
+          <fieldset class="field">
+            <legend>Finish</legend>
+            <div class="segmented segmented-sm">
+              <label><input type="radio" name="quality" value="0.28"><span>Draft 0.28</span></label>
+              <label><input type="radio" name="quality" value="0.2" checked><span>Standard 0.20</span></label>
+              <label><input type="radio" name="quality" value="0.12"><span>Fine 0.12</span></label>
+            </div>
+          </fieldset>
+
+          <div class="estimate" aria-live="polite">
+            <div class="estimate-figs">
+              <div><span class="fig-label">Weight</span><span class="fig" id="est-weight">0 g</span></div>
+              <div><span class="fig-label">Print time</span><span class="fig" id="est-time">0 h</span></div>
+              <div><span class="fig-label">Estimate</span><span class="fig fig-price" id="est-price">$0</span></div>
+            </div>
+            <p class="estimate-note">Estimate per piece. Final quote is confirmed with you before printing.</p>
+          </div>
+
+          <form class="request" id="custom-form" novalidate>
+            <div class="form-row">
+              <div class="input">
+                <label for="cf-name">Name</label>
+                <input id="cf-name" name="name" type="text" autocomplete="name" required>
+                <p class="input-error" hidden>Enter your name so we know who the quote is for.</p>
+              </div>
+              <div class="input">
+                <label for="cf-email">Email</label>
+                <input id="cf-email" name="email" type="email" autocomplete="email" required>
+                <p class="input-error" hidden>Enter an email address like name@example.com.</p>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="input input-qty">
+                <label for="cf-qty">Quantity</label>
+                <input id="cf-qty" name="qty" type="number" min="1" max="500" value="1" inputmode="numeric" required>
+                <p class="input-error" hidden>Choose a quantity from 1 to 500.</p>
+              </div>
+              <div class="input">
+                <label for="cf-date">Needed by <span class="optional">optional</span></label>
+                <input id="cf-date" name="date" type="date">
+              </div>
+            </div>
+            <div class="input">
+              <label for="cf-notes">What is it for?</label>
+              <textarea id="cf-notes" name="notes" rows="3" placeholder="Size limits, where it will live, anything it needs to fit"></textarea>
+            </div>
+            <button class="btn btn-solid btn-wide" type="submit">Send request <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+          </form>
+
+          <div class="confirm" id="custom-confirm" hidden tabindex="-1">
+            <h3><i class="ph ph-check" aria-hidden="true"></i> Your request is ready</h3>
+            <p>Email it to us to get your quote. <span id="custom-attach"></span></p>
+            <pre class="summary" id="custom-summary"></pre>
+            <div class="confirm-actions">
+              <a class="btn btn-solid" id="custom-mail" href="#">Email request <i class="ph ph-envelope-simple" aria-hidden="true"></i></a>
+              <button class="btn" type="button" data-copy="custom-summary"><i class="ph ph-copy" aria-hidden="true"></i> Copy</button>
+              <button class="btn btn-ghost" type="button" id="custom-edit">Edit</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Process -->
+    <section class="process wrap" id="process" aria-labelledby="process-title">
+      <h2 id="process-title">How it works</h2>
+      <ol class="steps">
+        <li class="step">
+          <span class="step-node"><i class="ph ph-cube" aria-hidden="true"></i></span>
+          <h3>Choose</h3>
+          <p>Pick a print from the shop, or shape your own in the custom studio.</p>
+        </li>
+        <li class="step">
+          <span class="step-node"><i class="ph ph-printer" aria-hidden="true"></i></span>
+          <h3>Print</h3>
+          <p>Your order is sliced, printed layer by layer, then cleaned up by hand.</p>
+        </li>
+        <li class="step">
+          <span class="step-node"><i class="ph ph-truck" aria-hidden="true"></i></span>
+          <h3>Ship</h3>
+          <p>Packed carefully and sent to your door, with the cost agreed up front.</p>
+        </li>
+      </ol>
+    </section>
+
+    <!-- Materials -->
+    <section class="materials wrap" id="materials" aria-labelledby="materials-title">
+      <div class="stacked">
+        <p class="eyebrow">Materials</p>
+        <h2 id="materials-title">Pick what it is made of</h2>
+      </div>
+      <div class="mat-grid">
+        <article class="mat">
+          <p class="mat-value">55°C</p>
+          <p class="mat-key">softening point</p>
+          <h3>PLA</h3>
+          <p>Rigid, crisp detail and the widest colour range. Keep it out of hot cars.</p>
+        </article>
+        <article class="mat">
+          <p class="mat-value">75°C</p>
+          <p class="mat-key">softening point</p>
+          <h3>PETG</h3>
+          <p>Tougher and more heat resistant. Good for planters, outdoor parts and things that get handled.</p>
+        </article>
+        <article class="mat">
+          <p class="mat-value">95A</p>
+          <p class="mat-key">shore hardness</p>
+          <h3>TPU</h3>
+          <p>Flexible and grippy. Phone cases, bumpers, gaskets and anything that should bend.</p>
+        </article>
+        <article class="mat mat-hot">
+          <p class="mat-value">0.05 mm</p>
+          <p class="mat-key">layer height</p>
+          <h3>Resin</h3>
+          <p>The finest detail we offer. Miniatures, jewellery masters and tiny parts.</p>
+        </article>
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="faq wrap" id="faq" aria-labelledby="faq-title">
+      <h2 id="faq-title">Questions</h2>
+      <div class="faq-list">
+        <details>
+          <summary>What files can I send?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>STL, OBJ, 3MF and STEP files all work. No model yet? Send a sketch or a photo with measurements and we will design it.</p>
+        </details>
+        <details>
+          <summary>How is the price worked out?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>By the material used, the time on the printer and any finishing. The studio estimate uses the same inputs, and the final quote is confirmed before printing.</p>
+        </details>
+        <details>
+          <summary>How long does an order take?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>Most single prints take a few hours on the printer. Your quote includes a ready date so you know when to expect it.</p>
+        </details>
+        <details>
+          <summary>Can I get a different size or colour?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>Yes. Every shop item comes in three sizes and any of our filament colours. For something outside that, use the custom studio.</p>
+        </details>
+        <details>
+          <summary>Do you ship?<i class="ph ph-plus" aria-hidden="true"></i></summary>
+          <p>Yes. Shipping is added to your quote based on where you are, so the total is clear before you pay.</p>
+        </details>
+      </div>
+    </section>
+
+    <!-- Closing CTA -->
+    <section class="closing wrap" aria-labelledby="closing-title">
+      <h2 id="closing-title">Have something in mind? We will print it.</h2>
+      <a class="btn btn-solid btn-big" href="#custom">Custom design <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+    </section>
+  </main>
+
+  <footer class="footer wrap">
+    <a class="brand" href="#top" aria-label="Dr Li 3D, back to top">
+      <span class="brand-mark" aria-hidden="true"><i></i><i></i><i></i></span>
+      <span class="brand-name">Dr Li 3D</span>
+    </a>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="#shop">Shop</a>
+      <a href="#custom">Custom design</a>
+      <a href="#materials">Materials</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <p class="footer-copy">&copy; 2026 Dr Li 3D</p>
+  </footer>
+
+  <!-- Quick view -->
+  <dialog class="sheet quickview" id="quickview" aria-labelledby="qv-name">
+    <button class="icon-btn sheet-close" type="button" data-close aria-label="Close"><i class="ph ph-x" aria-hidden="true"></i></button>
+    <div class="qv-stage">
+      <canvas id="qv-canvas" role="img" aria-label="3D view of the product. Drag to rotate."></canvas>
+      <span class="studio-drag qv-drag" aria-hidden="true"><i class="ph ph-hand-grabbing"></i> Drag to rotate</span>
+    </div>
+    <div class="qv-body">
+      <p class="qv-cat" id="qv-cat">Home</p>
+      <h2 id="qv-name">Product</h2>
+      <p class="qv-price" id="qv-price">$0</p>
+      <p class="qv-desc" id="qv-desc"></p>
+      <dl class="qv-specs" id="qv-specs"></dl>
+      <fieldset class="field">
+        <legend>Colour <span class="legend-value" id="qv-color-name"></span></legend>
+        <div class="swatches" id="qv-swatches"></div>
+      </fieldset>
+      <fieldset class="field">
+        <legend>Size</legend>
+        <div class="segmented" id="qv-sizes"></div>
+      </fieldset>
+      <div class="qv-buy">
+        <div class="stepper" role="group" aria-label="Quantity">
+          <button type="button" class="icon-btn" id="qv-minus" aria-label="Decrease quantity"><i class="ph ph-minus" aria-hidden="true"></i></button>
+          <output id="qv-qty" aria-live="polite">1</output>
+          <button type="button" class="icon-btn" id="qv-plus" aria-label="Increase quantity"><i class="ph ph-plus" aria-hidden="true"></i></button>
+        </div>
+        <button class="btn btn-solid btn-wide" type="button" id="qv-add">Add to cart</button>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Cart -->
+  <dialog class="drawer" id="cart" aria-labelledby="cart-title">
+    <div class="drawer-head">
+      <h2 id="cart-title">Your cart</h2>
+      <button class="icon-btn" type="button" data-close aria-label="Close cart"><i class="ph ph-x" aria-hidden="true"></i></button>
+    </div>
+
+    <div class="drawer-view" id="cart-view">
+      <ul class="cart-items" id="cart-items"></ul>
+      <div class="cart-empty" id="cart-empty" hidden>
+        <i class="ph ph-package" aria-hidden="true"></i>
+        <p>Your cart is empty.</p>
+        <p class="muted">Add a print from the shop, or design your own.</p>
+        <a class="btn" href="#shop" data-close>Browse prints</a>
+      </div>
+      <div class="drawer-foot" id="cart-foot">
+        <div class="subtotal"><span>Subtotal</span><span id="cart-subtotal">$0</span></div>
+        <p class="muted small">Shipping is added to your confirmation.</p>
+        <button class="btn btn-solid btn-wide" type="button" id="cart-checkout">Request order <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+      </div>
+    </div>
+
+    <form class="drawer-view request" id="checkout-form" hidden novalidate>
+      <div class="input">
+        <label for="co-name">Name</label>
+        <input id="co-name" name="name" type="text" autocomplete="name" required>
+        <p class="input-error" hidden>Enter your name.</p>
+      </div>
+      <div class="input">
+        <label for="co-email">Email</label>
+        <input id="co-email" name="email" type="email" autocomplete="email" required>
+        <p class="input-error" hidden>Enter an email address like name@example.com.</p>
+      </div>
+      <div class="input">
+        <label for="co-address">Shipping address</label>
+        <textarea id="co-address" name="address" rows="3" autocomplete="street-address" required></textarea>
+        <p class="input-error" hidden>Enter the address we should ship to.</p>
+      </div>
+      <div class="input">
+        <label for="co-notes">Notes <span class="optional">optional</span></label>
+        <textarea id="co-notes" name="notes" rows="2"></textarea>
+      </div>
+      <div class="drawer-foot">
+        <button class="btn btn-solid btn-wide" type="submit">Review order <i class="ph ph-arrow-right" aria-hidden="true"></i></button>
+        <button class="btn btn-ghost btn-wide" type="button" id="checkout-back">Back to cart</button>
+      </div>
+    </form>
+
+    <div class="drawer-view confirm" id="cart-confirm" hidden tabindex="-1">
+      <h3><i class="ph ph-check" aria-hidden="true"></i> Your order is ready</h3>
+      <p>Email it to us and we will reply with shipping and payment details.</p>
+      <pre class="summary" id="cart-summary"></pre>
+      <div class="confirm-actions">
+        <a class="btn btn-solid" id="cart-mail" href="#">Email order <i class="ph ph-envelope-simple" aria-hidden="true"></i></a>
+        <button class="btn" type="button" data-copy="cart-summary"><i class="ph ph-copy" aria-hidden="true"></i> Copy</button>
+      </div>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="assets/vendor/three.min.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
