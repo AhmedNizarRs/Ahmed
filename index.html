@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Ahmed</title>
+  <meta name="description" content="Ahmed designs and builds for the web. Push the letters around, then try the lab.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="preload" href="assets/fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Ahmed, back to top">ahmed</a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#lab">Lab</a>
+        <a href="#approach">Approach</a>
+        <a href="#about">About</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch theme">
+          <i class="ph ph-moon" aria-hidden="true"></i>
+        </button>
+        <a class="btn btn-small" href="#contact">Say hello</a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero wrap" id="top">
+      <div class="hero-copy">
+        <h1 class="hero-title">I build websites you want to&nbsp;touch.</h1>
+        <p class="hero-sub">I'm Ahmed. I design and build for the web. Push my name around, then try the lab below.</p>
+        <div class="hero-ctas">
+          <a class="btn" href="#lab">Open the lab <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+          <a class="btn btn-ghost" href="#contact">Say hello</a>
+        </div>
+      </div>
+      <div class="hero-art">
+        <canvas id="hero-canvas" role="img" aria-label="The name Ahmed drawn in particles that scatter away from your pointer"></canvas>
+        <p class="hero-hint" aria-hidden="true"><i class="ph ph-cursor-click"></i> Hover to push, click to scatter</p>
+      </div>
+    </section>
+
+    <section class="lab wrap" id="lab" aria-labelledby="lab-title">
+      <div class="section-head">
+        <h2 id="lab-title">The lab</h2>
+        <p>Four small experiments. Each one is live code running in your browser, so poke at them.</p>
+      </div>
+
+      <div class="lab-grid">
+        <article class="cell cell-throw" data-reveal>
+          <header class="cell-head">
+            <h3>Throwable type</h3>
+            <p>Grab a letter, fling it, watch it land.</p>
+          </header>
+          <canvas class="cell-canvas" id="throw-canvas" role="img" aria-label="Letters with gravity that you can drag and throw"></canvas>
+          <button class="icon-btn cell-reset" type="button" id="throw-reset" aria-label="Drop the letters again">
+            <i class="ph ph-arrow-counter-clockwise" aria-hidden="true"></i>
+          </button>
+        </article>
+
+        <article class="cell cell-grid" data-reveal>
+          <header class="cell-head">
+            <h3>Spotlight grid</h3>
+            <p>Dots swell under your pointer.</p>
+          </header>
+          <canvas class="cell-canvas" id="grid-canvas" role="img" aria-label="A grid of dots that grow near the pointer"></canvas>
+        </article>
+
+        <article class="cell cell-decode" data-reveal>
+          <header class="cell-head">
+            <h3>Decode</h3>
+            <p>Tap for the next hello.</p>
+          </header>
+          <button class="decode" type="button" id="decode-btn" aria-describedby="decode-lang">
+            <span class="decode-word" id="decode-word" aria-hidden="true">Hello</span>
+            <span class="decode-lang" id="decode-lang">English</span>
+          </button>
+          <p class="sr-only" aria-live="polite" id="decode-live">Hello, English</p>
+        </article>
+
+        <article class="cell cell-ripple" data-reveal>
+          <header class="cell-head">
+            <h3>Ripples</h3>
+            <p>Move or tap to disturb the surface.</p>
+          </header>
+          <canvas class="cell-canvas" id="ripple-canvas" role="img" aria-label="Rings that spread out from wherever you move or tap"></canvas>
+        </article>
+      </div>
+    </section>
+
+    <section class="approach wrap" id="approach" aria-labelledby="approach-title">
+      <div class="section-head">
+        <h2 id="approach-title">How I work</h2>
+      </div>
+      <div class="stack">
+        <article class="stack-card stack-fast">
+          <h3>Fast first.</h3>
+          <p>A page should be there before you finish blinking. Small files, few libraries, no spinners.</p>
+        </article>
+        <article class="stack-card stack-motion">
+          <h3>Motion with a reason.</h3>
+          <p>Animation should point at something or answer a click. If it only decorates, it goes.</p>
+        </article>
+        <article class="stack-card stack-detail">
+          <h3>The details are the design.</h3>
+          <p>Focus rings, dark mode, phone widths and readable contrast get the same care as the hero.</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="about wrap" id="about" aria-label="About">
+      <p class="about-text" data-words>
+        Hi, I'm <strong>Ahmed</strong>. I make websites that load fast, read clearly and have a little life in them.
+        This page is my sandbox, and everything you can touch on it is live code running in your browser.
+        No videos, no screenshots, no templates.
+      </p>
+    </section>
+
+    <section class="contact wrap" id="contact" aria-labelledby="contact-title">
+      <h2 class="contact-title" id="contact-title">Got an idea? <span>Let's build it.</span></h2>
+      <div class="contact-row">
+        <div class="magnet" data-magnetic>
+          <a class="btn btn-big" href="https://github.com/ahmednizarrs" target="_blank" rel="noopener">
+            Say hello <i class="ph ph-arrow-up-right" aria-hidden="true"></i>
+          </a>
+        </div>
+        <p class="contact-handle"><i class="ph ph-github-logo" aria-hidden="true"></i> github.com/ahmednizarrs</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer wrap">
+    <p>&copy; 2026 Ahmed</p>
+    <p>Made with plain HTML, CSS and a few canvases.</p>
+  </footer>
+
+  <script src="assets/js/main.js" defer></script>
+</body>
+</html>
