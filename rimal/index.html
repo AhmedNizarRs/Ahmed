@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Rimal Interiors</title>
+  <meta name="description" content="Digital tools from Rimal Interiors for architects and interior designers.">
+  <meta name="color-scheme" content="dark light">
+  <link rel="icon" href="assets/img/ornament.png">
+  <link rel="preload" href="assets/fonts/marcellus.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="nav">
+    <div class="wrap nav-inner">
+      <a class="brand" href="#top" aria-label="Rimal Interiors, back to top">
+        <img class="brand-mark" src="assets/img/dunes.png" alt="" width="560" height="163">
+        <span class="brand-text"><span class="brand-name">Rimal</span><span class="brand-sub">Interiors</span></span>
+      </a>
+      <nav class="nav-links" aria-label="Sections">
+        <a href="#tools">Tools</a>
+        <a href="#lab">Pattern lab</a>
+        <a href="#about">About</a>
+      </nav>
+      <div class="nav-actions">
+        <button class="icon-btn" type="button" data-theme-toggle aria-label="Switch theme"><i class="ph ph-sun" aria-hidden="true"></i></button>
+        <a class="btn btn-gold btn-sm" href="https://linktr.ee/rimalinteriors" target="_blank" rel="noopener">Open store <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+      </div>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- Hero: live topographic dunes -->
+    <section class="hero" id="top">
+      <canvas class="hero-canvas" id="dunes" aria-hidden="true"></canvas>
+      <div class="wrap hero-inner">
+        <div class="hero-copy">
+          <h1 class="hero-title">Architectural tools, shaped by the&nbsp;sands.</h1>
+          <p class="hero-sub">Digital tools from Rimal Interiors for architects and interior designers. Buy once, open in your software, start designing.</p>
+          <div class="hero-ctas">
+            <a class="btn btn-gold" href="#tools">Browse tools <i class="ph ph-arrow-right" aria-hidden="true"></i></a>
+            <a class="btn" href="https://www.instagram.com/rimalinterior/" target="_blank" rel="noopener"><i class="ph ph-instagram-logo" aria-hidden="true"></i> @rimalinterior</a>
+          </div>
+        </div>
+        <div class="hud" aria-hidden="true">
+          <span class="hud-row"><span>X</span><b id="hud-x">0.00</b><span>m</span></span>
+          <span class="hud-row"><span>Y</span><b id="hud-y">0.00</b><span>m</span></span>
+          <span class="hud-row"><span>Elev.</span><b id="hud-h">0.00</b><span>m</span></span>
+          <span class="hud-hint">Move across the dunes to shift the sand</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Tools -->
+    <section class="tools wrap" id="tools" aria-labelledby="tools-title">
+      <div class="tools-head">
+        <div class="stack-sm">
+          <p class="eyebrow">Digital store</p>
+          <h2 id="tools-title">Tools for every stage of a project</h2>
+        </div>
+        <div class="filters" role="group" aria-label="Filter tools">
+          <button type="button" class="chip is-active" data-filter="all" aria-pressed="true">All</button>
+          <button type="button" class="chip" data-filter="cad" aria-pressed="false">CAD &amp; 3D</button>
+          <button type="button" class="chip" data-filter="present" aria-pressed="false">Templates &amp; guides</button>
+          <button type="button" class="chip" data-filter="surface" aria-pressed="false">Patterns &amp; textures</button>
+        </div>
+      </div>
+      <ul class="tool-grid" id="tool-grid"></ul>
+      <p class="tools-foot">Every tool is sold through the Rimal Interiors store. <a href="https://linktr.ee/rimalinteriors" target="_blank" rel="noopener">See all products <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a></p>
+    </section>
+
+    <!-- Pattern lab -->
+    <section class="lab wrap" id="lab" aria-labelledby="lab-title">
+      <div class="lab-head">
+        <p class="eyebrow">Free tool</p>
+        <h2 id="lab-title">Pattern lab</h2>
+        <p>Design a geometric tile in the spirit of our ornament, then take it as an SVG for a screen, a feature wall or a render.</p>
+      </div>
+      <div class="lab-body">
+        <div class="lab-stage">
+          <canvas id="lab-canvas" role="img" aria-label="A geometric star pattern generated from your settings"></canvas>
+        </div>
+        <div class="lab-panel">
+          <fieldset class="field">
+            <legend>Grid</legend>
+            <div class="segmented" id="lab-tiling">
+              <label><input type="radio" name="tiling" value="488" checked><span>Star &amp; cross</span></label>
+              <label><input type="radio" name="tiling" value="square"><span>Square</span></label>
+              <label><input type="radio" name="tiling" value="hex"><span>Hexagon</span></label>
+              <label><input type="radio" name="tiling" value="tri"><span>Triangle</span></label>
+            </div>
+          </fieldset>
+          <div class="range">
+            <label for="lab-angle">Contact angle</label><output id="lab-angle-out" for="lab-angle">72.5°</output>
+            <input type="range" id="lab-angle" min="30" max="88" step="0.5" value="72.5">
+          </div>
+          <div class="range">
+            <label for="lab-gap">Interlace gap</label><output id="lab-gap-out" for="lab-gap">0</output>
+            <input type="range" id="lab-gap" min="0" max="14" step="1" value="0">
+          </div>
+          <div class="range">
+            <label for="lab-scale">Tile size</label><output id="lab-scale-out" for="lab-scale">110 px</output>
+            <input type="range" id="lab-scale" min="50" max="200" step="5" value="110">
+          </div>
+          <div class="range">
+            <label for="lab-weight">Line weight</label><output id="lab-weight-out" for="lab-weight">2</output>
+            <input type="range" id="lab-weight" min="0.5" max="6" step="0.5" value="2">
+          </div>
+          <fieldset class="field">
+            <legend>Colourway</legend>
+            <div class="segmented" id="lab-colors">
+              <label><input type="radio" name="colorway" value="night" checked><span><i class="dot" style="--a:#120c09;--b:#c9974a"></i>Gold on night</span></label>
+              <label><input type="radio" name="colorway" value="sand"><span><i class="dot" style="--a:#f3eee6;--b:#3b1f17"></i>Cocoa on sand</span></label>
+              <label><input type="radio" name="colorway" value="cocoa"><span><i class="dot" style="--a:#3b1f17;--b:#e9dcc6"></i>Sand on cocoa</span></label>
+            </div>
+          </fieldset>
+          <div class="lab-actions">
+            <button class="btn" type="button" id="lab-play" aria-pressed="false"><i class="ph ph-play" aria-hidden="true"></i> Animate</button>
+            <button class="btn" type="button" id="lab-shuffle"><i class="ph ph-shuffle" aria-hidden="true"></i> Surprise me</button>
+          </div>
+          <div class="lab-actions">
+            <button class="btn btn-gold" type="button" id="lab-download"><i class="ph ph-download-simple" aria-hidden="true"></i> Download SVG</button>
+            <button class="btn" type="button" id="lab-copy"><i class="ph ph-copy" aria-hidden="true"></i> Copy SVG</button>
+          </div>
+          <p class="lab-meta" id="lab-meta" aria-live="polite">0 line segments</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- About -->
+    <section class="about wrap" id="about" aria-labelledby="about-title">
+      <p class="about-ar" lang="ar" aria-hidden="true">رمال</p>
+      <div class="about-copy">
+        <h2 id="about-title"><span>Rimal</span> means sands.</h2>
+        <p>Dunes are shaped by thousands of small, patient moves. Good interiors are too. Our tools package the repetitive moves, so more of your time goes into the design itself.</p>
+      </div>
+      <img class="about-mark" src="assets/img/dunes.png" alt="" width="560" height="163" loading="lazy">
+    </section>
+
+    <!-- Steps -->
+    <section class="steps-sec wrap" aria-labelledby="steps-title">
+      <h2 id="steps-title">How to get a tool</h2>
+      <ol class="steps">
+        <li><span class="step-n">01</span><h3>Choose a tool</h3><p>Browse the collection here and pick what fits your project.</p></li>
+        <li><span class="step-n">02</span><h3>Check out on our store</h3><p>Every “Get it” button opens the Rimal Interiors store.</p></li>
+        <li><span class="step-n">03</span><h3>Open it and design</h3><p>Load the files into your software and put them to work.</p></li>
+      </ol>
+    </section>
+
+    <!-- Instagram -->
+    <section class="insta wrap" aria-labelledby="insta-title">
+      <h2 class="sr-only" id="insta-title">Follow on Instagram</h2>
+      <a class="insta-link" href="https://www.instagram.com/rimalinterior/" target="_blank" rel="noopener" id="insta-link">
+        <span class="insta-handle" aria-label="@rimalinterior">@rimalinterior</span>
+        <span class="insta-cta"><i class="ph ph-instagram-logo" aria-hidden="true"></i> Follow on Instagram <i class="ph ph-arrow-up-right" aria-hidden="true"></i></span>
+      </a>
+      <p class="insta-note">New tools and design work, posted on Instagram.</p>
+    </section>
+  </main>
+
+  <footer class="footer wrap">
+    <a class="brand" href="#top" aria-label="Rimal Interiors, back to top">
+      <img class="brand-mark" src="assets/img/dunes.png" alt="" width="560" height="163">
+      <span class="brand-text"><span class="brand-name">Rimal</span><span class="brand-sub">Interiors</span></span>
+    </a>
+    <nav class="footer-links" aria-label="Footer">
+      <a href="https://linktr.ee/rimalinteriors" target="_blank" rel="noopener">Store</a>
+      <a href="https://www.instagram.com/rimalinterior/" target="_blank" rel="noopener">Instagram</a>
+      <a href="#lab">Pattern lab</a>
+    </nav>
+    <p>&copy; 2026 Rimal Interiors</p>
+  </footer>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="assets/vendor/three.min.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
