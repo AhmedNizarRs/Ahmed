@@ -1,25 +1,97 @@
 (() => {
   "use strict";
 
-  const STORE_URL = "https://linktr.ee/rimalinteriors";
+  const STORE_URL = "https://kingahmed10.gumroad.com/";
+  const GUMROAD = (id) => `https://kingahmed10.gumroad.com/l/${id}`;
+  const COVER = (key) => `https://public-files.gumroad.com/${key}`;
 
-  // PLACEHOLDER CATALOG. Replace names, descriptions, formats and links with the
-  // real products from the Rimal Interiors store. `art` picks the card drawing:
-  // pattern, furniture, iso, board, texture or plan.
-  const TOOLS = [
-    { name: "Arabic Geometric Patterns", cat: "surface", label: "Vectors", format: "DXF · SVG", art: "pattern",
-      desc: "Star and girih patterns as clean vectors for screens, panels, CNC cutting and renders.", url: STORE_URL },
-    { name: "Furniture Block Library", cat: "cad", label: "CAD blocks", format: "DWG", art: "furniture",
-      desc: "Plan blocks for sofas, beds, dining sets and joinery, drawn to real sizes.", url: STORE_URL },
-    { name: "Interior 3D Model Pack", cat: "cad", label: "3D models", format: "SKP", art: "iso",
-      desc: "Ready-to-place models for living, dining and bedroom layouts.", url: STORE_URL },
-    { name: "Presentation Board Template", cat: "present", label: "Template", format: "PSD", art: "board",
-      desc: "Layered boards for concept, materials and final renders.", url: STORE_URL },
-    { name: "Material & Texture Pack", cat: "surface", label: "Textures", format: "JPG", art: "texture",
-      desc: "Stone, wood, plaster and fabric textures for your renders.", url: STORE_URL },
-    { name: "Space Planning Guide", cat: "present", label: "Guide", format: "PDF", art: "plan",
-      desc: "Clearances, circulation and room sizes for homes, on printable sheets.", url: STORE_URL },
+  // Products from the Rimal Interiors Gumroad store (kingahmed10.gumroad.com).
+  // price is in USD; 0 means free (pay what you want); min marks "from" pricing.
+  // tags drive the filters; art picks the fallback drawing shown until the cover loads.
+  const PRODUCTS = [
+    { id: "uyxaa", price: 24.99, tags: ["bundle", "cad", "max", "sketchup"], soft: "Bundle", art: "pattern", cover: "z7i4z1hrizx26mg1vydv0pfmacxc",
+      en: { name: "The Ultimate Architect Tools Vault", desc: "Our complete collection of architect tools in one bundle. Stop wasting hours searching for files.", badge: "Complete bundle" },
+      ar: { name: "حقيبة الأدوات المعمارية الشاملة", desc: "مجموعتنا الكاملة من الأدوات المعمارية في حزمة واحدة. توقّف عن إضاعة الساعات في البحث عن الملفات.", badge: "الحزمة الشاملة" } },
+    { id: "opbej", price: 20, tags: ["bundle", "cad"], soft: "Revit + AutoCAD", art: "plan", cover: "d16fdtqq2j4lad7q1ctobfxxd5kp",
+      en: { name: "Revit Elite Pack + 3000+ AutoCAD Dynamic Blocks", desc: "AutoCAD and Revit essentials to speed up your work, with a bonus file of 6000+ basic furniture blocks." },
+      ar: { name: "حزمة Revit Elite مع أكثر من 3000 بلوك أوتوكاد ديناميكي", desc: "أساسيات أوتوكاد وريفيت لتسريع عملك، مع ملف إضافي يضم أكثر من 6000 بلوك أثاث أساسي." } },
+    { id: "heuess", price: 14.99, tags: ["cad"], soft: "AutoCAD", art: "furniture", cover: "98xve6la1f2egwwpjrccdq6c5hrn",
+      en: { name: "3000+ AutoCAD Dynamic Blocks + Islamic Patterns", desc: "Dynamic blocks and Islamic patterns for faster drawings, plus a bonus file of 6000 blocks." },
+      ar: { name: "أكثر من 3000 بلوك أوتوكاد ديناميكي مع زخارف إسلامية", desc: "بلوكات ديناميكية وزخارف إسلامية لرسومات أسرع، مع ملف إضافي يضم 6000 بلوك." } },
+    { id: "rozkwu", price: 15, tags: ["cad"], soft: "Revit", art: "iso", cover: "c63akew7v4vtlyf0nb0kulcw0dfo",
+      en: { name: "Ultimate 26 GB Revit Families Library", desc: "A 26 GB library of Revit families and BIM content, so you stop modeling every element from scratch." },
+      ar: { name: "مكتبة عائلات ريفيت الشاملة بحجم 26 جيجابايت", desc: "مكتبة بحجم 26 جيجابايت من عائلات ريفيت ومحتوى BIM، لتتوقف عن نمذجة كل عنصر من الصفر." } },
+    { id: "pwuhf", price: 17.99, tags: ["sketchup"], soft: "SketchUp", art: "board", cover: "x7u7ww12mfiy3uwk1d6tfn34lp0t",
+      en: { name: "The Ultimate SketchUp Extension Mega Pack", desc: "35+ pro SketchUp plugins in one pack, everything you need in one download." },
+      ar: { name: "الحزمة الكبرى لإضافات سكتش أب", desc: "أكثر من 35 إضافة احترافية لسكتش أب في حزمة واحدة، كل ما تحتاجه في تنزيل واحد." } },
+    { id: "mnfgvg", price: 14.99, tags: ["sketchup"], soft: "SketchUp", art: "texture", cover: "rem3gxq1qbzsqwaa56y7b0d5w1sz",
+      en: { name: "Profile Builder Pack", desc: "Profile Builder 4.0 Pack Pro, to take your SketchUp workflow to the next level." },
+      ar: { name: "حزمة Profile Builder", desc: "حزمة Profile Builder 4.0 Pro لترتقي بسير عملك في سكتش أب إلى مستوى أعلى." } },
+    { id: "kstpnt", price: 4.99, tags: ["ai"], soft: "AI", art: "board", cover: "pe078we35dfu5veyyn7goa4gofao",
+      en: { name: "5000+ Premium AI Prompts for Architects & Interior Designers", desc: "An AI prompt library for designers. Develop your designs and results with AI, faster and more easily." },
+      ar: { name: "أكثر من 5000 أمر ذكاء اصطناعي للمعماريين ومصممي الديكور", desc: "مكتبة AI Prompt للمهندسين والمصممين. طوّر تصاميمك ونتائجك بالذكاء الاصطناعي بشكل أسرع وأسهل." } },
+    { id: "lgmiem", price: 29.99, min: true, tags: ["bundle", "cad"], soft: "Revit + AutoCAD", art: "plan", cover: "2wx71v97fucpww7xqxxacy5qp1jd",
+      en: { name: "Revit Elite Pack 5 GB + AutoCAD Dynamic Blocks", desc: "Revit block package No. 6 with 5 GB of blocks and families, plus 3000+ AutoCAD dynamic blocks and 6000 bonus furniture blocks." },
+      ar: { name: "حزمة Revit Elite بحجم 5 جيجابايت مع بلوكات أوتوكاد", desc: "حزمة بلوكات ريفيت رقم 6 بحجم 5 جيجابايت من البلوكات والعائلات، مع أكثر من 3000 بلوك أوتوكاد ديناميكي و6000 بلوك أثاث إضافي." } },
+    { id: "smfid", price: 0, tags: ["max"], soft: "3ds Max", art: "window", cover: "qg4atad2h0hu3lnd657hy71bla2p",
+      en: { name: "Window Generator v2.0 for 3ds Max", desc: "Create professional, fully customizable windows in seconds." },
+      ar: { name: "مولّد النوافذ v2.0 لثري دي ماكس", desc: "أنشئ نوافذ احترافية قابلة للتخصيص بالكامل في ثوانٍ." } },
+    { id: "kfspt", price: 0, tags: ["max"], soft: "3ds Max", art: "door", cover: "1ihnu9ahxxi0c1ej2iz739s75evt",
+      en: { name: "Glass Door Generator for 3ds Max", desc: "A parametric glass door script, so you stop modeling custom glass doors from scratch." },
+      ar: { name: "مولّد الأبواب الزجاجية لثري دي ماكس", desc: "سكربت بارامتري للأبواب الزجاجية، لتتوقف عن نمذجة الأبواب المخصصة من الصفر." } },
+    { id: "ycrsyb", price: 0, tags: ["max"], soft: "3ds Max", art: "cabinet", cover: "upd6ibdeh0gduqws4lf49zr9cdii",
+      en: { name: "Kitchen Cabinet Generator for 3ds Max", desc: "Create professional kitchen cabinets faster, with less manual modeling." },
+      ar: { name: "مولّد خزائن المطبخ لثري دي ماكس", desc: "أنشئ خزائن مطبخ احترافية بسرعة أكبر ونمذجة يدوية أقل." } },
+    { id: "iplgul", price: 0, tags: ["max", "bundle"], soft: "3ds Max", art: "iso", cover: "ijw8k6vfhdr3xg6n4n1b1kvfpwa8",
+      en: { name: "3ds Max Scripts Bundle", desc: "Our free 3ds Max scripts, together in one download." },
+      ar: { name: "حزمة سكربتات ثري دي ماكس", desc: "سكربتات ثري دي ماكس المجانية، مجتمعة في تنزيل واحد." } },
   ];
+
+  /* ---------------- Language ---------------- */
+  const I18N = {
+    ar: {
+      dir: "rtl", skip: "تخطَّ إلى المحتوى", "nav.label": "الأقسام", "nav.tools": "الأدوات", "nav.lab": "مختبر الزخارف", "nav.about": "من نحن", "nav.store": "افتح المتجر",
+      "lang.switch": "Switch to English", "lang.short": "EN", "lang.code": "en",
+      "theme.toLight": "التبديل إلى الوضع الفاتح", "theme.toDark": "التبديل إلى الوضع الداكن",
+      "hero.title": "أدوات معمارية، صاغتها الرمال.", "hero.sub": "أدوات رقمية من رمال للمعماريين ومصممي الديكور الداخلي. اشترِ مرة واحدة، افتحها في برنامجك، وابدأ التصميم.", "hero.browse": "تصفّح الأدوات",
+      "hud.x": "س", "hud.y": "ص", "hud.h": "الارتفاع", "hud.unit": "م", "hud.hint": "حرّك المؤشر فوق الكثبان لتحريك الرمال",
+      "tools.eyebrow": "المتجر الرقمي", "tools.title": "أدوات لكل مرحلة من مراحل المشروع", "tools.filter": "تصفية الأدوات",
+      "f.all": "الكل", "f.free": "مجاني", "f.bundle": "الحزم", "f.cad": "أوتوكاد وريفيت", "f.max": "ثري دي ماكس", "f.sketchup": "سكتش أب", "f.ai": "الذكاء الاصطناعي",
+      "tools.foot": "تُباع جميع الأدوات عبر Gumroad.", "tools.all": "تصفّح المتجر كاملاً",
+      "card.get": "احصل عليه", "card.getFree": "احصل عليه مجاناً", "card.free": "مجاني", "card.from": "يبدأ من", "card.aria": "احصل على {name} من Gumroad", "card.view": "عرض {name} على Gumroad", "soft.Bundle": "حزمة",
+      "lab.eyebrow": "أداة مجانية", "lab.title": "مختبر الزخارف", "lab.desc": "صمّم بلاطة هندسية مستوحاة من زخرفتنا، ثم احفظها بصيغة SVG لمشربية أو جدار مميز أو مشهد إظهار.", "lab.canvas": "زخرفة نجمية هندسية مولّدة من إعداداتك",
+      "lab.grid": "الشبكة", "t.488": "نجمة وصليب", "t.square": "مربع", "t.hex": "سداسي", "t.tri": "مثلث",
+      "lab.angle": "زاوية التلاقي", "lab.gap": "فراغ التضفير", "lab.scale": "حجم البلاطة", "lab.weight": "سماكة الخط", "lab.colorway": "الألوان",
+      "c.night": "ذهبي على ليلي", "c.sand": "بني على رملي", "c.cocoa": "رملي على بني",
+      "lab.animate": "تحريك", "lab.pause": "إيقاف", "lab.shuffle": "فاجئني", "lab.download": "تنزيل SVG", "lab.copy": "نسخ SVG",
+      "lab.meta": "{n} قطعة خطية، شبكة {grid}", "toast.download": "جارٍ تنزيل الزخرفة بصيغة SVG", "toast.copied": "تم نسخ SVG. الصقه في Illustrator أو Figma أو ملف نصي.", "toast.copyFail": "النسخ غير متاح هنا. استخدم زر التنزيل.",
+      "about.title": "<span>رمال</span>، كثبانٌ تتشكّل بصبر.", "about.body": "تتشكّل الكثبان من آلاف الحركات الصغيرة الصبورة، وكذلك التصاميم الداخلية الجميلة. أدواتنا تختصر عنك الخطوات المتكررة، ليذهب وقتك إلى التصميم نفسه.", "about.word": "RIMAL", "about.wordLang": "en",
+      "steps.title": "كيف تحصل على أداة", "s1.t": "اختر أداتك", "s1.p": "تصفّح المجموعة هنا واختر ما يناسب مشروعك.", "s2.t": "أتمم الشراء عبر Gumroad", "s2.p": "كل زر «احصل عليه» يفتح المنتج على Gumroad، حيث تدفع وتنزّل الملفات.", "s3.t": "افتحها وابدأ التصميم", "s3.p": "حمّل الملفات في برنامجك وابدأ العمل بها.",
+      "insta.cta": "تابعنا على إنستغرام", "insta.note": "أدوات جديدة وأعمال تصميم، ننشرها على إنستغرام.", "footer.store": "المتجر", "footer.insta": "إنستغرام",
+      "meta.desc": "أدوات رقمية من رمال للمعماريين ومصممي الديكور الداخلي: بلوكات أوتوكاد، عائلات ريفيت، إضافات سكتش أب وسكربتات ثري دي ماكس.",
+    },
+    en: {
+      dir: "ltr", skip: "Skip to content", "nav.label": "Sections", "nav.tools": "Tools", "nav.lab": "Pattern lab", "nav.about": "About", "nav.store": "Open store",
+      "lang.switch": "التبديل إلى العربية", "lang.short": "ع", "lang.code": "ar",
+      "theme.toLight": "Switch to light theme", "theme.toDark": "Switch to dark theme",
+      "hero.title": "Architectural tools, shaped by the sands.", "hero.sub": "Digital tools from Rimal Interiors for architects and interior designers. Buy once, open in your software, start designing.", "hero.browse": "Browse tools",
+      "hud.x": "X", "hud.y": "Y", "hud.h": "Elev.", "hud.unit": "m", "hud.hint": "Move across the dunes to shift the sand",
+      "tools.eyebrow": "Digital store", "tools.title": "Tools for every stage of a project", "tools.filter": "Filter tools",
+      "f.all": "All", "f.free": "Free", "f.bundle": "Bundles", "f.cad": "AutoCAD & Revit", "f.max": "3ds Max", "f.sketchup": "SketchUp", "f.ai": "AI",
+      "tools.foot": "Every tool is sold through Gumroad.", "tools.all": "See the full store",
+      "card.get": "Get it", "card.getFree": "Get it free", "card.free": "Free", "card.from": "From", "card.aria": "Get {name} on Gumroad", "card.view": "View {name} on Gumroad", "soft.Bundle": "Bundle",
+      "lab.eyebrow": "Free tool", "lab.title": "Pattern lab", "lab.desc": "Design a geometric tile in the spirit of our ornament, then take it as an SVG for a screen, a feature wall or a render.", "lab.canvas": "A geometric star pattern generated from your settings",
+      "lab.grid": "Grid", "t.488": "Star & cross", "t.square": "Square", "t.hex": "Hexagon", "t.tri": "Triangle",
+      "lab.angle": "Contact angle", "lab.gap": "Interlace gap", "lab.scale": "Tile size", "lab.weight": "Line weight", "lab.colorway": "Colourway",
+      "c.night": "Gold on night", "c.sand": "Cocoa on sand", "c.cocoa": "Sand on cocoa",
+      "lab.animate": "Animate", "lab.pause": "Pause", "lab.shuffle": "Surprise me", "lab.download": "Download SVG", "lab.copy": "Copy SVG",
+      "lab.meta": "{n} line segments, {grid} grid", "toast.download": "Downloading your SVG pattern", "toast.copied": "SVG copied. Paste it into Illustrator, Figma or a text file.", "toast.copyFail": "Copy is blocked here. Use Download SVG instead.",
+      "about.title": "<span>Rimal</span> means sands.", "about.body": "Dunes are shaped by thousands of small, patient moves. Good interiors are too. Our tools package the repetitive moves, so more of your time goes into the design itself.", "about.word": "رمال", "about.wordLang": "ar",
+      "steps.title": "How to get a tool", "s1.t": "Choose a tool", "s1.p": "Browse the collection here and pick what fits your project.", "s2.t": "Check out on Gumroad", "s2.p": "Every “Get it” button opens the product on Gumroad, where you pay and download.", "s3.t": "Open it and design", "s3.p": "Load the files into your software and put them to work.",
+      "insta.cta": "Follow on Instagram", "insta.note": "New tools and design work, posted on Instagram.", "footer.store": "Store", "footer.insta": "Instagram",
+      "meta.desc": "Digital tools from Rimal Interiors for architects and interior designers: AutoCAD blocks, Revit families, SketchUp plugins and 3ds Max scripts.",
+    },
+  };
 
   /* ---------------- Basics ---------------- */
   const $ = (s, r = document) => r.querySelector(s);
@@ -43,6 +115,37 @@
     toastTimer = setTimeout(() => { el.hidden = true; }, 2800);
   }
 
+  let lang = store.get("rimal-lang") === "en" ? "en" : "ar"; // Arabic by default
+  const t = (key, vars) => {
+    let str = (I18N[lang][key] ?? I18N.en[key] ?? key);
+    if (vars) for (const [k, v] of Object.entries(vars)) str = str.replace(`{${k}}`, v);
+    return str;
+  };
+  const langListeners = [];
+  function applyLang() {
+    const d = I18N[lang];
+    root.lang = lang;
+    root.dir = d.dir;
+    $$("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+    $$("[data-i18n-html]").forEach((el) => { el.innerHTML = t(el.dataset.i18nHtml); });
+    $$("[data-i18n-aria]").forEach((el) => el.setAttribute("aria-label", t(el.dataset.i18nAria)));
+    const btn = $("[data-lang-toggle]");
+    btn.textContent = d["lang.short"];
+    btn.lang = d["lang.code"];
+    btn.setAttribute("aria-label", d["lang.switch"]);
+    const word = $("#about-word");
+    word.textContent = d["about.word"];
+    word.lang = d["about.wordLang"];
+    $('meta[name="description"]').setAttribute("content", d["meta.desc"]);
+    langListeners.forEach((f) => f());
+  }
+  $("[data-lang-toggle]").addEventListener("click", () => {
+    lang = lang === "ar" ? "en" : "ar";
+    store.set("rimal-lang", lang);
+    applyLang();
+    if (typeof syncToggle === "function") syncToggle();
+  });
+
   /* ---------------- Theme ---------------- */
   const lightQ = matchMedia("(prefers-color-scheme: light)");
   const saved = store.get("rimal-theme");
@@ -59,7 +162,7 @@
   const toggle = $("[data-theme-toggle]");
   function syncToggle() {
     const light = isLight();
-    toggle.setAttribute("aria-label", light ? "Switch to dark theme" : "Switch to light theme");
+    toggle.setAttribute("aria-label", light ? t("theme.toDark") : t("theme.toLight"));
     $("i", toggle).className = "ph " + (light ? "ph-moon" : "ph-sun");
   }
   function emitTheme() { readPalette(); syncToggle(); themeListeners.forEach((f) => f()); }
@@ -492,6 +595,54 @@
       }
       return { paths, labels: [] };
     },
+    window(W, H) {
+      const h = H * 0.78, w = Math.min(W * 0.5, h * 0.62);
+      const x = (W - w) / 2, y = (H - h) / 2 + h * 0.06;
+      const r = w / 2, cx = x + r;
+      const paths = [];
+      const add = (pts, wt = 1.2, hot = false) => paths.push({ pts, w: wt, hot });
+      const frame = (inset, wt, hot) => add([[x + inset, y + h - inset], [x + inset, y + r], ...circlePts(cx, y + r, r - inset, 36, Math.PI, Math.PI * 2), [x + w - inset, y + r], [x + w - inset, y + h - inset], [x + inset, y + h - inset]], wt, hot);
+      frame(0, 1.8);
+      frame(8, 1.2, true);
+      add([[cx, y + 8], [cx, y + h - 8]], 1.2);
+      [0.45, 0.72].forEach((k) => add([[x + 8, y + h * k], [x + w - 8, y + h * k]], 1));
+      for (let i = 1; i < 4; i++) { const a0 = Math.PI + (i * Math.PI) / 4; add([[cx, y + r], [cx + Math.cos(a0) * (r - 8), y + r + Math.sin(a0) * (r - 8)]], 0.8); }
+      add([[x - 14, y + h + 6], [x + w + 14, y + h + 6]], 1.6);
+      return { paths, labels: [{ x: x + w + 10, y: y + h * 0.5, t: "W 900" }] };
+    },
+    door(W, H) {
+      const h = H * 0.8, w = Math.min(W * 0.42, h * 0.5);
+      const x = (W - w) / 2 - w * 0.25, y = (H - h) / 2;
+      const paths = [];
+      const add = (pts, wt = 1.2, hot = false) => paths.push({ pts, w: wt, hot });
+      add(rectPts(x, y, w, h), 1.8);
+      add(rectPts(x + 10, y + 10, w - 20, h - 20), 1.1, true);
+      [[0.15, 0.35], [0.3, 0.55], [0.45, 0.7]].forEach(([a, b]) => add([[x + 10 + (w - 20) * a, y + h * 0.75], [x + 10 + (w - 20) * b, y + h * 0.25]], 0.7));
+      add([[x + w - 22, y + h * 0.4], [x + w - 22, y + h * 0.6]], 2.4);
+      add([[x - 30, y + h], [x + w * 2.1, y + h]], 1.6);
+      add([[x + w, y + h], ...circlePts(x + w, y + h, w * 0.95, 24, Math.PI, Math.PI * 1.5)], 0.8, true);
+      return { paths, labels: [{ x: x + w + 12, y: y + 18, t: "GLASS 10mm" }] };
+    },
+    cabinet(W, H) {
+      const m = Math.min(W, H) * 0.08;
+      const x0 = m, x1 = W - m, w = x1 - x0;
+      const top = H * 0.14, wallH = H * 0.24, ctr = H * 0.56, base = H * 0.86;
+      const paths = [];
+      const add = (pts, wt = 1.2, hot = false) => paths.push({ pts, w: wt, hot });
+      const n = 4, cw = w / n;
+      for (let i = 0; i < n; i++) {
+        add(rectPts(x0 + i * cw, top, cw, wallH), 1.2);
+        add([[x0 + i * cw + cw / 2 - 8, top + wallH - 12], [x0 + i * cw + cw / 2 + 8, top + wallH - 12]], 1.6);
+        add(rectPts(x0 + i * cw, ctr + 8, cw, base - ctr - 8), 1.2);
+        add([[x0 + i * cw + cw / 2 - 10, ctr + 22], [x0 + i * cw + cw / 2 + 10, ctr + 22]], 1.6);
+      }
+      add([[x0 - 8, ctr], [x1 + 8, ctr]], 2, true);
+      add([[x0 - 8, ctr + 8], [x1 + 8, ctr + 8]], 1);
+      add(circlePts(x0 + cw * 2.5, ctr - 3, cw * 0.18, 20, Math.PI, Math.PI * 2), 1.2, true);
+      add([[x0 + cw * 2.5, ctr - 3 - cw * 0.18], [x0 + cw * 2.5, ctr - cw * 0.5], [x0 + cw * 2.5 + cw * 0.16, ctr - cw * 0.5]], 1.2, true);
+      add([[x0 - 8, base], [x1 + 8, base]], 1.6);
+      return { paths, labels: [{ x: x0, y: base + 16, t: "H 900 / D 600" }] };
+    },
     plan(W, H) {
       const m = 28, w = W - m * 2, h = H - m * 2.2;
       const paths = [];
@@ -550,38 +701,63 @@
     ctx.globalAlpha = 1;
   }
 
-  function renderTools() {
+  const priceText = (p) => {
+    if (p.price === 0) return t("card.free");
+    const v = `$${p.price % 1 ? p.price.toFixed(2) : p.price}`;
+    return p.min ? `${t("card.from")} ${v}` : v;
+  };
+
+  function renderProducts() {
     const grid = $("#tool-grid");
-    TOOLS.forEach((t, i) => {
+    const cards = [];
+    PRODUCTS.forEach((p, i) => {
       const li = document.createElement("li");
       li.className = "tool";
-      li.dataset.cat = t.cat;
+      li.dataset.tags = [...p.tags, p.price === 0 ? "free" : ""].join(" ");
       li.innerHTML = `
-        <div class="tool-art"><canvas aria-hidden="true"></canvas></div>
+        <a class="tool-art" target="_blank" rel="noopener" tabindex="-1">
+          <canvas aria-hidden="true"></canvas>
+        </a>
         <div class="tool-body">
-          <div class="tool-top"><span class="tool-cat"></span><span class="tool-format"></span></div>
+          <div class="tool-top"><span class="tool-cat"></span><span class="tool-price" dir="ltr"></span></div>
           <h3></h3>
           <p></p>
-          <a class="tool-get" target="_blank" rel="noopener">Get it <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
+          <a class="tool-get" target="_blank" rel="noopener"><span></span> <i class="ph ph-arrow-up-right" aria-hidden="true"></i></a>
         </div>`;
-      $(".tool-cat", li).textContent = t.label;
-      $(".tool-format", li).textContent = t.format;
-      $("h3", li).textContent = t.name;
-      $("p", li).textContent = t.desc;
-      const link = $(".tool-get", li);
-      link.href = t.url;
-      link.setAttribute("aria-label", `Get ${t.name} on the Rimal Interiors store`);
+      const url = GUMROAD(p.id);
+      const artLink = $(".tool-art", li);
+      artLink.href = url;
+      $(".tool-get", li).href = url;
+      if (p.price === 0) $(".tool-price", li).classList.add("is-free");
+      if (i === 0) {
+        const badge = document.createElement("span");
+        badge.className = "tool-badge";
+        artLink.append(badge);
+      }
+      // Real cover from Gumroad; the drawing stays underneath until it loads, or if it cannot.
+      if (p.cover) {
+        const img = new Image();
+        img.className = "tool-cover";
+        img.decoding = "async";
+        img.loading = i < 3 ? "eager" : "lazy";
+        img.referrerPolicy = "no-referrer";
+        img.addEventListener("load", () => img.classList.add("is-loaded"));
+        img.addEventListener("error", () => img.remove());
+        img.src = COVER(p.cover);
+        artLink.append(img);
+      }
       grid.append(li);
+      cards.push({ li, p });
 
       const canvas = $("canvas", li);
       const ctx = canvas.getContext("2d");
       let art = null, W = 0, H = 0, progress = reduce ? 1 : 0, pointer = null, animating = false;
       const build = () => {
-        art = ART[t.art](W, H);
-        art.paths.forEach((p) => {
+        art = ART[p.art](W, H);
+        art.paths.forEach((path) => {
           let L = 0;
-          for (let k = 1; k < p.pts.length; k++) L += Math.hypot(p.pts[k][0] - p.pts[k - 1][0], p.pts[k][1] - p.pts[k - 1][1]);
-          p.len = L;
+          for (let k = 1; k < path.pts.length; k++) L += Math.hypot(path.pts[k][0] - path.pts[k - 1][0], path.pts[k][1] - path.pts[k - 1][1]);
+          path.len = L;
         });
       };
       const draw = () => { if (art) drawArt(ctx, art, W, H, progress, pointer); };
@@ -620,9 +796,9 @@
           const cr = canvas.getBoundingClientRect();
           pointer = { x: e.clientX - cr.left, y: e.clientY - cr.top };
           if (!reduce) {
-            const rx = ((my / r.height) - 0.5) * -5;
-            const ry = ((mx / r.width) - 0.5) * 6;
-            li.style.transform = `perspective(1000px) rotateX(${rx}deg) rotateY(${ry}deg)`;
+            const rx = ((my / r.height) - 0.5) * -4;
+            const ry = ((mx / r.width) - 0.5) * 5;
+            li.style.transform = `perspective(1100px) rotateX(${rx}deg) rotateY(${ry}deg)`;
           }
           if (!animating) draw();
         });
@@ -634,11 +810,28 @@
       }
     });
 
+    const updateText = () => cards.forEach(({ li, p }) => {
+      const copy = p[lang];
+      $(".tool-cat", li).textContent = p.soft === "Bundle" ? t("soft.Bundle") : p.soft;
+      $(".tool-price", li).textContent = priceText(p);
+      $("h3", li).textContent = copy.name;
+      $("p", li).textContent = copy.desc;
+      $(".tool-get span", li).textContent = p.price === 0 ? t("card.getFree") : t("card.get");
+      $(".tool-get", li).setAttribute("aria-label", t("card.aria", { name: copy.name }));
+      $(".tool-art", li).setAttribute("aria-label", t("card.view", { name: copy.name }));
+      const img = $(".tool-cover", li);
+      if (img) img.alt = copy.name;
+      const badge = $(".tool-badge", li);
+      if (badge) badge.textContent = copy.badge || "";
+    });
+    updateText();
+    langListeners.push(updateText);
+
     $$(".filters .chip").forEach((chip) => chip.addEventListener("click", () => {
       const f = chip.dataset.filter;
       $$(".filters .chip").forEach((c) => { const on = c === chip; c.classList.toggle("is-active", on); c.setAttribute("aria-pressed", String(on)); });
       grid.classList.toggle("is-filtered", f !== "all");
-      $$(".tool", grid).forEach((li) => li.classList.toggle("is-hidden", f !== "all" && li.dataset.cat !== f));
+      $$(".tool", grid).forEach((li) => li.classList.toggle("is-hidden", f !== "all" && !li.dataset.tags.split(" ").includes(f)));
     }));
   }
 
@@ -648,8 +841,7 @@
     sand: { bg: "#f3eee6", line: "#3b1f17", hi: "#b5823a" },
     cocoa: { bg: "#3b1f17", line: "#e9dcc6", hi: "#e6bd76" },
   };
-  const TILING_NAMES = { 488: "Star & cross", square: "Square", hex: "Hexagon", tri: "Triangle" };
-  // Below 90 - 180/n the rays of an n-sided cell meet outside it and no star forms.
+    // Below 90 - 180/n the rays of an n-sided cell meet outside it and no star forms.
   const STAR_MIN = { 488: 67.5, square: 45, hex: 60, tri: 30 };
 
   function initLab() {
@@ -678,9 +870,14 @@
       ctx.beginPath();
       for (const s of segs) { ctx.moveTo(s[0], s[1]); ctx.lineTo(s[2], s[3]); }
       ctx.stroke();
-      $("#lab-meta").textContent = `${segs.length.toLocaleString()} line segments, ${TILING_NAMES[st.tiling].toLowerCase()} grid`;
+      $("#lab-meta").textContent = t("lab.meta", { n: segs.length.toLocaleString("en-US"), grid: t(`t.${st.tiling}`) });
     }
     function update() { segs = compute(W, H); draw(); }
+    langListeners.push(() => {
+      draw();
+      const span = $("#lab-play span");
+      if (span) span.textContent = playing ? t("lab.pause") : t("lab.animate");
+    });
 
     new ResizeObserver(() => {
       const r = canvas.getBoundingClientRect();
@@ -727,7 +924,8 @@
     function setPlaying(on) {
       playing = on;
       playBtn.setAttribute("aria-pressed", String(on));
-      playBtn.innerHTML = on ? '<i class="ph ph-pause" aria-hidden="true"></i> Pause' : '<i class="ph ph-play" aria-hidden="true"></i> Animate';
+      playBtn.innerHTML = on ? '<i class="ph ph-pause" aria-hidden="true"></i> <span></span>' : '<i class="ph ph-play" aria-hidden="true"></i> <span></span>';
+      $("span", playBtn).textContent = on ? t("lab.pause") : t("lab.animate");
       if (on) {
         let last = performance.now();
         const step = (now) => {
@@ -781,14 +979,14 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(url), 2000);
-      toast("Downloading your SVG pattern");
+      toast(t("toast.download"));
     });
     $("#lab-copy").addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(svgMarkup());
-        toast("SVG copied. Paste it into Illustrator, Figma or a text file.");
+        toast(t("toast.copied"));
       } catch {
-        toast("Copy is blocked here. Use Download SVG instead.");
+        toast(t("toast.copyFail"));
       }
     });
   }
@@ -838,8 +1036,10 @@
   /* ---------------- Boot ---------------- */
   const boot = () => {
     readPalette();
+    applyLang();
+    syncToggle();
     try { initDunes(); } catch (err) { console.warn("Dunes unavailable", err); }
-    renderTools();
+    renderProducts();
     initLab();
     initInsta();
     initReveal();
