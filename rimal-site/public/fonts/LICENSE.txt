@@ -1,0 +1,2 @@
+All fonts in this folder are licensed under the SIL Open Font License 1.1 (https://openfontlicense.org).
+Reem Kufi, IBM Plex Sans Arabic, IBM Plex Mono, Marcellus. Files copied from the @fontsource packages.

@@ -1,0 +1,91 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/brand/logo-full-light.png';
+import type { Lang } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { INSTAGRAM_URL } from '../config';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<section id="about" class="section about" aria-labelledby="about-title">
+  <img class="topo-bg" src="/topo.svg" alt="" loading="lazy" decoding="async" width="600" height="400" />
+  <div class="wrap grid">
+    <div class="mark" data-reveal>
+      <Image src={logo} alt="RIMAL Interiors" widths={[280, 420, 560]} sizes="(min-width: 64rem) 22rem, 70vw" loading="lazy" />
+    </div>
+    <div class="copy" data-reveal>
+      <p class="label label--gold">{t.about.kicker}</p>
+      <h2 id="about-title" class="section-title">{t.about.title}</h2>
+      {t.about.body.map((p) => <p class="body" set:html={bidi(p, lang)} />)}
+      <a class="link" href={INSTAGRAM_URL} target="_blank" rel="noopener">
+        <Icon name="instagram" />
+        <span>{t.about.ig}</span>
+        <span dir="ltr" class="handle">@rimalinterior</span>
+        <span class="sr-only">{t.newTab}</span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<style>
+  .about {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    background: var(--bg-2);
+  }
+  .topo-bg {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    inline-size: 100%;
+    block-size: 100%;
+    max-inline-size: none;
+    object-fit: cover;
+    opacity: 0.16;
+  }
+  .grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+  }
+  .mark {
+    justify-self: center;
+    inline-size: min(70vw, 20rem);
+  }
+  .mark :global(img) {
+    inline-size: 100%;
+    block-size: auto;
+  }
+  .copy {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+  }
+  .body {
+    color: var(--text-2);
+    font-size: var(--step-1);
+    max-inline-size: 44ch;
+  }
+  .handle {
+    color: var(--text-2);
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+  @media (min-width: 64rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr);
+      gap: 5rem;
+    }
+    .mark {
+      inline-size: 22rem;
+    }
+  }
+</style>

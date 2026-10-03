@@ -1,0 +1,249 @@
+---
+import { Picture } from 'astro:assets';
+import type { Lang } from '../content/products';
+import { flagship } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { photo } from '../lib/photos';
+import BuyButton from './BuyButton.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+// The room is mirrored for Arabic so the calm wall sits behind right-aligned text.
+const img = photo(lang === 'ar' ? 'hero-rtl' : 'hero');
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <Picture
+    src={img}
+    alt=""
+    class="hero-img"
+    formats={['avif', 'webp']}
+    widths={[640, 960, 1280, 1600, 2048]}
+    sizes="100vw"
+    loading="eager"
+    fetchpriority="high"
+    decoding="async"
+  />
+  <div class="shade" aria-hidden="true"></div>
+
+  <div class="wrap content">
+    <p class="label label--gold eyebrow" set:html={bidi(t.hero.eyebrow, lang)} />
+    <h1 id="hero-title">{t.hero.title}</h1>
+    <p class="lede" set:html={bidi(t.hero.lede, lang)} />
+
+    <div class="cta-row">
+      <BuyButton lang={lang} placement="hero" class="hero-buy" />
+      <a class="btn btn--line" href="#programs">{t.hero.secondary}</a>
+    </div>
+    <!-- TODO: confirm — "paid once, not per program" -->
+    <p class="price-note">
+      <span class="num" dir="ltr">${flagship.price}</span>
+      <span class="dot" aria-hidden="true"></span>
+      <span>{t.hero.priceNote}</span>
+      <span class="dot" aria-hidden="true"></span>
+      <span>Gumroad</span>
+    </p>
+
+    <a class="scroll" href="#features">
+      <span>{t.hero.scroll}</span>
+      <Icon name="down" />
+    </a>
+  </div>
+</section>
+
+<style>
+  .hero {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: end;
+    min-block-size: min(100svh, 56rem);
+    padding-block: 7rem 2.25rem;
+    overflow: hidden;
+  }
+  .hero :global(.hero-img),
+  .hero :global(picture) {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+  .hero :global(.hero-img) {
+    object-fit: cover;
+    /* phones: keep the sofa and the dunes window in frame */
+    object-position: 80% 60%;
+  }
+  :global([dir='rtl']) .hero :global(.hero-img) {
+    object-position: 20% 60%;
+  }
+  /* phones: the photo fills the top of the screen, the copy sits under it */
+  @media (max-width: 63.99rem) {
+    .hero :global(picture) {
+      block-size: 60%;
+    }
+    .hero :global(picture .hero-img) {
+      position: static;
+      block-size: 100%;
+    }
+  }
+  .shade {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(to bottom, rgb(21 16 12 / 0.6) 0%, transparent 18%),
+      linear-gradient(to top, var(--bg) 0%, var(--bg) 40%, rgb(21 16 12 / 0.6) 50%, transparent 64%);
+  }
+  .content {
+    position: relative;
+  }
+  .eyebrow {
+    margin-block-end: 1rem;
+  }
+  h1 {
+    font-size: var(--step-4);
+    max-inline-size: 11ch;
+  }
+  :lang(ar) h1 {
+    max-inline-size: 9ch;
+  }
+  .lede {
+    margin-block-start: 1rem;
+    max-inline-size: 36ch;
+    font-size: var(--step-0);
+    color: var(--text-2);
+  }
+  .cta-row {
+    display: grid;
+    gap: 0.625rem;
+    margin-block-start: 1.75rem;
+  }
+  .hero-buy {
+    min-block-size: 3.5rem;
+  }
+  .price-note {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.625rem;
+    margin-block-start: 0.875rem;
+    font-size: var(--step--1);
+    color: var(--text-2);
+  }
+  .price-note .num {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .dot {
+    inline-size: 3px;
+    block-size: 3px;
+    border-radius: 50%;
+    background: var(--gold);
+  }
+  .scroll {
+    display: none;
+  }
+
+  @media (min-width: 40rem) {
+    .cta-row {
+      display: flex;
+      flex-wrap: wrap;
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .hero {
+      align-items: center;
+      min-block-size: min(100svh, 52rem);
+      padding-block: 8rem 5rem;
+    }
+    .hero :global(.hero-img),
+    :global([dir='rtl']) .hero :global(.hero-img) {
+      object-position: 50% 50%;
+    }
+    .shade {
+      background:
+        linear-gradient(to bottom, rgb(21 16 12 / 0.6) 0%, transparent 18%),
+        linear-gradient(to top, var(--bg) 0%, transparent 22%),
+        linear-gradient(to right, rgb(21 16 12 / 0.9) 0%, rgb(21 16 12 / 0.55) 38%, transparent 62%);
+    }
+    :global([dir='rtl']) .shade {
+      background:
+        linear-gradient(to bottom, rgb(21 16 12 / 0.6) 0%, transparent 18%),
+        linear-gradient(to top, var(--bg) 0%, transparent 22%),
+        linear-gradient(to left, rgb(21 16 12 / 0.9) 0%, rgb(21 16 12 / 0.55) 38%, transparent 62%);
+    }
+    .lede {
+      font-size: var(--step-1);
+    }
+    .scroll {
+      display: inline-flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      margin-block-start: 3.5rem;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      text-decoration: none;
+      color: var(--text-2);
+    }
+    :lang(ar) .scroll {
+      font-size: 0.875rem;
+      letter-spacing: 0;
+    }
+    .scroll :global(svg) {
+      inline-size: 1rem;
+      block-size: 1rem;
+    }
+    @media (prefers-reduced-motion: no-preference) {
+      .scroll :global(svg) {
+        animation: nudge 2.4s ease-in-out infinite;
+      }
+    }
+  }
+  @keyframes nudge {
+    50% {
+      transform: translateY(4px);
+    }
+  }
+
+  /* gentle entrance; the headline itself never starts invisible (LCP) */
+  @media (prefers-reduced-motion: no-preference) {
+    .hero :global(.hero-img) {
+      animation: settle 1.8s var(--ease-out) both;
+    }
+    .eyebrow,
+    .lede,
+    .cta-row,
+    .price-note {
+      animation: rise 900ms var(--ease-out) both;
+    }
+    .lede {
+      animation-delay: 120ms;
+    }
+    .cta-row {
+      animation-delay: 220ms;
+    }
+    .price-note {
+      animation-delay: 300ms;
+    }
+  }
+  @keyframes settle {
+    from {
+      transform: scale(1.06);
+    }
+  }
+  @keyframes rise {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+  }
+</style>

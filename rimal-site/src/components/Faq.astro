@@ -1,0 +1,104 @@
+---
+import type { Lang } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<section id="faq" class="section faq" aria-labelledby="faq-title">
+  <div class="wrap grid">
+    <div class="section-head" data-reveal>
+      <p class="label label--gold">{t.faq.kicker}</p>
+      <h2 id="faq-title" class="section-title">{t.faq.title}</h2>
+    </div>
+    <div class="list" data-reveal>
+      {
+        t.faq.items.map((item) => (
+          <details>
+            <summary>
+              <span set:html={bidi(item.q, lang)} />
+              <Icon name="plus" class="pm" />
+            </summary>
+            <div class="answer">
+              <p set:html={bidi(item.a, lang)} />
+            </div>
+          </details>
+        ))
+      }
+    </div>
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+  }
+  .list {
+    border-block-start: 1px solid var(--line-2);
+  }
+  details {
+    border-block-end: 1px solid var(--line);
+    interpolate-size: allow-keywords;
+  }
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    min-block-size: 3.5rem;
+    padding-block: 1.125rem;
+    cursor: pointer;
+    list-style: none;
+    font-size: var(--step-1);
+    line-height: 1.45;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary :global(.pm) {
+    flex: none;
+    inline-size: 1.25rem;
+    block-size: 1.25rem;
+    color: var(--sand);
+    transition: transform 260ms var(--ease-out);
+  }
+  details[open] summary :global(.pm) {
+    transform: rotate(45deg);
+  }
+  summary:hover {
+    color: var(--sand-hi);
+  }
+  .answer {
+    padding-block-end: 1.5rem;
+    color: var(--text-2);
+    max-inline-size: 60ch;
+  }
+  details::details-content {
+    block-size: 0;
+    overflow: clip;
+    transition:
+      block-size 320ms var(--ease-out),
+      content-visibility 320ms allow-discrete;
+  }
+  details[open]::details-content {
+    block-size: auto;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    details::details-content {
+      transition: none;
+    }
+  }
+  @media (min-width: 64rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr);
+      gap: 4rem;
+      align-items: start;
+    }
+  }
+</style>

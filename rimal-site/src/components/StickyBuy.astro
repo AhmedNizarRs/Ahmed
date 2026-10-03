@@ -1,0 +1,70 @@
+---
+/** Phone-only buy bar. Appears once the hero buttons scroll away; hides at the final call to action. */
+import type { Lang } from '../content/products';
+import { flagship } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import BuyButton from './BuyButton.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<div class="sticky" data-sticky-buy data-show="false" inert>
+  <div class="txt">
+    <span class="name" set:html={bidi(t.sticky, lang)} />
+    <span class="price num" dir="ltr">${flagship.price}</span>
+  </div>
+  <BuyButton lang={lang} placement="sticky" price={null} label={t.buyShort} class="sticky-btn" />
+</div>
+
+<style>
+  .sticky {
+    position: fixed;
+    inset-inline: 0;
+    inset-block-end: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem var(--gutter) calc(0.75rem + env(safe-area-inset-bottom));
+    background: rgb(27 20 15 / 0.94);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-block-start: 1px solid var(--line);
+    transform: translateY(110%);
+    transition: transform 380ms var(--ease-out);
+  }
+  .sticky[data-show='true'] {
+    transform: translateY(0);
+  }
+  .txt {
+    display: grid;
+    line-height: 1.3;
+  }
+  .name {
+    font-size: 0.8125rem;
+    color: var(--text-2);
+  }
+  .price {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 1.375rem;
+  }
+  .sticky :global(.sticky-btn) {
+    min-block-size: 3rem;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sticky {
+      transition: none;
+    }
+  }
+  @media (min-width: 52rem) {
+    .sticky {
+      display: none;
+    }
+  }
+</style>

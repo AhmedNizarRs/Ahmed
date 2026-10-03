@@ -1,0 +1,174 @@
+---
+import { Picture } from 'astro:assets';
+import type { Lang } from '../content/products';
+import { flagship } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { photo } from '../lib/photos';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+const sheets = flagship.sheets!;
+---
+
+<section id="programs" class="section programs" aria-labelledby="programs-title">
+  <div class="wrap grid">
+    <div class="head" data-reveal>
+      <p class="label label--gold">{t.programs.kicker}</p>
+      <h2 id="programs-title" class="section-title">{t.programs.title}</h2>
+      <a class="link" href="#vault">{t.programs.all}<Icon name="arrow" /></a>
+    </div>
+
+    <ul class="cards" data-reveal>
+      {
+        sheets.map((s) => (
+          <li data-reveal-child>
+            <a class="card" href={`#sheet-${s.code.toLowerCase()}`}>
+              <div class="photo">
+                <Picture
+                  src={photo(s.image)}
+                  alt=""
+                  formats={['avif', 'webp']}
+                  widths={[320, 480, 640]}
+                  sizes="(min-width: 70rem) 15vw, (min-width: 40rem) 40vw, 72vw"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </div>
+              <div class="meta">
+                <h3 class="name" dir="ltr">{s.programName}</h3>
+                <p class="sub">
+                  <span class="num" dir="ltr">{s.figure}</span> <span set:html={bidi(s.figureLabel[lang], lang)} />
+                </p>
+                <Icon name="arrow" class="go" />
+              </div>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+    gap: 2rem;
+  }
+  .head {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+    justify-items: start;
+  }
+  .cards {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(72vw, 17rem);
+    gap: 0.75rem;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    scroll-padding-inline: var(--gutter);
+    margin-inline: calc(var(--gutter) * -1);
+    padding-inline: var(--gutter);
+    padding-block-end: 0.5rem;
+    scrollbar-width: none;
+  }
+  .cards::-webkit-scrollbar {
+    display: none;
+  }
+  .cards li {
+    scroll-snap-align: start;
+  }
+  .card {
+    position: relative;
+    display: grid;
+    block-size: 100%;
+    text-decoration: none;
+    background: var(--surface);
+    overflow: hidden;
+  }
+  .card .photo {
+    aspect-ratio: 3 / 4;
+  }
+  .card .photo :global(img) {
+    transition: transform 900ms var(--ease-out);
+  }
+  .meta {
+    position: absolute;
+    inset-inline: 0;
+    inset-block-end: 0;
+    display: grid;
+    gap: 0.25rem;
+    padding: 3.5rem 1.125rem 1.125rem;
+    background: linear-gradient(to top, rgb(21 16 12 / 0.95) 10%, rgb(21 16 12 / 0.6) 55%, transparent);
+  }
+  .name {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 1.375rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    line-height: 1.1;
+    text-align: start;
+  }
+  :global([dir='rtl']) .name {
+    text-align: right;
+  }
+  .sub {
+    font-size: 0.875rem;
+    color: var(--text-2);
+    line-height: 1.45;
+    padding-inline-end: 1.75rem;
+  }
+  .sub .num {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .card :global(.go) {
+    position: absolute;
+    inset-inline-end: 1.125rem;
+    inset-block-start: 3.75rem;
+    inline-size: 1.125rem;
+    block-size: 1.125rem;
+    color: var(--sand);
+    transition: transform 260ms var(--ease-out);
+  }
+  :global([dir='rtl']) .card :global(.go) {
+    transform: scaleX(-1);
+  }
+  @media (hover: hover) {
+    .card:hover .photo :global(img) {
+      transform: scale(1.05);
+    }
+    .card:hover :global(.go) {
+      transform: translateX(3px);
+    }
+    :global([dir='rtl']) .card:hover :global(.go) {
+      transform: scaleX(-1) translateX(3px);
+    }
+  }
+
+  @media (min-width: 70rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 5fr);
+      gap: 2.5rem;
+      align-items: center;
+    }
+    .cards {
+      grid-auto-flow: row;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      grid-auto-columns: auto;
+      overflow: visible;
+      margin-inline: 0;
+      padding: 0;
+    }
+    .name {
+      font-size: 1.125rem;
+    }
+  }
+</style>

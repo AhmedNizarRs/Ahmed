@@ -1,0 +1,123 @@
+---
+import { Picture } from 'astro:assets';
+import type { Lang } from '../content/products';
+import { flagship } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { photo } from '../lib/photos';
+import BuyButton from './BuyButton.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<section class="final" aria-labelledby="final-title" data-final>
+  <Picture
+    src={photo('final')}
+    alt=""
+    class="final-img"
+    formats={['avif', 'webp']}
+    widths={[640, 960, 1280, 1600, 2048]}
+    sizes="100vw"
+    loading="lazy"
+    decoding="async"
+  />
+  <div class="shade" aria-hidden="true"></div>
+  <div class="wrap content" data-reveal>
+    <p class="label label--gold" dir="ltr">{t.final.kicker}</p>
+    <h2 id="final-title" class="title">{t.final.title}</h2>
+    <p class="lede" set:html={bidi(t.final.lede, lang)} />
+    <div class="row">
+      <span class="price num" dir="ltr">${flagship.price}</span>
+      <BuyButton lang={lang} placement="final" price={null} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .final {
+    position: relative;
+    isolation: isolate;
+    display: grid;
+    align-items: end;
+    min-block-size: clamp(32rem, 70vw, 44rem);
+    padding-block: var(--section);
+    overflow: hidden;
+    border-block-start: 1px solid var(--line);
+  }
+  .final :global(picture),
+  .final :global(.final-img) {
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    inline-size: 100%;
+    block-size: 100%;
+  }
+  .final :global(.final-img) {
+    object-fit: cover;
+    object-position: 55% 30%;
+  }
+  @media (max-width: 63.99rem) {
+    .final {
+      padding-block-start: 16rem;
+    }
+    .final :global(picture) {
+      block-size: 62%;
+    }
+  }
+  .shade {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background:
+      linear-gradient(to top, var(--bg) 0%, var(--bg) 42%, rgb(21 16 12 / 0.55) 55%, transparent 75%),
+      linear-gradient(to bottom, var(--bg), transparent 25%);
+  }
+  .content {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+  }
+  .title {
+    font-size: var(--step-4);
+    max-inline-size: 12ch;
+  }
+  .lede {
+    max-inline-size: 36ch;
+  }
+  .lede {
+    color: var(--text-2);
+  }
+  .row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    margin-block-start: 0.75rem;
+  }
+  .price {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+  @media (min-width: 64rem) {
+    .final {
+      align-items: center;
+    }
+    .shade {
+      background:
+        linear-gradient(to right, var(--bg) 0%, rgb(21 16 12 / 0.9) 32%, rgb(21 16 12 / 0.55) 52%, transparent 75%),
+        linear-gradient(to bottom, var(--bg), transparent 20%),
+        linear-gradient(to top, var(--bg), transparent 25%);
+    }
+    :global([dir='rtl']) .shade {
+      background:
+        linear-gradient(to left, var(--bg) 0%, rgb(21 16 12 / 0.9) 32%, rgb(21 16 12 / 0.55) 52%, transparent 75%),
+        linear-gradient(to bottom, var(--bg), transparent 20%),
+        linear-gradient(to top, var(--bg), transparent 25%);
+    }
+  }
+</style>

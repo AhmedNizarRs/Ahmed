@@ -1,0 +1,115 @@
+---
+import type { Lang } from '../content/products';
+import { flagship } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+// The only comparison we can stand behind: "a tool like it can sell alone for $80+".
+const rows = [
+  { label: t.value.toolLine, price: '$80+', pct: 100, cls: 'tool' },
+  { label: t.value.vaultLine, price: `$${flagship.price}`, pct: Math.round((flagship.price! / 80) * 100), cls: 'vault' },
+];
+---
+
+<section class="section value" aria-labelledby="value-title">
+  <div class="wrap grid">
+    <div class="head" data-reveal>
+      <p class="label label--gold">{t.value.kicker}</p>
+      <h2 id="value-title" class="section-title">{t.value.title}</h2>
+    </div>
+    <div class="bars" data-reveal>
+      {
+        rows.map((r) => (
+          <div class:list={['bar-row', r.cls]} style={`--pct:${r.pct}%`} data-reveal-child>
+            <div class="bar-top">
+              <span class="bar-label" set:html={bidi(r.label, lang)} />
+              <span class="bar-price num" dir="ltr">{r.price}</span>
+            </div>
+            <div class="track" aria-hidden="true">
+              <span class="fill" />
+            </div>
+          </div>
+        ))
+      }
+      <p class="note" set:html={bidi(t.value.note, lang)} />
+    </div>
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+    gap: 2.5rem;
+  }
+  .head {
+    display: grid;
+    gap: 1rem;
+  }
+  .bars {
+    display: grid;
+    gap: 2rem;
+    align-content: center;
+  }
+  .bar-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 1rem;
+    margin-block-end: 0.75rem;
+  }
+  .bar-label {
+    color: var(--text-2);
+  }
+  .bar-price {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: var(--step-2);
+    line-height: 1;
+  }
+  .track {
+    block-size: 2px;
+    background: var(--line);
+  }
+  .fill {
+    display: block;
+    block-size: 100%;
+    inline-size: var(--pct);
+    background: var(--text-3);
+    transform-origin: left center;
+  }
+  :global([dir='rtl']) .fill {
+    transform-origin: right center;
+  }
+  .vault .fill {
+    background: var(--sand);
+    block-size: 4px;
+    margin-block-start: -1px;
+  }
+  .vault .bar-price {
+    color: var(--sand);
+  }
+  .note {
+    font-size: var(--step--1);
+    color: var(--text-3);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    :global(.js) .fill {
+      transform: scaleX(0);
+      transition: transform 1.2s var(--ease-out) 0.2s;
+    }
+    :global(.js) .bars.in .fill {
+      transform: scaleX(1);
+    }
+  }
+  @media (min-width: 64rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+      gap: 5rem;
+      align-items: center;
+    }
+  }
+</style>

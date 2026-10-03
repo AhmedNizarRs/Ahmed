@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import Header from './Header.astro';
+import Hero from './Hero.astro';
+import Features from './Features.astro';
+import Programs from './Programs.astro';
+import Spotlight from './Spotlight.astro';
+import Details from './Details.astro';
+import Value from './Value.astro';
+import Steps from './Steps.astro';
+import More from './More.astro';
+import About from './About.astro';
+import Faq from './Faq.astro';
+import Final from './Final.astro';
+import Footer from './Footer.astro';
+import StickyBuy from './StickyBuy.astro';
+import type { Lang } from '../content/products';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+---
+
+<Base lang={lang}>
+  <Header lang={lang} />
+  <main id="main">
+    <Hero lang={lang} />
+    <Features lang={lang} />
+    <Programs lang={lang} />
+    <Spotlight lang={lang} />
+    <Details lang={lang} />
+    <Value lang={lang} />
+    <Steps lang={lang} />
+    <More lang={lang} />
+    <About lang={lang} />
+    <Faq lang={lang} />
+    <Final lang={lang} />
+  </main>
+  <Footer lang={lang} />
+  <StickyBuy lang={lang} />
+</Base>

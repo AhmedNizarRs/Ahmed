@@ -1,0 +1,25 @@
+{
+  "name": "rimal-site",
+  "type": "module",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "clips": "node scripts/compress-clips.mjs",
+    "photos": "node scripts/photos.mjs",
+    "brand": "node scripts/brand-assets.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.5",
+    "motion": "^14.0.0"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.5"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

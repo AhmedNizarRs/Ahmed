@@ -1,0 +1,153 @@
+---
+import { Picture } from 'astro:assets';
+import type { Lang } from '../content/products';
+import { otherProducts } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { photo } from '../lib/photos';
+import { INSTAGRAM_URL } from '../config';
+import BuyButton from './BuyButton.astro';
+import Icon from './Icon.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<section id="store" class="section more" aria-labelledby="more-title">
+  <div class="wrap">
+    <div class="section-head head" data-reveal>
+      <div>
+        <p class="label label--gold">{t.more.kicker}</p>
+        <h2 id="more-title" class="section-title">{t.more.title}</h2>
+        <p class="lede" set:html={bidi(t.more.lede, lang)} />
+      </div>
+      <a class="link" href={INSTAGRAM_URL} target="_blank" rel="noopener">
+        <Icon name="instagram" />
+        <span set:html={bidi(t.more.follow, lang).replace(/@rimalinterior/, '<span class="handle">@rimalinterior</span>')} />
+        <span class="sr-only">{t.newTab}</span>
+      </a>
+    </div>
+
+    <ul class="grid" data-reveal>
+      {
+        otherProducts.map((p) => (
+          <li class:list={['product', { soon: p.status === 'soon' }]} data-reveal-child>
+            {p.image ? (
+              <div class="photo media">
+                <Picture src={photo(p.image)} alt="" formats={['avif', 'webp']} widths={[480, 720]} sizes="(min-width: 52rem) 30vw, 100vw" loading="lazy" />
+              </div>
+            ) : (
+              <div class="media placeholder" aria-hidden="true">
+                <span class="ph-tags">
+                  {p.programs.map((g) => (
+                    <span dir="ltr">{g}</span>
+                  ))}
+                </span>
+              </div>
+            )}
+            <div class="body">
+              {p.status === 'soon' && <span class="badge">{t.more.soon}</span>}
+              <h3 set:html={bidi(p.name[lang], lang)} />
+              <p set:html={bidi(p.tagline[lang], lang)} />
+              {p.status === 'live' && p.buyUrl && <BuyButton lang={lang} placement={`store-${p.id}`} href={p.buyUrl} price={p.price ?? null} label={t.buyShort} />}
+            </div>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+  }
+  .head > div {
+    display: grid;
+    gap: 1rem;
+  }
+  .grid {
+    display: grid;
+    gap: 0.75rem;
+  }
+  .head :global(.handle) {
+    text-transform: none;
+    letter-spacing: 0.02em;
+  }
+  .product {
+    display: grid;
+    background: var(--surface);
+  }
+  .media {
+    aspect-ratio: 16 / 9;
+  }
+  .placeholder {
+    aspect-ratio: 16 / 6;
+  }
+  @media (min-width: 52rem) {
+    .placeholder {
+      aspect-ratio: 16 / 9;
+    }
+  }
+  .placeholder {
+    display: grid;
+    place-items: center;
+    background:
+      repeating-linear-gradient(135deg, rgb(243 233 219 / 0.035) 0 1px, transparent 1px 14px),
+      var(--surface-2);
+    border-block-end: 1px solid var(--line);
+  }
+  .ph-tags {
+    display: flex;
+    gap: 0.5rem;
+  }
+  .ph-tags span {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-3);
+  }
+  .body {
+    display: grid;
+    gap: 0.5rem;
+    justify-items: start;
+    padding: 1.25rem 1.25rem 1.5rem;
+  }
+  .badge {
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--sand);
+  }
+  :lang(ar) .badge {
+    font-size: 0.875rem;
+    letter-spacing: 0;
+  }
+  h3 {
+    font-size: var(--step-2);
+  }
+  :lang(en) h3 {
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  :lang(ar) h3 {
+    font-weight: 300;
+  }
+  .body p {
+    color: var(--text-2);
+  }
+  @media (min-width: 52rem) {
+    .grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+</style>

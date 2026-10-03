@@ -1,0 +1,131 @@
+---
+import { Image } from 'astro:assets';
+import logo from '../assets/brand/logo-lockup-light.png';
+import type { Lang } from '../content/products';
+import { flagship, otherProducts } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { INSTAGRAM_URL, INSTAGRAM_HANDLE } from '../config';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+const year = new Date().getFullYear();
+---
+
+<footer class="footer">
+  <div class="wrap top">
+    <div class="brand">
+      <Image src={logo} alt="RIMAL Interiors" height={56} width={Math.round((56 * logo.width) / logo.height)} densities={[1, 2]} loading="lazy" />
+      <p set:html={bidi(t.footer.tagline, lang)} />
+    </div>
+    <nav class="col" aria-label={t.footer.shop}>
+      <h2 class="label">{t.footer.shop}</h2>
+      <a href={flagship.buyUrl} target="_blank" rel="noopener" data-buy="footer">
+        <span set:html={bidi(t.footer.vault, lang)} />
+        <span class="sr-only">{t.newTab}</span>
+      </a>
+      {
+        otherProducts.map((p) => (
+          <span class="muted">
+            <span set:html={bidi(p.name[lang], lang)} /> · {t.footer.soon}
+          </span>
+        ))
+      }
+    </nav>
+    <div class="col">
+      <h2 class="label">{t.footer.contact}</h2>
+      <a href={INSTAGRAM_URL} target="_blank" rel="noopener"><span dir="ltr">Instagram @{INSTAGRAM_HANDLE}</span><span class="sr-only">{t.newTab}</span></a>
+      <span class="muted" set:html={bidi(t.footer.checkout, lang)} />
+      <a href={t.langSwitch.href} hreflang={t.langSwitch.hreflang} lang={t.langSwitch.hreflang}>{t.langSwitch.label}</a>
+    </div>
+  </div>
+  <div class="wrap bottom">
+    <p class="made" lang="en" dir="ltr">{t.footer.made}</p>
+    <p class="small">
+      <span dir="ltr">© {year} RIMAL Interiors</span> · {t.footer.rights} · {t.footer.imagery}
+    </p>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    background: var(--bg);
+    border-block-start: 1px solid var(--line);
+    padding-block: 3.5rem 6.5rem;
+    font-size: 0.9375rem;
+  }
+  .top {
+    display: grid;
+    gap: 2.5rem;
+  }
+  .brand {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+  }
+  .brand :global(img) {
+    block-size: 3.5rem;
+    inline-size: auto;
+  }
+  .brand p {
+    color: var(--text-2);
+    max-inline-size: 30ch;
+  }
+  .col {
+    display: grid;
+    gap: 0.625rem;
+    align-content: start;
+    justify-items: start;
+  }
+  .col .label {
+    margin-block-end: 0.25rem;
+  }
+  .col a {
+    text-decoration: none;
+    color: var(--text);
+    min-block-size: 1.75rem;
+  }
+  .col a:hover {
+    text-decoration: underline;
+  }
+  .muted {
+    color: var(--text-3);
+  }
+  .bottom {
+    display: grid;
+    gap: 0.5rem;
+    margin-block-start: 3rem;
+    padding-block-start: 1.5rem;
+    border-block-start: 1px solid var(--line);
+  }
+  .made {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 1.125rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    justify-self: start;
+  }
+  .small {
+    font-size: 0.8125rem;
+    color: var(--text-3);
+  }
+  @media (min-width: 52rem) {
+    .footer {
+      padding-block-end: 3rem;
+    }
+    .top {
+      grid-template-columns: 2fr 1.2fr 1fr;
+    }
+    .bottom {
+      grid-template-columns: auto 1fr;
+      align-items: baseline;
+      gap: 2rem;
+    }
+    .small {
+      text-align: end;
+    }
+  }
+</style>

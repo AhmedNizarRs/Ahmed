@@ -1,0 +1,84 @@
+---
+import type { Lang } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<section class="section steps" aria-labelledby="steps-title">
+  <div class="wrap">
+    <div class="section-head" data-reveal>
+      <p class="label label--gold">{t.steps.kicker}</p>
+      <h2 id="steps-title" class="section-title">{t.steps.title}</h2>
+    </div>
+    <ol class="list" data-reveal>
+      {
+        t.steps.items.map((s, i) => (
+          <li data-reveal-child>
+            <span class="n num" dir="ltr">0{i + 1}</span>
+            <h3 set:html={bidi(s.t, lang)} />
+            <p set:html={bidi(s.d, lang)} />
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .list {
+    display: grid;
+    gap: 0;
+    border-block-start: 1px solid var(--line-2);
+  }
+  li {
+    display: grid;
+    grid-template-columns: 3rem minmax(0, 1fr);
+    gap: 0.25rem 1rem;
+    padding-block: 1.5rem;
+    border-block-end: 1px solid var(--line);
+  }
+  .n {
+    grid-row: span 2;
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 1.5rem;
+    line-height: 1.2;
+    color: var(--sand);
+  }
+  h3 {
+    font-family: var(--f-body);
+    font-size: var(--step-1);
+    font-weight: 600;
+    line-height: 1.4;
+    text-transform: none;
+    letter-spacing: 0;
+  }
+  p {
+    color: var(--text-2);
+    max-inline-size: 40ch;
+  }
+  @media (min-width: 52rem) {
+    .list {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      border-block-start: 0;
+    }
+    li {
+      grid-template-columns: 1fr;
+      padding: 1.75rem 2rem 0 0;
+      border: 0;
+      border-block-start: 1px solid var(--line-2);
+    }
+    :global([dir='rtl']) li {
+      padding: 1.75rem 0 0 2rem;
+    }
+    .n {
+      grid-row: auto;
+      margin-block-end: 1rem;
+    }
+  }
+</style>

@@ -1,0 +1,26 @@
+---
+/** Every purchase goes to Gumroad in a new tab. There is no payment code on this site. */
+import Icon from './Icon.astro';
+import type { Lang } from '../content/products';
+import { flagship } from '../content/products';
+import { getCopy } from '../content/copy';
+
+interface Props {
+  lang: Lang;
+  label?: string;
+  href?: string;
+  price?: number | null;
+  class?: string;
+  /** Where on the page this button sits (data-buy attribute, handy for analytics). */
+  placement: string;
+}
+const { lang, label, href = flagship.buyUrl!, price = flagship.price, class: cls, placement } = Astro.props;
+const t = getCopy(lang);
+---
+
+<a class:list={['btn', 'btn--buy', cls]} href={href} target="_blank" rel="noopener" data-buy={placement}>
+  <span>{label ?? t.hero.cta}</span>
+  {price != null && <span class="price num" dir="ltr">${price}</span>}
+  <Icon name="external" />
+  <span class="sr-only">{t.newTab}</span>
+</a>

@@ -1,0 +1,297 @@
+---
+import { Picture } from 'astro:assets';
+import { existsSync } from 'node:fs';
+import type { Lang } from '../content/products';
+import { flagship } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { photo } from '../lib/photos';
+import { INSTAGRAM_URL } from '../config';
+import BuyButton from './BuyButton.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+const sheets = flagship.sheets!;
+
+// A clip is shown only if `npm run clips` has produced it in public/clips.
+const hasClip = (name?: string) => !!name && existsSync(new URL(`../../public/clips/${name}.mp4`, import.meta.url));
+---
+
+<section id="vault" class="spotlight" aria-labelledby="vault-title">
+  <div class="band">
+    <div class="photo media">
+      <Picture
+        src={photo('spotlight')}
+        alt=""
+        formats={['avif', 'webp']}
+        widths={[640, 960, 1280, 1600]}
+        sizes="(min-width: 64rem) 55vw, 100vw"
+        loading="lazy"
+        decoding="async"
+      />
+    </div>
+
+    <div class="info" data-reveal>
+      <p class="label label--gold">{t.spotlight.kicker}</p>
+      <h2 id="vault-title" class="title" set:html={bidi(flagship.name[lang], lang)} />
+      <p class="tagline" set:html={bidi(flagship.tagline[lang], lang)} />
+
+      <dl class="specs">
+        {
+          t.spotlight.specs.map((s) => (
+            <div>
+              <dt set:html={bidi(s.k, lang)} />
+              <dd set:html={bidi(s.v, lang)} />
+            </div>
+          ))
+        }
+      </dl>
+
+      <div class="buy-row">
+        <span class="price num" dir="ltr">${flagship.price}</span>
+        <BuyButton lang={lang} placement="spotlight" price={null} />
+      </div>
+
+      <a class="proof" href={INSTAGRAM_URL} target="_blank" rel="noopener">
+        <span class="proof-lead" set:html={bidi(t.spotlight.proofLead, lang)} />
+        <span class="proof-stats">
+          <span><b class="num" dir="ltr">118K</b> {t.spotlight.views}</span>
+          <span><b class="num" dir="ltr">2,610</b> {t.spotlight.shares}</span>
+        </span>
+        <span class="sr-only">{t.newTab}</span>
+      </a>
+    </div>
+  </div>
+
+  <div class="wrap schedule-wrap">
+    <h3 class="label schedule-title">{t.spotlight.scheduleTitle}</h3>
+    <ol class="schedule">
+      {
+        sheets.map((s) => (
+          <li id={`sheet-${s.code.toLowerCase()}`} class="row" data-reveal>
+            <span class="code num" dir="ltr">{s.code}</span>
+            <div class="prog">
+              <span class="prog-name" dir="ltr">{s.programName}</span>
+              <span class="fig">
+                <span class="num" dir="ltr">{s.figure}</span> <span set:html={bidi(s.figureLabel[lang], lang)} />
+              </span>
+            </div>
+            <div class="desc">
+              <p set:html={bidi(s.summary[lang], lang)} />
+              {s.details.map((d) => <p class="more" set:html={bidi(d[lang], lang)} />)}
+            </div>
+            {hasClip(s.clip) && (
+              <video
+                class="clip"
+                data-clip
+                muted
+                playsinline
+                loop
+                preload="none"
+                poster={`/clips/${s.clip}.jpg`}
+                aria-label={`${s.programName}: ${lang === 'ar' ? 'تسجيل شاشة' : 'screen recording'}`}
+              >
+                <source src={`/clips/${s.clip}.mp4`} type="video/mp4" />
+              </video>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+  </div>
+</section>
+
+<style>
+  .spotlight {
+    background: var(--bg-2);
+    border-block: 1px solid var(--line);
+  }
+  .band {
+    display: grid;
+  }
+  .media {
+    aspect-ratio: 4 / 3;
+  }
+  .media :global(picture) {
+    display: block;
+    block-size: 100%;
+  }
+  .info {
+    display: grid;
+    align-content: center;
+    gap: 1rem;
+    padding: 2.5rem var(--gutter) 3rem;
+  }
+  .title {
+    font-size: var(--step-3);
+    max-inline-size: 14ch;
+  }
+  :lang(en) .title {
+    text-transform: uppercase;
+    letter-spacing: 0.015em;
+  }
+  :lang(ar) .title {
+    font-weight: 300;
+    line-height: 1.3;
+  }
+  .tagline {
+    color: var(--text-2);
+    max-inline-size: 38ch;
+  }
+  .specs {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    margin-block: 0.5rem;
+  }
+  .specs > div {
+    padding-inline: 1.25rem;
+    border-inline-start: 1px solid var(--line-2);
+  }
+  .specs > div:first-child {
+    padding-inline-start: 0;
+    border: 0;
+  }
+  dt {
+    font-size: 0.75rem;
+    color: var(--text-3);
+  }
+  dd {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--text);
+  }
+  .buy-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 1rem 1.5rem;
+    margin-block-start: 0.5rem;
+  }
+  .price {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 2.25rem;
+    line-height: 1;
+  }
+  .proof {
+    display: grid;
+    gap: 0.125rem;
+    margin-block-start: 1rem;
+    padding-block-start: 1.25rem;
+    border-block-start: 1px solid var(--line);
+    text-decoration: none;
+    max-inline-size: 28rem;
+  }
+  .proof-lead {
+    font-size: 0.8125rem;
+    color: var(--text-3);
+  }
+  .proof:hover .proof-lead {
+    text-decoration: underline;
+  }
+  .proof-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 1.5rem;
+    color: var(--text-2);
+  }
+  .proof-stats b {
+    font-family: 'Marcellus', Georgia, serif;
+    font-weight: 400;
+    font-size: 1.75rem;
+    color: var(--text);
+    margin-inline-end: 0.25rem;
+  }
+
+  /* schedule of contents */
+  .schedule-wrap {
+    padding-block: 1rem var(--section);
+  }
+  .schedule-title {
+    padding-block: 1.5rem 1rem;
+    border-block-end: 1px solid var(--line-2);
+  }
+  .row {
+    display: grid;
+    grid-template-columns: 3.5rem minmax(0, 1fr);
+    gap: 0.25rem 1rem;
+    padding-block: 1.5rem;
+    border-block-end: 1px solid var(--line);
+    scroll-margin-top: 6rem;
+  }
+  .row:target {
+    background: linear-gradient(to right, rgb(211 163 92 / 0.08), transparent);
+  }
+  .code {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--sand);
+    padding-block-start: 0.35rem;
+  }
+  .prog {
+    display: grid;
+  }
+  .prog-name {
+    font-family: 'Marcellus', Georgia, serif;
+    font-size: 1.5rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1.2;
+    text-align: start;
+  }
+  :global([dir='rtl']) .prog-name {
+    text-align: right;
+  }
+  .fig {
+    color: var(--text-2);
+  }
+  .fig .num {
+    color: var(--text);
+    font-weight: 600;
+  }
+  .desc {
+    grid-column: 2;
+    color: var(--text-2);
+    max-inline-size: 52ch;
+  }
+  .desc .more {
+    color: var(--text-3);
+    margin-block-start: 0.25rem;
+  }
+  .clip {
+    grid-column: 1 / -1;
+    inline-size: 100%;
+    aspect-ratio: 16 / 9;
+    object-fit: cover;
+    background: var(--surface);
+    margin-block-start: 0.75rem;
+  }
+
+  @media (min-width: 64rem) {
+    .band {
+      grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+      min-block-size: 38rem;
+    }
+    .media {
+      aspect-ratio: auto;
+    }
+    .info {
+      padding: 4rem clamp(2rem, 5vw, 5rem);
+    }
+    .row {
+      grid-template-columns: 5rem minmax(0, 1fr) minmax(0, 1.4fr);
+      align-items: start;
+    }
+    .desc {
+      grid-column: 3;
+      grid-row: 1;
+    }
+    .clip {
+      grid-column: 2 / -1;
+      max-inline-size: 40rem;
+    }
+  }
+</style>

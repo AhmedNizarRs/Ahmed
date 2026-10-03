@@ -1,0 +1,111 @@
+---
+import { Picture } from 'astro:assets';
+import type { Lang } from '../content/products';
+import { getCopy } from '../content/copy';
+import { bidi } from '../lib/bidi';
+import { photo } from '../lib/photos';
+import BuyButton from './BuyButton.astro';
+
+interface Props {
+  lang: Lang;
+}
+const { lang } = Astro.props;
+const t = getCopy(lang);
+---
+
+<section id="details" class="section details" aria-labelledby="details-title">
+  <div class="wrap grid">
+    <div class="head" data-reveal>
+      <h2 id="details-title" class="section-title">{t.details.title}</h2>
+      <p class="lede" set:html={bidi(t.details.lede, lang)} />
+      <BuyButton lang={lang} placement="details" class="details-buy" />
+    </div>
+    <ul class="tiles" data-reveal>
+      {
+        t.details.tiles.map((tile) => (
+          <li class="tile" data-reveal-child>
+            <div class="photo">
+              <Picture
+                src={photo(`tile-${tile.key}`)}
+                alt=""
+                formats={['avif', 'webp']}
+                widths={[240, 360, 480]}
+                sizes="(min-width: 64rem) 16vw, 45vw"
+                loading="lazy"
+                decoding="async"
+              />
+            </div>
+            <span class="tile-label">{tile.label}</span>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</section>
+
+<style>
+  .grid {
+    display: grid;
+    gap: 2.25rem;
+  }
+  .head {
+    display: grid;
+    gap: 1rem;
+    align-content: center;
+    justify-items: start;
+  }
+  .details-buy {
+    margin-block-start: 0.5rem;
+  }
+  .tiles {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.625rem;
+  }
+  .tile {
+    position: relative;
+    overflow: hidden;
+  }
+  .tile .photo {
+    aspect-ratio: 4 / 5;
+  }
+  .tile .photo :global(img) {
+    transition: transform 900ms var(--ease-out);
+  }
+  .tile:hover .photo :global(img) {
+    transform: scale(1.05);
+  }
+  .tile::after {
+    content: '';
+    position: absolute;
+    inset: 40% 0 0;
+    background: linear-gradient(to top, rgb(21 16 12 / 0.9), transparent);
+    pointer-events: none;
+  }
+  .tile-label {
+    position: absolute;
+    inset-inline: 1rem;
+    inset-block-end: 0.875rem;
+    z-index: 1;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    line-height: 1.4;
+  }
+  :lang(ar) .tile-label {
+    font-size: 0.9375rem;
+    font-weight: 400;
+    letter-spacing: 0;
+  }
+  @media (min-width: 64rem) {
+    .grid {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 2.4fr);
+      gap: 3rem;
+      align-items: center;
+    }
+    .tiles {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+</style>
