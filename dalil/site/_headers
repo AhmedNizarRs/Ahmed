@@ -1,0 +1,20 @@
+# Netlify response headers for the DALIL investor page.
+# This file sits inside the published folder so it works with every deploy method,
+# including dragging the "site" folder into Netlify.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), interest-cohort=()
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; font-src 'self'; connect-src 'self'; form-action 'self'; frame-ancestors 'none'; base-uri 'self'; object-src 'none'
+
+# Fonts never change, so browsers can keep them for a year.
+# CSS, JS and images keep Netlify's default (always check for a newer copy),
+# so an edit shows up for everyone as soon as you redeploy.
+/assets/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/DALIL_investor_pack.pdf
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Disposition: attachment; filename="DALIL_investor_pack.pdf"

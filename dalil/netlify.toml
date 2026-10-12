@@ -1,0 +1,6 @@
+# Netlify settings for the DALIL investor page.
+# The website is the "site" folder. There is no build step.
+# Response headers (security and caching) are in site/_headers.
+# Everything outside "site" (README, QR codes, screenshots) is never published.
+[build]
+  publish = "site"
