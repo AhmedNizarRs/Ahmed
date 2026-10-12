@@ -1,121 +1,150 @@
 # Design System: DALIL investor page
 
-This file describes the design system that is built into `site/assets/css/site.css`. Use it when you add a section or a new page, or when you brief a designer or an AI tool, so new work matches what is already there.
+This file describes the design system that is built into `site/assets/css/site.css`. Use it when you add a section or a page, or when you brief a designer or an AI tool, so new work matches what is already there.
 
 ## 1. Visual theme and atmosphere
 
-A calm, architectural page that feels like a well-lit building core: warm off-white walls, ink-black handrails and one bright safety yellow where the hand should go. The yellow always marks the clip itself or the next action, never decoration.
+A dark, cinematic page that feels like a stairwell at night: near-black walls, brushed-steel rails, and one safety-yellow clip where the hand should go. The product glows in the dark, so the page lives in the dark. One switch on the page turns the lights off completely and lets the clip's green glow take over.
 
-- **Density: 3 of 10, gallery airy.** Generous section padding (72 to 84 px on phones, 120 to 136 px on desktop), one idea per section and short lines of text.
-- **Variance: 5 of 10, offset but orderly.** Split hero (7:5), a 5:7:4 card row for the levels of sight, a sideways strip for places. Nothing overlaps.
-- **Motion: 4 of 10, quiet CSS.** The yellow clip slides along a drawn handrail as you scroll, and cards fade up as they arrive. No looping animation except the 1.1 s busy bar while the form sends.
-
-Two dark ink bands (the problem and the opportunity) and the dark footer give the page a rhythm: light for the product, dark for the stakes and the money.
+- **Density: 4 of 10, airy.** Sections are 96 to 176 px apart, with one idea per section and short lines.
+- **Variance: 7 of 10, offset and asymmetric.**
+  - A bottom-left hero over full-bleed video.
+  - Split grids at 6:5, 5:7 and 8:4.
+  - A bento grid of three steps, one tall.
+  - A sideways walk through eight places.
+  - A rising handrail for the roadmap.
+- **Motion: 6 of 10, every movement has a reason.**
+  - The headline decodes from braille.
+  - The hand glides along the rail.
+  - Words light up on the blank handrail.
+  - The film frame opens up as it arrives.
+  - The places pan sideways.
+  - The roadmap rail fills month by month.
+  - Charts grow from their baseline.
 
 ## 2. Color palette and roles
 
 | Token | Name | Hex | Role |
 |---|---|---|---|
-| `--yellow` | Safety Yellow | `#FFC700` | The single accent: primary buttons, the clip on the rail, stat figures on ink, the touch card, tranche 1 |
-| `--yellow-press` | Pressed Yellow | `#F0BB00` | Hover and busy state of yellow buttons |
-| `--ink` | Handrail Ink | `#111315` | Main text, dark bands, footer, focus rings on light backgrounds |
-| `--paper` | Wall Paper | `#F7F5F0` | Page background |
-| `--white` | Clean Surface | `#FFFFFF` | Alternate section background, form, cards |
-| `--slate` | Brand Slate | `#8C96A5` | Secondary text on ink only |
-| `--muted` | Reading Grey | `#555F6D` | Secondary text on paper and white |
-| `--line` | Hairline | `rgb(17 19 21 / 0.12)` | Card borders, table rules, dividers |
-| `--line-strong` | Control Edge | `#6E7682` | Input, checkbox-card and icon-button borders |
-| `--error` | Error Red | `#B42318` | Error text, error borders |
-| `--error-bg` | Error Wash | `#FDF1EF` | Background of invalid fields and the error summary |
+| `--bg` | Stairwell Black | `#0B0C0E` | Page background |
+| `--bg-2` | Raised Panel | `#121418` | Cards, form, rail demo |
+| `--bg-3` | Lifted Panel | `#1A1D22` | DALIL column, toggles, unreached milestones |
+| `--fg` | Bone White | `#F2F1EC` | Main text |
+| `--fg-2` | Steel Grey | `#A9B0BA` | Secondary text |
+| `--fg-3` | Dim Steel | `#8A929D` | Labels, hints, captions |
+| `--line`, `--line-2` | Hairlines | white at 9% and 16% | Card edges, dividers |
+| `--control` | Control Edge | `#747C87` | Input and chip borders |
+| `--accent` | Safety Yellow | `#FFC700` | The single accent: primary buttons, the clip, big figures, chart bars, focus rings |
+| `--glow` | Glow Green | `#8BF5B0` | Only the product's own glow, in the lights-off state |
+| `--error` | Signal Red | `#FF8A7A` | Form errors |
 
-Yellow is fully saturated because it is the DALIL brand colour and the product's real colour; it is the only accent on the page.
+Yellow is fully saturated because it is DALIL's brand colour and the product's real colour. It is the only accent. Green is the material's photoluminescent glow, not a second UI colour.
 
-### Contrast rules (WCAG 2.2 AA, measured)
+### Contrast (WCAG 2.2 AA, measured on `--bg`)
 
-| Pair | Ratio | Use |
-|---|---|---|
-| Ink on paper | 17.1:1 | Body text |
-| Muted on paper | 5.9:1 | Secondary text on the page background |
-| Muted on white | 6.5:1 | Secondary text on cards and the form |
-| Slate on ink | 6.2:1 | Secondary text in dark bands |
-| Ink on yellow | 11.9:1 | Button labels |
-| Yellow on ink | 11.9:1 | Big figures in dark bands |
-| Error on white | 6.6:1 | Field errors |
-| Control edge on white | 4.6:1 | Input borders (needs 3:1) |
+| Pair | Ratio |
+|---|---|
+| Bone White text | 17.3:1 |
+| Steel Grey text | 9.0:1 |
+| Dim Steel text | 6.2:1 |
+| Yellow text | 12.5:1 |
+| Ink on yellow (buttons) | 12.5:1 |
+| Glow Green | 14.7:1 |
 
-Never use these as text:
-
-- **Slate on paper** (2.7:1). On light backgrounds use Reading Grey instead.
-- **Yellow on paper or white** (1.4:1). Yellow is only ever a fill there.
+Never dim text with `opacity`: use the grey tokens. The roadmap's unreached months are grey, not faded.
 
 ## 3. Typography rules
 
-- **Typeface:** Manrope, self-hosted as one variable file (`assets/fonts/manrope-latin.woff2`, weights 400 to 800, `font-display: swap`). The Arabic دليل in the logo uses a 2.7 KB subset of IBM Plex Sans Arabic.
-- **Display (h1):** `clamp(2.6rem, 9vw, 5rem)`, weight 750, line height 1.02, tracking −0.04em. Fixed at 4.25rem on desktop so the headline sits on two lines.
-- **Section headings (h2):** `clamp(1.95rem, 6vw, 3.25rem)`, weight 750, tracking −0.03em, `text-wrap: balance`.
-- **Card headings (h3):** 1.25rem (1.5rem for the three steps), weight 750.
-- **Body:** 1.0625rem (17 px), line height 1.6, `text-wrap: pretty`. Lead paragraphs are 1.125 to 1.375rem in Reading Grey, capped at 34ch. Body copy is capped at 52 to 62ch.
-- **Big figures:** weight 800, tracking −0.035 to −0.045em. Comparison table and tranche amounts use `tabular-nums`.
-- **Labels:** small uppercase with 0.06 to 0.14em tracking, used only for eyebrows, the market region, tranche names and table headers.
-- **Copy style:** sentence case everywhere, curly quotes, `…` for loading text, a non-breaking space inside amounts and units (`AED&nbsp;500,000`, `2&nbsp;seconds`).
+- **Typeface:** Geist, self-hosted as one variable file (weights 300 to 800), preloaded with `font-display: optional` so it never swaps mid-read. Geist Mono for labels, figures and data.
+- **Hero headline:** `clamp(2.75rem, 8.4vw, 6.75rem)`, weight 600, tracking −0.045em, line height 0.98, two lines.
+- **Section headings:** `clamp(2.1rem, 5.6vw, 4.25rem)`, weight 600, tracking −0.03em, `text-wrap: balance`, at most 18 characters wide per line.
+- **Statements** (No app. No battery. No renovation.): up to 5.25rem, with the last phrase in yellow.
+- **Big figures** (21.8M, AED 18k, AED 500k): weight 300, tight tracking, tabular figures, in yellow.
+- **Body:** 17 px, line height 1.6. Lead paragraphs are capped at 46 characters wide.
+- **Labels:** Geist Mono, small caps-style uppercase, 0.08 to 0.14em tracking. Eyebrows are rationed to three on the page (The problem, Financials, The ask).
+- **Copy:** sentence case, curly quotes, `…` for loading text, no em or en dashes (ranges use "to" or a hyphen), a non-breaking space inside amounts (`AED&nbsp;170M`).
 
 ## 4. Component stylings
 
-- **Primary button:** Safety Yellow fill, Handrail Ink label, 12 px corners, at least 56 px tall, weight 750. Hover darkens to Pressed Yellow; press scales to 0.98. The arrow icon nudges down 2 px on hover. One per screen.
-- **Secondary button:** transparent with a 1.5 px ink edge (drawn as an inset shadow), used for "Back to the page" and the desktop header link.
-- **Text link:** bold, underlined, 12 px vertical padding for a comfortable tap area. Hover thickens the underline from 1 px to 2 px.
-- **Icon button (gallery arrows):** 48 px square, white, 1.5 px Control Edge border, `aria-label` on every one. Disabled at either end of the strip.
-- **Cards:** used only where they group a picture with its caption, or hold a figure. White or paper fill, 1 px Hairline border, 12 px corners, no shadow. Images inside cards use 8 px corners.
-- **Inputs:** label above, hint under the label, error under the field. White, 56 px tall, 1.5 px Control Edge border, 12 px corners, 17 px text so iPhones don't zoom. Focus adds a 3 px ink outline. Invalid fields get an Error Red border and Error Wash fill.
-- **Checkbox cards:** the whole 56 px row is the tap target. A checked row gets an ink border and a pale yellow fill (`#FFF8DB`).
-- **Error summary:** appears above the form when sending fails validation and takes focus. It lists every problem as a link that moves focus to the field.
-- **Loading:** the send button reads "Sending your details…" and a short ink highlight slides along its bottom edge.
-- **Tags:** a small ink pill reading "Visualisation" on every in-situ picture; a dashed slate box for the `[SOURCE]` placeholder.
-- **Sticky phone button:** below 960 px, a full-width yellow button pinned to the bottom of the screen. It hides while the hero button or the form is on screen, and leaves the tab order when hidden.
+### Buttons
+
+- **Primary:** a full pill in Safety Yellow with an ink label. A circular "orb" holds the arrow, and the orb slides right on hover. Pressing scales the button to 0.97.
+- **Ghost:** a translucent dark pill with a hairline edge, used for "Watch the film".
+- **One label per intent:** "Join the waitlist" in the nav, the hero and the form.
+
+### Navigation
+
+A floating pill, detached from the top edge, with a frosted background and four section links on screens 960 px and wider. Under that width it shows only the logo and the button.
+
+### Cards
+
+- **Shape:** 24 px corners, `--bg-2` fill and a hairline inner edge.
+- **Variety:** at least two cards in every group differ, with a yellow fill, a yellow glow gradient or a photo.
+
+### Rail demo
+
+- **Rail:** a steel tube drawn with gradients.
+- **Clips:** three yellow clips showing their rib count and a raised mark.
+- **Hand:** a ringed white circle, built as an ARIA slider with keyboard steps.
+- **Readout:** shows the rib category, the message and its braille.
+
+### Toggles
+
+- **Lights switch:** a pill track with a sliding knob. It turns green and glows when the lights are off.
+- **Rib keys:** pills that fill yellow when pressed.
+- **State:** both use `aria-pressed`.
+
+### Charts
+
+- **Bars:** single-hue yellow on no background track, labelled directly in Geist Mono, growing from their baseline.
+- **Comparison:** the competitor range is neutral grey, so nothing relies on colour alone.
+
+### Form
+
+- **Layout:** label above, hint below the label, error below the field.
+- **Inputs:** 54 px tall with 14 px corners and a Control Edge border. Focus turns the border yellow with a soft yellow ring.
+- **Interest options:** pill chips that fill yellow with a check icon when picked.
+- **Errors:** the error summary takes focus and links to each field.
+
+### Video frames
+
+- **Corners:** 20 to 28 px, with a lazy-loaded AVIF poster under each video.
+- **Playback:** the video fades in only once it is actually playing.
+- **Film:** the play button is a large yellow disc.
 
 ## 5. Layout principles
 
-- **Container:** 1200 px maximum, centred, with 16 px side padding on phones and 32 px from 640 px. Padding also clears the notch when a phone is held sideways.
-- **Breakpoints:** mobile first at 390 px, then 640 px (two columns for cards and choices) and 960 px (split hero, horizontal rail, form beside its intro).
-- **Grids:** CSS Grid throughout:
-  - hero 7:5;
-  - problem 5:6;
-  - levels of sight 5:7:4;
-  - form 4:6.
-- **Sideways strips:** "Where it works" scrolls sideways at every width, with snap points and arrow buttons from 640 px. The visualisations scroll sideways on phones and become a three-up grid from 640 px.
-- **Spacing:** sections have slightly more space below than above (72/84 px, 120/136 px).
-- **Overflow:** the page never scrolls sideways (checked at 320, 375, 390, 768, 1024, 1440 and 1920 px).
-- **Shape:** 12 px corners on buttons, inputs, cards and photos; 8 px on images inside cards; full pills only for small tags and sector labels; circles for the two team portraits.
+- **Container:** 1240 px maximum. Side padding is 20 px on phones and 32 px from 640 px, and it also clears the notch on landscape phones.
+- **Breakpoints:** mobile first, then 640 px (two columns for fields, modules and cards) and 960 px (split grids, the pinned sideways walk, the rising-rail roadmap, the sticky form intro).
+- **Full height:** the hero uses `min-height: 100dvh`, never `100vh`.
+- **Overflow:** no horizontal page scroll at any width from 320 to 1920 px. Only the comparison table and the places strip scroll sideways, each inside its own focusable region.
+- **Layers:** z-index 40 is the fixed film-grain overlay (pointer-events none), 50 the nav and 60 the skip link.
 
 ## 6. Motion and interaction
 
-- **Easing:** `cubic-bezier(0.16, 1, 0.3, 1)` for movement; 0.15 to 0.2 s colour changes on hover.
-- **Rail clip:** a CSS scroll-driven animation (`animation-timeline: view()`) moves the yellow clip down the rail on phones and across it on desktop. It only uses `transform`, so it runs on the compositor. Browsers without scroll timelines show the clip parked at the first step.
-- **Reveals:** cards and headings below the fold fade up 16 px over 0.7 s via IntersectionObserver. Cards in the same row arrive 70 ms apart. Nothing visible at load is hidden.
-- **Reduced motion:** with `prefers-reduced-motion: reduce` there are no reveals, no rail animation, no smooth scrolling and near-instant transitions.
-- **Forced colours (Windows high contrast):** yellow buttons and cards get a 2 px system-colour border; the clip keeps its own colours.
+- **Curves:** `cubic-bezier(0.16, 1, 0.3, 1)` for movement and `cubic-bezier(0.32, 0.72, 0, 1)` for spring-like presses and toggles. Nothing animates `top`, `left`, `width` or `height`, only `transform` and `opacity`.
+- **Headline:** the braille decode keeps the headline's own line breaks, so nothing moves (layout shift 0).
+- **ScrollTrigger:** GSAP ScrollTrigger is self-hosted and loads only when the browser is idle or the visitor interacts. Effects are set up once scrolling settles.
+  - The sideways walk's scroll length is reserved in advance, so setting it up never moves the page.
+  - CSS smooth scrolling switches off while ScrollTrigger runs, and in-page links are smoothed in script and move focus to their target.
+- **Videos:** these only play while on screen, and never when the visitor has asked for reduced motion or less data.
+- **Reduced motion:** no decode, no glide, no pin, no reveals, no autoplay and no marquee. The lights switch jumps straight to the glowing frame.
 
 ## 7. Anti-patterns (never do these on this page)
 
 ### Content
 
-- No invented numbers, testimonials, customers, awards or partner logos.
-- No organisation named as a partner: none has signed yet.
-- No airport or aircraft imagery.
-- No claim that DALIL is profitable or that revenue covers costs.
-- No claim that the Arabic braille is certified. It is being verified.
-- Say "up to 3× cheaper", never "3× cheaper".
-- Keep the `[SOURCE]` tag next to the 21.8 million figure until the source is added.
-- Caption every in-situ picture "Visualisation".
+- No invented numbers. Every figure comes from the v7 deck.
+- No organisation logos or names presented as customers or partners: none has signed yet.
+- No claim that the Arabic braille is already approved: that is a month-6 milestone.
 
 ### Visual
 
-- No second accent colour, no gradients on text, no glows, no pure black (`#000000`).
-- No yellow or slate text on light backgrounds.
+- No second accent colour, no gradient text, no neon glow except the product's own green, no pure black (`#000000`).
+- No em or en dashes in visible text.
 - No emojis.
-- No inline `style` attributes or inline scripts: the Content Security Policy blocks them.
-- No animation of `top`, `left`, `width` or `height`.
-- No looping decorative motion.
+- No inline `style` attributes or inline scripts: the Content Security Policy blocks them, so values live in CSS (for example `.bar[data-v="62"]`).
+- No `window.addEventListener("scroll")` handlers.
 
 ### Form
 
