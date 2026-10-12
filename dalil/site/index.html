@@ -37,7 +37,6 @@
       <ul class="nav-links">
         <li><a href="#product">Product</a></li>
         <li><a href="#market">Market</a></li>
-        <li><a href="#ask">The ask</a></li>
         <li><a href="#team">Team</a></li>
       </ul>
       <a class="btn btn-primary btn-sm" href="#join">Join the waitlist</a>
@@ -50,7 +49,7 @@
     <section class="hero" id="top" aria-labelledby="hero-title">
       <div class="hero-media" aria-hidden="true">
         <picture class="hero-poster"><source type="image/avif" srcset="/assets/img/hero-poster-720.avif 720w, /assets/img/hero-poster-1280.avif 1280w" sizes="100vw"><source type="image/webp" srcset="/assets/img/hero-poster-720.webp 720w, /assets/img/hero-poster-1280.webp 1280w" sizes="100vw"><img src="/assets/img/hero-poster-720.jpg" srcset="/assets/img/hero-poster-720.jpg 720w, /assets/img/hero-poster-1280.jpg 1280w" sizes="100vw" width="1280" height="720" alt="" loading="eager" decoding="async" fetchpriority="high"></picture>
-        <video class="hero-video" muted loop playsinline preload="none" data-src-wide="/assets/video/hero-stairs" data-src-narrow="/assets/video/hero-stairs-720"></video>
+        <video class="hero-video" id="hero-video" muted loop playsinline preload="none" data-src="/assets/video/hero-stairs"></video>
         <div class="hero-scrim"></div>
       </div>
       <div class="hero-inner">
@@ -58,9 +57,9 @@
         <p class="hero-sub">A 3D-printed clip that turns any handrail into braille, raised numbers and a glow in the dark. No app. No battery.</p>
         <div class="hero-actions">
           <a class="btn btn-primary" href="#join">Join the waitlist <span class="btn-orb"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></svg></span></a>
-          <a class="btn btn-ghost" href="#film"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg> Watch the film</a>
         </div>
       </div>
+      <button hidden class="vid-toggle hero-toggle" type="button" aria-pressed="false" data-video="#hero-video"><span class="vt-pause"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z"/></svg></span><span class="vt-play"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg></span><span class="visually-hidden">Pause background video</span></button>
     </section>
 
     <!-- The problem -->
@@ -90,17 +89,16 @@
         <h2 id="film-title" class="visually-hidden">The DALIL film</h2>
         <div class="film-frame">
           <picture class="film-poster"><source type="image/avif" srcset="/assets/img/reel-poster-640.avif 640w, /assets/img/reel-poster-1280.avif 1280w" sizes="(min-width: 1240px) 1200px, 100vw"><source type="image/webp" srcset="/assets/img/reel-poster-640.webp 640w, /assets/img/reel-poster-1280.webp 1280w" sizes="(min-width: 1240px) 1200px, 100vw"><img src="/assets/img/reel-poster-640.jpg" srcset="/assets/img/reel-poster-640.jpg 640w, /assets/img/reel-poster-1280.jpg 1280w" sizes="(min-width: 1240px) 1200px, 100vw" width="1280" height="720" alt="A yellow DALIL clip on a grey rail, from the film." loading="lazy" decoding="async"></picture>
-          <video class="film-video" playsinline preload="none" aria-describedby="film-desc">
-            <source src="/assets/video/reel.mp4" type="video/mp4">
-            <source src="/assets/video/reel.webm" type="video/webm">
-            <track kind="captions" src="/assets/video/reel.en.vtt" srclang="en" label="English" default>
+          <video class="film-video autoplay" id="film-video" muted loop playsinline preload="none" aria-describedby="film-desc" data-src-wide="/assets/video/reel-1080" data-src-narrow="/assets/video/reel-720">
+            <source src="/assets/video/reel-720.mp4" type="video/mp4">
+            <source src="/assets/video/reel-720.webm" type="video/webm">
           </video>
-          <button class="film-play" type="button">
-            <span class="film-play-orb"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg></span>
-            <span class="film-play-label">Play the film <span class="visually-hidden">, 15 seconds, with music</span><span class="film-len" aria-hidden="true">0:15</span></span>
-          </button>
+          <div class="film-controls">
+            <button hidden class="vid-toggle" type="button" aria-pressed="false" data-video="#film-video"><span class="vt-pause"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z"/></svg></span><span class="vt-play"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg></span><span class="visually-hidden">Pause the film</span></button>
+            <button hidden class="vid-sound" type="button" aria-pressed="false" data-video="#film-video"><span class="vs-off"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M192,152V104a8,8,0,0,1,16,0v48a8,8,0,0,1-16,0Zm40-72a8,8,0,0,0-8,8v80a8,8,0,0,0,16,0V88A8,8,0,0,0,232,80ZM221.92,210.62a8,8,0,1,1-11.84,10.76L168,175.09V224a8,8,0,0,1-12.91,6.31L85.25,176H40a16,16,0,0,1-16-16V96A16,16,0,0,1,40,80H81.55L50.08,45.38A8,8,0,0,1,61.92,34.62ZM152,157.49,96.1,96H40v64H88a7.94,7.94,0,0,1,4.91,1.69L152,207.64ZM125.06,69.31l26.94-21v58.47a8,8,0,0,0,16,0V32a8,8,0,0,0-12.91-6.31l-39.85,31a8,8,0,0,0,9.82,12.63Z"/></svg></span><span class="vs-on"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M155.51,24.81a8,8,0,0,0-8.42.88L77.25,80H32A16,16,0,0,0,16,96v64a16,16,0,0,0,16,16H77.25l69.84,54.31A8,8,0,0,0,160,224V32A8,8,0,0,0,155.51,24.81ZM32,96H72v64H32ZM144,207.64,88,164.09V91.91l56-43.55Zm54-106.08a40,40,0,0,1,0,52.88,8,8,0,0,1-12-10.58,24,24,0,0,0,0-31.72,8,8,0,0,1,12-10.58ZM248,128a79.9,79.9,0,0,1-20.37,53.34,8,8,0,0,1-11.92-10.67,64,64,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67A79.83,79.83,0,0,1,248,128Z"/></svg></span><span class="visually-hidden">Sound</span></button>
+          </div>
         </div>
-        <p class="film-desc" id="film-desc">A 15-second film with music and no speech. On screen: The handrail is already in their hand. It says nothing. DALIL, a clip on the rail. A raised numeral and braille. A grammar a hand can read. Measured on site, printed to fit. When the lights fail, it still speaks.</p>
+        <p class="visually-hidden" id="film-desc">A 15-second film with music and no speech. On screen: The handrail is already in their hand. It says nothing. DALIL, a clip on the rail. A raised numeral and braille. A grammar a hand can read. Measured on site, printed to fit. When the lights fail, it still speaks.</p>
       </div>
     </section>
 
@@ -129,15 +127,21 @@
 
         <ol class="steps">
           <li class="step step-clip">
-            <picture><source type="image/avif" srcset="/assets/img/clip-rail-640.avif 640w, /assets/img/clip-rail-1000.avif 1000w, /assets/img/clip-rail-1600.avif 1600w" sizes="(min-width: 960px) 34vw, 100vw"><source type="image/webp" srcset="/assets/img/clip-rail-640.webp 640w, /assets/img/clip-rail-1000.webp 1000w, /assets/img/clip-rail-1600.webp 1600w" sizes="(min-width: 960px) 34vw, 100vw"><img src="/assets/img/clip-rail-640.jpg" srcset="/assets/img/clip-rail-640.jpg 640w, /assets/img/clip-rail-1000.jpg 1000w, /assets/img/clip-rail-1600.jpg 1600w" sizes="(min-width: 960px) 34vw, 100vw" width="1600" height="897" alt="A yellow DALIL clip fitted around a steel stair handrail." loading="lazy" decoding="async"></picture>
+            <picture class="video-poster"><source type="image/avif" srcset="/assets/img/clip-poster-640.avif 640w, /assets/img/clip-poster-1280.avif 1280w" sizes="(min-width: 960px) 42vw, 100vw"><source type="image/webp" srcset="/assets/img/clip-poster-640.webp 640w, /assets/img/clip-poster-1280.webp 1280w" sizes="(min-width: 960px) 42vw, 100vw"><img src="/assets/img/clip-poster-640.jpg" srcset="/assets/img/clip-poster-640.jpg 640w, /assets/img/clip-poster-1280.jpg 1280w" sizes="(min-width: 960px) 42vw, 100vw" width="1280" height="720" alt="A yellow DALIL clip fitted around a steel stair handrail, people walking past below." loading="lazy" decoding="async"></picture>
+            <video class="loop-video autoplay" id="clip-video" muted loop playsinline preload="none" aria-hidden="true">
+              <source src="/assets/video/clip.mp4" type="video/mp4">
+              <source src="/assets/video/clip.webm" type="video/webm">
+            </video>
+            <button hidden class="vid-toggle step-toggle" type="button" aria-pressed="false" data-video="#clip-video"><span class="vt-pause"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z"/></svg></span><span class="vt-play"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg></span><span class="visually-hidden">Pause the clip video</span></button>
             <div class="step-text"><span class="step-n">1</span><h3>Clip</h3><p>Snaps on in seconds. No tools.</p></div>
           </li>
           <li class="step step-find">
             <picture class="video-poster"><source type="image/avif" srcset="/assets/img/hand-poster-640.avif 640w, /assets/img/hand-poster-1280.avif 1280w" sizes="(min-width: 960px) 58vw, 100vw"><source type="image/webp" srcset="/assets/img/hand-poster-640.webp 640w, /assets/img/hand-poster-1280.webp 1280w" sizes="(min-width: 960px) 58vw, 100vw"><img src="/assets/img/hand-poster-640.jpg" srcset="/assets/img/hand-poster-640.jpg 640w, /assets/img/hand-poster-1280.jpg 1280w" sizes="(min-width: 960px) 58vw, 100vw" width="1280" height="720" alt="A hand slides along a steel rail and meets a yellow DALIL clip." loading="lazy" decoding="async"></picture>
-            <video class="loop-video" muted loop playsinline preload="none" aria-hidden="true">
+            <video class="loop-video autoplay" id="hand-video" muted loop playsinline preload="none" aria-hidden="true">
               <source src="/assets/video/hand.mp4" type="video/mp4">
               <source src="/assets/video/hand.webm" type="video/webm">
             </video>
+            <button hidden class="vid-toggle step-toggle" type="button" aria-pressed="false" data-video="#hand-video"><span class="vt-pause"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M200,32H160a16,16,0,0,0-16,16V208a16,16,0,0,0,16,16h40a16,16,0,0,0,16-16V48A16,16,0,0,0,200,32Zm0,176H160V48h40ZM96,32H56A16,16,0,0,0,40,48V208a16,16,0,0,0,16,16H96a16,16,0,0,0,16-16V48A16,16,0,0,0,96,32Zm0,176H56V48H96Z"/></svg></span><span class="vt-play"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M232.4,114.49,88.32,26.35a16,16,0,0,0-16.2-.3A15.86,15.86,0,0,0,64,39.87V216.13A15.94,15.94,0,0,0,80,232a16.07,16.07,0,0,0,8.36-2.35L232.4,141.51a15.81,15.81,0,0,0,0-27ZM80,215.94V40l143.83,88Z"/></svg></span><span class="visually-hidden">Pause the hand video</span></button>
             <div class="step-text"><span class="step-n">2</span><h3>Find</h3><p>A sliding hand meets it without searching.</p></div>
           </li>
           <li class="step step-read">
@@ -306,33 +310,6 @@
             <p class="care"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,0,0-56.13-23.43h-.45A79.52,79.52,0,0,0,69.59,72.71,8,8,0,0,1,58.41,61.27a96,96,0,0,1,135,.79L208,76.69V48a8,8,0,0,1,16,0ZM186.41,183.29a80,80,0,0,1-112.47-.66L59.31,168H88a8,8,0,0,0,0-16H40a8,8,0,0,0-8,8v48a8,8,0,0,0,16,0V179.31l14.63,14.63A95.43,95.43,0,0,0,130,222.06h.53a95.36,95.36,0,0,0,67.07-27.33,8,8,0,0,0-11.18-11.44Z"/></svg> Plus a yearly care plan</p>
           </div>
         </div>
-      </div>
-    </section>
-
-    <!-- The ask -->
-    <section class="ask" id="ask" aria-labelledby="ask-title">
-      <div class="wrap ask-grid">
-        <div class="ask-head">
-          <p class="eyebrow">The ask</p>
-          <h2 id="ask-title" class="ask-number"><span class="ask-cur">AED</span> <span class="count" data-to="500">500</span>k</h2>
-        </div>
-        <div class="ask-split">
-          <h3>Where the money goes</h3>
-          <ul class="alloc">
-            <li data-p="39"><div><p class="alloc-name">Team and sales</p><p class="alloc-note">Two founders full-time, partnerships, events</p></div><span class="alloc-bar"></span><span class="alloc-pct">39%</span></li>
-            <li data-p="36"><div><p class="alloc-name">Production and operations</p><p class="alloc-note">Workshop, printers, materials, licence</p></div><span class="alloc-bar"></span><span class="alloc-pct">36%</span></li>
-            <li data-p="25"><div><p class="alloc-name">Certification and safety buffer</p><p class="alloc-note">Fire and braille approval, room for the unexpected</p></div><span class="alloc-bar"></span><span class="alloc-pct">25%</span></li>
-          </ul>
-        </div>
-      </div>
-      <div class="wrap">
-        <h3 class="get-title">What you get</h3>
-        <ul class="gets">
-          <li class="get get-own"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M254.3,107.91,228.78,56.85a16,16,0,0,0-21.47-7.15L182.44,62.13,130.05,48.27a8.14,8.14,0,0,0-4.1,0L73.56,62.13,48.69,49.7a16,16,0,0,0-21.47,7.15L1.7,107.9a16,16,0,0,0,7.15,21.47l27,13.51,55.49,39.63a8.06,8.06,0,0,0,2.71,1.25l64,16a8,8,0,0,0,7.6-2.1l55.07-55.08,26.42-13.21a16,16,0,0,0,7.15-21.46Zm-54.89,33.37L165,113.72a8,8,0,0,0-10.68.61C136.51,132.27,116.66,130,104,122L147.24,80h31.81l27.21,54.41ZM41.53,64,62,74.22,36.43,125.27,16,115.06Zm116,119.13L99.42,168.61l-49.2-35.14,28-56L128,64.28l9.8,2.59-45,43.68-.08.09a16,16,0,0,0,2.72,24.81c20.56,13.13,45.37,11,64.91-5L188,152.66Zm62-57.87-25.52-51L214.47,64,240,115.06Zm-87.75,92.67a8,8,0,0,1-7.75,6.06,8.13,8.13,0,0,1-1.95-.24L80.41,213.33a7.89,7.89,0,0,1-2.71-1.25L51.35,193.26a8,8,0,0,1,9.3-13l25.11,17.94L126,208.24A8,8,0,0,1,131.82,217.94Z"/></svg><h4>Ownership</h4><p>A share of the first tactile wayfinding company in the UAE</p></li>
-          <li class="get get-income"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M232,208a8,8,0,0,1-8,8H32a8,8,0,0,1-8-8V48a8,8,0,0,1,16,0V156.69l50.34-50.35a8,8,0,0,1,11.32,0L128,132.69,180.69,80H160a8,8,0,0,1,0-16h40a8,8,0,0,1,8,8v40a8,8,0,0,1-16,0V91.31l-58.34,58.35a8,8,0,0,1-11.32,0L96,123.31l-56,56V200H224A8,8,0,0,1,232,208Z"/></svg><h4>Recurring income</h4><p>Every building renews a yearly care plan</p></li>
-          <li class="get get-grow"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M128,24A104,104,0,1,0,232,128,104.11,104.11,0,0,0,128,24Zm0,16a87.5,87.5,0,0,1,48,14.28V74L153.83,99.74,122.36,104l-.31-.22L102.38,90.92A16,16,0,0,0,79.87,95.1L58.93,126.4a16,16,0,0,0-2.7,8.81L56,171.44l-3.27,2.15A88,88,0,0,1,128,40ZM62.29,186.47l2.52-1.65A16,16,0,0,0,72,171.53l.21-36.23L93.17,104a3.62,3.62,0,0,0,.32.22l19.67,12.87a15.94,15.94,0,0,0,11.35,2.77L156,115.59a16,16,0,0,0,10-5.41l22.17-25.76A16,16,0,0,0,192,74V67.67A87.87,87.87,0,0,1,211.77,155l-16.14-14.76a16,16,0,0,0-16.93-3l-30.46,12.65a16.08,16.08,0,0,0-9.68,12.45l-2.39,16.19a16,16,0,0,0,11.77,17.81L169.4,202l2.36,2.37A87.88,87.88,0,0,1,62.29,186.47ZM185,195l-4.3-4.31a16,16,0,0,0-7.26-4.18L152,180.85l2.39-16.19L184.84,152,205,170.48A88.43,88.43,0,0,1,185,195Z"/></svg><h4>Room to grow</h4><p>From Sharjah to the whole UAE, then the GCC</p></li>
-          <li class="get get-impact"><svg class="icon" viewBox="0 0 256 256" aria-hidden="true" focusable="false"><path d="M178,40c-20.65,0-38.73,8.88-50,23.89C116.73,48.88,98.65,40,78,40a62.07,62.07,0,0,0-62,62c0,70,103.79,126.66,108.21,129a8,8,0,0,0,7.58,0C136.21,228.66,240,172,240,102A62.07,62.07,0,0,0,178,40ZM128,214.8C109.74,204.16,32,155.69,32,102A46.06,46.06,0,0,1,78,56c19.45,0,35.78,10.36,42.6,27a8,8,0,0,0,14.8,0c6.82-16.67,23.15-27,42.6-27a46.06,46.06,0,0,1,46,46C224,155.61,146.24,204.15,128,214.8Z"/></svg><h4>Real impact</h4><p>Your name behind a more accessible UAE</p></li>
-        </ul>
       </div>
     </section>
 

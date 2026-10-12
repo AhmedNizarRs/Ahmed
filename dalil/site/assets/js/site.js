@@ -106,52 +106,67 @@
     window.requestAnimationFrame(frame);
   }
 
-  /* ---------- Hero video: starts after the page has loaded, so it never delays the first picture ---------- */
-  var heroVideo = $(".hero-video");
-  function startHero() {
-    if (!heroVideo || reduceMotion || saveData) return;
-    // H.264 where the browser has it (Safari, Chrome, Edge), VP9 WebM elsewhere.
-    var ext = heroVideo.canPlayType('video/mp4; codecs="avc1.640028"') ? ".mp4" : ".webm";
-    heroVideo.src = (window.innerWidth <= 760 ? heroVideo.getAttribute("data-src-narrow") : heroVideo.getAttribute("data-src-wide")) + ext;
-    heroVideo.addEventListener("playing", function () { heroVideo.classList.add("is-playing"); }, { once: true });
-    var p = heroVideo.play();
-    if (p && p.catch) p.catch(function () { /* autoplay refused: the poster stays */ });
-    if (hasIO) {
-      new IntersectionObserver(function (entries) {
-        if (entries[0].isIntersecting) { var q = heroVideo.play(); if (q && q.catch) q.catch(function () {}); }
-        else heroVideo.pause();
-      }).observe(heroVideo);
-    }
-  }
+  /* ---------- Videos ----------
+     Every video plays muted, only while it is on screen, and never under reduced motion or Save-Data.
+     Each one has a small pause button, and a video someone paused stays paused. */
+  var videoExt = document.createElement("video").canPlayType('video/mp4; codecs="avc1.640028"') ? ".mp4" : ".webm";
+  var autoMotion = !reduceMotion && !saveData;
 
-  /* ---------- The film ---------- */
-  var filmFrame = $(".film-frame");
-  if (filmFrame) {
-    var film = $(".film-video", filmFrame);
-    var filmBtn = $(".film-play", filmFrame);
-    filmBtn.addEventListener("click", function () {
-      film.controls = true;
-      filmFrame.classList.add("is-playing");
-      var p = film.play();
-      if (p && p.catch) p.catch(function () { filmFrame.classList.remove("is-playing"); });
-      film.focus();
-    });
-    film.addEventListener("ended", function () {
-      filmFrame.classList.remove("is-playing");
-      film.controls = false;
-      filmBtn.focus();
-    });
+  // Pick the file the first time a video is needed: the hero has one size; the film has a sharper one for big screens.
+  function ensureSource(v) {
+    if (v.dataset.sourced) return;
+    v.dataset.sourced = "1";
+    var base = v.getAttribute("data-src") ||
+      (v.getAttribute("data-src-wide") && (window.innerWidth > 760 ? v.getAttribute("data-src-wide") : v.getAttribute("data-src-narrow")));
+    if (base) { v.src = base + videoExt; }
   }
-
-  /* ---------- Loop videos (the hand finding the clip): play only while on screen ---------- */
-  $$(".loop-video").forEach(function (v) {
-    if (reduceMotion || saveData || !hasIO) return;
-    v.addEventListener("playing", function () { v.classList.add("is-playing"); }, { once: true });
+  function syncControls(v) {
+    $$('.vid-toggle[data-video="#' + v.id + '"]').forEach(function (b) { b.setAttribute("aria-pressed", v.paused ? "true" : "false"); });
+    $$('.vid-sound[data-video="#' + v.id + '"]').forEach(function (b) { b.setAttribute("aria-pressed", v.muted ? "false" : "true"); });
+  }
+  function playVideo(v) {
+    if (v.dataset.userPaused === "true") return;
+    ensureSource(v);
+    var p = v.play();
+    if (p && p.catch) p.catch(function () { syncControls(v); });
+  }
+  function watchVideo(v, threshold) {
+    v.addEventListener("playing", function () { v.classList.add("is-playing"); syncControls(v); });
+    v.addEventListener("pause", function () { syncControls(v); });
+    v.addEventListener("volumechange", function () { syncControls(v); });
+    syncControls(v);
+    if (!autoMotion || !hasIO) return;
     new IntersectionObserver(function (entries) {
-      if (entries[0].isIntersecting) { var p = v.play(); if (p && p.catch) p.catch(function () {}); }
-      else v.pause();
-    }, { rootMargin: "100px 0px" }).observe(v);
+      if (entries[0].isIntersecting) playVideo(v); else v.pause();
+    }, { threshold: threshold }).observe(v);
+  }
+  $$(".vid-toggle, .vid-sound").forEach(function (b) { b.hidden = false; });
+  document.addEventListener("click", function (e) {
+    var btn = e.target.closest ? e.target.closest(".vid-toggle, .vid-sound") : null;
+    if (!btn) return;
+    var v = $(btn.getAttribute("data-video"));
+    if (!v) return;
+    if (btn.classList.contains("vid-sound")) {
+      v.muted = !v.muted;
+      if (!v.muted && v.paused) { v.dataset.userPaused = "false"; playVideo(v); }
+    } else if (v.paused) {
+      v.dataset.userPaused = "false";
+      playVideo(v);
+    } else {
+      v.dataset.userPaused = "true";
+      v.pause();
+    }
+    syncControls(v);
   });
+
+  // The hero video waits until the page has loaded (see afterLoad), so it never delays the first picture.
+  var heroVideo = $("#hero-video");
+  function startHero() {
+    if (!heroVideo) return;
+    watchVideo(heroVideo, 0.1);
+  }
+  // The film, the clip and the hand play as they scroll into view.
+  $$("video.autoplay").forEach(function (v) { watchVideo(v, 0.45); });
 
   /* ---------- The rail: slide your hand, meet a clip, read it ---------- */
   var rail = $("[data-rail]");
@@ -347,10 +362,10 @@
   belowFold($$(".count"), function (el) { el.textContent = (0).toFixed(+(el.getAttribute("data-decimals") || 0)); }, countUp, { threshold: 0.6 });
 
   // Charts grow from their baseline when they arrive
-  belowFold($$(".bars, .range-chart, .alloc"), function (el) { el.classList.add("will-grow"); }, function (el) { el.classList.add("is-in"); }, { threshold: 0.35 });
+  belowFold($$(".bars, .range-chart"), function (el) { el.classList.add("will-grow"); }, function (el) { el.classList.add("is-in"); }, { threshold: 0.35 });
 
   // Gentle reveals
-  belowFold($$(".section-reveal, .problem h2, .stat, .product-title, .rail-demo, .steps > li, .manifesto, .grammar-key, .module, .sight-copy, .glow-frame, .places-head, .compare h2, .table-scroll, .market-chart h2, .per-building, .pricing h2, .price-pair > div, .range-chart, .included, .ask-head, .alloc li, .gets > li, .roadmap h2, .customers h2, .founder, .join-intro, .lead-form"),
+  belowFold($$(".section-reveal, .problem h2, .stat, .product-title, .rail-demo, .steps > li, .manifesto, .grammar-key, .module, .sight-copy, .glow-frame, .places-head, .compare h2, .table-scroll, .market-chart h2, .per-building, .pricing h2, .price-pair > div, .range-chart, .included, .roadmap h2, .customers h2, .founder, .join-intro, .lead-form"),
     function (el) { el.classList.add("reveal"); }, function (el) { el.classList.add("is-in"); });
 
   /* ---------- GSAP: loaded after everything else, only with motion allowed ---------- */

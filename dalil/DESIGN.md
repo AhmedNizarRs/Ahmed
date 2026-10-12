@@ -59,9 +59,9 @@ Never dim text with `opacity`: use the grey tokens. The roadmap's unreached mont
 - **Hero headline:** `clamp(2.75rem, 8.4vw, 6.75rem)`, weight 600, tracking −0.045em, line height 0.98, two lines.
 - **Section headings:** `clamp(2.1rem, 5.6vw, 4.25rem)`, weight 600, tracking −0.03em, `text-wrap: balance`, at most 18 characters wide per line.
 - **Statements** (No app. No battery. No renovation.): up to 5.25rem, with the last phrase in yellow.
-- **Big figures** (21.8M, AED 18k, AED 500k): weight 300, tight tracking, tabular figures, in yellow.
+- **Big figures** (21.8M, AED 18k, AED 87k): weight 300, tight tracking, tabular figures, in yellow.
 - **Body:** 17 px, line height 1.6. Lead paragraphs are capped at 46 characters wide.
-- **Labels:** Geist Mono, small caps-style uppercase, 0.08 to 0.14em tracking. Eyebrows are rationed to three on the page (The problem, Financials, The ask).
+- **Labels:** Geist Mono, small caps-style uppercase, 0.08 to 0.14em tracking. Eyebrows are rationed to two on the page (The problem, Financials).
 - **Copy:** sentence case, curly quotes, `…` for loading text, no em or en dashes (ranges use "to" or a hyphen), a non-breaking space inside amounts (`AED&nbsp;170M`).
 
 ## 4. Component stylings
@@ -70,7 +70,7 @@ Never dim text with `opacity`: use the grey tokens. The roadmap's unreached mont
 
 - **Primary:** a full pill in Safety Yellow with an ink label. A circular "orb" holds the arrow, and the orb slides right on hover. Pressing scales the button to 0.97.
 - **Ghost:** a translucent dark pill with a hairline edge, used for "Watch the film".
-- **One label per intent:** "Join the waitlist" in the nav, the hero and the form.
+- **One label per intent:** "Join the waitlist" in the nav, the hero and the form. It is the only call to action: the page exists to get the form filled in.
 
 ### Navigation
 
@@ -109,8 +109,8 @@ A floating pill, detached from the top edge, with a frosted background and four 
 ### Video frames
 
 - **Corners:** 20 to 28 px, with a lazy-loaded AVIF poster under each video.
-- **Playback:** the video fades in only once it is actually playing.
-- **Film:** the play button is a large yellow disc.
+- **Playback:** every video is muted, plays only while on screen, and fades in once it is actually playing.
+- **Controls:** a 44 px round pause button on each video that plays by itself (hero, film, clip, hand). The film also has a sound button that turns yellow when sound is on. A video someone paused stays paused.
 
 ## 5. Layout principles
 
@@ -127,7 +127,7 @@ A floating pill, detached from the top edge, with a frosted background and four 
 - **ScrollTrigger:** GSAP ScrollTrigger is self-hosted and loads only when the browser is idle or the visitor interacts. Effects are set up once scrolling settles.
   - The sideways walk's scroll length is reserved in advance, so setting it up never moves the page.
   - CSS smooth scrolling switches off while ScrollTrigger runs, and in-page links are smoothed in script and move focus to their target.
-- **Videos:** these only play while on screen, and never when the visitor has asked for reduced motion or less data.
+- **Videos:** these only play while on screen, and never when the visitor has asked for reduced motion or less data. The film starts by itself, muted, as it scrolls into view.
 - **Reduced motion:** no decode, no glide, no pin, no reveals, no autoplay and no marquee. The lights switch jumps straight to the glowing frame.
 
 ## 7. Anti-patterns (never do these on this page)
