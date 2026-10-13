@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /thanks/
 
-Sitemap: https://dalil-invest.netlify.app/sitemap.xml
+Sitemap: https://dalil-team.com/sitemap.xml

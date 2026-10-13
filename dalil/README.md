@@ -2,7 +2,7 @@
 
 The DALIL company landing page. Its one job is to get investors, mentors and the first buildings to fill in the form. People scan the QR code on the closing slide, see the clip work on their phone, and join the waitlist in under a minute. Each sign-up is saved in Netlify, emailed to both founders, and can be downloaded as a spreadsheet (CSV) or copied into a Google Sheet automatically.
 
-- Live address (once deployed): `https://dalil-invest.netlify.app`, or your own domain (see [Use your own domain](#use-your-own-domain))
+- Live address: `https://dalil-team.com` (the old `https://dalil-invest.netlify.app` forwards to it)
 - Public contact email on the page: `dalilwayfinding@gmail.com`
 - Sign-up emails go to: `ahmednazar422@gmail.com` and `dalilwayfinding@gmail.com`
 
@@ -112,9 +112,9 @@ If `dalil-invest` is already taken, choose another name, then remake the QR code
 
 Add `?src=` and a short label to any link you share:
 
-- `https://dalil-invest.netlify.app/?src=linkedin`
-- `https://dalil-invest.netlify.app/?src=whatsapp`
-- `https://dalil-invest.netlify.app/?src=email`
+- `https://dalil-team.com/?src=linkedin`
+- `https://dalil-team.com/?src=whatsapp`
+- `https://dalil-team.com/?src=email`
 
 The label shows up in the `src` column. Labels can use lowercase letters, numbers, `-` and `_`.
 
@@ -226,7 +226,7 @@ In a terminal, from the `dalil/site` folder, run `python3 -m http.server 8000`, 
 
 ## QR code
 
-- `qr/qr-dalil.png` (2000 × 2000 px) and `qr/qr-dalil.svg` (sharp at any size) open `https://dalil-invest.netlify.app/?src=qr`.
+- `qr/qr-dalil.png` (2000 × 2000 px) and `qr/qr-dalil.svg` (sharp at any size) open `https://dalil-team.com/?src=qr`.
 - Ink `#111315` on white, error correction level H, a wide white border, and the DALIL mark in the centre.
 - Checked by reading it back with a QR decoder at full size and at 160 px, and blurred, tilted 8° and at low contrast.
 

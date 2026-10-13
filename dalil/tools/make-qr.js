@@ -4,7 +4,7 @@
 //
 // Usage (needs Node 18+):
 //   npm install qrcode@1.5.4 jsqr@1.4.0 pngjs@7.0.0 playwright
-//   node make-qr.js https://dalil-invest.netlify.app/?src=qr ../qr
+//   node make-qr.js https://dalil-team.com/?src=qr ../qr
 const fs = require('fs');
 const path = require('path');
 const QRCode = require('qrcode');
