@@ -45,7 +45,11 @@ jobs:
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
             build | tee "$RUNNER_TEMP/xcodebuild.log" | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
-          test -d build/Release-iphoneos/ScanForge.app
+          # The .app folder appears even when compiling fails, so check for the executable.
+          if [ ! -f build/Release-iphoneos/ScanForge.app/ScanForge ]; then
+            grep -E "error:" "$RUNNER_TEMP/xcodebuild.log" | sort -u
+            exit 1
+          fi
           plutil -p build/Release-iphoneos/ScanForge.app/Info.plist
           plutil -extract UIFileSharingEnabled raw build/Release-iphoneos/ScanForge.app/Info.plist | grep -q true
 

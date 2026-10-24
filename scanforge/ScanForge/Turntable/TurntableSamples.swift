@@ -94,12 +94,12 @@ struct TurntableSamples: Sequence {
         var columnMap = [Int](repeating: 0, count: outputWidth)
         for x in 0..<outputWidth {
             let scaled: Int = x * width / outputWidth
-            columnMap[x] = min(width - 1, scaled)
+            columnMap[x] = Swift.min(width - 1, scaled)
         }
         values.withUnsafeBufferPointer { source in
             for y in 0..<outputHeight {
                 let scaledRow: Int = y * height / outputHeight
-                let sourceRow: Int = min(height - 1, scaledRow) * width
+                let sourceRow: Int = Swift.min(height - 1, scaledRow) * width
                 let row = base.advanced(by: y * rowBytes).assumingMemoryBound(to: UInt8.self)
                 for x in 0..<outputWidth { row[x] = source[sourceRow + columnMap[x]] }
             }
