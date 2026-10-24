@@ -39,6 +39,7 @@ jobs:
             build | tee "$RUNNER_TEMP/xcodebuild.log" | grep -E "error:|warning:|BUILD (SUCCEEDED|FAILED)" || true
           test -d build/Release-iphoneos/ScanForge.app
           plutil -p build/Release-iphoneos/ScanForge.app/Info.plist
+          plutil -extract UIFileSharingEnabled raw build/Release-iphoneos/ScanForge.app/Info.plist | grep -q true
 
       - name: Package IPA
         run: |
