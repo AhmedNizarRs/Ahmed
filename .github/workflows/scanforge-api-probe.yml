@@ -1,0 +1,19 @@
+name: ScanForge API probe
+
+on:
+  workflow_dispatch:
+
+jobs:
+  probe:
+    runs-on: macos-latest
+    steps:
+      - name: Dump Object Capture API from the iOS SDK
+        run: |
+          SDK=$(xcrun --sdk iphoneos --show-sdk-path)
+          echo "SDK: $SDK"
+          find "$SDK/System/Library/Frameworks" -name "*.swiftinterface" -path "*Reality*" | grep arm64e-apple-ios.swiftinterface > files.txt
+          cat files.txt
+          for f in $(cat files.txt); do
+            grep -n -B2 -E "PhotogrammetrySample|class PhotogrammetrySession|PhotogrammetrySession\.(Configuration|Request)|featureSensitivity|sampleOrdering|isObjectMaskingEnabled|enum Detail|case (preview|reduced|medium|full|raw)\b|struct Geometry|init\(input|modelFile|class ObjectCaptureSession|ObjectCaptureSession\.Configuration|isOverCaptureEnabled|struct Configuration|var objectMask|var depthDataMap|var gravity|var metadata|var image|requestImageCapture|canRequestImageCapture|beginNewScanPass|maximumNumberOfInputImages|numberOfShotsTaken|isSupported|captureMode|CaptureMode|isAutoCapture|ObjectCaptureView\(" "$f" \
+              | grep -v -E "^\s*--\s*$" | cut -c1-220
+          done
