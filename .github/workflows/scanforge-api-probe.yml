@@ -2,6 +2,9 @@ name: ScanForge API probe
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - ".github/workflows/scanforge-api-probe.yml"
 
 jobs:
   probe:
