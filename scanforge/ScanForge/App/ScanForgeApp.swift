@@ -5,7 +5,7 @@ import SwiftUI
 struct ScanForgeApp: App {
     @StateObject private var store = ScanStore()
 
-    var body: some Scene {
+    var body: some SwiftUI.Scene {
         WindowGroup {
             RootView()
                 .environmentObject(store)

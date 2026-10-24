@@ -4,7 +4,8 @@ import SwiftUI
 /// Camera screen with Apple's guided Object Capture overlay plus
 /// plain-language instructions and one obvious button for each step.
 struct CaptureView: View {
-    @ObservedObject var session: ObjectCaptureSession
+    // ObjectCaptureSession is @Observable, so SwiftUI tracks it without a wrapper.
+    let session: ObjectCaptureSession
     @ObservedObject var flow: ScanFlowModel
     @State private var confirmCancel = false
     @State private var showTips = false
