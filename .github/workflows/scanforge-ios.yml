@@ -6,6 +6,14 @@ on:
       - "scanforge/**"
       - ".github/workflows/scanforge-ios.yml"
   workflow_dispatch:
+    inputs:
+      commit_ipa:
+        description: "Also commit the IPA to scanforge/dist/ on this branch"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -53,3 +61,14 @@ jobs:
           name: ScanForge-unsigned-ipa
           path: scanforge/ScanForge-unsigned.ipa
           if-no-files-found: error
+
+      - name: Commit IPA to branch
+        if: github.event_name == 'workflow_dispatch' && inputs.commit_ipa
+        run: |
+          mkdir -p dist
+          cp ScanForge-unsigned.ipa dist/ScanForge.ipa
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f dist/ScanForge.ipa
+          git commit -m "Add ScanForge.ipa build [skip ci]"
+          git push
