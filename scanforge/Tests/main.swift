@@ -1,6 +1,6 @@
 // Unit tests for the STL pipeline in ScanForge/Export/PrintMesh.swift.
 // Run on a Mac:
-//   swiftc -O ScanForge/Export/PrintMesh.swift Tests/main.swift -o /tmp/meshtests && /tmp/meshtests
+//   swiftc -O ScanForge/Export/PrintMesh.swift ScanForge/Export/PrintMesh+Base.swift ScanForge/Turntable/TurntableMath.swift Tests/main.swift -o /tmp/meshtests && /tmp/meshtests
 
 import Foundation
 
@@ -186,6 +186,156 @@ do {
     let tri = PrintMesh(positions: [SIMD3(0, 0, 0), SIMD3(1, 0, 0), SIMD3(0, 1, 0)], triangles: [SIMD3(0, 1, 2)])
     check(tri.vertexNormals().allSatisfy { $0 == SIMD3(0, 0, 1) }, "counter-clockwise triangle faces +Z")
     check(PrintMesh.faceNormal(SIMD3(0, 0, 0), SIMD3(0, 0, 0), SIMD3(1, 0, 0)) == .zero, "degenerate triangle gets a zero normal")
+}
+
+/// Adds a quad facing `outward` (winding is picked automatically).
+func addQuad(_ mesh: inout PrintMesh, _ q: [SIMD3<Float>], outward: SIMD3<Float>) {
+    let base = UInt32(mesh.positions.count)
+    let e1 = q[1] - q[0], e2 = q[2] - q[0]
+    let n = SIMD3(e1.y * e2.z - e1.z * e2.y, e1.z * e2.x - e1.x * e2.z, e1.x * e2.y - e1.y * e2.x)
+    mesh.positions += (n * outward).sum() >= 0 ? q : q.reversed()
+    mesh.triangles += [SIMD3(base, base + 1, base + 2), SIMD3(base, base + 2, base + 3)]
+}
+
+/// A closed 20 x 20 x 20 block with a 10 x 10 square hole straight through it.
+func squareTube() -> PrintMesh {
+    var m = PrintMesh(positions: [], triangles: [])
+    let cuts: [Float] = [0, 5, 15, 20]
+    for z: Float in [0, 20] {
+        let up: SIMD3<Float> = z == 0 ? SIMD3(0, 0, -1) : SIMD3(0, 0, 1)
+        for i in 0..<3 {
+            for j in 0..<3 where !(i == 1 && j == 1) {
+                let x0 = cuts[i], x1 = cuts[i + 1], y0 = cuts[j], y1 = cuts[j + 1]
+                addQuad(&m, [SIMD3(x0, y0, z), SIMD3(x1, y0, z), SIMD3(x1, y1, z), SIMD3(x0, y1, z)], outward: up)
+            }
+        }
+    }
+    for i in 0..<3 {
+        let a = cuts[i], b = cuts[i + 1]
+        addQuad(&m, [SIMD3(a, 0, 0), SIMD3(b, 0, 0), SIMD3(b, 0, 20), SIMD3(a, 0, 20)], outward: SIMD3(0, -1, 0))
+        addQuad(&m, [SIMD3(a, 20, 0), SIMD3(b, 20, 0), SIMD3(b, 20, 20), SIMD3(a, 20, 20)], outward: SIMD3(0, 1, 0))
+        addQuad(&m, [SIMD3(0, a, 0), SIMD3(0, b, 0), SIMD3(0, b, 20), SIMD3(0, a, 20)], outward: SIMD3(-1, 0, 0))
+        addQuad(&m, [SIMD3(20, a, 0), SIMD3(20, b, 0), SIMD3(20, b, 20), SIMD3(20, a, 20)], outward: SIMD3(1, 0, 0))
+    }
+    // Hole walls face into the hole.
+    addQuad(&m, [SIMD3(5, 5, 0), SIMD3(15, 5, 0), SIMD3(15, 5, 20), SIMD3(5, 5, 20)], outward: SIMD3(0, 1, 0))
+    addQuad(&m, [SIMD3(5, 15, 0), SIMD3(15, 15, 0), SIMD3(15, 15, 20), SIMD3(5, 15, 20)], outward: SIMD3(0, -1, 0))
+    addQuad(&m, [SIMD3(5, 5, 0), SIMD3(5, 15, 0), SIMD3(5, 15, 20), SIMD3(5, 5, 20)], outward: SIMD3(1, 0, 0))
+    addQuad(&m, [SIMD3(15, 5, 0), SIMD3(15, 15, 0), SIMD3(15, 15, 20), SIMD3(15, 5, 20)], outward: SIMD3(-1, 0, 0))
+    return m.welded(tolerance: 1e-4)
+}
+
+print("Volume")
+do {
+    let cube = gridCube(size: 20, n: 4).welded(tolerance: 1e-4)
+    check(close(cube.volume(), 8000, 0.5), "20 mm cube is 8000 mm³ (got \(cube.volume()))")
+    let tube = squareTube()
+    check(tube.analyze().isWatertight, "square tube test shape is watertight (open edges: \(tube.analyze().openEdgeCount))")
+    check(close(tube.volume(), 6000, 0.5), "square tube is 6000 mm³ (got \(tube.volume()))")
+}
+
+print("Flat base cut")
+do {
+    let cube = gridCube(size: 20, n: 4).welded(tolerance: 1e-4)
+    let cut = cube.cutBelow(height: 5.3).welded(tolerance: 1e-4)
+    let analysis = cut.analyze()
+    check(analysis.isWatertight, "cut cube is closed again (open edges: \(analysis.openEdgeCount))")
+    check(close(cut.bounds!.min.z, 5.3), "nothing left below the cut")
+    check(close(cut.volume(), 20 * 20 * 14.7, 0.5), "cut cube volume is right (got \(cut.volume()))")
+    let capDown = cut.triangles.filter { t in
+        let a = cut.positions[Int(t.x)], b = cut.positions[Int(t.y)], c = cut.positions[Int(t.z)]
+        return close(a.z, 5.3) && close(b.z, 5.3) && close(c.z, 5.3)
+    }
+    check(!capDown.isEmpty && capDown.allSatisfy { t in
+        PrintMesh.faceNormal(cut.positions[Int(t.x)], cut.positions[Int(t.y)], cut.positions[Int(t.z)]).z < -0.99
+    }, "cap faces down onto the bed (\(capDown.count) cap triangles)")
+
+    let tube = squareTube().cutBelow(height: 4).welded(tolerance: 1e-4)
+    check(tube.analyze().isWatertight, "cut tube is closed, cap keeps its hole (open edges: \(tube.analyze().openEdgeCount))")
+    check(close(tube.volume(), 16 * 300, 0.5), "cut tube volume is right, hole not filled (got \(tube.volume()))")
+
+    check(cube.cutBelow(height: -1).triangles.count == cube.triangles.count, "cut below the mesh changes nothing")
+    check(cube.cutBelow(height: 25).isEmpty, "cut above the mesh leaves nothing")
+
+    // A rotated, finely tessellated cube is closer to a real scan: many cut edges and slanted faces.
+    let angle: Float = 0.6
+    let tilted = gridCube(size: 30, n: 24)
+        .transformed { p in
+            let c = p - SIMD3(15, 15, 15)
+            let y = c.y * cos(angle) - c.z * sin(angle), z = c.y * sin(angle) + c.z * cos(angle)
+            let x = c.x * cos(angle) - y * sin(angle), y2 = c.x * sin(angle) + y * cos(angle)
+            return SIMD3(x, y2, z)
+        }
+        .welded(tolerance: 1e-4)
+    let tiltedCut = tilted.cutBelow(height: -3.7).welded(tolerance: 1e-4)
+    let tiltedAnalysis = tiltedCut.analyze()
+    check(tiltedAnalysis.isWatertight, "tilted cube cut is closed (open edges: \(tiltedAnalysis.openEdgeCount))")
+    check(tiltedAnalysis.pieceCount == 1, "tilted cube cut is one piece")
+    check(tiltedCut.volume() > 0 && tiltedCut.volume() < tilted.volume(), "cut removes volume but keeps it positive")
+}
+
+print("Turntable depth mask")
+do {
+    // 40 x 30 depth map: wall at 1.2 m, a 10 x 10 object at 0.35 m in the middle, one missing reading on it.
+    let w = 40, h = 30
+    var depth = [Float](repeating: 1.2, count: w * h)
+    for y in 10..<20 { for x in 15..<25 { depth[y * w + x] = 0.35 } }
+    depth[15 * w + 20] = 0
+    let region = NormalizedRect(x: 0.25, y: 0.2, width: 0.5, height: 0.6)
+
+    check(DepthMask.centerDepth(depth: depth, width: w, height: h, region: region) == 0.35, "centre depth finds the object")
+    let suggested = DepthMask.suggestedSettings(depth: depth, width: w, height: h, region: region, focalLength: 30)!
+    check(suggested.near < 0.35 && suggested.far > 0.35 && suggested.far < 1.2, "suggested range holds the object but not the wall (\(suggested.near)...\(suggested.far))")
+
+    let mask = DepthMask.make(depth: depth, width: w, height: h, settings: suggested, grow: 0)
+    check(mask[15 * w + 18] == 255, "object pixels are kept")
+    check(mask[15 * w + 20] == 255, "pixels with no LiDAR reading inside the frame are kept")
+    check(mask[12 * w + 12] == 0, "wall inside the frame is masked out")
+    check(mask[2 * w + 2] == 0, "everything outside the frame is masked out")
+    check(mask.filter { $0 == 255 }.count == 100, "mask is exactly the object (got \(mask.filter { $0 == 255 }.count))")
+
+    let grown = DepthMask.make(depth: depth, width: w, height: h, settings: suggested, grow: 2)
+    check(grown[15 * w + 13] == 255 && grown[15 * w + 12] == 0, "growing widens the mask by 2 pixels")
+    check(grown[2 * w + 2] == 0, "growing stays inside the frame")
+}
+
+print("Stillness detector")
+do {
+    var detector = StillnessDetector()
+    let a = [Float](repeating: 100, count: 64)
+    let b = (0..<64).map { Float($0 % 2 == 0 ? 130 : 70) }
+    var shots = 0
+    // Held still at the start: one photo.
+    for _ in 0..<20 { if detector.feed(a) { shots += 1 } }
+    check(shots == 1, "takes one photo once the scene is still (got \(shots))")
+    // Still longer: no duplicates.
+    for _ in 0..<40 { if detector.feed(a) { shots += 1 } }
+    check(shots == 1, "no duplicate photos while nothing moves")
+    // Turned: a blur of frames, then a new still view.
+    for i in 0..<6 { _ = detector.feed(i % 2 == 0 ? b : a) }
+    for _ in 0..<20 { if detector.feed(b) { shots += 1 } }
+    check(shots == 2, "takes a new photo after the object is turned and stops (got \(shots))")
+    // A hand passes through but the object ends where it was: no duplicate.
+    for i in 0..<6 { _ = detector.feed(i % 2 == 0 ? a : b) }
+    for _ in 0..<20 { if detector.feed(b) { shots += 1 } }
+    check(shots == 2, "no photo when the view ends up unchanged")
+    // Sensor noise doesn't count as movement.
+    var noisy = detector
+    let noise = b.enumerated().map { $0.element + ($0.offset % 3 == 0 ? 0.8 : -0.4) }
+    var noiseShots = 0
+    for i in 0..<60 { if noisy.feed(i % 2 == 0 ? b : noise) { noiseShots += 1 } }
+    check(noiseShots == 0, "camera noise doesn't trigger photos")
+}
+
+print("Raw grid files")
+do {
+    let floats: [Float] = [0.25, 1.5, .nan, 3]
+    let decoded = RawGrid.decodeFloats(RawGrid.encode(floats, width: 2, height: 2))!
+    check(decoded.width == 2 && decoded.height == 2 && decoded.values[0] == 0.25 && decoded.values[3] == 3 && decoded.values[2].isNaN, "depth round-trips")
+    let bytes: [UInt8] = [0, 255, 255, 0, 7, 9]
+    let decodedBytes = RawGrid.decodeBytes(RawGrid.encode(bytes, width: 3, height: 2))!
+    check(decodedBytes.values == bytes && decodedBytes.width == 3, "mask round-trips")
+    check(RawGrid.decodeFloats(Data([1, 2, 3])) == nil, "truncated file is rejected")
 }
 
 print("Performance")

@@ -147,6 +147,8 @@ struct PrintMesh: Sendable {
         /// Edges used by only one triangle. Zero means the mesh is closed (watertight).
         var openEdgeCount: Int
         var size: SIMD3<Float>
+        /// Enclosed volume in cubic mesh units; only meaningful for a watertight mesh.
+        var volume: Float
 
         var isWatertight: Bool { openEdgeCount == 0 }
     }
@@ -168,7 +170,17 @@ struct PrintMesh: Sendable {
         }
         let openEdges = edges.values.reduce(0) { $0 + ($1 == 1 ? 1 : 0) }
         let pieces = Set(pieceRoots()).count
-        return Analysis(triangleCount: triangles.count, pieceCount: pieces, openEdgeCount: openEdges, size: size)
+        return Analysis(triangleCount: triangles.count, pieceCount: pieces, openEdgeCount: openEdges, size: size, volume: volume())
+    }
+
+    /// Signed volume from the divergence theorem. Positive when faces point outward.
+    func volume() -> Float {
+        var total: Double = 0
+        for t in triangles {
+            let a = positions[Int(t.x)], b = positions[Int(t.y)], c = positions[Int(t.z)]
+            total += Double((a * crossProduct(b, c)).sum())
+        }
+        return Float(total / 6)
     }
 
     /// For each triangle, the id of the connected piece it belongs to.

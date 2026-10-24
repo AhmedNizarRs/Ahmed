@@ -10,7 +10,9 @@ struct ScanFlowView: View {
         Group {
             switch flow.phase {
             case .capturing:
-                if let session = flow.captureSession {
+                if flow.scan.isTurntable {
+                    TurntableCaptureView(flow: flow)
+                } else if let session = flow.captureSession {
                     CaptureView(session: session, flow: flow)
                 } else {
                     ProgressView("Starting camera…")

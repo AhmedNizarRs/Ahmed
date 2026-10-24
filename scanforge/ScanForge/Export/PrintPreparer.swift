@@ -7,6 +7,18 @@ struct PrintSettings: Codable, Equatable, Hashable, Sendable {
     /// 1.0 prints the object at its real, scanned size.
     var scale: Double = 1.0
     var removeFloatingBits: Bool = true
+    /// Millimetres (at real size) cut off the bottom to give a flat base. 0 keeps the scan as is.
+    var baseCut: Double = 0
+
+    init() {}
+
+    // Settings saved by older versions miss newer keys; fall back to defaults.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        scale = try container.decodeIfPresent(Double.self, forKey: .scale) ?? 1.0
+        removeFloatingBits = try container.decodeIfPresent(Bool.self, forKey: .removeFloatingBits) ?? true
+        baseCut = try container.decodeIfPresent(Double.self, forKey: .baseCut) ?? 0
+    }
 }
 
 /// A scan converted into a print-ready mesh at real size (scale 1.0).
@@ -37,15 +49,32 @@ enum PrintPreparer {
     /// Loads the reconstructed USDZ and turns it into a clean, Z-up mesh in
     /// millimetres sitting on the build plate. Runs for a second or two, so
     /// call it off the main thread.
-    static func prepare(modelURL: URL, removeFloatingBits: Bool) throws -> PreparedPrint {
-        var mesh = try loadMesh(from: modelURL)
+    static func prepare(modelURL: URL, settings: PrintSettings) throws -> PreparedPrint {
+        try finish(loadBaseMesh(modelURL: modelURL), settings: settings)
+    }
+
+    /// The slow part: reads the model and converts it to a welded, Z-up mesh in millimetres.
+    static func loadBaseMesh(modelURL: URL) throws -> PrintMesh {
+        let mesh = try loadMesh(from: modelURL)
             .convertedFromYUpToZUp()
             .scaled(by: metresToMillimetres)
             .welded(tolerance: 0.001)
-        if removeFloatingBits {
+        guard !mesh.isEmpty else { throw PrintPreparationError.noGeometry }
+        return mesh
+    }
+
+    /// The fast part: applies the user's clean-up settings to a base mesh.
+    static func finish(_ base: PrintMesh, settings: PrintSettings) throws -> PreparedPrint {
+        var mesh = base
+        if settings.removeFloatingBits {
             mesh = mesh.removingSmallPieces(minimumShare: debrisShare)
         }
         mesh = mesh.placedOnBed()
+        if settings.baseCut > 0 {
+            mesh = mesh.cutBelow(height: Float(settings.baseCut))
+                .welded(tolerance: 0.001)
+                .placedOnBed()
+        }
         guard !mesh.isEmpty else { throw PrintPreparationError.noGeometry }
         return PreparedPrint(mesh: mesh, analysis: mesh.analyze())
     }

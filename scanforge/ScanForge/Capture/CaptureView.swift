@@ -117,10 +117,26 @@ struct CaptureView: View {
                 Button("Reset box") { flow.resetDetection() }
                     .font(.subheadline.weight(.semibold))
             case .capturing:
-                if canFinishEarly {
-                    Button("Finish now") { flow.finishCapture() }
-                        .font(.subheadline.weight(.semibold))
+                HStack(spacing: 12) {
+                    Button {
+                        session.requestImageCapture()
+                    } label: {
+                        Label("Photo", systemImage: "camera.fill")
+                            .frame(maxWidth: .infinity, minHeight: 46)
+                    }
+                    .buttonStyle(.bordered)
+                    .disabled(!session.canRequestImageCapture)
+                    if canFinishEarly {
+                        Button {
+                            flow.finishCapture()
+                        } label: {
+                            Label("Finish", systemImage: "checkmark")
+                                .frame(maxWidth: .infinity, minHeight: 46)
+                        }
+                        .buttonStyle(.borderedProminent)
+                    }
                 }
+                .font(.headline)
             case .initializing, .finishing:
                 ProgressView()
             default:
@@ -152,7 +168,7 @@ struct CaptureView: View {
             return "Drag the box edges so they fit snugly around the object, then start."
         case .capturing:
             switch flow.passNumber {
-            case 1: return "Walk slowly all the way around the object, holding the phone at its height."
+            case 1: return "Circle the object slowly at its height. Tip: put it on a stool in the middle of the room, or use Turntable mode instead."
             case 2: return "Go around again, this time from higher up looking down."
             default: return "Go around once more so the camera sees every side."
             }

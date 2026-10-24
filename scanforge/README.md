@@ -74,5 +74,5 @@ Run the mesh tests on a Mac:
 
 ```sh
 cd scanforge
-swiftc -O ScanForge/Export/PrintMesh.swift Tests/main.swift -o /tmp/meshtests && /tmp/meshtests
+swiftc -O ScanForge/Export/PrintMesh.swift ScanForge/Export/PrintMesh+Base.swift ScanForge/Turntable/TurntableMath.swift Tests/main.swift -o /tmp/meshtests && /tmp/meshtests
 ```

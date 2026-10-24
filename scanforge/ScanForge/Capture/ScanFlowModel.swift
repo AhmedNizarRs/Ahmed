@@ -31,6 +31,7 @@ final class ScanFlowModel: ObservableObject, Identifiable {
     @Published private(set) var isDiscarded = false
 
     var canRetryProcessing: Bool { store.photoCount(scan) >= Self.minimumPhotos }
+    var turntableFolders: TurntableFolders { store.turntableFolders(for: scan) }
 
     private let store: ScanStore
     private let start: Start
@@ -55,6 +56,7 @@ final class ScanFlowModel: ObservableObject, Identifiable {
         guard !hasStarted else { return }
         hasStarted = true
         switch start {
+        case .capture where scan.isTurntable: phase = .capturing // TurntableCaptureView drives the camera
         case .capture: startCapture()
         case .processing: startProcessing()
         }
@@ -168,33 +170,18 @@ final class ScanFlowModel: ObservableObject, Identifiable {
         let temporaryURL = store.folder(for: scan).appendingPathComponent("model-building.usdz")
         try? FileManager.default.removeItem(at: temporaryURL)
 
-        var configuration = PhotogrammetrySession.Configuration()
-        configuration.checkpointDirectory = store.checkpointURL(for: scan)
-
         do {
-            let session = try PhotogrammetrySession(input: store.imagesURL(for: scan), configuration: configuration)
-            photogrammetrySession = session
-            try session.process(requests: [.modelFile(url: temporaryURL)])
-
-            outputs: for try await output in session.outputs {
-                switch output {
-                case .requestProgress(_, let fractionComplete):
-                    progress = fractionComplete
-                case .requestProgressInfo(_, let info):
-                    remainingTime = info.estimatedRemainingTime
-                    if let processingStage = info.processingStage {
-                        stage = Self.describe(processingStage)
-                    }
-                case .requestError(_, let error):
-                    throw error
-                case .processingCancelled:
-                    photogrammetrySession = nil
-                    return
-                case .processingComplete:
-                    break outputs
-                default:
-                    break
+            if scan.isTurntable {
+                // First with the LiDAR masks; if Apple's engine rejects them, retry with its own masking.
+                do {
+                    try await runPhotogrammetry(input: .turntable(useMasks: true), output: temporaryURL)
+                } catch where !isStopping {
+                    stage = "Trying again without LiDAR masks…"
+                    try? FileManager.default.removeItem(at: store.checkpointURL(for: scan))
+                    try await runPhotogrammetry(input: .turntable(useMasks: false), output: temporaryURL)
                 }
+            } else {
+                try await runPhotogrammetry(input: .folder, output: temporaryURL)
             }
             photogrammetrySession = nil
             guard !isStopping else { return }
@@ -213,7 +200,7 @@ final class ScanFlowModel: ObservableObject, Identifiable {
             let settings = current.settings
             let stlURL = store.stlURL(for: current)
             try await Task.detached(priority: .userInitiated) {
-                let prepared = try PrintPreparer.prepare(modelURL: modelURL, removeFloatingBits: settings.removeFloatingBits)
+                let prepared = try PrintPreparer.prepare(modelURL: modelURL, settings: settings)
                 try PrintPreparer.writeSTL(prepared, scale: settings.scale, to: stlURL)
             }.value
             store.markExported(current, settings: settings)
@@ -222,6 +209,55 @@ final class ScanFlowModel: ObservableObject, Identifiable {
             photogrammetrySession = nil
             guard !isStopping else { return }
             phase = .failed(Self.message(for: error))
+        }
+    }
+
+    private enum PhotoInput {
+        case folder
+        case turntable(useMasks: Bool)
+    }
+
+    /// Runs Apple's reconstruction until the model file is written.
+    /// Returns normally when cancelled; check `isStopping` afterwards.
+    private func runPhotogrammetry(input: PhotoInput, output: URL) async throws {
+        var configuration = PhotogrammetrySession.Configuration()
+        configuration.checkpointDirectory = store.checkpointURL(for: scan)
+        // Finds more matching points on plain surfaces: keeps detail that would otherwise be smoothed away.
+        configuration.featureSensitivity = .high
+        configuration.isObjectMaskingEnabled = true
+
+        let session: PhotogrammetrySession
+        switch input {
+        case .folder:
+            session = try PhotogrammetrySession(input: store.imagesURL(for: scan), configuration: configuration)
+        case .turntable(let useMasks):
+            configuration.sampleOrdering = .sequential
+            try? FileManager.default.createDirectory(at: store.checkpointURL(for: scan), withIntermediateDirectories: true)
+            let samples = TurntableSamples(folders: turntableFolders, useMasks: useMasks)
+            session = try PhotogrammetrySession(input: samples, configuration: configuration)
+        }
+        photogrammetrySession = session
+        defer { photogrammetrySession = nil }
+        try session.process(requests: [.modelFile(url: output)])
+
+        outputs: for try await item in session.outputs {
+            switch item {
+            case .requestProgress(_, let fractionComplete):
+                progress = fractionComplete
+            case .requestProgressInfo(_, let info):
+                remainingTime = info.estimatedRemainingTime
+                if let processingStage = info.processingStage {
+                    stage = Self.describe(processingStage)
+                }
+            case .requestError(_, let error):
+                throw error
+            case .processingCancelled:
+                return
+            case .processingComplete:
+                break outputs
+            default:
+                break
+            }
         }
     }
 

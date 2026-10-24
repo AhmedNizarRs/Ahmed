@@ -2,6 +2,13 @@ import Foundation
 import ImageIO
 import UIKit
 
+enum CaptureKind: String, Codable, Sendable {
+    /// Apple's guided Object Capture: walk around the object.
+    case guided
+    /// Phone on a stand, object on a turntable, LiDAR masks.
+    case turntable
+}
+
 struct Scan: Identifiable, Codable, Hashable, Sendable {
     let id: UUID
     var name: String
@@ -13,6 +20,10 @@ struct Scan: Identifiable, Codable, Hashable, Sendable {
     var exportedSettings: PrintSettings?
     /// When the 3D model was last rebuilt from the photos.
     var processedAt: Date?
+    /// nil for scans made before turntable mode existed.
+    var captureKind: CaptureKind?
+
+    var isTurntable: Bool { captureKind == .turntable }
 }
 
 /// Keeps scans on disk.
@@ -44,6 +55,17 @@ final class ScanStore: ObservableObject {
     func modelURL(for scan: Scan) -> URL { folder(for: scan).appendingPathComponent("model.usdz") }
     func thumbnailURL(for scan: Scan) -> URL { folder(for: scan).appendingPathComponent("thumbnail.jpg") }
     func stlURL(for scan: Scan) -> URL { exportsRoot.appendingPathComponent(scan.stlFileName) }
+
+    func turntableFolders(for scan: Scan) -> TurntableFolders {
+        let folder = folder(for: scan)
+        return TurntableFolders(
+            images: imagesURL(for: scan),
+            depth: folder.appendingPathComponent("Depth", isDirectory: true),
+            masks: folder.appendingPathComponent("Masks", isDirectory: true),
+            log: folder.appendingPathComponent("capture.json"),
+            thumbnail: thumbnailURL(for: scan)
+        )
+    }
     private func metadataURL(for scan: Scan) -> URL { folder(for: scan).appendingPathComponent("scan.json") }
 
     // MARK: Status
@@ -59,7 +81,9 @@ final class ScanStore: ObservableObject {
 
     /// Bytes used by the capture photos and reconstruction checkpoints.
     func photoStorageSize(_ scan: Scan) -> Int64 {
-        directorySize(imagesURL(for: scan)) + directorySize(checkpointURL(for: scan))
+        let turntable = turntableFolders(for: scan)
+        return directorySize(imagesURL(for: scan)) + directorySize(checkpointURL(for: scan))
+            + directorySize(turntable.depth) + directorySize(turntable.masks)
     }
 
     func thumbnail(for scan: Scan) -> UIImage? {
@@ -68,10 +92,10 @@ final class ScanStore: ObservableObject {
 
     // MARK: Changes
 
-    func createScan() -> Scan {
+    func createScan(kind: CaptureKind) -> Scan {
         let number = (scans.compactMap { Int($0.name.replacingOccurrences(of: "Scan ", with: "")) }.max() ?? 0) + 1
         let name = "Scan \(number)"
-        let scan = Scan(id: UUID(), name: name, createdAt: Date(), stlFileName: uniqueFileName(for: name, excluding: nil))
+        let scan = Scan(id: UUID(), name: name, createdAt: Date(), stlFileName: uniqueFileName(for: name, excluding: nil), captureKind: kind)
         try? fileManager.createDirectory(at: imagesURL(for: scan), withIntermediateDirectories: true)
         try? fileManager.createDirectory(at: checkpointURL(for: scan), withIntermediateDirectories: true)
         save(scan)
@@ -114,8 +138,10 @@ final class ScanStore: ObservableObject {
 
     /// Frees space by removing capture photos. The model and STL stay.
     func deletePhotos(of scan: Scan) {
-        try? fileManager.removeItem(at: imagesURL(for: scan))
-        try? fileManager.removeItem(at: checkpointURL(for: scan))
+        let turntable = turntableFolders(for: scan)
+        for url in [imagesURL(for: scan), checkpointURL(for: scan), turntable.depth, turntable.masks, turntable.log] {
+            try? fileManager.removeItem(at: url)
+        }
         objectWillChange.send()
     }
 

@@ -34,11 +34,24 @@ final class PrintModel: ObservableObject {
         return nil
     }
 
-    func load(modelURL: URL, removeFloatingBits: Bool) async {
+    /// The loaded model, kept so changing a setting doesn't re-read the file.
+    private var baseMesh: (key: String, mesh: PrintMesh)?
+
+    func load(modelURL: URL, processedAt: Date?, settings: PrintSettings) async {
         if prepared == nil { state = .loading }
+        let key = "\(modelURL.path)|\(processedAt?.timeIntervalSince1970 ?? 0)"
         do {
+            let base: PrintMesh
+            if let cached = baseMesh, cached.key == key {
+                base = cached.mesh
+            } else {
+                base = try await Task.detached(priority: .userInitiated) {
+                    try PrintPreparer.loadBaseMesh(modelURL: modelURL)
+                }.value
+                baseMesh = (key, base)
+            }
             let prepared = try await Task.detached(priority: .userInitiated) {
-                try PrintPreparer.prepare(modelURL: modelURL, removeFloatingBits: removeFloatingBits)
+                try PrintPreparer.finish(base, settings: settings)
             }.value
             guard !Task.isCancelled else { return }
             state = .ready(prepared)
@@ -73,6 +86,7 @@ private struct ShareItem: Identifiable {
 private struct LoadKey: Equatable {
     let processedAt: Date?
     let removeFloatingBits: Bool
+    let baseCut: Double
     let hasModel: Bool
 }
 
@@ -92,6 +106,7 @@ private struct ScanDetailContent: View {
     @State private var fitAxis: PrintAxis = .height
     @State private var fitTarget: Double?
     @State private var exportError: String?
+    @State private var baseCutDraft: Double = 0
     @FocusState private var editingNumber: Bool
 
     /// A common bed size (Bambu X1/P1, Prusa MK4 is a little smaller).
@@ -123,10 +138,14 @@ private struct ScanDetailContent: View {
                 Button("Done") { editingNumber = false }
             }
         }
-        .task(id: LoadKey(processedAt: scan.processedAt, removeFloatingBits: scan.settings.removeFloatingBits, hasModel: store.hasModel(scan))) {
+        .task(id: LoadKey(processedAt: scan.processedAt, removeFloatingBits: scan.settings.removeFloatingBits,
+                          baseCut: scan.settings.baseCut, hasModel: store.hasModel(scan))) {
             guard store.hasModel(scan) else { return }
-            await printModel.load(modelURL: store.modelURL(for: scan), removeFloatingBits: scan.settings.removeFloatingBits)
+            var loadSettings = scan.settings
+            loadSettings.scale = 1 // scale is applied on export, not to the preview mesh
+            await printModel.load(modelURL: store.modelURL(for: scan), processedAt: scan.processedAt, settings: loadSettings)
         }
+        .onAppear { baseCutDraft = scan.settings.baseCut }
         .sheet(item: $shareItem) { item in
             ActivityView(items: [item.url])
                 .ignoresSafeArea()
@@ -248,6 +267,33 @@ private struct ScanDetailContent: View {
             Text("Scans are measured at real size. Measure the real object once and use Fit to size if your print needs to be exact. Floating bits are loose specks and pieces of the table picked up during the scan.")
         }
 
+        Section {
+            VStack(alignment: .leading, spacing: 6) {
+                HStack {
+                    Text("Cut off the bottom")
+                    Spacer()
+                    Text(baseCutDraft == 0 ? "Off" : String(format: "%.1f mm", baseCutDraft))
+                        .monospacedDigit()
+                        .foregroundStyle(.secondary)
+                }
+                Slider(value: $baseCutDraft, in: 0...maxBaseCut(prepared), step: 0.5) { editing in
+                    if !editing { updateSettings { $0.baseCut = baseCutDraft } }
+                }
+            }
+            if scan.settings.baseCut > 0 {
+                Button("Remove the cut") {
+                    baseCutDraft = 0
+                    updateSettings { $0.baseCut = 0 }
+                }
+            }
+        } header: {
+            Text("Flat base")
+        } footer: {
+            Text(scan.isTurntable
+                 ? "Turntable showing under your object? Slide until it's gone. The cut is filled flat so the print sits firmly on the bed."
+                 : "Slices off an uneven scanned bottom and fills it flat so the print sits firmly on the bed.")
+        }
+
         Section("Mesh check") {
             if prepared.analysis.isWatertight {
                 Label("Closed surface, ready to slice", systemImage: "checkmark.seal.fill")
@@ -258,6 +304,10 @@ private struct ScanDetailContent: View {
             }
             if prepared.analysis.pieceCount > 1 {
                 LabeledContent("Separate pieces", value: "\(prepared.analysis.pieceCount)")
+            }
+            if prepared.analysis.isWatertight, prepared.analysis.volume > 0 {
+                let cubicCM = Double(prepared.analysis.volume) * pow(scan.settings.scale, 3) / 1000
+                LabeledContent("Volume", value: "\(cubicCM.formatted(.number.precision(.fractionLength(1)))) cm³")
             }
             LabeledContent("Triangles", value: prepared.analysis.triangleCount.formatted())
         }
@@ -343,6 +393,12 @@ private struct ScanDetailContent: View {
         var updated = store.scan(id: scan.id) ?? scan
         change(&updated.settings)
         store.save(updated)
+    }
+
+    /// Leaves at least 2 mm of the object, measured at real size.
+    private func maxBaseCut(_ prepared: PreparedPrint) -> Double {
+        let height = Double(prepared.analysis.size.z) + scan.settings.baseCut
+        return max(0.5, min(40, (height - 2).rounded(.down)))
     }
 
     private func applyFit(_ prepared: PreparedPrint) {

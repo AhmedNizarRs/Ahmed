@@ -29,7 +29,7 @@ jobs:
 
       - name: Test STL pipeline
         run: |
-          xcrun --sdk macosx swiftc -O ScanForge/Export/PrintMesh.swift Tests/main.swift -o "$RUNNER_TEMP/meshtests"
+          xcrun --sdk macosx swiftc -O ScanForge/Export/PrintMesh.swift ScanForge/Export/PrintMesh+Base.swift ScanForge/Turntable/TurntableMath.swift Tests/main.swift -o "$RUNNER_TEMP/meshtests"
           "$RUNNER_TEMP/meshtests"
 
       - name: Build app (unsigned)
