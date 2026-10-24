@@ -4,6 +4,22 @@ ScanForge turns real objects into 3D-printable STL files on your iPhone. It uses
 
 Built for iPhone 17 Pro Max. It works on any iPhone Pro with LiDAR (12 Pro or newer) running iOS 17 or later.
 
+## Two ways to scan
+
+- **Turntable (recommended):** the phone stays still on a stand while you turn the object on a turntable, lazy Susan or plate. The LiDAR scanner:
+  - measures the distance and tells you when it's right (25–45 cm)
+  - cuts the background out of every photo (shown live in red), so only the object is reconstructed
+  - stores a depth map with every photo for true real-world scale
+
+  A photo is taken automatically each time you turn the object a little and let go. For motorized turntables there's a timer mode instead. Do one turn at object height, one from above, and optionally one with the object on its side.
+- **Walk around:** Apple's guided Object Capture. Good for big or heavy objects. It has a manual shutter, and you can finish after a single pass.
+
+On iPhone, Apple's reconstruction only offers its "reduced" detail level (up to about 50k triangles). ScanForge gets the most out of it by:
+- running it with high feature sensitivity
+- giving it steady, sharp, background-free turntable photos
+
+Getting close (25–35 cm) and using bright, even light make the biggest difference.
+
 ## What it does
 
 1. **Guided scanning.** Apple's capture overlay shows which sides still need photos. ScanForge adds plain instructions ("move closer", "slow down", "more light") and walks you through the recommended passes: around at object height, again from above, then flipped for the bottom.
@@ -13,6 +29,7 @@ Built for iPhone 17 Pro Max. It works on any iPhone Pro with LiDAR (12 Pro or ne
    - **Z-up and sitting on the bed**, centred, so it drops straight into your slicer.
    - **Floating bits removed**, such as specks and bits of table the scan picked up.
    - **Welded mesh** with a watertight check, so you know before slicing whether it's a closed surface.
+   - **Flat base:** slice off the turntable or an uneven bottom; the cut is filled flat so the print sits firmly on the bed.
 4. **Adjust before printing.**
    - Scale by percent, or **Fit to size**: type the real measured width, depth or height and the model scales to match.
    - Live dimensions in mm, plus a warning if the model is bigger than a 256 mm bed.
