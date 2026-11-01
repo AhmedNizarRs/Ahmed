@@ -1,0 +1,90 @@
+name: Vigil iOS
+
+on:
+  push:
+    paths:
+      - "vigil/**"
+      - ".github/workflows/vigil-ios.yml"
+  workflow_dispatch:
+    inputs:
+      commit_ipa:
+        description: "Also commit the IPA to vigil/dist/ on this branch"
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    defaults:
+      run:
+        working-directory: vigil
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Show Xcode
+        run: xcodebuild -version
+
+      - name: Test task rules and call planning
+        run: |
+          xcrun --sdk macosx swiftc -O Vigil/Model/Tasks.swift Tests/main.swift -o "$RUNNER_TEMP/vigiltests"
+          "$RUNNER_TEMP/vigiltests"
+
+      - name: Fetch fonts (SIL Open Font License)
+        run: |
+          mkdir -p Vigil/Fonts
+          base=https://raw.githubusercontent.com/google/fonts/main/ofl
+          for f in unifrakturcook/UnifrakturCook-Bold.ttf imfellenglish/IMFeENrm28P.ttf imfellenglish/IMFeENit28P.ttf imfellenglishsc/IMFeENsc28P.ttf; do
+            curl -fsSL "$base/$f" -o "Vigil/Fonts/$(basename "$f")" || echo "::warning::Could not download $f; the app falls back to system serif"
+          done
+          curl -fsSL "$base/imfellenglish/OFL.txt" -o Vigil/Fonts/OFL-IMFell.txt || true
+          curl -fsSL "$base/unifrakturcook/OFL.txt" -o Vigil/Fonts/OFL-UnifrakturCook.txt || true
+          ls -l Vigil/Fonts
+
+      - name: Build app (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project Vigil.xcodeproj \
+            -target Vigil \
+            -configuration Release \
+            -sdk iphoneos \
+            SYMROOT="$PWD/build" \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            build | tee "$RUNNER_TEMP/xcodebuild.log" | grep -E "error:|BUILD (SUCCEEDED|FAILED)" || true
+          # The .app folder appears even when compiling fails, so check for the executable.
+          if [ ! -f build/Release-iphoneos/Vigil.app/Vigil ]; then
+            grep -E "error:" "$RUNNER_TEMP/xcodebuild.log" | sort -u
+            exit 1
+          fi
+          plutil -extract NSAlarmKitUsageDescription raw build/Release-iphoneos/Vigil.app/Info.plist
+          ls build/Release-iphoneos/Vigil.app
+
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Release-iphoneos/Vigil.app Payload/
+          zip -qry Vigil-unsigned.ipa Payload
+          ls -lh Vigil-unsigned.ipa
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Vigil-unsigned-ipa
+          path: vigil/Vigil-unsigned.ipa
+          if-no-files-found: error
+
+      - name: Commit IPA to branch
+        if: github.event_name == 'workflow_dispatch' && inputs.commit_ipa
+        run: |
+          mkdir -p dist
+          cp Vigil-unsigned.ipa dist/Vigil.ipa
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -f dist/Vigil.ipa
+          git commit -m "Add Vigil.ipa build [skip ci]"
+          git pull --rebase
+          git push

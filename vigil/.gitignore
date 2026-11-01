@@ -1,0 +1,8 @@
+build/
+Payload/
+*.ipa
+xcuserdata/
+DerivedData/
+*.xcuserstate
+# Downloaded at build time (see .github/workflows/vigil-ios.yml)
+Vigil/Fonts/
