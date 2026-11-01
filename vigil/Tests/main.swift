@@ -87,7 +87,8 @@ do {
     check(CallPlanner.plan(tasks: [], times: times, from: now, calendar: calendar).isEmpty, "no tasks, no calls")
     check(CallPlanner.plan(tasks: [bins], times: times, from: now, calendar: calendar).allSatisfy { calendar.component(.weekday, from: $0.date) == 3 }, "a weekday-only list calls on that day only")
     check(CallPlanner.plan(tasks: [water], times: times, from: now, days: 7, limit: 5, calendar: calendar).count == 5, "the limit is respected")
-    let duplicates = CallPlanner.plan(tasks: [water], times: times + times, from: now, days: 1, calendar: calendar)
+    let fresh = VigilTask(title: "Stretch", cadence: .daily)
+    let duplicates = CallPlanner.plan(tasks: [fresh], times: times + times, from: now, days: 1, calendar: calendar)
     check(duplicates.count == 2, "duplicate times don't double-call")
 }
 
