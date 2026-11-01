@@ -62,6 +62,9 @@ jobs:
             exit 1
           fi
           plutil -extract NSAlarmKitUsageDescription raw build/Release-iphoneos/Vigil.app/Info.plist
+          # Without a launch screen iOS runs the app letterboxed in old 3.5-inch mode.
+          plutil -extract UILaunchStoryboardName raw build/Release-iphoneos/Vigil.app/Info.plist
+          test -d build/Release-iphoneos/Vigil.app/LaunchScreen.storyboardc
           ls build/Release-iphoneos/Vigil.app
 
       - name: Package IPA
