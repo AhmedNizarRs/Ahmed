@@ -28,6 +28,13 @@ against the original versus 31.5 dB for bicubic. Detail that never reached
 
 ![Web UI](docs/ui.png)
 
+## Try it in your browser (free GPU)
+
+[![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ahmednizarrs/ahmed/blob/claude/vercel-labs-agent-skills-2lgsxj/videoforge/VideoForge.ipynb)
+
+Choose **Runtime → Change runtime type → T4 GPU**, then **Run all**, and open
+the `gradio.live` link it prints.
+
 ## Install
 
 ```bash
