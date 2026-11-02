@@ -1,0 +1,808 @@
+<title>VideoForge</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one phone-width column; the before/after viewer is the hero, controls stack beneath it. */
+:root {
+  --bg: #eef0f3;
+  --surface: #ffffff;
+  --ink: #14171c;
+  --muted: #5a6170;
+  --line: #d8dce3;
+  --accent: #2d43d1;
+  --accent-ink: #ffffff;
+  --accent-soft: #e2e6ff;
+  --warn: #a34b0b;
+  --stage: #0d0f13;
+  --stage-ink: #f1f2f5;
+  --font-display: "Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --radius: 14px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1115; --surface: #171a20; --ink: #e8eaef; --muted: #9aa1ae; --line: #2a2f38;
+    --accent: #8d9cff; --accent-ink: #0f1115; --accent-soft: #1e2440; --warn: #f0a35e;
+    --stage: #07080a; --stage-ink: #f1f2f5; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1115; --surface: #171a20; --ink: #e8eaef; --muted: #9aa1ae; --line: #2a2f38;
+  --accent: #8d9cff; --accent-ink: #0f1115; --accent-soft: #1e2440; --warn: #f0a35e;
+  --stage: #07080a; --stage-ink: #f1f2f5; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 40px;
+}
+.app { max-width: 680px; margin: 0 auto; display: grid; gap: 18px; }
+header { display: grid; gap: 6px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: clamp(30px, 8vw, 40px); line-height: 1; margin: 0; letter-spacing: -0.02em; text-wrap: balance; }
+.tagline { margin: 0; color: var(--muted); max-width: 52ch; }
+.chip-note { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+.chip-note::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--accent); }
+
+/* ---- before/after stage ---- */
+.stage { background: var(--stage); color: var(--stage-ink); border-radius: var(--radius); overflow: hidden; display: grid; }
+.compare { position: relative; width: 100%; aspect-ratio: 16 / 9; max-width: 100%; touch-action: pan-y; cursor: ew-resize; user-select: none; -webkit-user-select: none; }
+.compare canvas { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; display: block; }
+.compare .after { clip-path: inset(0 0 0 var(--split, 50%)); }
+.divider { position: absolute; top: 0; bottom: 0; left: var(--split, 50%); width: 2px; margin-left: -1px; background: var(--stage-ink); pointer-events: none; }
+.divider::after { content: "⇆"; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 34px; height: 34px; border-radius: 50%; background: var(--stage-ink); color: var(--stage); display: grid; place-items: center; font-size: 16px; }
+.tag { position: absolute; top: 10px; font-family: var(--font-mono); font-size: 11px; line-height: 1.3; padding: 4px 7px; border-radius: 6px; background: rgb(0 0 0 / 0.55); color: #fff; pointer-events: none; }
+.tag.left { left: 10px; } .tag.right { right: 10px; text-align: right; }
+.compare input[type=range] { position: absolute; inset: auto 0 0 0; width: 100%; opacity: 0; height: 24px; margin: 0; }
+.compare input[type=range]:focus-visible + .divider { outline: 3px solid var(--accent); }
+.stage-foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 12px; padding: 10px 14px; font-family: var(--font-mono); font-size: 12px; color: #b6bbc6; }
+
+/* ---- panels ---- */
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; display: grid; gap: 14px; }
+.panel h2 { font-family: var(--font-display); font-size: 18px; font-weight: 600; margin: 0; letter-spacing: -0.01em; }
+.row { display: grid; gap: 8px; }
+.label { font-size: 13px; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; }
+.label output { font-family: var(--font-mono); font-weight: 500; color: var(--ink); }
+.pick { position: relative; display: grid; place-items: center; gap: 4px; text-align: center; padding: 18px 12px; border: 1.5px dashed var(--line); border-radius: 12px; background: var(--bg); }
+.pick strong { font-size: 16px; }
+.pick span { color: var(--muted); font-size: 13px; }
+.pick input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.pick:focus-within { outline: 3px solid var(--accent); outline-offset: 2px; }
+.fileinfo { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); overflow-wrap: anywhere; min-width: 0; }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; }
+.seg label { position: relative; }
+.seg input { position: absolute; opacity: 0; inset: 0; }
+.seg span { display: inline-block; padding: 8px 13px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: 14px; font-weight: 500; }
+.seg input:checked + span { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg input:focus-visible + span { outline: 3px solid var(--accent); outline-offset: 2px; }
+.seg input:disabled + span { opacity: 0.4; text-decoration: line-through; }
+input[type=range].slider { width: 100%; accent-color: var(--accent); }
+.hint { font-size: 13px; color: var(--muted); margin: 0; }
+.summary { font-family: var(--font-mono); font-size: 13px; padding: 10px 12px; border-radius: 10px; background: var(--accent-soft); color: var(--ink); display: grid; gap: 2px; }
+
+/* ---- actions ---- */
+.actions { display: grid; grid-template-columns: 1fr 1.4fr; gap: 10px; }
+button { font: inherit; font-weight: 600; font-size: 15px; border-radius: 12px; padding: 14px 12px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; min-height: 50px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+/* ---- progress ---- */
+.progress { display: grid; gap: 10px; }
+.bar { height: 10px; border-radius: 6px; background: var(--bg); border: 1px solid var(--line); overflow: hidden; background-image: repeating-linear-gradient(90deg, transparent 0 calc(10% - 1px), var(--line) calc(10% - 1px) 10%); }
+.bar > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width 0.25s ease; }
+.counters { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.status { margin: 0; font-size: 14px; }
+.status.error { color: var(--warn); font-weight: 500; }
+.result video, .result img { width: 100%; border-radius: 10px; background: var(--stage); display: block; }
+footer { font-size: 12.5px; color: var(--muted); display: grid; gap: 6px; }
+footer a { color: var(--accent); }
+@media (prefers-reduced-motion: reduce) { .bar > i { transition: none; } }
+</style>
+
+<main class="app">
+  <header>
+    <h1>VideoForge</h1>
+    <p class="tagline">AI upscaling and clean-up for videos and photos, running on your phone's own graphics chip.</p>
+    <span class="chip-note">Runs on this device · nothing is uploaded</span>
+  </header>
+
+  <section class="stage" aria-label="Before and after">
+    <div class="compare" id="compare">
+      <canvas class="before" id="cvBefore" width="320" height="180"></canvas>
+      <canvas class="after" id="cvAfter" width="1280" height="720"></canvas>
+      <span class="tag left" id="tagBefore">Original<br>320×180</span>
+      <span class="tag right" id="tagAfter">VideoForge<br>1280×720</span>
+      <input type="range" id="split" min="0" max="100" value="50" aria-label="Move the before/after divider">
+      <div class="divider" aria-hidden="true"></div>
+    </div>
+    <div class="stage-foot"><span id="stageCaption">Sample frame · drag to compare</span><span id="stageTiming"></span></div>
+  </section>
+
+  <section class="panel" aria-labelledby="hSource">
+    <h2 id="hSource">1 · Your video or photo</h2>
+    <div class="pick">
+      <strong>Choose a video or photo</strong>
+      <span>From your camera roll or files</span>
+      <input type="file" id="file" accept="video/*,image/*" aria-label="Choose a video or photo">
+    </div>
+    <div class="fileinfo" id="fileinfo">No file chosen. The sample above shows what the AI does.</div>
+    <div class="row" id="trimRow" hidden>
+      <div class="label"><span>Start at</span><output id="startOut">0:00</output></div>
+      <input type="range" class="slider" id="start" min="0" max="10" step="0.1" value="0">
+      <div class="label"><span>Clip length</span><output id="lenOut">5 s</output></div>
+      <input type="range" class="slider" id="len" min="1" max="10" step="1" value="5">
+      <p class="hint">Phones take a few seconds per frame, so start with a short clip.</p>
+    </div>
+  </section>
+
+  <section class="panel" aria-labelledby="hSettings">
+    <h2 id="hSettings">2 · Settings</h2>
+    <div class="row">
+      <div class="label"><span>AI model</span></div>
+      <div class="seg" role="radiogroup" aria-label="AI model">
+        <label><input type="radio" name="model" value="general" checked><span>Real footage</span></label>
+        <label><input type="radio" name="model" value="anime"><span>Animation</span></label>
+      </div>
+    </div>
+    <div class="row">
+      <div class="label"><span>Output size</span></div>
+      <div class="seg" id="sizes" role="radiogroup" aria-label="Output size">
+        <label><input type="radio" name="size" value="x1"><span>Same size</span></label>
+        <label><input type="radio" name="size" value="x2" checked><span>2×</span></label>
+        <label><input type="radio" name="size" value="x4"><span>4×</span></label>
+        <label><input type="radio" name="size" value="p720"><span>720p</span></label>
+        <label><input type="radio" name="size" value="p1080"><span>1080p</span></label>
+        <label><input type="radio" name="size" value="p2160"><span>4K</span></label>
+      </div>
+    </div>
+    <div class="row" id="denoiseRow">
+      <div class="label"><span>Noise removal</span><output id="denoiseOut">50%</output></div>
+      <input type="range" class="slider" id="denoise" min="0" max="1" step="0.05" value="0.5" aria-label="Noise removal strength">
+    </div>
+    <div class="row" id="fpsRow" hidden>
+      <div class="label"><span>Frame rate</span></div>
+      <div class="seg" role="radiogroup" aria-label="Frame rate">
+        <label><input type="radio" name="fps" value="24"><span>24</span></label>
+        <label><input type="radio" name="fps" value="25"><span>25</span></label>
+        <label><input type="radio" name="fps" value="30" checked><span>30</span></label>
+        <label><input type="radio" name="fps" value="60"><span>60</span></label>
+      </div>
+    </div>
+    <div class="summary" id="summary" aria-live="polite"></div>
+  </section>
+
+  <div class="actions">
+    <button id="btnPreview">Preview</button>
+    <button id="btnRun" class="primary">Enhance</button>
+  </div>
+
+  <section class="panel progress" id="progress" hidden aria-live="polite">
+    <div class="bar"><i id="barFill"></i></div>
+    <div class="counters"><span id="cntFrames"></span><span id="cntSpeed"></span><span id="cntEta"></span></div>
+    <button id="btnCancel">Cancel</button>
+  </section>
+
+  <p class="status" id="status" role="status"></p>
+
+  <section class="panel result" id="result" hidden aria-labelledby="hResult">
+    <h2 id="hResult">3 · Result</h2>
+    <video id="outVideo" controls playsinline hidden></video>
+    <img id="outImage" alt="Enhanced result" hidden>
+    <div class="fileinfo" id="resultInfo"></div>
+    <button id="btnSave" class="primary">Save</button>
+  </section>
+
+  <footer>
+    <span>Models: Real-ESRGAN compact (BSD-3-Clause). Keep this screen open while it works; switching apps can pause the GPU.</span>
+    <span>Frame-rate boosting, slow motion and stabilisation are in the desktop version: <a href="https://github.com/ahmednizarrs/ahmed/tree/claude/vercel-labs-agent-skills-2lgsxj/videoforge" target="_blank" rel="noopener">VideoForge on GitHub</a>.</span>
+  </footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/mp4-muxer@5.2.2/build/mp4-muxer.js"></script>
+<script>
+"use strict";
+const SAMPLE_BEFORE = "%%SAMPLE_BEFORE%%";
+const SAMPLE_AFTER = "%%SAMPLE_AFTER%%";
+const $ = (s) => document.querySelector(s);
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const MAX_OUT_SIDE = 4096;          // phone canvas limits
+const MAX_OUT_AREA = 16_000_000;
+
+/* =====================================================================
+   Model weights (float16, packed for the shader by web/export_weights.py)
+   ===================================================================== */
+const H2F = (() => {
+  const t = new Float32Array(65536);
+  for (let h = 0; h < 65536; h++) {
+    const s = h & 0x8000 ? -1 : 1, e = (h >> 10) & 31, f = h & 1023;
+    t[h] = e === 0 ? s * f * 2 ** -24 : e === 31 ? (f ? NaN : s * Infinity) : s * 2 ** (e - 15) * (1 + f / 1024);
+  }
+  return t;
+})();
+const modelCache = {};
+function fetchModel(key) {
+  if (!modelCache[key]) {
+    modelCache[key] = (async () => {
+      const r = await fetch(`models/${key}.json`);
+      if (!r.ok) throw new Error(`Could not download the AI model (${r.status}).`);
+      const j = await r.json();
+      const bin = atob(j.data), out = new Float32Array(j.count);
+      for (let i = 0; i < j.count; i++) out[i] = H2F[bin.charCodeAt(2 * i) | (bin.charCodeAt(2 * i + 1) << 8)];
+      return { layers: j.layers, data: out };
+    })().catch((e) => { delete modelCache[key]; throw e; });
+  }
+  return modelCache[key];
+}
+async function modelWeights(model, denoise) {
+  if (model === "anime") return fetchModel("anime");
+  const [strong, weak] = await Promise.all([fetchModel("general"), fetchModel("general-wdn")]);
+  if (denoise >= 1) return strong;
+  // Real-ESRGAN ships a weak-denoise twin; blending the two gives a strength dial.
+  const a = strong.data, b = weak.data, d = new Float32Array(a.length);
+  for (let i = 0; i < a.length; i++) d[i] = denoise * a[i] + (1 - denoise) * b[i];
+  return { layers: strong.layers, data: d };
+}
+
+/* =====================================================================
+   WebGL2 engine: 3x3 convs + PReLU + pixel shuffle, tiled
+   ===================================================================== */
+const VS = `#version 300 es
+void main(){ vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2)); gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0); }`;
+function convFS(ni, fromImage) {
+  return `#version 300 es
+precision highp float; precision highp int; precision highp sampler2DArray;
+uniform ${fromImage ? "sampler2D" : "sampler2DArray"} src;
+uniform ivec2 size; uniform vec4 bias; uniform vec4 alpha; uniform int act;
+layout(std140) uniform W { mat4 w[${ni * 9}]; };
+out vec4 o;
+void main(){
+  ivec2 p = ivec2(gl_FragCoord.xy);
+  vec4 acc = bias;
+  for (int t = 0; t < 9; t++) {
+    ivec2 q = p + ivec2(t - (t / 3) * 3 - 1, t / 3 - 1);
+    if (q.x < 0 || q.y < 0 || q.x >= size.x || q.y >= size.y) continue;
+    ${fromImage
+      ? "acc += w[t] * vec4(texelFetch(src, q, 0).rgb, 0.0);"
+      : `for (int i = 0; i < ${ni}; i++) acc += w[i * 9 + t] * texelFetch(src, ivec3(q, i), 0);`}
+  }
+  if (act == 1) acc = max(acc, vec4(0.0)) + alpha * min(acc, vec4(0.0));
+  o = acc;
+}`;
+}
+const SHUFFLE_FS = `#version 300 es
+precision highp float; precision highp int; precision highp sampler2DArray;
+uniform sampler2DArray conv; uniform sampler2D img;
+out vec4 o;
+void main(){
+  ivec2 P = ivec2(gl_FragCoord.xy), p = P / 4, d = P - p * 4;
+  int base = d.y * 4 + d.x;
+  vec3 c;
+  for (int k = 0; k < 3; k++) { int idx = k * 16 + base; c[k] = texelFetch(conv, ivec3(p, idx / 4), 0)[idx - (idx / 4) * 4]; }
+  c += texelFetch(img, p, 0).rgb;
+  o = vec4(clamp(c, 0.0, 1.0), 1.0);
+}`;
+
+class Engine {
+  constructor(tile = 256, pad = 16) {
+    this.T = tile; this.P = pad; this.M = tile + 2 * pad;
+    const cv = document.createElement("canvas"); cv.width = cv.height = 1;
+    const gl = cv.getContext("webgl2", { antialias: false, depth: false, stencil: false, premultipliedAlpha: false, powerPreference: "high-performance" });
+    if (!gl) throw new Error("This browser can't run the AI model because WebGL 2 is missing. Update the browser, or try Safari or Chrome.");
+    this.gl = gl; this.lost = false;
+    cv.addEventListener("webglcontextlost", (e) => { e.preventDefault(); this.lost = true; });
+    gl.getExtension("EXT_color_buffer_float"); gl.getExtension("EXT_color_buffer_half_float");
+    this.align = gl.getParameter(gl.UNIFORM_BUFFER_OFFSET_ALIGNMENT);
+    this.vao = gl.createVertexArray();
+    this.progImg = this.program(convFS(1, true), ["src", "size", "bias", "alpha", "act"]);
+    this.progArr = this.program(convFS(16, false), ["src", "size", "bias", "alpha", "act"]);
+    this.progShuf = this.program(SHUFFLE_FS, ["conv", "img"]);
+    const M = this.M;
+    this.inTex = this.tex2D(gl.RGBA8, M, M);
+    this.outTex = this.tex2D(gl.RGBA8, 4 * M, 4 * M);
+    this.fbo = gl.createFramebuffer();
+    this.arr = this.makeArrays();
+    this.ubo = gl.createBuffer();
+    this.pixels = new Uint8Array(16 * M * M * 4);
+    this.tmp = document.createElement("canvas"); this.tmp.width = this.tmp.height = 4 * M;
+    this.tctx = this.tmp.getContext("2d");
+  }
+  program(fs, names) {
+    const gl = this.gl, p = gl.createProgram();
+    for (const [type, src] of [[gl.VERTEX_SHADER, VS], [gl.FRAGMENT_SHADER, fs]]) {
+      const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s);
+      if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error("Shader error: " + gl.getShaderInfoLog(s));
+      gl.attachShader(p, s);
+    }
+    gl.linkProgram(p);
+    if (!gl.getProgramParameter(p, gl.LINK_STATUS)) throw new Error("Shader link error: " + gl.getProgramInfoLog(p));
+    const u = {}; for (const n of names) u[n] = gl.getUniformLocation(p, n);
+    const bi = gl.getUniformBlockIndex(p, "W"); if (bi !== gl.INVALID_INDEX) gl.uniformBlockBinding(p, bi, 0);
+    return { p, u };
+  }
+  tex2D(fmt, w, h) {
+    const gl = this.gl, t = gl.createTexture();
+    gl.bindTexture(gl.TEXTURE_2D, t); gl.texStorage2D(gl.TEXTURE_2D, 1, fmt, w, h);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    return t;
+  }
+  makeArrays() {
+    const gl = this.gl;
+    for (const fmt of [gl.RGBA16F, gl.RGBA32F]) {
+      const ts = [0, 1].map(() => {
+        const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D_ARRAY, t);
+        gl.texStorage3D(gl.TEXTURE_2D_ARRAY, 1, fmt, this.M, this.M, 16);
+        gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MIN_FILTER, gl.NEAREST); gl.texParameteri(gl.TEXTURE_2D_ARRAY, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+        return t;
+      });
+      gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+      gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, ts[0], 0, 0);
+      if (gl.checkFramebufferStatus(gl.FRAMEBUFFER) === gl.FRAMEBUFFER_COMPLETE) return ts;
+      ts.forEach((t) => gl.deleteTexture(t));
+    }
+    throw new Error("This device's graphics chip can't store the AI model's intermediate results (no float render targets).");
+  }
+  setWeights(w) {
+    const gl = this.gl, A = this.align;
+    let total = 0;
+    this.layers = w.layers.map((L) => {
+      const block = L.ni * 9 * 64, stride = Math.ceil(block / A) * A, groups = [];
+      for (let o = 0; o < L.no; o++) { groups.push({ off: total, size: block }); total += stride; }
+      return { ...L, groups };
+    });
+    const buf = new Float32Array(total / 4), d = w.data;
+    for (const L of this.layers) {
+      const per = L.ni * 9 * 16, wlen = L.no * per;
+      L.groups.forEach((g, o) => {
+        buf.set(d.subarray(L.offset + o * per, L.offset + (o + 1) * per), g.off / 4);
+        g.bias = d.slice(L.offset + wlen + 4 * o, L.offset + wlen + 4 * o + 4);
+        g.alpha = L.act ? d.slice(L.offset + wlen + 4 * L.no + 4 * o, L.offset + wlen + 4 * L.no + 4 * o + 4) : new Float32Array(4);
+      });
+    }
+    gl.bindBuffer(gl.UNIFORM_BUFFER, this.ubo); gl.bufferData(gl.UNIFORM_BUFFER, buf, gl.STATIC_DRAW);
+  }
+  runTile(rgba, rw, rh) {
+    const gl = this.gl;
+    gl.bindVertexArray(this.vao);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, null);
+    gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, this.inTex);
+    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+    gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, rw, rh, gl.RGBA, gl.UNSIGNED_BYTE, rgba);
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.fbo);
+    gl.viewport(0, 0, rw, rh);
+    let dst = 0;
+    this.layers.forEach((L, li) => {
+      const pr = li === 0 ? this.progImg : this.progArr;
+      gl.useProgram(pr.p);
+      gl.uniform1i(pr.u.src, 0); gl.uniform2i(pr.u.size, rw, rh); gl.uniform1i(pr.u.act, L.act ? 1 : 0);
+      if (li > 0) gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.arr[1 - dst]);
+      L.groups.forEach((g, o) => {
+        gl.framebufferTextureLayer(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, this.arr[dst], 0, o);
+        gl.bindBufferRange(gl.UNIFORM_BUFFER, 0, this.ubo, g.off, g.size);
+        gl.uniform4fv(pr.u.bias, g.bias); gl.uniform4fv(pr.u.alpha, g.alpha);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+      });
+      dst = 1 - dst;
+    });
+    // pixel shuffle + nearest-neighbour skip connection
+    gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, this.outTex, 0);
+    gl.viewport(0, 0, 4 * rw, 4 * rh);
+    gl.useProgram(this.progShuf.p);
+    gl.bindTexture(gl.TEXTURE_2D_ARRAY, this.arr[1 - dst]); gl.uniform1i(this.progShuf.u.conv, 0);
+    gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, this.inTex); gl.uniform1i(this.progShuf.u.img, 1);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+    const n = 16 * rw * rh * 4;
+    gl.readPixels(0, 0, 4 * rw, 4 * rh, gl.RGBA, gl.UNSIGNED_BYTE, this.pixels.subarray(0, n));
+    if (this.lost) throw new Error("The browser paused the graphics chip. Keep this screen open and try again.");
+    return this.pixels.subarray(0, n);
+  }
+  /** Upscale srcCanvas into dstCanvas (any size; the net runs at 4x and is resampled per tile). */
+  async upscale(src, dst, { signal, onTile } = {}) {
+    const W = src.width, H = src.height, sx = dst.width / W, sy = dst.height / H, { T, P } = this;
+    const sctx = src.getContext("2d", { willReadFrequently: true });
+    const dctx = dst.getContext("2d");
+    dctx.imageSmoothingEnabled = true; dctx.imageSmoothingQuality = "high";
+    const tiles = Math.ceil(W / T) * Math.ceil(H / T);
+    let done = 0;
+    for (let y0 = 0; y0 < H; y0 += T) {
+      for (let x0 = 0; x0 < W; x0 += T) {
+        if (signal?.aborted) throw new DOMException("Cancelled", "AbortError");
+        const x1 = Math.min(x0 + T, W), y1 = Math.min(y0 + T, H);
+        const px0 = Math.max(0, x0 - P), py0 = Math.max(0, y0 - P), px1 = Math.min(W, x1 + P), py1 = Math.min(H, y1 + P);
+        const rw = px1 - px0, rh = py1 - py0;
+        const id = sctx.getImageData(px0, py0, rw, rh);
+        const out = this.runTile(new Uint8Array(id.data.buffer), rw, rh);
+        this.tctx.putImageData(new ImageData(new Uint8ClampedArray(out.buffer, 0, out.length), 4 * rw, 4 * rh), 0, 0);
+        const dx0 = Math.round(x0 * sx), dy0 = Math.round(y0 * sy), dx1 = Math.round(x1 * sx), dy1 = Math.round(y1 * sy);
+        dctx.drawImage(this.tmp, (x0 - px0) * 4, (y0 - py0) * 4, (x1 - x0) * 4, (y1 - y0) * 4, dx0, dy0, dx1 - dx0, dy1 - dy0);
+        onTile?.(++done, tiles);
+        await sleep(0);
+      }
+    }
+  }
+}
+let engine = null, engineKey = "";
+async function getEngine(model, denoise) {
+  if (!engine || engine.lost) { engine = new Engine(); engineKey = ""; }
+  const key = model === "anime" ? "anime" : `general:${denoise}`;
+  if (key !== engineKey) { engine.setWeights(await modelWeights(model, denoise)); engineKey = key; }
+  return engine;
+}
+
+/* =====================================================================
+   UI state
+   ===================================================================== */
+const state = { file: null, kind: null, w: 320, h: 180, duration: 0, video: null, image: null, result: null, busy: false, abort: null, secPerFrame: 0 };
+const src = document.createElement("canvas");
+const els = {
+  compare: $("#compare"), before: $("#cvBefore"), after: $("#cvAfter"), split: $("#split"),
+  tagBefore: $("#tagBefore"), tagAfter: $("#tagAfter"), caption: $("#stageCaption"), timing: $("#stageTiming"),
+  file: $("#file"), fileinfo: $("#fileinfo"), trimRow: $("#trimRow"), start: $("#start"), len: $("#len"),
+  startOut: $("#startOut"), lenOut: $("#lenOut"), denoise: $("#denoise"), denoiseOut: $("#denoiseOut"),
+  denoiseRow: $("#denoiseRow"), fpsRow: $("#fpsRow"), summary: $("#summary"),
+  btnPreview: $("#btnPreview"), btnRun: $("#btnRun"), btnCancel: $("#btnCancel"),
+  progress: $("#progress"), barFill: $("#barFill"), cntFrames: $("#cntFrames"), cntSpeed: $("#cntSpeed"), cntEta: $("#cntEta"),
+  status: $("#status"), result: $("#result"), outVideo: $("#outVideo"), outImage: $("#outImage"), resultInfo: $("#resultInfo"), btnSave: $("#btnSave"),
+};
+const val = (name) => document.querySelector(`input[name="${name}"]:checked`)?.value;
+const even = (x) => Math.max(2, Math.round(x / 2) * 2);
+const fmtTime = (s) => { s = Math.max(0, Math.round(s)); const m = Math.floor(s / 60); return `${m}:${String(s % 60).padStart(2, "0")}`; };
+const fmtDur = (s) => s < 90 ? `${Math.round(s)} s` : s < 5400 ? `${Math.round(s / 60)} min` : `${(s / 3600).toFixed(1)} h`;
+const fmtMB = (b) => `${(b / 1e6).toFixed(b < 1e7 ? 1 : 0)} MB`;
+
+function setStatus(msg, error = false) { els.status.textContent = msg; els.status.classList.toggle("error", error); }
+
+function outSize(key, w, h) {
+  if (key === "x1") return [even(w), even(h)];
+  if (key === "x2") return [even(w * 2), even(h * 2)];
+  if (key === "x4") return [even(w * 4), even(h * 4)];
+  const target = { p720: 720, p1080: 1080, p2160: 2160 }[key];
+  const k = target / Math.min(w, h);           // short side = target (works for portrait video)
+  return [even(w * k), even(h * k)];
+}
+const fits = ([w, h]) => w <= MAX_OUT_SIDE && h <= MAX_OUT_SIDE && w * h <= MAX_OUT_AREA;
+
+function refreshSettings() {
+  const isVideo = state.kind === "video";
+  els.denoiseRow.hidden = val("model") === "anime";
+  els.fpsRow.hidden = !isVideo;
+  els.trimRow.hidden = !isVideo;
+  els.denoiseOut.textContent = `${Math.round(els.denoise.value * 100)}%`;
+  // disable sizes that are too big for a phone canvas
+  let checkedOk = false;
+  document.querySelectorAll('input[name="size"]').forEach((r) => {
+    r.disabled = !fits(outSize(r.value, state.w, state.h));
+    if (r.checked && !r.disabled) checkedOk = true;
+  });
+  if (!checkedOk) {
+    const first = [...document.querySelectorAll('input[name="size"]')].reverse().find((r) => !r.disabled && r.value.startsWith("x"));
+    if (first) first.checked = true;
+  }
+  const [ow, oh] = outSize(val("size"), state.w, state.h);
+  const lines = [`${state.w}×${state.h} → ${ow}×${oh}`];
+  if (isVideo) {
+    const start = +els.start.value, len = Math.min(+els.len.value, Math.max(0.1, state.duration - start));
+    els.startOut.textContent = fmtTime(start);
+    els.lenOut.textContent = `${Math.round(len)} s`;
+    const frames = Math.max(1, Math.floor(len * +val("fps")));
+    lines.push(`${frames} frames at ${val("fps")} fps`);
+    if (state.secPerFrame) lines.push(`about ${fmtDur(frames * state.secPerFrame * (ow * oh) / (state.lastOutArea || ow * oh))} on this device`);
+    els.btnRun.textContent = "Enhance video";
+  } else {
+    els.btnRun.textContent = state.kind === "image" ? "Enhance photo" : "Enhance";
+  }
+  els.summary.innerHTML = lines.map((l) => `<span>${l}</span>`).join("");
+  els.btnRun.disabled = state.busy || !state.kind;
+  els.btnPreview.disabled = state.busy || !state.kind;
+}
+
+/* ---- compare viewer ---- */
+function setSplit(pct) { els.compare.style.setProperty("--split", `${pct}%`); els.split.value = pct; }
+function showCompare(beforeSource, bw, bh, afterCanvas, caption) {
+  els.before.width = bw; els.before.height = bh;
+  els.before.getContext("2d").drawImage(beforeSource, 0, 0, bw, bh);
+  els.after.width = afterCanvas.width; els.after.height = afterCanvas.height;
+  els.after.getContext("2d").drawImage(afterCanvas, 0, 0);
+  els.compare.style.aspectRatio = `${bw} / ${bh}`;
+  els.tagBefore.innerHTML = `Original<br>${bw}×${bh}`;
+  els.tagAfter.innerHTML = `VideoForge<br>${afterCanvas.width}×${afterCanvas.height}`;
+  els.caption.textContent = caption;
+}
+let dragging = false;
+const splitFromEvent = (e) => { const r = els.compare.getBoundingClientRect(); setSplit(Math.min(100, Math.max(0, ((e.clientX - r.left) / r.width) * 100))); };
+els.compare.addEventListener("pointerdown", (e) => { dragging = true; els.compare.setPointerCapture(e.pointerId); splitFromEvent(e); });
+els.compare.addEventListener("pointermove", (e) => { if (dragging) splitFromEvent(e); });
+els.compare.addEventListener("pointerup", () => { dragging = false; });
+els.compare.addEventListener("pointercancel", () => { dragging = false; });
+els.split.addEventListener("input", () => setSplit(+els.split.value));
+
+async function loadSample() {
+  const load = (s) => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = s; });
+  try {
+    const [b, a] = await Promise.all([load(SAMPLE_BEFORE), load(SAMPLE_AFTER)]);
+    const ac = document.createElement("canvas"); ac.width = a.naturalWidth; ac.height = a.naturalHeight;
+    ac.getContext("2d").drawImage(a, 0, 0);
+    showCompare(b, b.naturalWidth, b.naturalHeight, ac, "Sample frame · drag to compare");
+  } catch { /* sample is decorative */ }
+}
+
+/* ---- file loading ---- */
+els.file.addEventListener("change", async () => {
+  const f = els.file.files?.[0];
+  if (!f) return;
+  resetResult();
+  setStatus("Opening file…");
+  try {
+    if (state.video) { URL.revokeObjectURL(state.video.src); state.video = null; }
+    state.file = f;
+    if (f.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|gif|bmp)$/i.test(f.name)) {
+      const img = new Image(); img.decoding = "async";
+      img.src = URL.createObjectURL(f);
+      await img.decode();
+      state.kind = "image"; state.image = img; state.w = img.naturalWidth; state.h = img.naturalHeight; state.duration = 0;
+      els.fileinfo.textContent = `${f.name} · photo · ${state.w}×${state.h} · ${fmtMB(f.size)}`;
+      src.width = state.w; src.height = state.h; src.getContext("2d", { willReadFrequently: true }).drawImage(img, 0, 0);
+    } else {
+      const v = document.createElement("video");
+      v.muted = true; v.playsInline = true; v.preload = "auto"; v.setAttribute("playsinline", "");
+      v.src = URL.createObjectURL(f);
+      await new Promise((res, rej) => { v.onloadedmetadata = res; v.onerror = () => rej(new Error("This video format can't be opened in this browser.")); });
+      if (!v.videoWidth) throw new Error("This video format can't be opened in this browser.");
+      state.kind = "video"; state.video = v; state.w = v.videoWidth; state.h = v.videoHeight;
+      state.duration = isFinite(v.duration) ? v.duration : 10;
+      els.fileinfo.textContent = `${f.name} · video · ${state.w}×${state.h} · ${fmtTime(state.duration)} · ${fmtMB(f.size)}`;
+      els.start.max = Math.max(0, state.duration - 0.5).toFixed(1); els.start.value = 0;
+      els.len.max = Math.max(1, Math.ceil(Math.min(60, state.duration)));
+      els.len.value = Math.min(5, +els.len.max);
+    }
+    state.secPerFrame = 0;
+    // pick a sensible default size
+    const short = Math.min(state.w, state.h);
+    const pref = short <= 400 ? "x4" : short <= 800 ? "x2" : "x1";
+    const r = document.querySelector(`input[name="size"][value="${pref}"]`); if (r) r.checked = true;
+    refreshSettings();
+    setStatus(state.kind === "video" ? "Tap Preview to check one frame, then Enhance video." : "Tap Preview or Enhance photo.");
+  } catch (e) {
+    state.kind = null; refreshSettings();
+    setStatus(e.message || String(e), true);
+  }
+});
+for (const el of [els.start, els.len, els.denoise]) el.addEventListener("input", refreshSettings);
+document.querySelectorAll('input[name="model"], input[name="size"], input[name="fps"]').forEach((r) => r.addEventListener("change", refreshSettings));
+
+/* ---- video frame access ---- */
+async function seekTo(v, t) {
+  t = Math.min(Math.max(0, t), Math.max(0, v.duration - 0.001));
+  if (Math.abs(v.currentTime - t) < 1e-4 && v.readyState >= 2) return;
+  const frameShown = v.requestVideoFrameCallback ? new Promise((r) => v.requestVideoFrameCallback(() => r())) : null;
+  await new Promise((res, rej) => {
+    const ok = () => { cleanup(); res(); }, bad = () => { cleanup(); rej(new Error("Could not read a frame from this video.")); };
+    const cleanup = () => { v.removeEventListener("seeked", ok); v.removeEventListener("error", bad); };
+    v.addEventListener("seeked", ok); v.addEventListener("error", bad);
+    v.currentTime = t;
+  });
+  if (frameShown) await Promise.race([frameShown, sleep(400)]);
+}
+async function primeVideo(v) {   // iOS decodes frames only after a play() from a tap
+  try { await v.play(); v.pause(); } catch { /* fine on most browsers */ }
+}
+function drawSource(source) {
+  src.width = state.w; src.height = state.h;
+  src.getContext("2d", { willReadFrequently: true }).drawImage(source, 0, 0, state.w, state.h);
+}
+
+/* ---- busy / progress ---- */
+function setBusy(b) {
+  state.busy = b;
+  els.progress.hidden = !b;
+  els.file.disabled = b;
+  refreshSettings();
+}
+function progress(done, total, started, unit) {
+  els.barFill.style.width = `${(100 * done) / total}%`;
+  els.cntFrames.textContent = `${unit} ${done} / ${total}`;
+  const el = (performance.now() - started) / 1000;
+  if (done > 0) {
+    const per = el / done;
+    els.cntSpeed.textContent = `${per.toFixed(1)} s per ${unit.toLowerCase()}`;
+    els.cntEta.textContent = `${fmtDur(per * (total - done))} left`;
+  } else { els.cntSpeed.textContent = ""; els.cntEta.textContent = "Starting"; }
+}
+let wakeLock = null;
+async function keepAwake(on) {
+  try {
+    if (on && navigator.wakeLock) wakeLock = await navigator.wakeLock.request("screen");
+    else if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+  } catch { /* optional */ }
+}
+els.btnCancel.addEventListener("click", () => state.abort?.abort());
+
+/* ---- preview one frame ---- */
+els.btnPreview.addEventListener("click", async () => {
+  if (state.busy || !state.kind) return;
+  setBusy(true); resetResult(); state.abort = new AbortController();
+  try {
+    setStatus("Loading the AI model…");
+    const model = val("model"), denoise = +els.denoise.value;
+    const eng = await getEngine(model, denoise);
+    if (state.kind === "video") { await primeVideo(state.video); await seekTo(state.video, +els.start.value); drawSource(state.video); }
+    else drawSource(state.image);
+    const [ow, oh] = outSize(val("size"), state.w, state.h);
+    const out = document.createElement("canvas"); out.width = ow; out.height = oh;
+    setStatus("Enhancing one frame…");
+    const t0 = performance.now();
+    await eng.upscale(src, out, { signal: state.abort.signal, onTile: (d, t) => progress(d, t, t0, "Tile") });
+    const secs = (performance.now() - t0) / 1000;
+    state.secPerFrame = secs; state.lastOutArea = ow * oh;
+    showCompare(src, state.w, state.h, out, state.kind === "video" ? `Frame at ${fmtTime(+els.start.value)} · drag to compare` : "Your photo · drag to compare");
+    els.timing.textContent = `${secs.toFixed(1)} s per frame`;
+    setStatus("Preview ready. Drag the divider on the image to compare.");
+    els.compare.scrollIntoView({ behavior: "smooth", block: "center" });
+  } catch (e) {
+    setStatus(e.name === "AbortError" ? "Cancelled." : e.message || String(e), e.name !== "AbortError");
+  } finally { setBusy(false); }
+});
+
+/* ---- full run ---- */
+els.btnRun.addEventListener("click", async () => {
+  if (state.busy || !state.kind) return;
+  setBusy(true); resetResult(); state.abort = new AbortController();
+  await keepAwake(true);
+  try {
+    if (state.kind === "image") await runImage(); else await runVideo();
+  } catch (e) {
+    setStatus(e.name === "AbortError" ? "Cancelled." : e.message || String(e), e.name !== "AbortError");
+  } finally { setBusy(false); keepAwake(false); }
+});
+
+async function runImage() {
+  setStatus("Loading the AI model…");
+  const eng = await getEngine(val("model"), +els.denoise.value);
+  drawSource(state.image);
+  const [ow, oh] = outSize(val("size"), state.w, state.h);
+  const out = document.createElement("canvas"); out.width = ow; out.height = oh;
+  const t0 = performance.now();
+  setStatus("Enhancing photo…");
+  await eng.upscale(src, out, { signal: state.abort.signal, onTile: (d, t) => progress(d, t, t0, "Tile") });
+  showCompare(src, state.w, state.h, out, "Your photo · drag to compare");
+  const blob = await new Promise((r) => out.toBlob(r, "image/png"));
+  const name = state.file.name.replace(/\.[^.]+$/, "") + "-videoforge.png";
+  showResult({ blob, name, kind: "image", info: `${ow}×${oh} PNG · ${fmtMB(blob.size)} · ${((performance.now() - t0) / 1000).toFixed(0)} s` });
+}
+
+async function pickVideoEncoder(w, h, fps) {
+  if (!window.VideoEncoder) throw new Error("Saving video needs a newer browser (iPhone: iOS 16.4 or later; Android: current Chrome). Photos still work.");
+  const bitrate = Math.round(Math.min(50e6, Math.max(2e6, w * h * fps * 0.12)));
+  const cands = [["avc1.640033", "avc"], ["avc1.4d0033", "avc"], ["avc1.42003e", "avc"], ["avc1.640028", "avc"], ["vp09.00.51.08", "vp9"], ["vp09.00.41.08", "vp9"]];
+  for (const [codec, mux] of cands) {
+    const cfg = { codec, width: w, height: h, bitrate, framerate: fps, ...(mux === "avc" ? { avc: { format: "avc" } } : {}) };
+    try { const s = await VideoEncoder.isConfigSupported(cfg); if (s.supported) return { cfg: s.config || cfg, mux }; } catch { /* next */ }
+  }
+  throw new Error(`This device can't encode ${w}×${h} video. Pick a smaller output size.`);
+}
+async function prepareAudio(file, start, dur) {
+  if (!window.AudioEncoder || file.size > 400e6) return null;
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    const ctx = new AC();
+    const buf = await ctx.decodeAudioData(await file.arrayBuffer());
+    ctx.close?.();
+    const channels = Math.min(2, buf.numberOfChannels), sr = buf.sampleRate;
+    for (const [codec, mux] of [["mp4a.40.2", "aac"], ["opus", "opus"]]) {
+      const cfg = { codec, sampleRate: sr, numberOfChannels: channels, bitrate: 128000 };
+      const s = await AudioEncoder.isConfigSupported(cfg).catch(() => ({ supported: false }));
+      if (s.supported) return { buf, channels, sr, cfg, mux, start, dur };
+    }
+  } catch { /* no audio track or not decodable */ }
+  return null;
+}
+async function encodeAudio(a, muxer) {
+  let err = null;
+  const enc = new AudioEncoder({ output: (c, m) => muxer.addAudioChunk(c, m), error: (e) => { err = e; } });
+  enc.configure(a.cfg);
+  const s0 = Math.floor(a.start * a.sr), s1 = Math.min(a.buf.length, Math.floor((a.start + a.dur) * a.sr)), CH = 4096;
+  const chans = [...Array(a.channels)].map((_, c) => a.buf.getChannelData(c));
+  for (let s = s0; s < s1; s += CH) {
+    const n = Math.min(CH, s1 - s), data = new Float32Array(n * a.channels);
+    chans.forEach((ch, c) => data.set(ch.subarray(s, s + n), c * n));
+    const ad = new AudioData({ format: "f32-planar", sampleRate: a.sr, numberOfFrames: n, numberOfChannels: a.channels, timestamp: Math.round(((s - s0) / a.sr) * 1e6), data });
+    enc.encode(ad); ad.close();
+    if (err) throw err;
+  }
+  await enc.flush(); enc.close();
+}
+
+async function runVideo() {
+  const v = state.video, fps = +val("fps");
+  const start = +els.start.value, len = Math.min(+els.len.value, Math.max(0.1, state.duration - start));
+  const total = Math.max(1, Math.floor(len * fps));
+  const [ow, oh] = outSize(val("size"), state.w, state.h);
+  if (!window.Mp4Muxer) throw new Error("The video saving library didn't load. Check your connection and reload the page.");
+  setStatus("Checking what this device can encode…");
+  const venc = await pickVideoEncoder(ow, oh, fps);
+  setStatus("Loading the AI model and audio…");
+  const [eng, audio] = await Promise.all([getEngine(val("model"), +els.denoise.value), prepareAudio(state.file, start, len)]);
+  const muxer = new Mp4Muxer.Muxer({
+    target: new Mp4Muxer.ArrayBufferTarget(),
+    video: { codec: venc.mux, width: ow, height: oh, frameRate: fps },
+    audio: audio ? { codec: audio.mux, numberOfChannels: audio.channels, sampleRate: audio.sr } : undefined,
+    fastStart: "in-memory", firstTimestampBehavior: "offset",
+  });
+  let encErr = null;
+  const enc = new VideoEncoder({ output: (c, m) => muxer.addVideoChunk(c, m), error: (e) => { encErr = e; } });
+  enc.configure(venc.cfg);
+  const out = document.createElement("canvas"); out.width = ow; out.height = oh;
+  await primeVideo(v);
+  setStatus("Enhancing video. Keep this screen open.");
+  const t0 = performance.now();
+  try {
+    for (let i = 0; i < total; i++) {
+      if (state.abort.signal.aborted) throw new DOMException("Cancelled", "AbortError");
+      await seekTo(v, start + (i + 0.5) / fps);
+      drawSource(v);
+      await eng.upscale(src, out, { signal: state.abort.signal });
+      const frame = new VideoFrame(out, { timestamp: Math.round((i * 1e6) / fps), duration: Math.round(1e6 / fps) });
+      enc.encode(frame, { keyFrame: i % Math.round(fps * 2) === 0 });
+      frame.close();
+      if (encErr) throw encErr;
+      while (enc.encodeQueueSize > 2) await sleep(5);
+      progress(i + 1, total, t0, "Frame");
+      if (i === 0) showCompare(src, state.w, state.h, out, `Frame at ${fmtTime(start)} · drag to compare`);
+    }
+    await enc.flush();
+  } finally { if (enc.state !== "closed") enc.close(); }
+  if (encErr) throw encErr;
+  let audioNote = "";
+  if (audio) { setStatus("Adding sound…"); try { await encodeAudio(audio, muxer); audioNote = " · with sound"; } catch { audioNote = " · sound could not be added"; } }
+  else audioNote = " · no sound (this browser can't encode it, or the clip has none)";
+  muxer.finalize();
+  const blob = new Blob([muxer.target.buffer], { type: "video/mp4" });
+  const secs = (performance.now() - t0) / 1000;
+  const name = state.file.name.replace(/\.[^.]+$/, "") + "-videoforge.mp4";
+  showResult({ blob, name, kind: "video", info: `${ow}×${oh} · ${fps} fps · ${total} frames · ${fmtMB(blob.size)} · took ${fmtDur(secs)}${audioNote}` });
+}
+
+/* ---- result + save ---- */
+function resetResult() {
+  if (state.result?.url) URL.revokeObjectURL(state.result.url);
+  state.result = null; els.result.hidden = true;
+  els.outVideo.removeAttribute("src"); els.outVideo.hidden = true; els.outImage.hidden = true;
+}
+function showResult(r) {
+  r.url = URL.createObjectURL(r.blob);
+  state.result = r;
+  els.outVideo.hidden = r.kind !== "video"; els.outImage.hidden = r.kind !== "image";
+  if (r.kind === "video") els.outVideo.src = r.url; else els.outImage.src = r.url;
+  els.resultInfo.textContent = `${r.name} · ${r.info}`;
+  els.btnSave.textContent = r.kind === "video" ? "Save video" : "Save photo";
+  els.result.hidden = false;
+  setStatus("Done. Tap Save to keep it.");
+  els.result.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+let downloads = null;
+(async () => { try { downloads = await window.claude?.use?.("downloads"); } catch { downloads = null; } })();
+els.btnSave.addEventListener("click", async () => {
+  const r = state.result; if (!r) return;
+  if (downloads) {
+    try { await downloads.save({ filename: r.name, data: r.blob }); setStatus("Saved."); }
+    catch (e) {
+      const msg = { declined: "Not saved.", rate_limited: "A save is already in progress. Try again in a moment.", too_large: "This file is too large to save here. Try a shorter clip or smaller size." }[e?.code];
+      setStatus(msg || "Saving isn't available here. Press and hold the result to save it instead.", !msg || e?.code !== "declined");
+    }
+    return;
+  }
+  const a = document.createElement("a"); a.href = r.url; a.download = r.name; document.body.append(a); a.click(); a.remove();
+});
+
+/* ---- start ---- */
+setSplit(50);
+loadSample();
+refreshSettings();
+els.btnPreview.disabled = els.btnRun.disabled = true;
+window.__vf = { Engine, modelWeights, outSize };
+</script>

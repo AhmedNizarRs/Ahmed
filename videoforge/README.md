@@ -28,6 +28,15 @@ against the original versus 31.5 dB for bicubic. Detail that never reached
 
 ![Web UI](docs/ui.png)
 
+## On your phone
+
+`web/` contains a version that runs entirely in the phone's browser on its own
+GPU (WebGL 2), with no install and no upload. It does AI upscaling and noise
+removal for photos and videos and saves MP4/PNG. `python web/export_weights.py`
+packs the weights, and `python web/build.py` writes `web/index.html`. Publish
+that file with `web/models/*.json` beside it. The engine reproduces PyTorch's
+output to within 2/255 per pixel.
+
 ## Try it in your browser (free GPU)
 
 [![Open in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/ahmednizarrs/ahmed/blob/claude/vercel-labs-agent-skills-2lgsxj/videoforge/VideoForge.ipynb)
