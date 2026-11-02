@@ -12,7 +12,8 @@ from typing import Callable
 import numpy as np
 
 from .enhance import Interpolator, Upscaler
-from .video import VideoInfo, VideoWriter, probe, read_frames, stabilize_transforms
+from .video import (VideoInfo, VideoWriter, filter_path, probe, read_frames,
+                    stabilize_transforms)
 
 Progress = Callable[[int, int, str], None]
 
@@ -93,7 +94,7 @@ def enhance_video(src: str | Path, dst: str | Path, s: Settings,
         progress(0, p["out_frames"], "Analysing camera shake")
         trf = Path(tmpdir.name) / "motion.trf"
         stabilize_transforms(src, trf)
-        vf.append(f"vidstabtransform=input={trf}:smoothing=20:zoom=0:optzoom=1")
+        vf.append(f"vidstabtransform=input={filter_path(trf)}:smoothing=20:zoom=0:optzoom=1")
     if s.deflicker:
         vf.append("deflicker=size=5:mode=am")
     if s.pre_denoise > 0:

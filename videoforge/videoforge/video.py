@@ -50,11 +50,21 @@ def probe(path: str | Path) -> VideoInfo:
                      any(s["codec_type"] == "audio" for s in data["streams"]))
 
 
+def filter_path(p: str | Path) -> str:
+    """Quote a file path for use inside an ffmpeg filter argument.
+
+    Windows paths ("C:\\x\\y") break filter syntax: backslashes are escapes and
+    the drive colon separates options. Use forward slashes and escape colons.
+    """
+    s = str(Path(p).resolve()).replace("\\", "/").replace(":", "\\:").replace("'", "\\'")
+    return f"'{s}'"
+
+
 def stabilize_transforms(path: str | Path, trf: Path, shakiness: int = 5) -> None:
     """First vid.stab pass: analyse camera motion into a .trf file."""
     subprocess.run(
         ["ffmpeg", "-v", "error", "-y", "-i", str(path),
-         "-vf", f"vidstabdetect=shakiness={shakiness}:accuracy=15:result={trf}",
+         "-vf", f"vidstabdetect=shakiness={shakiness}:accuracy=15:result={filter_path(trf)}",
          "-f", "null", "-"], check=True)
 
 

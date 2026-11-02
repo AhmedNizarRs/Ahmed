@@ -43,6 +43,23 @@ pip install -r requirements.txt
 # NVIDIA GPU: install the CUDA build of torch from https://pytorch.org first
 ```
 
+### Windows
+
+Run every tool through `python -m` instead of the `.exe` launchers, which
+some security policies block:
+
+```bat
+winget install Gyan.FFmpeg
+python -m pip install -r requirements.txt
+:: NVIDIA GPU (much faster): replace the CPU build of torch with the CUDA one
+python -m pip install --force-reinstall torch --index-url https://download.pytorch.org/whl/cu128
+python app.py
+```
+
+Open a new Command Prompt after installing ffmpeg so it is on `PATH`. If
+`pip.exe` reports *"blocked by your organization's Device Guard policy"*, the
+PC is centrally managed. Ask whoever manages it, or use the Colab link above.
+
 ## Command line
 
 ```bash
