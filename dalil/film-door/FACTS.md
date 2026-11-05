@@ -8,4 +8,4 @@
 | 4 | "When the lights fail, it still speaks." | dalil/site/index.html (film description) | "When the lights fail, it still speaks." | 2026-11-05 |
 | 5 | Tagline "Make the existing path speak." | dalil/site/index.html (hero) | "Make the existing path speak." | 2026-11-05 |
 
-"Room 204" is an example label, not a claim. No numbers, prices or market figures appear on screen.
+"Room 15" (as on the CAD prototype) is an example label, not a claim. No numbers, prices or market figures appear on screen.

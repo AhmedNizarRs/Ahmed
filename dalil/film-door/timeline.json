@@ -47,7 +47,7 @@
     {
      "what": "hook line",
      "from": 0.0,
-     "to": 3.25
+     "to": 3.0
     }
    ],
    "transitionOut": {
@@ -78,7 +78,7 @@
     },
     {
      "what": "your hand is on the handle",
-     "from": 6.75,
+     "from": 7.0,
      "to": 9.9
     }
    ],
@@ -151,7 +151,7 @@
      "to": 19.25
     },
     {
-     "what": "room 204",
+     "what": "room 15",
      "from": 16.75,
      "to": 19.25
     }
@@ -256,7 +256,7 @@
    "id": "hook",
    "text": "A door handle you can read.",
    "from": 0.0,
-   "to": 3.25,
+   "to": 3.0,
    "role": "hook",
    "px": 104
   },
@@ -264,7 +264,7 @@
    "id": "url0",
    "text": "dalil-team.com",
    "from": 0.0,
-   "to": 3.25,
+   "to": 3.0,
    "role": "cta",
    "px": 48
   },
@@ -279,7 +279,7 @@
   {
    "id": "hand",
    "text": "Your hand is on the handle.",
-   "from": 6.75,
+   "from": 7.0,
    "to": 9.9,
    "role": null,
    "px": 72
@@ -310,7 +310,7 @@
   },
   {
    "id": "room",
-   "text": "Room 204",
+   "text": "Room 15",
    "from": 16.75,
    "to": 19.25,
    "role": null,
