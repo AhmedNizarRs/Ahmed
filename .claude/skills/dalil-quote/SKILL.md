@@ -26,7 +26,10 @@ python3 .claude/skills/dalil-quote/quote.py --input building.json
  "floors": 4, "staircases": 2, "clips": 48, "door_tags": 30, "care_plan": true}
 ```
 
-   The script reads `dalil-hq/data/pricing.json`. If a needed rate is `null`, it stops and lists what's missing. **Do not guess the rate.** Ask a founder to fill it in `pricing.json`, or give only an *indicative* range from the benchmarks, clearly labelled "Indicative, to be confirmed after the site visit."
+   The script reads `dalil-hq/data/pricing.json`:
+   - Until a per-floor rate is set, it prices **AED 130 per point** (each clip or door tag), the price on the DALIL website. An average building is about 138 points (AED 18k); a hospital about 669 (AED 87k). Use these to sanity-check.
+   - Once `per_floor_aed` is set, it switches to per-floor pricing.
+   - The yearly care-plan price is not set yet: show it as "to confirm". **Do not guess it.**
 
 3. **Write the proposal** (save to `dalil-hq/departments/sales/proposals/<client>-<YYYY-MM-DD>.md`):
    1. The problem in their building (one paragraph, specific to their type)

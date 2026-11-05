@@ -2,7 +2,8 @@
 """DALIL quote calculator.
 
 Reads rates from dalil-hq/data/pricing.json and a building description (JSON),
-then prints a price table. Refuses to give a final price while a needed rate is unset.
+then prints a price table. Uses the per-floor rate when set, otherwise AED 130 per point
+(clip or door tag), the price on the DALIL website.
 
 Usage:
     python3 .claude/skills/dalil-quote/quote.py --input building.json
@@ -44,45 +45,42 @@ def main():
     r = cfg["rates"]
     mult = cfg["multipliers_by_building_type"].get(b["type"], 1.0)
 
-    missing = []
-    if r.get("per_floor_aed") is None:
-        missing.append("rates.per_floor_aed")
-    if b.get("door_tags") and r.get("door_tag_unit_aed") is None:
-        missing.append("rates.door_tag_unit_aed")
-    if b.get("care_plan") and r.get("care_plan_per_year_aed") is None:
-        missing.append("rates.care_plan_per_year_aed")
-
-    if missing:
-        bm = cfg["benchmarks"]
-        print("Cannot produce a final quote. These rates are not set in dalil-hq/data/pricing.json:")
-        for m in missing:
-            print(f"  - {m}")
-        print()
-        print("Indicative benchmarks only (label as 'to be confirmed after the site visit'):")
-        print(f"  - Average building, everything included: {aed(bm['average_building_aed'])}")
-        print(f"  - Hospital, installed: {aed(bm['hospital_installed_aed'])} "
-              f"(imported wall signs: {aed(bm['hospital_imported_wall_signs_aed'][0])}"
-              f"–{aed(bm['hospital_imported_wall_signs_aed'][1])} plus installation)")
-        sys.exit(2)
-
-    lines = [("Floors", b["floors"], r["per_floor_aed"] * mult)]
-    # Clips are included in the per-floor price; listed for scope only.
-    if b.get("door_tags"):
-        lines.append(("Door tags", b["door_tags"], r["door_tag_unit_aed"]))
+    bm = cfg["benchmarks"]
+    per_floor = r.get("per_floor_aed")
+    lines = []
+    if per_floor is not None:
+        method = "per floor"
+        lines.append(("Floors", b["floors"], per_floor * mult))
+        if b.get("door_tags"):
+            lines.append(("Door tags", b["door_tags"], r["door_tag_unit_aed"]))
+    else:
+        method = "per point (AED %d each, from the website)" % r["clip_unit_aed"]
+        if not (b.get("clips") or b.get("door_tags")):
+            sys.exit("Per-floor rate not set, so the quote is per point: give --clips and/or --door-tags.\n"
+                     f"Rough guide: an average building is about {bm['implied_points_average_building']} points "
+                     f"(AED {bm['average_building_aed']:,}), a hospital about {bm['implied_points_hospital']}.")
+        if b.get("clips"):
+            lines.append(("Handrail clips", b["clips"], r["clip_unit_aed"] * mult))
+        if b.get("door_tags"):
+            lines.append(("Door tags", b["door_tags"], r["door_tag_unit_aed"] * mult))
     if r.get("site_visit_aed"):
         lines.append(("Site visit and measuring", 1, r["site_visit_aed"]))
 
     subtotal = sum(q * u for _, q, u in lines)
     vat = subtotal * cfg["vat"]["rate"] if cfg["vat"]["registered"] else 0.0
     total = subtotal + vat
-    care = r["care_plan_per_year_aed"] if b.get("care_plan") else None
+    care_rate = r.get("care_plan_per_year_aed")
+    care = care_rate if b.get("care_plan") else None
 
     result = {
         "client": b.get("client", ""), "building": b.get("building", ""), "type": b["type"],
         "lines": [{"item": n, "qty": q, "unit_aed": u, "total_aed": q * u} for n, q, u in lines],
+        "method": method,
+        "floors": b["floors"],
         "clips_in_scope": b.get("clips", 0),
         "subtotal_aed": subtotal, "vat_aed": vat, "total_aed": total,
         "care_plan_per_year_aed": care,
+        "care_plan_requested": bool(b.get("care_plan")),
         "validity_days": cfg["quote_validity_days"],
     }
     if a.json:
@@ -93,16 +91,17 @@ def main():
     print("-" * 60)
     for l in result["lines"]:
         print(f"{l['item']:<28}{l['qty']:>6} x {aed(l['unit_aed']):>12} = {aed(l['total_aed']):>12}")
-    if result["clips_in_scope"]:
+    if per_floor is not None and result["clips_in_scope"]:
         print(f"{'Clips (included)':<28}{result['clips_in_scope']:>6}")
+    print(f"Pricing: {method}. Floors in scope: {b['floors']}")
     print("Included: site visit and measuring, custom-fit clips, installation, accessibility map")
     print("-" * 60)
     print(f"{'Subtotal':<48}{aed(subtotal):>12}")
     if cfg["vat"]["registered"]:
         print(f"{'VAT 5%':<48}{aed(vat):>12}")
     print(f"{'Total':<48}{aed(total):>12}")
-    if care is not None:
-        print(f"{'Yearly care plan (optional)':<48}{aed(care):>12}")
+    if b.get("care_plan"):
+        print(f"{'Yearly care plan (optional)':<48}{aed(care) if care is not None else 'to confirm':>12}")
     print(f"Valid for {result['validity_days']} days. Final price confirmed after the site visit.")
 
 

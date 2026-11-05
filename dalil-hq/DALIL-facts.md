@@ -93,7 +93,8 @@ Positioning: **Cheaper. Faster. No apps, no batteries.** Tone toward competitors
 - A hospital: **AED 87k installed**, against **AED 118k–263k plus installation** for imported wall signs.
 - Included: site visit and measuring, custom-fit clips and door tags, installation, accessibility map.
 - Plus a **yearly care plan**.
-- Per-floor rate, door-tag price and care-plan price: `[TO CONFIRM]` (set them in `dalil-hq/data/pricing.json`).
+- **AED 130 per clip** (website comparison table, against AED 180–400 per wall tactile sign). Quotes use AED 130 per point (clip or door tag) until a per-floor rate is set. Check: 138 points ≈ AED 18k average building; 669 points ≈ AED 87k hospital.
+- Per-floor rate and care-plan price: `[TO CONFIRM]`. Door-tag price assumed AED 130, like a clip: `[TO CONFIRM]`. Set them in `dalil-hq/data/pricing.json`.
 
 ## 7. Roadmap (first 24 months)
 
@@ -133,7 +134,7 @@ Closing line: "Two founders. One city. Every handrail can speak."
 
 ## 11. Open questions (founders to answer)
 
-- [ ] Per-floor price, door-tag price, yearly care-plan price
+- [ ] Per-floor price and yearly care-plan price (and confirm door tags are AED 130 like clips)
 - [ ] Funding ask: amount, instrument, use of funds (kept off the website on purpose)
 - [ ] Company legal setup: licence type, free zone or mainland, date
 - [ ] Month-1 start date of the roadmap

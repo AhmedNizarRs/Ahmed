@@ -1,14 +1,15 @@
 {
-  "_note": "Founders: fill every null. The dalil-quote skill refuses to produce a final quote while a needed rate is null. Benchmarks come from DALIL-facts.md.",
+  "_note": "Prices from the DALIL website: AED 130 per clip (competition table), AED 18k average building, AED 87k hospital. Quotes use AED 130 per point (clip or door tag) until a per-floor rate is set. Founders: set per_floor_aed to switch to per-floor pricing, and set care_plan_per_year_aed.",
   "currency": "AED",
   "rates": {
     "per_floor_aed": null,
     "clip_unit_aed": 130,
-    "door_tag_unit_aed": null,
+    "door_tag_unit_aed": 130,
     "site_visit_aed": 0,
     "installation_included": true,
     "accessibility_map_included": true,
-    "care_plan_per_year_aed": null
+    "care_plan_per_year_aed": null,
+    "_door_tag_note": "Assumed equal to the clip price: the website's AED 130 is compared per sign against wall signs (AED 180-400). Confirm."
   },
   "multipliers_by_building_type": {
     "tower": 1.0,
@@ -26,8 +27,13 @@
   "benchmarks": {
     "average_building_aed": 18000,
     "hospital_installed_aed": 87000,
-    "hospital_imported_wall_signs_aed": [118000, 263000],
-    "gross_margin": 0.58
+    "hospital_imported_wall_signs_aed": [
+      118000,
+      263000
+    ],
+    "gross_margin": 0.58,
+    "implied_points_average_building": 138,
+    "implied_points_hospital": 669
   },
   "quote_validity_days": 30
 }

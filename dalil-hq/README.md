@@ -36,7 +36,7 @@ You can also name the department: "Ask DALIL Sales to…"
 
 ## Fill these in first (10 minutes)
 
-- [ ] `data/pricing.json`: per-floor price, door-tag price, care-plan price. The quote calculator won't give a final price until these are set.
+- [ ] `data/pricing.json`: quotes already work at AED 130 per clip or door tag. Add the per-floor price (if you want per-floor quotes) and the yearly care-plan price.
 - [ ] `DALIL-facts.md` section 11: funding ask, company setup, Month-1 start date, IP status, current leads.
 - [ ] `departments/chief-of-staff/okrs.md`: check the goals and dates are right.
 
