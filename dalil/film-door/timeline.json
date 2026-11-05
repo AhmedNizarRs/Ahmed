@@ -1,0 +1,349 @@
+{
+ "meta": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 30,
+  "dur": 29.3333,
+  "clock": "music",
+  "register": "clean",
+  "loop": false,
+  "bpm": 90,
+  "meter": "4/4",
+  "bars": 11,
+  "t0": 0.0,
+  "songOffset": null,
+  "grid": "designed",
+  "hookWaiver": null,
+  "vo": {
+   "status": "RENDERED",
+   "file": null,
+   "rateWps": null
+  }
+ },
+ "objects": [
+  {
+   "id": "handle",
+   "role": "constant",
+   "what": "the door's lever handle"
+  },
+  {
+   "id": "clip",
+   "role": "hero",
+   "what": "the yellow DALIL door clip"
+  }
+ ],
+ "scenes": [
+  {
+   "id": "hook",
+   "start": 0.0,
+   "end": 3.3333,
+   "beats": {
+    "start": 0.0
+   },
+   "cueRef": {
+    "start": "beat 0.00"
+   },
+   "reads": [
+    {
+     "what": "hook line",
+     "from": 0.0,
+     "to": 3.25
+    }
+   ],
+   "transitionOut": {
+    "type": "cut",
+    "dur": 0.0,
+    "why": "next step: where the room information lives today"
+   }
+  },
+  {
+   "id": "problem",
+   "start": 3.3333,
+   "end": 10.0,
+   "beats": {
+    "sign": 3.3333,
+    "pan": 6.3333,
+    "handle": 7.0
+   },
+   "cueRef": {
+    "sign": "beat 5.00",
+    "pan": "beat 9.50",
+    "handle": "beat 10.50"
+   },
+   "reads": [
+    {
+     "what": "the sign is on the wall",
+     "from": 3.45,
+     "to": 6.55
+    },
+    {
+     "what": "your hand is on the handle",
+     "from": 6.75,
+     "to": 9.9
+    }
+   ],
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0.0,
+    "why": "same handle, same camera",
+    "bridge": "handle"
+   }
+  },
+  {
+   "id": "clip",
+   "start": 10.0,
+   "end": 14.0,
+   "beats": {
+    "enter": 10.0,
+    "anticipate": 11.0,
+    "snap": 11.3333,
+    "orbit": 12.0
+   },
+   "cueRef": {
+    "enter": "beat 15.00",
+    "anticipate": "beat 16.50",
+    "snap": "beat 17.00",
+    "orbit": "beat 18.00"
+   },
+   "reads": [
+    {
+     "what": "DALIL clips on",
+     "from": 11.4,
+     "to": 13.9
+    }
+   ],
+   "transitionOut": {
+    "type": "cut",
+    "dur": 0.0,
+    "why": "closer look at what the clip carries",
+    "bridge": "clip"
+   }
+  },
+  {
+   "id": "read",
+   "start": 14.0,
+   "end": 19.3333,
+   "beats": {
+    "numeral": 14.3333,
+    "cell1": 15.3333,
+    "cell2": 15.6667,
+    "cell3": 16.0,
+    "cell4": 16.3333,
+    "room": 16.6667
+   },
+   "cueRef": {
+    "numeral": "beat 21.50",
+    "cell1": "beat 23.00",
+    "cell2": "beat 23.50",
+    "cell3": "beat 24.00",
+    "cell4": "beat 24.50",
+    "room": "beat 25.00"
+   },
+   "reads": [
+    {
+     "what": "raised number",
+     "from": 14.5,
+     "to": 19.25
+    },
+    {
+     "what": "braille",
+     "from": 15.5,
+     "to": 19.25
+    },
+    {
+     "what": "room 204",
+     "from": 16.75,
+     "to": 19.25
+    }
+   ],
+   "transitionOut": {
+    "type": "lights-out",
+    "dur": 0.25,
+    "why": "the turn"
+   }
+  },
+  {
+   "id": "dark",
+   "start": 19.3333,
+   "end": 20.6667,
+   "beats": {
+    "out": 19.3333
+   },
+   "cueRef": {
+    "out": "beat 29.00"
+   },
+   "reads": [],
+   "transitionOut": {
+    "type": "glow-up",
+    "dur": 0.4,
+    "why": "payoff",
+    "bridge": "clip"
+   }
+  },
+  {
+   "id": "glow",
+   "start": 20.6667,
+   "end": 24.6667,
+   "beats": {
+    "hero": 20.6667
+   },
+   "cueRef": {
+    "hero": "beat 31.00"
+   },
+   "reads": [
+    {
+     "what": "it still speaks",
+     "from": 21.0,
+     "to": 24.4
+    }
+   ],
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0.0,
+    "why": "pull back to show scale",
+    "bridge": "clip"
+   }
+  },
+  {
+   "id": "end",
+   "start": 24.6667,
+   "end": 29.3333,
+   "beats": {
+    "pull": 24.6667,
+    "card": 26.0,
+    "url": 26.6667
+   },
+   "cueRef": {
+    "pull": "beat 37.00",
+    "card": "beat 39.00",
+    "url": "beat 40.00"
+   },
+   "reads": [
+    {
+     "what": "every door reads",
+     "from": 25.0,
+     "to": 26.0
+    },
+    {
+     "what": "tagline and URL",
+     "from": 26.1,
+     "to": 29.25
+    }
+   ],
+   "transitionOut": {
+    "type": "end",
+    "dur": 0.0,
+    "why": "end"
+   }
+  }
+ ],
+ "cuts": [
+  3.3333,
+  14.0
+ ],
+ "hero": {
+  "t": 20.6667,
+  "what": "the clip glows green in the dark"
+ },
+ "silences": [
+  {
+   "from": 19.45,
+   "to": 20.6
+  }
+ ],
+ "texts": [
+  {
+   "id": "hook",
+   "text": "A door handle you can read.",
+   "from": 0.0,
+   "to": 3.25,
+   "role": "hook",
+   "px": 104
+  },
+  {
+   "id": "url0",
+   "text": "dalil-team.com",
+   "from": 0.0,
+   "to": 3.25,
+   "role": "cta",
+   "px": 48
+  },
+  {
+   "id": "sign",
+   "text": "The room sign is on the wall.",
+   "from": 3.45,
+   "to": 6.55,
+   "role": null,
+   "px": 72
+  },
+  {
+   "id": "hand",
+   "text": "Your hand is on the handle.",
+   "from": 6.75,
+   "to": 9.9,
+   "role": null,
+   "px": 72
+  },
+  {
+   "id": "clips",
+   "text": "DALIL clips on. No tools.",
+   "from": 11.4,
+   "to": 13.9,
+   "role": "term",
+   "px": 84
+  },
+  {
+   "id": "num",
+   "text": "Raised number",
+   "from": 14.5,
+   "to": 19.25,
+   "role": "term",
+   "px": 72
+  },
+  {
+   "id": "braille",
+   "text": "Braille",
+   "from": 15.5,
+   "to": 19.25,
+   "role": "term",
+   "px": 72
+  },
+  {
+   "id": "room",
+   "text": "Room 204",
+   "from": 16.75,
+   "to": 19.25,
+   "role": null,
+   "px": 56
+  },
+  {
+   "id": "still",
+   "text": "When the lights fail, it still speaks.",
+   "from": 21.0,
+   "to": 24.4,
+   "role": null,
+   "px": 84
+  },
+  {
+   "id": "tag",
+   "text": "Make the existing path speak.",
+   "from": 26.1,
+   "to": 29.25,
+   "role": null,
+   "px": 84
+  },
+  {
+   "id": "url",
+   "text": "dalil-team.com",
+   "from": 26.6,
+   "to": 29.25,
+   "role": "cta",
+   "px": 56
+  }
+ ],
+ "terms": [
+  "DALIL",
+  "braille",
+  "raised number"
+ ]
+}
