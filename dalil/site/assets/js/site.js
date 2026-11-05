@@ -13,6 +13,30 @@
   var hasIO = "IntersectionObserver" in window;
   var smoothScrolling = false;
 
+  /* ---------- Analytics: anonymous events sent to PostHog (see analytics.js). Never sends form contents. ---------- */
+  var tracked = {};
+  function track(name, props, opts) {
+    try { if (window.posthog && window.posthog.capture) window.posthog.capture(name, props || {}, opts); } catch (e) { /* analytics must never break the page */ }
+  }
+  function trackOnce(name, props) {
+    var key = name + (props ? JSON.stringify(props) : "");
+    if (tracked[key]) return;
+    tracked[key] = true;
+    track(name, props);
+  }
+
+  // Which sections people actually reach: one event per section per visit.
+  if (hasIO) {
+    var sectionSeen = new IntersectionObserver(function (entries) {
+      entries.forEach(function (en) {
+        if (!en.isIntersecting) return;
+        trackOnce("section_viewed", { section: en.target.id });
+        sectionSeen.unobserve(en.target);
+      });
+    }, { threshold: 0.35 });
+    $$("main section[id]").forEach(function (s) { sectionSeen.observe(s); });
+  }
+
   /* ---------- English braille (grade 1), used by the hero and the rail readout ---------- */
   var BRAILLE = { a: "⠁", b: "⠃", c: "⠉", d: "⠙", e: "⠑", f: "⠋", g: "⠛", h: "⠓", i: "⠊", j: "⠚", k: "⠅", l: "⠇", m: "⠍",
     n: "⠝", o: "⠕", p: "⠏", q: "⠟", r: "⠗", s: "⠎", t: "⠞", u: "⠥", v: "⠧", w: "⠺", x: "⠭", y: "⠽", z: "⠵" };
@@ -131,7 +155,10 @@
     if (p && p.catch) p.catch(function () { syncControls(v); });
   }
   function watchVideo(v, threshold) {
-    v.addEventListener("playing", function () { v.classList.add("is-playing"); syncControls(v); });
+    v.addEventListener("playing", function () {
+      v.classList.add("is-playing"); syncControls(v);
+      if (v.id === "film-video") trackOnce("film_started");
+    });
     v.addEventListener("pause", function () { syncControls(v); });
     v.addEventListener("volumechange", function () { syncControls(v); });
     syncControls(v);
@@ -148,6 +175,7 @@
     if (!v) return;
     if (btn.classList.contains("vid-sound")) {
       v.muted = !v.muted;
+      if (!v.muted) trackOnce("video_sound_on", { video: v.id });
       if (!v.muted && v.paused) { v.dataset.userPaused = "false"; playVideo(v); }
     } else if (v.paused) {
       v.dataset.userPaused = "false";
@@ -214,6 +242,7 @@
       return ((e.clientX - r.left) / r.width) * 100;
     }
     function stopAuto() {
+      if (!interacted) trackOnce("rail_demo_used");
       interacted = true;
       rail.classList.remove("is-idle");
       if (autoplay) { window.cancelAnimationFrame(autoplay); autoplay = null; }
@@ -266,6 +295,7 @@
       ribKeys.forEach(function (k) { k.setAttribute("aria-pressed", "false"); });
       key.setAttribute("aria-pressed", on ? "true" : "false");
       var kind = key.getAttribute("data-kind");
+      if (on) track("rib_filter_selected", { kind: kind });
       modules.classList.toggle("is-filtered", on);
       $$(".module", modules).forEach(function (m) {
         m.classList.toggle("is-match", on && m.getAttribute("data-kind") === kind);
@@ -283,6 +313,7 @@
       var off = lightsBtn.getAttribute("aria-pressed") !== "true";
       lightsBtn.setAttribute("aria-pressed", off ? "true" : "false");
       sight.setAttribute("data-lights", off ? "off" : "on");
+      track("lights_toggled", { lights: off ? "off" : "on" });
       label.textContent = off ? "Turn the lights on" : "Turn the lights off";
       if (off) {
         if (reduceMotion) {
@@ -477,6 +508,7 @@
 
   function initForm(form) {
     form.noValidate = true; // We validate in JS; without JS the browser's own validation runs.
+    form.addEventListener("focusin", function () { trackOnce("waitlist_form_started"); });
     var summary = $("#error-summary");
     var summaryList = $("#error-summary-list");
     var status = $("#form-status");
@@ -569,7 +601,12 @@
       status.classList.remove("is-error");
       rules.forEach(function (r) { touchedFields[r.id] = true; });
       var failed = rules.filter(function (rule) { return !validate(rule); });
-      if (failed.length) { renderSummary(failed); return; }
+      if (failed.length) {
+        // Field names only, never what was typed.
+        track("waitlist_validation_failed", { fields: failed.map(function (r) { return r.id.replace(/^f-/, ""); }) });
+        renderSummary(failed);
+        return;
+      }
       summary.hidden = true;
       collectInterests();
       setBusy(true);
@@ -588,9 +625,13 @@
         clearTimeout(timer);
         if (!res.ok) throw new Error("HTTP " + res.status);
         status.textContent = "Sent. Taking you to the next page.";
+        // Interest choices and arrival source only; no name, email, phone or organisation.
+        track("waitlist_submitted", { interests: interestsHidden.value, src: $("#f-src") ? $("#f-src").value : "direct" },
+          { send_instantly: true, transport: "sendBeacon" });
         window.location.assign("/thanks/");
       }).catch(function () {
         clearTimeout(timer);
+        track("waitlist_submit_failed");
         setBusy(false);
         status.classList.add("is-error");
         status.textContent = "We couldn’t send your details. Check your connection and try again, or email dalilwayfinding@gmail.com.";
