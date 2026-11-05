@@ -1,0 +1,33 @@
+{
+  "_note": "Founders: fill every null. The dalil-quote skill refuses to produce a final quote while a needed rate is null. Benchmarks come from DALIL-facts.md.",
+  "currency": "AED",
+  "rates": {
+    "per_floor_aed": null,
+    "clip_unit_aed": 130,
+    "door_tag_unit_aed": null,
+    "site_visit_aed": 0,
+    "installation_included": true,
+    "accessibility_map_included": true,
+    "care_plan_per_year_aed": null
+  },
+  "multipliers_by_building_type": {
+    "tower": 1.0,
+    "education": 1.0,
+    "hotel": 1.0,
+    "healthcare": 1.0,
+    "government": 1.0,
+    "mall_airport_metro": 1.0
+  },
+  "vat": {
+    "rate": 0.05,
+    "registered": false,
+    "_note": "UAE VAT is 5%. Only charge it once DALIL is VAT-registered (confirm with the accountant)."
+  },
+  "benchmarks": {
+    "average_building_aed": 18000,
+    "hospital_installed_aed": 87000,
+    "hospital_imported_wall_signs_aed": [118000, 263000],
+    "gross_margin": 0.58
+  },
+  "quote_validity_days": 30
+}
