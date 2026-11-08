@@ -45,13 +45,14 @@ Each item names the place in the pack, or the DALIL department, that tests it.
 - [ ] A named decision-maker and a signed pilot or letter of intent, starting with the University of Sharjah. (`dalil-sales`)
 - [ ] The buyer's trigger written down: the regulation, tender or mandate that makes a building buy this year. (`dalil-sales`, `/founder-competitors`)
 - [ ] Whether DALIL replaces wall signs under local code or comes on top of them. (`dalil-product`, with a professional's sign-off)
+  - Partly answered for Dubai: the Dubai Universal Design Code puts braille signage on the door jamb at 1500 mm and asks for English Grade 1 braille, so DALIL looks like an add-on there. Sharjah and the Fire and Life Safety Code still `[TO CONFIRM]`. See `competitors.md` §4d.
 
 **Numbers that check**
 - [ ] Margin rebuilt from real costs: cost per clip, print time, failure rate, site-visit and installation labour. (`/founder-cfo`)
 - [ ] Cost to win one building. (`/founder-cfo`, `/founder-marketing`)
 - [ ] Per-floor rate and care-plan price set. (`/founder-pricing`, `dalil-hq/data/pricing.json`)
 - [ ] Check the year-2 figure against the average building: AED 346k across 22 buildings is about AED 15.7k a building, below the AED 18k average. Is the mix of buildings different, or does one number need updating? (`/founder-cfo`)
-- [ ] Named competitors, what they charge and what their customers complain about, including whether braille on handrails already exists anywhere. (`/founder-competitors`)
+- [x] Named competitors, what they charge and what their customers complain about, including whether braille on handrails already exists anywhere. (`/founder-competitors`, done 2026-11-08: it exists in six countries, in the Gulf and at the Dubai Frame; see `competitors.md`)
 
 **An offer and a moat**
 - [ ] Lead the offer with "found by the hand, works in a blackout, installed in a week", not with price. Add a guarantee the CFO can afford (for example, free replacement under the care plan) and a clear name for the per-floor package. (`/founder-offer`)
