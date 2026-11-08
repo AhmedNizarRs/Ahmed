@@ -347,7 +347,7 @@ gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 function frameOf(k) { // zoom to fit the drawing in ~840 px, drawing centred at screen y 1110
   const d = D[k]; return { c: d.c, z: Math.min(2.1, 840 / (2 * d.r)), ay: 1110, rot: ROLL[k] };
 }
-const WIDE1 = { c: [900, 1700], z: 0.86, ay: 1060, rot: 0 }, WIDE2 = { c: [900, 1600], z: 0.6, ay: 960, rot: 0 };
+const WIDE1 = { c: [900, 1800], z: 0.66, ay: 900, rot: 0 }, WIDE2 = { c: [900, 1600], z: 0.6, ay: 960, rot: 0 };
 function blend(A, B, u, dip) {
   const zl = Math.exp(lerp(Math.log(A.z), Math.log(B.z), u)) * (1 - dip * Math.sin(Math.PI * u));
   return { c: [lerp(A.c[0], B.c[0], u), lerp(A.c[1], B.c[1], u)], z: zl, ay: lerp(A.ay, B.ay, u), rot: lerp(A.rot, B.rot, u) };
