@@ -21,9 +21,10 @@ canvas { position:absolute; left:0; top:0; }
 .lat { font-family:"Jost"; direction:ltr; }
 #t-sub2 { top:500px; color:var(--ink2); font-family:"Plex Arabic"; font-weight:500; }
 #t-price { top:200px; color:var(--gold); font-family:"Jost"; font-weight:500; line-height:1; }
-#t-was { top:410px; color:var(--ink2); text-decoration:line-through; text-decoration-thickness:4px; }
+#t-was { top:410px; color:rgba(239,228,210,0.85); text-decoration:line-through; text-decoration-thickness:4px; }
 #t-name2 { top:495px; color:var(--ink); font-family:"Plex Arabic"; font-weight:500; }
-#t-url { top:1525px; color:var(--ink2); }
+#t-cta1 { top:1335px; }
+#t-url { top:1415px; color:rgba(239,228,210,0.9); }
 </style>
 </head>
 <body>
@@ -47,6 +48,7 @@ const easeInOut = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2
 const easeOut = u => 1 - Math.pow(1 - u, 3);
 const easeIn = u => u * u * u;
 const smooth = u => u * u * (3 - 2 * u);
+const smooth01 = u => smooth(Math.min(1, Math.max(0, u)));
 // constant speed with short accel / decel (a plotter, not a slideshow)
 function cruise(u, k = 0.1) {
   u = clamp(u); const v = 1 / (1 - k);           // peak speed so area = 1
@@ -162,23 +164,29 @@ function buildTess() {
   const tile = 200, segs = [];
   for (let j = 0; j < 16; j++) for (let i = 0; i < 9; i++) {
     const cx = 100 + i * tile, cy = 100 + j * tile;
-    if (Math.hypot(cx - PLAQUE[0], cy - PLAQUE[1]) < PLAQUE_R + 110) continue;
-    if (ORDER.some(k => Math.hypot(cx - D[k].c[0], cy - D[k].c[1]) < D[k].r + 70)) continue;
+    if (Math.hypot(cx - PLAQUE[0], cy - PLAQUE[1]) < PLAQUE_R + 60) continue;
+    if (ORDER.some(k => Math.hypot(cx - D[k].c[0], cy - D[k].c[1]) < D[k].r + 30)) continue;
     const st = star8(cx, cy, 100);
     for (let k = 0; k < 16; k++) segs.push([st[k], st[k + 1]]);
     const dm = [[cx - 100, cy - 100], [cx + 100, cy - 100]];       // diamonds at two corners per tile (others come from neighbours)
     for (const [qx, qy] of dm) { const r = 30; const q = [[qx, qy - r], [qx + r, qy], [qx, qy + r], [qx - r, qy], [qx, qy - r]]; for (let k = 0; k < 4; k++) segs.push([q[k], q[k + 1]]); }
   }
-  const ring = arc(PLAQUE[0], PLAQUE[1], PLAQUE_R, -Math.PI / 2, 1.5 * Math.PI, 120), ring2 = arc(PLAQUE[0], PLAQUE[1], PLAQUE_R - 26, -Math.PI / 2, 1.5 * Math.PI, 120);
-  for (let k = 0; k < 120; k++) { segs.push([ring[k], ring[k + 1]]); segs.push([ring2[k], ring2[k + 1]]); }
-  let dmax = 0; for (const s of segs) dmax = Math.max(dmax, Math.hypot(s[0][0] - origin[0], s[0][1] - origin[1]));
-  const R = rng(7);
-  for (const s of segs) {
-    const d = Math.hypot(s[0][0] - origin[0], s[0][1] - origin[1]);
-    TESS.push({ a: s[0], b: s[1], t0: 1.3 * Math.pow(d / dmax, 0.8) + R() * 0.05, dur: 0.2 });
+  let dmax = 0, dnear = 1e9;
+  for (const s of segs) { const d = Math.hypot(s[0][0] - origin[0], s[0][1] - origin[1]); dmax = Math.max(dmax, d); dnear = Math.min(dnear, d); }
+  const R = rng(7), RAY = 0.3;
+  // eight grooves run out of the ball to where the lattice begins: the split visibly comes from the ball
+  for (let k = 0; k < 8; k++) {
+    const a = -Math.PI / 2 + k * Math.PI / 4, L = dnear + 20;
+    TESS.push({ a: origin, b: [origin[0] + L * Math.cos(a), origin[1] + L * Math.sin(a)], t0: HERO_T + 0.02, dur: RAY, ray: true });
   }
-  const tmin = Math.min(...TESS.map(s => s.t0));          // the split starts on the hero frame itself
-  for (const s of TESS) s.t0 += HERO_T + 0.02 - tmin;
+  for (const s of segs) {   // the lattice spreads outward from where the rays land
+    const d = Math.hypot(s[0][0] - origin[0], s[0][1] - origin[1]);
+    TESS.push({ a: s[0], b: s[1], t0: HERO_T + 0.02 + RAY * 0.85 + 1.3 * Math.pow((d - dnear) / (dmax - dnear), 0.8) + R() * 0.05, dur: 0.2 });
+  }
+  // the plaque ring traces itself just before the stamp, so it is never an empty placeholder
+  const ring = arc(PLAQUE[0], PLAQUE[1], PLAQUE_R, -Math.PI / 2, 1.5 * Math.PI, 120), ring2 = arc(PLAQUE[0], PLAQUE[1], PLAQUE_R - 26, -Math.PI / 2, 1.5 * Math.PI, 120);
+  for (let k = 0; k < 120; k++) for (const rr of [ring, ring2])
+    TESS.push({ a: rr[k], b: rr[k + 1], t0: STAMP_T - 0.55 + 0.45 * k / 120, dur: 0.06, ring: true });
 }
 
 // ---------------------------------------------------------------- height-map canvases
@@ -345,7 +353,7 @@ gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
 // ---------------------------------------------------------------- camera
 function frameOf(k) { // zoom to fit the drawing in ~840 px, drawing centred at screen y 1110
-  const d = D[k]; return { c: d.c, z: Math.min(2.1, 840 / (2 * d.r)), ay: 1110, rot: ROLL[k] };
+  const d = D[k]; return { c: d.c, z: Math.min(2.1, 840 / (2 * d.r)), ay: k === "vault" ? 960 : 1110, rot: ROLL[k] };
 }
 const WIDE1 = { c: [900, 1800], z: 0.66, ay: 900, rot: 0 }, WIDE2 = { c: [900, 1600], z: 0.6, ay: 960, rot: 0 };
 function blend(A, B, u, dip) {
@@ -408,6 +416,21 @@ window.TEXTS = t => textEls.filter(({ x }) => t >= x.from && t <= x.to).map(({ x
 const ov = document.getElementById("ov").getContext("2d");
 function drawOverlay(t, cam) {
   ov.clearRect(0, 0, SCR_W, SCR_H);
+  const glow = smooth01((t - (HERO_T - 0.6)) / 0.55) * (1 - Math.min(1, Math.max(0, (t - HERO_T) / 0.1)));
+  if (glow > 0) {   // a slow gold build on the ball during the silence: the eye is on it when it splits
+    const bp = toScreen(cam, ballAt(t)), gr = 70 * cam.z * 2.2;
+    const g = ov.createRadialGradient(bp[0], bp[1], 0, bp[0], bp[1], gr);
+    g.addColorStop(0, `rgba(255,214,150,${0.55 * glow})`); g.addColorStop(0.35, `rgba(230,170,90,${0.22 * glow})`); g.addColorStop(1, "rgba(230,170,90,0)");
+    ov.fillStyle = g; ov.beginPath(); ov.arc(bp[0], bp[1], gr, 0, Math.PI * 2); ov.fill();
+  }
+  // feathered dark behind the end-card text blocks (name line, CTA + URL) so they read over the pattern
+  for (const [id, cy, rx, ry, al] of [["name2", 470, 500, 120, 0.62], ["cta1", 1405, 470, 125, 0.66]]) {
+    const x = TL.texts.find(q => q.id === id); const a = al * smooth01((t - (x.from - 0.32)) / 0.32);
+    if (a <= 0) continue;
+    ov.save(); ov.translate(SCR_W / 2, cy); ov.scale(rx / ry, 1);
+    const g = ov.createRadialGradient(0, 0, 0, 0, 0, ry); g.addColorStop(0, `rgba(18,12,9,${a})`); g.addColorStop(0.6, `rgba(18,12,9,${a * 0.8})`); g.addColorStop(1, "rgba(18,12,9,0)");
+    ov.fillStyle = g; ov.beginPath(); ov.arc(0, 0, ry, 0, Math.PI * 2); ov.fill(); ov.restore();
+  }
   if (t < HERO_T) return;
   const r = 6.5 * cam.z * 1.6;
   for (const s of TESS) {
@@ -429,8 +452,9 @@ window.seek = async function (t) {
   gl.uniform2f(U("uCam"), cam.c[0], cam.c[1]); gl.uniform1f(U("uZoom"), cam.z); gl.uniform1f(U("uRot"), cam.rot);
   gl.uniform2f(U("uAnchor"), SCR_W / 2, cam.ay);
   const bp = toScreen(cam, ballAt(t));
-  const vis = 1 - clamp((t - HERO_T) / 0.18);
-  gl.uniform4f(U("uBall"), bp[0], bp[1], 14.5 * cam.z * (0.45 + 0.55 * vis), vis);
+  const vis = 1 - clamp((t - HERO_T) / 0.12);
+  const swell = 1 + 0.15 * smooth01((t - (HERO_T - 0.6)) / 0.55) * vis;     // the ball swells as the silence holds
+  gl.uniform4f(U("uBall"), bp[0], bp[1], 14.5 * cam.z * (0.45 + 0.55 * vis) * swell, vis);
   gl.uniform1f(U("uDim"), 0);
   gl.viewport(0, 0, SCR_W, SCR_H); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); gl.finish();
   drawOverlay(t, cam);

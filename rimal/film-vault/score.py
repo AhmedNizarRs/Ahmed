@@ -66,7 +66,7 @@ place(boom * np.minimum(1, k / 0.012), HERO, 0.55)
 rush = bandnoise(200, 3500, int(1.8 * SR)); kk = np.arange(len(rush)) / SR
 place(rush * np.minimum(1, kk / 0.05) * np.exp(-kk * 1.7), HERO, 0.20)
 tick = bandnoise(2500, 9000, 240) * np.exp(-np.arange(240) / 50)
-for st in SD["tess"]:
+for st in [x for x in SD["tess"] if x < STAMP - 1.0]:   # lattice only; the ring traces silently before the bell
     place(tick, st, 0.035 * rng.uniform(0.5, 1.0))
 
 # 5. Bell under the stamp (inharmonic partials on D5)

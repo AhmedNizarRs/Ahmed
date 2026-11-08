@@ -79,7 +79,7 @@ texts = [
     T("was", "$84.96", w_of("L10", 4) + 0.25, DUR, None, 60),
     T("name2", "حقيبة الأدوات المعمارية الشاملة", w_of("L10", 4) + 0.25, DUR, None, 54),
     T("cta1", "الرابط في البايو", L["L11"]["to"] + 0.2, DUR, "cta", 56, "bottom"),
-    T("url", "kingahmed10.gumroad.com", L["L11"]["to"] + 0.35, DUR, None, 40, "bottom"),
+    T("url", "kingahmed10.gumroad.com", L["L11"]["to"] + 0.35, DUR, None, 44, "bottom"),
 ]
 
 tl = {
