@@ -1,0 +1,1 @@
+{ "name": "rimal-film-vault", "private": true, "scripts": { "stills": "node render.js qa/stills 0 0 --times 0,4,8.6,12.6,15.6,17.6,20.2,23.5,26.0,26.6,33" } }

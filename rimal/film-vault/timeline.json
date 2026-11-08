@@ -1,0 +1,688 @@
+{
+ "meta": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 60,
+  "dur": 34.5,
+  "clock": "voice",
+  "register": "clean",
+  "loop": false,
+  "grid": "none",
+  "hookWaiver": null,
+  "vo": {
+   "status": "RENDERED",
+   "file": "vo/vo_edit.wav",
+   "voice": "ElevenLabs · Mohammed Ali · eleven_v3",
+   "timings": "faster-whisper medium word timestamps, remapped through vo/edit_vo.sh"
+  }
+ },
+ "objects": [
+  {
+   "id": "ball",
+   "role": "constant",
+   "what": "brass ball ploughing the groove"
+  },
+  {
+   "id": "table",
+   "role": "constant",
+   "what": "dark sand table, 1800x3200 world units (9:16)"
+  }
+ ],
+ "vo": [
+  {
+   "id": "L1",
+   "text": "حقيبة الأدوات المعمارية الشاملة.",
+   "from": 0.4,
+   "to": 2.96,
+   "words": [
+    {
+     "w": "حقيبة",
+     "t": 0.4
+    },
+    {
+     "w": "الأدوات",
+     "t": 1.0
+    },
+    {
+     "w": "المعمارية",
+     "t": 1.6
+    },
+    {
+     "w": "الشاملة.",
+     "t": 2.24
+    }
+   ]
+  },
+  {
+   "id": "L2",
+   "text": "كل أداة تحتاجها، في تنزيل واحد.",
+   "from": 3.28,
+   "to": 5.98,
+   "words": [
+    {
+     "w": "كل",
+     "t": 3.28
+    },
+    {
+     "w": "أداة",
+     "t": 3.32
+    },
+    {
+     "w": "تحتاجها",
+     "t": 3.74
+    },
+    {
+     "w": "في",
+     "t": 4.6
+    },
+    {
+     "w": "تنزيل",
+     "t": 5.02
+    },
+    {
+     "w": "واحد.",
+     "t": 5.46
+    }
+   ]
+  },
+  {
+   "id": "L3",
+   "text": "أكثر من 3000 بلوك أوتوكاد ديناميكي.",
+   "from": 7.02,
+   "to": 9.92,
+   "words": [
+    {
+     "w": "أكثر",
+     "t": 7.02
+    },
+    {
+     "w": "من",
+     "t": 7.24
+    },
+    {
+     "w": "3000",
+     "t": 7.44
+    },
+    {
+     "w": "بلوك",
+     "t": 8.1
+    },
+    {
+     "w": "أوتوكاد",
+     "t": 8.72
+    },
+    {
+     "w": "ديناميكي.",
+     "t": 9.24
+    }
+   ]
+  },
+  {
+   "id": "L4",
+   "text": "مكتبة عائلات ريفيت، 26 جيجابايت.",
+   "from": 10.7,
+   "to": 14.16,
+   "words": [
+    {
+     "w": "مكتبة",
+     "t": 10.7
+    },
+    {
+     "w": "عائلات",
+     "t": 11.16
+    },
+    {
+     "w": "ريفيت",
+     "t": 11.72
+    },
+    {
+     "w": "26",
+     "t": 12.18
+    },
+    {
+     "w": "جيجا",
+     "t": 13.12
+    },
+    {
+     "w": "بايت.",
+     "t": 13.64
+    }
+   ]
+  },
+  {
+   "id": "L5",
+   "text": "إضافات سكتش أب،",
+   "from": 14.68,
+   "to": 16.12,
+   "words": [
+    {
+     "w": "إضافات",
+     "t": 14.68
+    },
+    {
+     "w": "سكتش",
+     "t": 15.38
+    },
+    {
+     "w": "أب.",
+     "t": 15.84
+    }
+   ]
+  },
+  {
+   "id": "L6",
+   "text": "وسكربتات ثري دي ماكس.",
+   "from": 16.32,
+   "to": 18.32,
+   "words": [
+    {
+     "w": "وسكريبتات",
+     "t": 16.32
+    },
+    {
+     "w": "ثري",
+     "t": 17.1
+    },
+    {
+     "w": "دي",
+     "t": 17.46
+    },
+    {
+     "w": "ماكس.",
+     "t": 17.6
+    }
+   ]
+  },
+  {
+   "id": "L7",
+   "text": "وزخارف إسلامية جاهزة.",
+   "from": 18.54,
+   "to": 20.68,
+   "words": [
+    {
+     "w": "وزخارف",
+     "t": 18.54
+    },
+    {
+     "w": "إسلامية",
+     "t": 19.28
+    },
+    {
+     "w": "جاهزة.",
+     "t": 20.1
+    }
+   ]
+  },
+  {
+   "id": "L8",
+   "text": "لماذا ترسم كل شيء من الصفر؟",
+   "from": 21.96,
+   "to": 24.82,
+   "words": [
+    {
+     "w": "لماذا",
+     "t": 21.96
+    },
+    {
+     "w": "ترسم",
+     "t": 22.6
+    },
+    {
+     "w": "كل",
+     "t": 23.04
+    },
+    {
+     "w": "شيء",
+     "t": 23.4
+    },
+    {
+     "w": "من",
+     "t": 24.08
+    },
+    {
+     "w": "الصفر؟",
+     "t": 24.3
+    }
+   ]
+  },
+  {
+   "id": "L9",
+   "text": "ابدأ التصميم.",
+   "from": 26.42,
+   "to": 27.35,
+   "words": [
+    {
+     "w": "إبدأ",
+     "t": 26.42
+    },
+    {
+     "w": "التصميم",
+     "t": 26.72
+    }
+   ]
+  },
+  {
+   "id": "L10",
+   "text": "كل هذا بأقل من 25 دولاراً.",
+   "from": 27.66,
+   "to": 31.02,
+   "words": [
+    {
+     "w": "كل",
+     "t": 27.66
+    },
+    {
+     "w": "هذا",
+     "t": 28.02
+    },
+    {
+     "w": "بأقل",
+     "t": 28.6
+    },
+    {
+     "w": "من",
+     "t": 29.26
+    },
+    {
+     "w": "25",
+     "t": 29.44
+    },
+    {
+     "w": "دولار",
+     "t": 30.38
+    }
+   ]
+  },
+  {
+   "id": "L11",
+   "text": "من رمال.",
+   "from": 31.02,
+   "to": 32.0,
+   "words": [
+    {
+     "w": "من",
+     "t": 31.02
+    },
+    {
+     "w": "رمال.",
+     "t": 31.66
+    }
+   ]
+  }
+ ],
+ "scenes": [
+  {
+   "id": "vault",
+   "start": 0.0,
+   "end": 6.9,
+   "beats": {
+    "drawBox": 0.6,
+    "drawArrow": 3.28,
+    "arrowDone": 5.88
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "follow the ball to the next tool (next item on the list)",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "cad",
+   "start": 6.9,
+   "end": 10.7,
+   "beats": {
+    "draw": 6.9,
+    "term": 7.44,
+    "done": 10.2
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "follow the ball (next item)",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "revit",
+   "start": 10.7,
+   "end": 14.5,
+   "beats": {
+    "draw": 10.75,
+    "term": 11.72,
+    "done": 14.0
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "follow the ball (next item)",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "su",
+   "start": 14.5,
+   "end": 16.3,
+   "beats": {
+    "draw": 14.7,
+    "term": 14.68,
+    "done": 16.0
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "follow the ball (next item)",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "max",
+   "start": 16.3,
+   "end": 18.4,
+   "beats": {
+    "draw": 16.35,
+    "term": 16.32,
+    "done": 18.1
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "follow the ball (next item)",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "star",
+   "start": 18.4,
+   "end": 21.9,
+   "beats": {
+    "draw": 18.45,
+    "term": 18.54,
+    "done": 20.7
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "camera rises to show how little one ball has drawn (the turn)",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "turn",
+   "start": 21.9,
+   "end": 25.55,
+   "beats": {
+    "rise": 21.96,
+    "still": 24.85
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "silence breaks into the hero (cause: the question; effect: everything at once)",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "hero",
+   "start": 25.55,
+   "end": 27.4,
+   "beats": {
+    "split": 25.55,
+    "filled": 26.95
+   },
+   "transitionOut": {
+    "type": "continuous",
+    "dur": 0,
+    "why": "hold on the filled table; the price lands on it",
+    "bridge": "ball"
+   }
+  },
+  {
+   "id": "end",
+   "start": 27.4,
+   "end": 34.5,
+   "beats": {
+    "price": 29.44,
+    "stamp": 31.02,
+    "cta": 32.2
+   }
+  }
+ ],
+ "hero": {
+  "t": 25.55,
+  "what": "the ball splits; the star tessellation fills the table"
+ },
+ "silences": [
+  {
+   "from": 24.85,
+   "to": 25.55
+  }
+ ],
+ "cuts": [],
+ "sfx": [
+  {
+   "at": "hero.split",
+   "offset": 0,
+   "src": "boom+rush",
+   "gain": 0,
+   "why": "payoff"
+  },
+  {
+   "at": "end.stamp",
+   "offset": 0.05,
+   "src": "chime",
+   "gain": -10,
+   "why": "brand stamp"
+  }
+ ],
+ "captions": [
+  {
+   "from": 0.4,
+   "to": 2.96,
+   "text": "حقيبة الأدوات المعمارية الشاملة.",
+   "src": "vo:L1"
+  },
+  {
+   "from": 3.28,
+   "to": 5.98,
+   "text": "كل أداة تحتاجها، في تنزيل واحد.",
+   "src": "vo:L2"
+  },
+  {
+   "from": 7.02,
+   "to": 9.92,
+   "text": "أكثر من 3000 بلوك أوتوكاد ديناميكي.",
+   "src": "vo:L3"
+  },
+  {
+   "from": 10.7,
+   "to": 14.16,
+   "text": "مكتبة عائلات ريفيت، 26 جيجابايت.",
+   "src": "vo:L4"
+  },
+  {
+   "from": 14.68,
+   "to": 16.12,
+   "text": "إضافات سكتش أب،",
+   "src": "vo:L5"
+  },
+  {
+   "from": 16.32,
+   "to": 18.32,
+   "text": "وسكربتات ثري دي ماكس.",
+   "src": "vo:L6"
+  },
+  {
+   "from": 18.54,
+   "to": 20.68,
+   "text": "وزخارف إسلامية جاهزة.",
+   "src": "vo:L7"
+  },
+  {
+   "from": 21.96,
+   "to": 24.82,
+   "text": "لماذا ترسم كل شيء من الصفر؟",
+   "src": "vo:L8"
+  },
+  {
+   "from": 26.42,
+   "to": 27.35,
+   "text": "ابدأ التصميم.",
+   "src": "vo:L9"
+  },
+  {
+   "from": 27.66,
+   "to": 31.02,
+   "text": "كل هذا بأقل من 25 دولاراً.",
+   "src": "vo:L10"
+  },
+  {
+   "from": 31.02,
+   "to": 32.0,
+   "text": "من رمال.",
+   "src": "vo:L11"
+  }
+ ],
+ "texts": [
+  {
+   "id": "hook",
+   "text": "حقيبة الأدوات المعمارية الشاملة",
+   "from": 0.0,
+   "to": 6.0,
+   "role": "hook",
+   "px": 100,
+   "zone": "top"
+  },
+  {
+   "id": "sub2",
+   "text": "كل أداة تحتاجها، في تنزيل واحد",
+   "from": 3.28,
+   "to": 6.2,
+   "role": null,
+   "px": 54,
+   "zone": "top"
+  },
+  {
+   "id": "cta0",
+   "text": "رمال · الرابط في البايو",
+   "from": 0.0,
+   "to": 6.2,
+   "role": "cta",
+   "px": 48,
+   "zone": "bottom"
+  },
+  {
+   "id": "cad",
+   "text": "أكثر من 3000 بلوك أوتوكاد ديناميكي",
+   "from": 7.02,
+   "to": 10.55,
+   "role": "term",
+   "px": 64,
+   "zone": "top"
+  },
+  {
+   "id": "revit",
+   "text": "عائلات ريفيت · 26 GB",
+   "from": 11.16,
+   "to": 13.95,
+   "role": "term",
+   "px": 92,
+   "zone": "top"
+  },
+  {
+   "id": "su",
+   "text": "إضافات سكتش أب",
+   "from": 14.4,
+   "to": 18.45,
+   "role": "term",
+   "px": 84,
+   "zone": "top"
+  },
+  {
+   "id": "max",
+   "text": "وسكربتات ثري دي ماكس",
+   "from": 16.32,
+   "to": 18.45,
+   "role": null,
+   "px": 84,
+   "zone": "top2"
+  },
+  {
+   "id": "star",
+   "text": "زخارف إسلامية جاهزة",
+   "from": 18.95,
+   "to": 21.4,
+   "role": null,
+   "px": 92,
+   "zone": "top"
+  },
+  {
+   "id": "why",
+   "text": "لماذا ترسم كل شيء من الصفر؟",
+   "from": 21.96,
+   "to": 24.85,
+   "role": null,
+   "px": 84,
+   "zone": "top"
+  },
+  {
+   "id": "go",
+   "text": "ابدأ التصميم، لا البحث.",
+   "from": 26.37,
+   "to": 29.1,
+   "role": null,
+   "px": 92,
+   "zone": "top"
+  },
+  {
+   "id": "price",
+   "text": "$24.99",
+   "from": 29.44,
+   "to": 34.5,
+   "role": null,
+   "px": 190,
+   "zone": "top"
+  },
+  {
+   "id": "was",
+   "text": "$84.96",
+   "from": 29.69,
+   "to": 34.5,
+   "role": null,
+   "px": 60,
+   "zone": "top"
+  },
+  {
+   "id": "name2",
+   "text": "حقيبة الأدوات المعمارية الشاملة",
+   "from": 29.69,
+   "to": 34.5,
+   "role": null,
+   "px": 54,
+   "zone": "top"
+  },
+  {
+   "id": "cta1",
+   "text": "الرابط في البايو",
+   "from": 32.2,
+   "to": 34.5,
+   "role": "cta",
+   "px": 56,
+   "zone": "bottom"
+  },
+  {
+   "id": "url",
+   "text": "kingahmed10.gumroad.com",
+   "from": 32.35,
+   "to": 34.5,
+   "role": null,
+   "px": 40,
+   "zone": "bottom"
+  }
+ ],
+ "terms": [
+  "أوتوكاد",
+  "ريفيت",
+  "سكتش أب"
+ ]
+}

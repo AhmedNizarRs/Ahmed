@@ -1,0 +1,7 @@
+frames/
+qa/
+node_modules/
+vo/vo.wav
+mix_raw.wav
+mix.wav
+vo/music_only.npy

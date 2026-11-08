@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Rimal · The Sand Table</title>
+<style>
+@font-face { font-family: "Reem Kufi"; src: url(assets/reem-kufi-arabic.woff2) format("woff2"); }
+@font-face { font-family: "Plex Arabic"; font-weight: 500; src: url(assets/plex-arabic-500.woff2) format("woff2"); }
+@font-face { font-family: "Plex Arabic"; font-weight: 600; src: url(assets/plex-arabic-600.woff2) format("woff2"); }
+@font-face { font-family: "Jost"; src: url(assets/jost.woff2) format("woff2"); }
+:root { --bg:#120c09; --ink:#efe4d2; --ink2:#b8a58d; --gold:#e6bd76; }
+html, body { margin:0; width:1080px; height:1920px; overflow:hidden; background:var(--bg); }
+#stage { position:relative; width:1080px; height:1920px; }
+canvas { position:absolute; left:0; top:0; }
+.t { position:absolute; left:60px; right:60px; text-align:center; color:var(--ink); opacity:0; will-change:transform,opacity; }
+.top { top:230px; }
+.top2 { top:350px; }
+.bottom { top:1440px; }
+.disp { font-family:"Reem Kufi"; font-weight:400; line-height:1.18; letter-spacing:0; }
+.line { font-family:"Plex Arabic"; font-weight:600; line-height:1.3; }
+.lat { font-family:"Jost"; direction:ltr; }
+#t-sub2 { top:500px; color:var(--ink2); font-family:"Plex Arabic"; font-weight:500; }
+#t-price { top:200px; color:var(--gold); font-family:"Jost"; font-weight:500; line-height:1; }
+#t-was { top:410px; color:var(--ink2); text-decoration:line-through; text-decoration-thickness:4px; }
+#t-name2 { top:495px; color:var(--ink); font-family:"Plex Arabic"; font-weight:500; }
+#t-url { top:1525px; color:var(--ink2); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <canvas id="gl" width="1080" height="1920"></canvas>
+  <canvas id="ov" width="1080" height="1920"></canvas>
+</div>
+<script>
+"use strict";
+// ---------------------------------------------------------------- page contract
+window.FPS = 60;
+let TL = null;
+const TW = 1800, TH = 3200, S = 0.8;            // table in world units; height maps at S px per unit
+const CW = TW * S, CH = TH * S;
+const SCR_W = 1080, SCR_H = 1920;
+
+// ---------------------------------------------------------------- math
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, u) => a + (b - a) * u;
+const easeInOut = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+const easeOut = u => 1 - Math.pow(1 - u, 3);
+const easeIn = u => u * u * u;
+const smooth = u => u * u * (3 - 2 * u);
+// constant speed with short accel / decel (a plotter, not a slideshow)
+function cruise(u, k = 0.1) {
+  u = clamp(u); const v = 1 / (1 - k);           // peak speed so area = 1
+  if (u < k) return 0.5 * v * u * u / k;
+  if (u > 1 - k) { const w = 1 - u; return 1 - 0.5 * v * w * w / k; }
+  return 0.5 * v * k + v * (u - k);
+}
+function rng(seed) { return () => { seed |= 0; seed = seed + 0x6D2B79F5 | 0; let t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+
+// ---------------------------------------------------------------- drawing geometry (world units)
+const rect = (x, y, w, h) => [[x, y], [x + w, y], [x + w, y + h], [x, y + h], [x, y]];
+function arc(cx, cy, r, a0, a1, n = 28) { const p = []; for (let i = 0; i <= n; i++) { const a = lerp(a0, a1, i / n); p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); } return p; }
+function rrect(x, y, w, h, r) {
+  const P = Math.PI, p = [];
+  p.push(...arc(x + r, y + r, r, P, 1.5 * P, 6));
+  p.push(...arc(x + w - r, y + r, r, 1.5 * P, 2 * P, 6));
+  p.push(...arc(x + w - r, y + h - r, r, 0, 0.5 * P, 6));
+  p.push(...arc(x + r, y + h - r, r, 0.5 * P, P, 6));
+  p.push(p[0].slice()); return p;
+}
+const iso = (ox, oy) => (a, b, c) => [ox + (a - b) * 0.866, oy + (a + b) * 0.5 - c];
+function star8(cx, cy, Ro) { // two-square 8-point star outline (16 vertices)
+  const Ri = Ro * Math.cos(Math.PI / 4) / Math.cos(Math.PI / 8), p = [];
+  for (let k = 0; k <= 16; k++) { const a = -Math.PI / 2 + k * Math.PI / 8, r = k % 2 ? Ri : Ro; p.push([cx + r * Math.cos(a), cy + r * Math.sin(a)]); }
+  return p;
+}
+
+const D = {}; // drawings: center, radius (for framing + tessellation exclusion), strokes
+D.vault = { c: [900, 470], r: 230, strokes: [
+  rrect(720, 420, 360, 250, 26),                                  // the case
+  [[835, 420], ...arc(900, 410, 65, Math.PI, 2 * Math.PI, 18).slice(1), [965, 420]], // handle
+  [[900, 470], [900, 610]], [[848, 560], [900, 612], [952, 560]], // download arrow
+  [[800, 640], [1000, 640]],
+]};
+D.cad = { c: [480, 1010], r: 290, strokes: [
+  rect(260, 850, 440, 320),                                       // room
+  [[560, 1170], [560, 1080]], arc(560, 1170, 90, -Math.PI / 2, 0, 14),  // door leaf + swing
+  rrect(300, 880, 170, 62, 10), [[300, 900], [470, 900]], [[357, 900], [357, 942]], [[413, 900], [413, 942]], // sofa block
+  arc(620, 940, 34, 0, 2 * Math.PI, 26),                          // round table
+  rect(605, 880, 30, 22), rect(605, 978, 30, 22), rect(560, 929, 22, 22), rect(658, 929, 22, 22), // chairs
+]};
+{ const P = iso(1320, 1010);
+  D.revit = { c: [1320, 1030], r: 270, strokes: [
+    [P(-150, 0, 0), P(150, 0, 0), P(150, 40, 0), P(150, 40, 240), P(-150, 40, 240), P(-150, 0, 240), P(-150, 0, 0)], // wall slab
+    [P(-150, 0, 240), P(150, 0, 240), P(150, 40, 240)], [P(150, 0, 240), P(150, 0, 0)],
+    [P(-80, 40, 60), P(60, 40, 60), P(60, 40, 190), P(-80, 40, 190), P(-80, 40, 60)],   // window family
+    [P(-10, 40, 60), P(-10, 40, 190)], [P(-80, 40, 125), P(60, 40, 125)],
+  ]}; }
+{ const P = iso(1330, 2390);
+  D.su = { c: [1330, 2330], r: 250, strokes: [
+    [P(-110, -90, 0), P(110, -90, 0), P(110, 90, 0), P(-110, 90, 0), P(-110, -90, 0)],    // face
+    [P(-110, 90, 0), P(-110, 90, 170)], [P(110, 90, 0), P(110, 90, 170)], [P(110, -90, 0), P(110, -90, 170)], // push-pull
+    [P(-110, -90, 170), P(110, -90, 170), P(110, 90, 170), P(-110, 90, 170), P(-110, -90, 170)],
+    [P(0, 0, 200), P(0, 0, 300)], [P(-25, 0, 270), P(0, 0, 305), P(25, 0, 270)],          // push-pull arrow
+  ]}; }
+D.max = { c: [480, 2330], r: 250, strokes: [
+  [[340, 2520], [340, 2280], ...arc(480, 2280, 140, Math.PI, 2 * Math.PI, 22).slice(1), [620, 2520], [340, 2520]], // arched frame
+  [[372, 2490], [372, 2285], ...arc(480, 2285, 108, Math.PI, 2 * Math.PI, 18).slice(1), [588, 2490], [372, 2490]],
+  [[480, 2177], [480, 2490]], [[372, 2340], [588, 2340]], [[372, 2420], [588, 2420]],
+]};
+D.star = { c: [900, 2860], r: 260, strokes: [
+  star8(900, 2860, 210), arc(900, 2860, 92, -Math.PI / 2, 1.5 * Math.PI, 36), star8(900, 2860, 60),
+]};
+const ORDER = ["vault", "cad", "revit", "su", "max", "star"];
+const ROLL = { vault: 0, cad: -0.035, revit: 0.05, su: -0.035, max: 0.03, star: 0 };
+const PLAQUE = [900, 1650], PLAQUE_R = 330;
+
+// ---------------------------------------------------------------- the ball's one line
+const PIECES = [];  // {pts:[[x,y]...], deep:[bool per segment], t0, t1, ease, cum, len}
+function mkPiece(pts, deep, t0, t1, ease) {
+  const cum = [0]; for (let i = 1; i < pts.length; i++) cum.push(cum[i - 1] + Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]));
+  return { pts, deep, t0, t1, ease, cum, len: cum[cum.length - 1] };
+}
+function buildPieces() {
+  const B = Object.fromEntries(TL.scenes.map(s => [s.id, s.beats]));
+  const times = { vault: [B.vault.drawBox, B.vault.arrowDone] };
+  for (const k of ["cad", "revit", "su", "max", "star"]) times[k] = [B[k].draw, B[k].done];
+  let cur = D.vault.strokes[0][0];
+  ORDER.forEach((k, idx) => {
+    if (idx > 0) { // transit to this drawing: shallow groove, eased move
+      const prev = ORDER[idx - 1], to = D[k].strokes[0][0];
+      PIECES.push(mkPiece([cur, to], [false], times[prev][1], times[k][0], easeInOut));
+      cur = to;
+    }
+    const pts = [cur], deep = [];
+    for (const s of D[k].strokes) {
+      if (Math.hypot(s[0][0] - cur[0], s[0][1] - cur[1]) > 1) { pts.push(s[0]); deep.push(false); }
+      for (let i = 1; i < s.length; i++) { pts.push(s[i]); deep.push(true); }
+      cur = s[s.length - 1];
+    }
+    PIECES.push(mkPiece(pts, deep, times[k][0], times[k][1], u => cruise(u, 0.08)));
+    PIECES[PIECES.length - 1].name = k;
+  });
+}
+function pointAt(pc, d) { // position at arc length d
+  let i = 1; while (i < pc.cum.length - 1 && pc.cum[i] < d) i++;
+  const a = pc.pts[i - 1], b = pc.pts[i], seg = pc.cum[i] - pc.cum[i - 1] || 1, u = clamp((d - pc.cum[i - 1]) / seg);
+  return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), i];
+}
+function ballAt(t) {
+  let pos = PIECES[0].pts[0];
+  for (const pc of PIECES) { if (t >= pc.t0) { const p = pointAt(pc, pc.ease(clamp((t - pc.t0) / (pc.t1 - pc.t0))) * pc.len); pos = [p[0], p[1]]; } }
+  return pos;
+}
+
+// ---------------------------------------------------------------- hero tessellation
+const TESS = [];   // {a:[x,y], b:[x,y], t0, dur}
+let HERO_T = 0, STAMP_T = 0;
+function buildTess() {
+  HERO_T = TL.hero.t;
+  STAMP_T = TL.scenes.find(s => s.id === "end").beats.stamp;
+  const origin = D.star.strokes[2][16];  // where the ball rests at the hero
+  const tile = 200, segs = [];
+  for (let j = 0; j < 16; j++) for (let i = 0; i < 9; i++) {
+    const cx = 100 + i * tile, cy = 100 + j * tile;
+    if (Math.hypot(cx - PLAQUE[0], cy - PLAQUE[1]) < PLAQUE_R + 110) continue;
+    if (ORDER.some(k => Math.hypot(cx - D[k].c[0], cy - D[k].c[1]) < D[k].r + 70)) continue;
+    const st = star8(cx, cy, 100);
+    for (let k = 0; k < 16; k++) segs.push([st[k], st[k + 1]]);
+    const dm = [[cx - 100, cy - 100], [cx + 100, cy - 100]];       // diamonds at two corners per tile (others come from neighbours)
+    for (const [qx, qy] of dm) { const r = 30; const q = [[qx, qy - r], [qx + r, qy], [qx, qy + r], [qx - r, qy], [qx, qy - r]]; for (let k = 0; k < 4; k++) segs.push([q[k], q[k + 1]]); }
+  }
+  const ring = arc(PLAQUE[0], PLAQUE[1], PLAQUE_R, -Math.PI / 2, 1.5 * Math.PI, 120), ring2 = arc(PLAQUE[0], PLAQUE[1], PLAQUE_R - 26, -Math.PI / 2, 1.5 * Math.PI, 120);
+  for (let k = 0; k < 120; k++) { segs.push([ring[k], ring[k + 1]]); segs.push([ring2[k], ring2[k + 1]]); }
+  let dmax = 0; for (const s of segs) dmax = Math.max(dmax, Math.hypot(s[0][0] - origin[0], s[0][1] - origin[1]));
+  const R = rng(7);
+  for (const s of segs) {
+    const d = Math.hypot(s[0][0] - origin[0], s[0][1] - origin[1]);
+    TESS.push({ a: s[0], b: s[1], t0: 1.3 * Math.pow(d / dmax, 0.8) + R() * 0.05, dur: 0.2 });
+  }
+  const tmin = Math.min(...TESS.map(s => s.t0));          // the split starts on the hero frame itself
+  for (const s of TESS) s.t0 += HERO_T + 0.02 - tmin;
+}
+
+// ---------------------------------------------------------------- height-map canvases
+const mk = () => { const c = document.createElement("canvas"); c.width = CW; c.height = CH; return c; };
+const cG = mk(), cR = mk(), cF = mk();
+const gG = cG.getContext("2d"), gR = cR.getContext("2d"), gF = cF.getContext("2d");
+const GROOVE = 13, RIDGE = 36;
+function strokePath(ctx, path, width, alpha, blur) {
+  ctx.filter = blur ? `blur(${blur}px)` : "none";
+  ctx.lineWidth = width; ctx.lineCap = "round"; ctx.lineJoin = "round";
+  ctx.strokeStyle = `rgba(255,255,255,${alpha})`; ctx.stroke(path);
+}
+function drawHeight(t) {
+  for (const g of [gG, gR, gF]) { g.setTransform(1, 0, 0, 1, 0, 0); g.filter = "none"; g.clearRect(0, 0, CW, CH); g.setTransform(S, 0, 0, S, 0, 0); }
+  const deep = new Path2D(), shallow = new Path2D();
+  let tip = null, fresh = [];
+  for (const pc of PIECES) {
+    if (t < pc.t0) break;
+    const dd = pc.ease(clamp((t - pc.t0) / (pc.t1 - pc.t0))) * pc.len;
+    for (let i = 1; i < pc.pts.length; i++) {
+      if (pc.cum[i - 1] >= dd) break;
+      const a = pc.pts[i - 1], b = pc.pts[i], u = clamp((dd - pc.cum[i - 1]) / (pc.cum[i] - pc.cum[i - 1] || 1));
+      const e = [lerp(a[0], b[0], u), lerp(a[1], b[1], u)];
+      const P = pc.deep[i - 1] ? deep : shallow; P.moveTo(a[0], a[1]); P.lineTo(e[0], e[1]);
+      if (t <= pc.t1 + 0.6 && pc.deep[i - 1]) fresh.push({ a, e, end: pc.cum[i - 1] + u * (pc.cum[i] - pc.cum[i - 1]), dd, pc });
+    }
+  }
+  // tessellation (hero)
+  const tess = new Path2D(); let anyT = false;
+  for (const s of TESS) { if (t < s.t0) continue; const u = easeOut(clamp((t - s.t0) / s.dur)); tess.moveTo(s.a[0], s.a[1]); tess.lineTo(lerp(s.a[0], s.b[0], u), lerp(s.a[1], s.b[1], u)); anyT = true; }
+  strokePath(gR, shallow, RIDGE * 0.6, 0.08, 6 * S); strokePath(gG, shallow, GROOVE * 0.5, 0.12, 2 * S);
+  strokePath(gR, deep, RIDGE, 0.55, 9 * S); strokePath(gG, deep, GROOVE, 1.0, 2.4 * S);
+  if (anyT) { strokePath(gR, tess, RIDGE * 0.85, 0.5, 8 * S); strokePath(gG, tess, GROOVE * 0.9, 0.9, 2.2 * S); }
+  // fresh groove glint: the last ~140 units behind the ball, fading with age
+  for (const f of fresh) {
+    const age = Math.max(0, (f.dd - f.end) / 140) + Math.max(0, t - f.pc.t1) / 0.6;
+    if (age >= 1) continue;
+    const p = new Path2D(); p.moveTo(f.a[0], f.a[1]); p.lineTo(f.e[0], f.e[1]);
+    strokePath(gF, p, 9, (1 - age) * 0.9, 2.5 * S);
+  }
+  // the stamp: «رمال» pressed into the sand
+  const sp = easeOut(clamp((t - STAMP_T) / 0.5));
+  if (sp > 0) {
+    for (const [g, w, a, b] of [[gR, 26, 0.45 * sp, 8 * S], [gG, 0, 1.0 * sp, 2 * S]]) {
+      g.filter = `blur(${b}px)`; g.font = `410px "Reem Kufi"`; g.textAlign = "center"; g.textBaseline = "middle"; g.direction = "rtl";
+      if (w) { g.lineWidth = w; g.lineJoin = "round"; g.strokeStyle = `rgba(255,255,255,${a})`; g.strokeText("رمال", PLAQUE[0], PLAQUE[1] - 20); }
+      else { g.fillStyle = `rgba(255,255,255,${a})`; g.fillText("رمال", PLAQUE[0], PLAQUE[1] - 20); }
+    }
+  }
+}
+
+// ---------------------------------------------------------------- static base relief (dunes + wind ripples), baked once
+function bakeBase() {
+  const W = CW / 2 | 0, H = CH / 2 | 0, data = new Uint8Array(W * H * 4), R = rng(11);
+  const G = 64, grid = new Float32Array((G + 1) * (G + 1)); for (let i = 0; i < grid.length; i++) grid[i] = R();
+  const vn = (x, y) => { // value noise on a 64-cell lattice, x,y in cells (wrapping)
+    const xi = Math.floor(x), yi = Math.floor(y), fx = x - xi, fy = y - yi, ux = smooth(fx), uy = smooth(fy);
+    const g = (a, b) => grid[((b % G + G) % G) * (G + 1) + ((a % G + G) % G)];
+    return lerp(lerp(g(xi, yi), g(xi + 1, yi), ux), lerp(g(xi, yi + 1), g(xi + 1, yi + 1), ux), uy);
+  };
+  for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+    const wx = x / W * TW, wy = y / H * TH;
+    const big = vn(wx * 0.0016, wy * 0.0016) * 0.7 + vn(wx * 0.004 + 9, wy * 0.004) * 0.3;
+    const warp = vn(wx * 0.003 + 3, wy * 0.003 + 5) * 6.0;
+    const rip = Math.sin((wx * 0.55 + wy * 0.83) * 0.075 + warp) * (0.55 + 0.45 * vn(wx * 0.0025 + 1, wy * 0.0025 + 7));
+    const h = clamp(0.5 + 0.32 * (big - 0.5) * 2 * 0.6 + 0.05 * rip);
+    const v = Math.round(h * 65535); const o = (y * W + x) * 4;
+    data[o] = v >> 8; data[o + 1] = v & 255; data[o + 2] = 0; data[o + 3] = 255;
+  }
+  return { W, H, data };
+}
+
+// ---------------------------------------------------------------- WebGL
+const gl = document.getElementById("gl").getContext("webgl2", { preserveDrawingBuffer: true, antialias: false });
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D uBase, uG, uR, uF;
+uniform vec2 uRes, uCam, uAnchor; uniform float uZoom, uRot;
+uniform vec4 uBall;   // screen x, y, radius px, visibility
+uniform float uDim;
+out vec4 o;
+const vec2 WORLD = vec2(${TW}.0, ${TH}.0);
+const vec3 L = normalize(vec3(-0.78, -0.50, 0.38));   // low sun from the upper left (world y down)
+float hash(vec2 p){ p = fract(p*vec2(443.897, 441.423)); p += dot(p, p.yx+19.19); return fract((p.x+p.y)*p.x); }
+float baseH(vec2 uv){ vec4 b = texture(uBase, uv); return b.r + b.g/256.0; }
+vec3 field(vec2 w){ // x = height (world units), y = groove, z = ridge
+  vec2 uv = w / WORLD;
+  float g = texture(uG, uv).a, r = texture(uR, uv).a;
+  float b = baseH(uv);
+  float h = b*26.0*(1.0 - 0.75*clamp(r*1.6,0.,1.)) + 7.0*r - 13.0*g;
+  return vec3(h, g, r);
+}
+void main(){
+  vec2 s = vec2(gl_FragCoord.x, uRes.y - gl_FragCoord.y);
+  vec2 rel = (s - uAnchor) / uZoom;
+  float c = cos(uRot), sn = sin(uRot);
+  vec2 w = uCam + vec2(c*rel.x - sn*rel.y, sn*rel.x + c*rel.y);
+  vec3 bg = vec3(0.0067, 0.0037, 0.0027);           // #120c09 in linear
+  float e = max(0.9, 0.7/uZoom);
+  vec3 f0 = field(w);
+  float hx = field(w + vec2(e,0.)).x - field(w - vec2(e,0.)).x;
+  float hy = field(w + vec2(0.,e)).x - field(w - vec2(0.,e)).x;
+  vec3 n = normalize(vec3(-hx/(2.0*e), -hy/(2.0*e), 1.0));
+  // sand grain: per-grain normal jitter at ~1.4 world units (crisp at every zoom)
+  vec2 gc = floor(w/1.4);
+  vec2 jit = vec2(hash(gc), hash(gc+17.3)) - 0.5;
+  n = normalize(n + vec3(jit*0.55, 0.0));
+  float diff = max(dot(n, L), 0.0);
+  // self-shadow: march toward the sun through the height field
+  vec2 dir = normalize(L.xy); float tanE = L.z / length(L.xy), sh = 0.0;
+  for (int i = 1; i <= 7; i++){ float d = float(i)*float(i)*1.6; float hh = field(w + dir*d).x; sh = max(sh, (hh - f0.x) - d*tanE); }
+  float shadow = 1.0 - smoothstep(0.0, 2.5, sh);
+  float ao = 1.0 - 0.55*f0.y - 0.12*clamp(f0.z,0.,1.);
+  float tone = hash(gc*0.37+3.1);
+  vec3 alb = mix(vec3(0.21, 0.135, 0.085), vec3(0.27, 0.185, 0.115), tone);   // dark warm sand, linear
+  vec3 sun = vec3(1.0, 0.80, 0.58), sky = vec3(0.11, 0.085, 0.08);
+  vec3 col = alb * (sky + 2.05*sun*diff*shadow) * ao;
+  float gli = texture(uF, w/WORLD).a;                                        // fresh groove: the tool's gold
+  col += vec3(0.80, 0.50, 0.20) * gli * (0.35 + 0.9*diff);
+  // table edge falls into the dark
+  vec2 uv = w / WORLD; vec2 ed = min(uv, 1.0-uv);
+  col *= smoothstep(-0.01, 0.06, min(ed.x, ed.y*1.78));
+  // brass ball
+  vec2 bd = (s - uBall.xy) / max(uBall.z, 1e-3);
+  float bl = length(bd);
+  vec2 sd = (s - (uBall.xy + vec2(0.85, 0.55)*uBall.z)) / max(uBall.z,1e-3);  // its shadow, away from the sun
+  col *= 1.0 - 0.6*uBall.w*(1.0 - smoothstep(0.55, 1.25, length(sd)));
+  if (bl < 1.0 && uBall.w > 0.0){
+    vec3 N = vec3(bd.x, bd.y, sqrt(1.0 - bl*bl));
+    vec3 Ls = normalize(vec3(-0.78, -0.50, 0.55));
+    vec3 brass = vec3(0.80, 0.50, 0.20);
+    float d2 = max(dot(N, Ls), 0.0);
+    vec3 H = normalize(Ls + vec3(0.,0.,1.));
+    float sp = pow(max(dot(N,H),0.0), 60.0);
+    vec3 bc = brass*(0.10 + 1.25*d2) + vec3(1.0,0.86,0.62)*sp*1.6 + brass*0.25*pow(1.0-N.z, 2.0);
+    float a = (1.0 - smoothstep(0.93, 1.0, bl)) * uBall.w;
+    col = mix(col, bc, a);
+  }
+  col = mix(col, bg, uDim);
+  // scrims for the text zones (top and bottom thirds fall into the brand dark)
+  float y = s.y / uRes.y;
+  float top = 1.0 - smoothstep(0.17, 0.40, y), bot = smoothstep(0.70, 0.86, y);
+  col = mix(col, bg, clamp(top*0.93 + bot*0.88, 0., 0.95));
+  col = col / (1.0 + col*0.35);                                              // soft shoulder
+  o = vec4(pow(col, vec3(1.0/2.2)), 1.0);
+}`;
+function shader(type, src) { const s = gl.createShader(type); gl.shaderSource(s, src); gl.compileShader(s); if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, shader(gl.VERTEX_SHADER, VS)); gl.attachShader(prog, shader(gl.FRAGMENT_SHADER, FS)); gl.linkProgram(prog);
+if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) throw new Error(gl.getProgramInfoLog(prog));
+gl.useProgram(prog);
+const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf); gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog, "p"); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+const U = n => gl.getUniformLocation(prog, n);
+function tex(unit) { const t = gl.createTexture(); gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, t);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE); gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE); return t; }
+const tBase = tex(0), tG = tex(1), tR = tex(2), tF = tex(3);
+gl.uniform1i(U("uBase"), 0); gl.uniform1i(U("uG"), 1); gl.uniform1i(U("uR"), 2); gl.uniform1i(U("uF"), 3);
+gl.uniform2f(U("uRes"), SCR_W, SCR_H);
+gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
+
+// ---------------------------------------------------------------- camera
+function frameOf(k) { // zoom to fit the drawing in ~840 px, drawing centred at screen y 1110
+  const d = D[k]; return { c: d.c, z: Math.min(2.1, 840 / (2 * d.r)), ay: 1110, rot: ROLL[k] };
+}
+const WIDE1 = { c: [900, 1700], z: 0.86, ay: 1060, rot: 0 }, WIDE2 = { c: [900, 1600], z: 0.6, ay: 960, rot: 0 };
+function blend(A, B, u, dip) {
+  const zl = Math.exp(lerp(Math.log(A.z), Math.log(B.z), u)) * (1 - dip * Math.sin(Math.PI * u));
+  return { c: [lerp(A.c[0], B.c[0], u), lerp(A.c[1], B.c[1], u)], z: zl, ay: lerp(A.ay, B.ay, u), rot: lerp(A.rot, B.rot, u) };
+}
+function camAt(t) {
+  const B = Object.fromEntries(TL.scenes.map(s => [s.id, s.beats]));
+  const start = { vault: B.vault.drawBox, cad: B.cad.draw, revit: B.revit.draw, su: B.su.draw, max: B.max.draw, star: B.star.draw };
+  const end = { vault: B.vault.arrowDone, cad: B.cad.done, revit: B.revit.done, su: B.su.done, max: B.max.done, star: B.star.done };
+  // opening: a slow push-in on the resting ball
+  let cam = { ...frameOf("vault") };
+  cam.z *= lerp(0.9, 1.0, easeOut(clamp(t / 6.0)));
+  for (let i = 1; i < ORDER.length; i++) {
+    const a = ORDER[i - 1], b = ORDER[i];
+    const t0 = end[a] - 0.25, t1 = start[b] + 0.35;
+    if (t >= t0) {
+      const A = { ...frameOf(a) }; if (a === "vault") A.z *= 1.0;
+      const dist = Math.hypot(D[a].c[0] - D[b].c[0], D[a].c[1] - D[b].c[1]);
+      cam = blend(A, frameOf(b), easeInOut(clamp((t - t0) / (t1 - t0))), clamp(dist / 2600, 0, 0.45));
+    }
+  }
+  // star: slow push-in while it draws
+  if (t >= start.star + 0.35) { const f = frameOf("star"); cam = { ...f, z: f.z * lerp(1.0, 1.06, easeInOut(clamp((t - start.star - 0.35) / 2.5))) }; }
+  const rise = B.turn.rise, still = B.turn.still;
+  if (t >= rise) { const f = frameOf("star"); f.z *= 1.06; cam = blend(f, WIDE1, easeInOut(clamp((t - rise) / (still - rise))), 0); }
+  if (t >= HERO_T) cam = blend(WIDE1, WIDE2, easeOut(clamp((t - HERO_T) / 1.85)), 0);
+  return cam;
+}
+function toScreen(cam, p) {
+  const dx = p[0] - cam.c[0], dy = p[1] - cam.c[1], c = Math.cos(-cam.rot), s = Math.sin(-cam.rot);
+  return [SCR_W / 2 + (c * dx - s * dy) * cam.z, cam.ay + (s * dx + c * dy) * cam.z];
+}
+
+// ---------------------------------------------------------------- text
+const textEls = [];
+function buildTexts() {
+  const stage = document.getElementById("stage");
+  for (const x of TL.texts) {
+    const el = document.createElement("div");
+    el.id = "t-" + x.id; el.className = "t " + (x.zone || "top");
+    const latin = /^[$\w.\s]+$/.test(x.text);
+    el.classList.add(latin ? "lat" : (x.px >= 80 ? "disp" : "line"));
+    el.style.fontSize = x.px + "px";
+    if (latin) el.textContent = x.text; else el.innerHTML = x.text.replace(/[$+0-9A-Za-z.]+(?:\s[$+0-9A-Za-z.]+)*/g, m => `<span dir="ltr" style="unicode-bidi:isolate;font-family:Jost">${m}</span>`);
+    stage.appendChild(el); textEls.push({ x, el });
+  }
+}
+function textState(x, t) {
+  const IN = 0.32, OUT = 0.2;
+  if (t < x.from - IN || t > x.to + OUT) return { a: 0, y: 0, s: 1 };
+  if (t < x.from) { const u = easeOut(clamp((t - (x.from - IN)) / IN)); return { a: u, y: (1 - u) * 26, s: 1 }; }
+  if (t > x.to) { const u = easeIn(clamp((t - x.to) / OUT)); return { a: 1 - u, y: -u * 14, s: 1 }; }
+  return { a: 1, y: 0, s: 1 };
+}
+window.SOUNDDATA = () => ({ ball: Array.from({ length: Math.round(TL.meta.dur * 60) + 1 }, (_, f) => ballAt(f / 60)), tess: TESS.map(s => s.t0), pieces: PIECES.map(p => ({ t0: p.t0, t1: p.t1, deep: p.deep.some(Boolean) })) });
+window.TEXTS = t => textEls.filter(({ x }) => t >= x.from && t <= x.to).map(({ x }) => x.text);
+
+// ---------------------------------------------------------------- overlay: the ball's split (hero)
+const ov = document.getElementById("ov").getContext("2d");
+function drawOverlay(t, cam) {
+  ov.clearRect(0, 0, SCR_W, SCR_H);
+  if (t < HERO_T) return;
+  const r = 6.5 * cam.z * 1.6;
+  for (const s of TESS) {
+    const u = (t - s.t0) / s.dur; if (u <= 0 || u >= 1.25) continue;
+    const e = easeOut(clamp(u)), p = toScreen(cam, [lerp(s.a[0], s.b[0], e), lerp(s.a[1], s.b[1], e)]);
+    const a = u < 1 ? 1 : 1 - (u - 1) / 0.25;
+    const g = ov.createRadialGradient(p[0] - r * 0.3, p[1] - r * 0.3, 0, p[0], p[1], r);
+    g.addColorStop(0, `rgba(255,230,180,${a})`); g.addColorStop(0.5, `rgba(230,189,118,${a})`); g.addColorStop(1, `rgba(150,95,40,0)`);
+    ov.fillStyle = g; ov.beginPath(); ov.arc(p[0], p[1], r, 0, Math.PI * 2); ov.fill();
+  }
+}
+
+// ---------------------------------------------------------------- seek
+let baseReady = false;
+window.seek = async function (t) {
+  drawHeight(t);
+  for (const [unit, c, tt] of [[1, cG, tG], [2, cR, tR], [3, cF, tF]]) { gl.activeTexture(gl.TEXTURE0 + unit); gl.bindTexture(gl.TEXTURE_2D, tt); gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, c); }
+  const cam = camAt(t);
+  gl.uniform2f(U("uCam"), cam.c[0], cam.c[1]); gl.uniform1f(U("uZoom"), cam.z); gl.uniform1f(U("uRot"), cam.rot);
+  gl.uniform2f(U("uAnchor"), SCR_W / 2, cam.ay);
+  const bp = toScreen(cam, ballAt(t));
+  const vis = 1 - clamp((t - HERO_T) / 0.18);
+  gl.uniform4f(U("uBall"), bp[0], bp[1], 14.5 * cam.z * (0.45 + 0.55 * vis), vis);
+  gl.uniform1f(U("uDim"), 0);
+  gl.viewport(0, 0, SCR_W, SCR_H); gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4); gl.finish();
+  drawOverlay(t, cam);
+  for (const { x, el } of textEls) { const st = textState(x, t); el.style.opacity = st.a.toFixed(3); el.style.transform = `translateY(${st.y.toFixed(2)}px)`; }
+};
+
+window.READY = (async () => {
+  TL = await (await fetch("timeline.json")).json();
+  window.DUR = TL.meta.dur;
+  await Promise.all([document.fonts.load('400px "Reem Kufi"', "رمال"), document.fonts.load('600 40px "Plex Arabic"', "رمال"),
+    document.fonts.load('500 40px "Plex Arabic"', "رمال"), document.fonts.load('40px "Jost"', "$24.99")]);
+  buildPieces(); buildTess(); buildTexts();
+  const b = bakeBase();
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, tBase);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, b.W, b.H, 0, gl.RGBA, gl.UNSIGNED_BYTE, b.data);
+  await seek(0);
+  return true;
+})();
+</script>
+</body>
+</html>
