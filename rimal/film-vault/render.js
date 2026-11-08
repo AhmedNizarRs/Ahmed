@@ -31,9 +31,17 @@ const times = timesArg >= 0 ? args[timesArg + 1].split(",").map(Number) : null;
     : Array.from({ length: Number(args[2]) - Number(args[1]) }, (_, i) => { const f = Number(args[1]) + i; return { t: f / fps, name: `f${String(f).padStart(5, "0")}.png` }; });
   const t0 = Date.now();
   for (const { t, name } of list) {
-    await page.evaluate(async (tt) => { await window.seek(tt); }, t);
-    await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
-    await page.screenshot({ path: path.join(outDir, name), type: "png" });
+    const out = path.join(outDir, name);
+    if (!times && fs.existsSync(out) && fs.statSync(out).size > 0) continue;   // resume
+    for (let attempt = 0; ; attempt++) {
+      try {
+        await page.evaluate(async (tt) => { await window.seek(tt); }, t);
+        await page.evaluate(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))));
+        await page.screenshot({ path: out + ".tmp.png", type: "png", timeout: 180000 });
+        fs.renameSync(out + ".tmp.png", out);
+        break;
+      } catch (e) { if (attempt >= 2) throw e; console.error("retry", name, e.message.split("\n")[0]); }
+    }
     if (errors.length) { console.error("page errors at", t, errors); process.exit(1); }
   }
   console.log(`rendered ${list.length} frames in ${((Date.now() - t0) / 1000).toFixed(1)} s`);
