@@ -25,6 +25,8 @@ Route each request to the right department agent. For work spanning several, sta
 ### DALIL skills (`.claude/skills/`, also usable as slash commands)
 `/dalil-weekly-plan` · `/dalil-investor-update` · `/dalil-quote` · `/dalil-outreach` · `/dalil-content-post` · `/dalil-user-test`
 
+Founder pack (`/founder-board` … `/founder-plan`): for DALIL, use `dalil-hq/founder/` as the `founder/` folder (pass `--dir dalil-hq/founder` to `compile.py`, `--dir dalil-hq/founder/panel` to `panel.py`). The board ran on 2026-11-08: see `dalil-hq/founder/board.md`.
+
 ### Rules for every department
 - **Draft, never send.** No emails, posts, applications or messages go out without a founder's explicit OK. Gmail drafts are fine when asked.
 - **Never claim** a customer, pilot, partner, certification or number that isn't in `DALIL-facts.md` or the department files.
