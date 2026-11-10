@@ -4,7 +4,7 @@
 The voice is the clock, so the music is a bed: a D-hijaz drone, a soft frame-drum pulse and oud-like plucks
 (Karplus-Strong). The pulse is re-anchored on the two moments that matter — the bundle's name and the price —
 so those land on a downbeat. Real silence precedes the price; the impact under it is the loudest non-voice sound.
-usage: mix.py [--novoice]
+usage: mix.py [--novoice] [--nomusic]   (--nomusic: sound effects only, no score)
 """
 import json, os, subprocess, sys, wave
 import numpy as np
@@ -183,6 +183,9 @@ a, b = int(sil["from"] * SR), int((HIT - 0.004) * SR)
 gate[a - int(0.012 * SR):a] = np.linspace(1, 0, int(0.012 * SR)); gate[a:b] = 0
 gate[int((END - 0.9) * SR):] *= np.clip((END - 0.05 - t[int((END - 0.9) * SR):]) / 0.85, 0, 1)
 music_L *= gate; music_R *= gate
+NOMUSIC = "--nomusic" in sys.argv
+if NOMUSIC:
+    music_L[:] = 0; music_R[:] = 0
 
 # ---------- SFX from the timeline ----------
 S = (np.zeros(N), np.zeros(N))
@@ -221,7 +224,7 @@ if have_vo:
     vg = 0.5 / (np.sqrt(np.mean(V[0][np.abs(V[0]) > 0.01] ** 2)) + 1e-9) * 0.2
     V[0][:] *= vg; V[1][:] *= vg
 
-mg = 1.0 if have_vo else 1.5
+mg = 0.0 if NOMUSIC else (1.0 if have_vo else 1.5)
 L = music_L * mg + S[0] + V[0]; R = music_R * mg + S[1] + V[1]
 mixed = np.stack([L, R], 1)[: int(round(DUR * SR))]
 mixed[: int(0.025 * SR)] *= np.linspace(0, 1, int(0.025 * SR))[:, None]
@@ -233,10 +236,19 @@ with wave.open(pre, "wb") as w:
     w.setnchannels(2); w.setsampwidth(3); w.setframerate(SR)
     w.writeframes((np.clip(mixed, -1, 1) * 8388607).astype("<i4").astype(np.int32).view(np.uint8).reshape(-1, 4)[:, :3].tobytes())
 
+out = os.path.join(HERE, "out", "mix.wav")
+if NOMUSIC and not have_vo:
+    # sparse effects-only mix: loudnorm would have to crush it, so apply one static gain that stops at -1.8 dBTP
+    q = subprocess.run(["ffmpeg", "-hide_banner", "-i", pre, "-af", "ebur128=peak=true", "-f", "null", "-"], capture_output=True, text=True).stderr
+    tail = q[q.rindex("Summary:"):]
+    I = float(tail.split("I:")[1].split("LUFS")[0]); TP = float(tail.split("Peak:")[1].split("dBFS")[0])
+    g = min(-14.0 - I, -1.8 - TP)
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", pre, "-af", f"volume={g:.2f}dB", "-ar", str(SR), out], check=True)
+    print(f"mix.wav written; SFX ONLY, no voice | gain {g:+.1f} dB (premix {I} LUFS, peak {TP} dBFS)"); sys.exit(0)
+
 # master: two-pass loudnorm to -14 LUFS, true peak -1.8 dBTP (AAC raises peaks a little)
 p1 = subprocess.run(["ffmpeg", "-hide_banner", "-i", pre, "-af", "loudnorm=I=-14:TP=-1.8:LRA=11:print_format=json", "-f", "null", "-"], capture_output=True, text=True).stderr
 m = json.loads(p1[p1.rindex("{"):])
 af = f"loudnorm=I=-14:TP=-1.8:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true"
-out = os.path.join(HERE, "out", "mix.wav")
 subprocess.run(["ffmpeg", "-v", "error", "-y", "-i", pre, "-af", af, "-ar", str(SR), out], check=True)
 print("mix.wav written;", "with voice" if have_vo else "NO VOICE (music + SFX only)", "| premix I =", m["input_i"], "LUFS")
