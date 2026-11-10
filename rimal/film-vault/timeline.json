@@ -1,0 +1,944 @@
+{
+ "meta": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 30,
+  "dur": 55.2,
+  "clock": "voice",
+  "register": "clean",
+  "loop": false,
+  "grid": "none",
+  "hookWaiver": null,
+  "vo": {
+   "status": "ESTIMATED",
+   "file": null,
+   "rateWps": null
+  }
+ },
+ "objects": [
+  {
+   "id": "crosshair",
+   "role": "constant",
+   "what": "gold CAD crosshair: it drafts every window, leads every camera move and ends as the caret that types the CTA"
+  },
+  {
+   "id": "cta chip",
+   "role": "bridge",
+   "what": "standing comment prompt that opens into the comment field at the end"
+  },
+  {
+   "id": "price",
+   "role": "hero",
+   "what": "25$ filling the one empty cell of the sheet"
+  }
+ ],
+ "cells": {
+  "title": [
+   2,
+   0
+  ],
+  "revit": [
+   1,
+   0
+  ],
+  "autocad": [
+   0,
+   0
+  ],
+  "blocks": [
+   0,
+   1
+  ],
+  "sketchup": [
+   0,
+   2
+  ],
+  "kitchen": [
+   1,
+   2
+  ],
+  "max": [
+   2,
+   2
+  ],
+  "ai": [
+   2,
+   1
+  ],
+  "price": [
+   1,
+   1
+  ]
+ },
+ "vo": [
+  {
+   "id": "L1",
+   "text": "أكثر شي يضيّع وقت المعماري، مو التصميم نفسه.",
+   "from": 0.35,
+   "to": 3.65
+  },
+  {
+   "id": "L2",
+   "text": "البحث عن الأدوات.",
+   "from": 3.9,
+   "to": 5.3
+  },
+  {
+   "id": "L3",
+   "text": "تخيّل لو كلها عندك من البداية.",
+   "from": 5.75,
+   "to": 8.05
+  },
+  {
+   "id": "L4",
+   "text": "هاي هي حزمة المهندس المعماري الشاملة.",
+   "from": 8.4,
+   "to": 11.2
+  },
+  {
+   "id": "L5",
+   "text": "إذا شغلك على ريفيت، مكتبة فاميليز بحجم ستة وعشرين جيجابايت.",
+   "from": 12.2,
+   "to": 16.8
+  },
+  {
+   "id": "L6",
+   "text": "لأوتوكاد، أكثر من ثلاثة آلاف بلوك ذكي، تتحكم بأبعادها خلال ثواني.",
+   "from": 17.3,
+   "to": 22.5
+  },
+  {
+   "id": "L7",
+   "text": "وفوقها، أكثر من ستة آلاف بلوك إضافي.",
+   "from": 23.0,
+   "to": 26.0
+  },
+  {
+   "id": "L8",
+   "text": "لسكتش أب، أكثر من ثلاثين إضافة احترافية،",
+   "from": 26.5,
+   "to": 29.5
+  },
+  {
+   "id": "L9",
+   "text": "ومن ضمنها مولّد المطابخ.",
+   "from": 29.8,
+   "to": 31.7
+  },
+  {
+   "id": "L10",
+   "text": "ولثري دي ماكس، سكربتات تولّد النوافذ والأبواب والمطابخ.",
+   "from": 32.3,
+   "to": 36.5
+  },
+  {
+   "id": "L11",
+   "text": "وحتى الذكاء الاصطناعي، أكثر من خمسة آلاف برومت جاهز.",
+   "from": 37.4,
+   "to": 41.4
+  },
+  {
+   "id": "L12",
+   "text": "خلّي أدواتك كلها بمكان واحد.",
+   "from": 41.85,
+   "to": 44.15
+  },
+  {
+   "id": "L13",
+   "text": "وكم رح تدفع مقابل كل هذا؟",
+   "from": 44.5,
+   "to": 46.6
+  },
+  {
+   "id": "L14",
+   "text": "خمسة وعشرين دولار فقط.",
+   "from": 47.4,
+   "to": 49.4
+  },
+  {
+   "id": "L15",
+   "text": "اكتب كلمة حزمة بالتعليقات، ونرسل لك الرابط.",
+   "from": 50.1,
+   "to": 53.5
+  }
+ ],
+ "cues": {
+  "L1.s": 0.35,
+  "L1.e": 3.65,
+  "L1.mo": 2.396,
+  "L2.s": 3.9,
+  "L2.e": 5.3,
+  "L3.s": 5.75,
+  "L3.e": 8.05,
+  "L4.s": 8.4,
+  "L4.e": 11.2,
+  "L4.hizma": 9.184,
+  "L5.s": 12.2,
+  "L5.e": 16.8,
+  "L5.lib": 13.856,
+  "L5.num": 15.236,
+  "L6.s": 17.3,
+  "L6.e": 22.5,
+  "L6.num": 18.444,
+  "L6.control": 20.524,
+  "L7.s": 23.0,
+  "L7.e": 26.0,
+  "L7.num": 24.02,
+  "L8.s": 26.5,
+  "L8.e": 29.5,
+  "L8.num": 27.64,
+  "L9.s": 29.8,
+  "L9.e": 31.7,
+  "L9.kitchen": 30.655,
+  "L10.s": 32.3,
+  "L10.e": 36.5,
+  "L10.scripts": 33.56,
+  "L10.windows": 34.484,
+  "L10.doors": 35.24,
+  "L10.kitchens": 35.912,
+  "L11.s": 37.4,
+  "L11.e": 41.4,
+  "L11.num": 39.4,
+  "L12.s": 41.85,
+  "L12.e": 44.15,
+  "L13.s": 44.5,
+  "L13.e": 46.6,
+  "L14.s": 47.4,
+  "L14.e": 49.4,
+  "L14.faqat": 48.84,
+  "L15.s": 50.1,
+  "L15.e": 53.5,
+  "L15.hizma": 51.052,
+  "L15.send": 52.072,
+  "hook.search": 3.9,
+  "hook.imagine": 5.7,
+  "hook.sweep": 7.63,
+  "title.in": 7.97,
+  "grid.start": 41.7,
+  "grid.land": 43.4,
+  "question.in": 44.45,
+  "price.hit": 47.14,
+  "cta.in": 49.85,
+  "end": 55.2,
+  "revit.go": 11.75,
+  "revit.land": 12.3,
+  "autocad.go": 16.85,
+  "autocad.land": 17.4,
+  "blocks.go": 22.55,
+  "blocks.land": 23.1,
+  "sketchup.go": 26.05,
+  "sketchup.land": 26.6,
+  "kitchen.go": 29.48,
+  "kitchen.land": 29.96,
+  "max.go": 31.85,
+  "max.land": 32.4,
+  "ai.go": 36.95,
+  "ai.land": 37.5,
+  "max.draw": 32.7
+ },
+ "scenes": [
+  {
+   "id": "hook",
+   "start": 0.0,
+   "end": 7.97,
+   "beats": {
+    "search": 3.9,
+    "imagine": 5.7,
+    "sweep": 7.63
+   },
+   "cueRef": {
+    "search": "L2.start",
+    "imagine": "L3.start",
+    "sweep": "L3.end - 0.42"
+   },
+   "transitionOut": {
+    "type": "cause-effect",
+    "dur": 0.5,
+    "why": "the crosshair sweeps the scattered searches into one point; the point opens into the vault's title",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "title",
+   "start": 7.97,
+   "end": 12.3,
+   "beats": {
+    "hizma": 9.184,
+    "whip": 11.75
+   },
+   "cueRef": {
+    "hizma": "L4.حزمة"
+   },
+   "transitionOut": {
+    "type": "whip pan",
+    "dur": 0.55,
+    "why": "next step along the sheet (whip left)",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "revit",
+   "start": 12.3,
+   "end": 17.4,
+   "beats": {
+    "lib": 13.856,
+    "num": 15.236
+   },
+   "transitionOut": {
+    "type": "whip pan",
+    "dur": 0.55,
+    "why": "next step (whip left)",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "autocad",
+   "start": 17.4,
+   "end": 23.1,
+   "beats": {
+    "num": 18.444,
+    "control": 20.524,
+    "drop": 22.55
+   },
+   "transitionOut": {
+    "type": "whip pan",
+    "dur": 0.55,
+    "why": "'on top of that' — drop down",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "blocks",
+   "start": 23.1,
+   "end": 26.6,
+   "beats": {
+    "num": 24.02
+   },
+   "transitionOut": {
+    "type": "whip pan",
+    "dur": 0.55,
+    "why": "next step (drop down)",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "sketchup",
+   "start": 26.6,
+   "end": 29.96,
+   "beats": {
+    "num": 27.64,
+    "slide": 29.48
+   },
+   "transitionOut": {
+    "type": "whip pan",
+    "dur": 0.55,
+    "why": "'including' — slide to the neighbour",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "kitchen",
+   "start": 29.96,
+   "end": 32.4,
+   "beats": {
+    "kitchen": 30.655
+   },
+   "transitionOut": {
+    "type": "whip pan",
+    "dur": 0.55,
+    "why": "next step (whip right)",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "max",
+   "start": 32.4,
+   "end": 37.5,
+   "beats": {
+    "scripts": 33.56,
+    "windows": 34.484,
+    "doors": 35.24,
+    "kitchens": 35.912,
+    "draw": 32.7
+   },
+   "transitionOut": {
+    "type": "whip pan",
+    "dur": 0.55,
+    "why": "last tool (rise)",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "ai",
+   "start": 37.5,
+   "end": 41.7,
+   "beats": {
+    "num": 39.4
+   },
+   "transitionOut": {
+    "type": "scale through (zoom extents)",
+    "dur": 1.7,
+    "why": "'keep all your tools in one place': the eight cells turn out to be one sheet",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "grid",
+   "start": 41.7,
+   "end": 47.14,
+   "beats": {
+    "land": 43.4,
+    "question": 44.45,
+    "start": 41.7
+   },
+   "cueRef": {
+    "question": "L13.start"
+   },
+   "transitionOut": {
+    "type": "push in",
+    "dur": 0.35,
+    "why": "the answer fills the one empty cell",
+    "bridge": "crosshair"
+   }
+  },
+  {
+   "id": "price",
+   "start": 47.14,
+   "end": 49.85,
+   "beats": {
+    "hit": 47.14,
+    "faqat": 48.84
+   },
+   "cueRef": {
+    "hit": "L14.start - 0.26"
+   },
+   "transitionOut": {
+    "type": "next step",
+    "dur": 1.0,
+    "why": "the standing CTA chip opens into the comment field",
+    "bridge": "cta chip"
+   }
+  },
+  {
+   "id": "cta",
+   "start": 49.85,
+   "end": 55.2,
+   "beats": {
+    "hizma": 51.052,
+    "send": 52.072
+   },
+   "cueRef": {
+    "hizma": "L15.حزمة",
+    "send": "L15.ونرسل"
+   }
+  }
+ ],
+ "camera": [
+  {
+   "t0": 0,
+   "t1": 0,
+   "zoom": 1,
+   "x": 2700.0,
+   "y": 960.0,
+   "ease": "hold",
+   "why": "open on the hook"
+  },
+  {
+   "t0": 11.75,
+   "t1": 12.3,
+   "zoom": 1,
+   "x": 1620.0,
+   "y": 960.0,
+   "ease": "whip",
+   "why": "next tool: the sheet continues to the left",
+   "to": "revit"
+  },
+  {
+   "t0": 16.85,
+   "t1": 17.4,
+   "zoom": 1,
+   "x": 540.0,
+   "y": 960.0,
+   "ease": "whip",
+   "why": "next tool",
+   "to": "autocad"
+  },
+  {
+   "t0": 22.55,
+   "t1": 23.1,
+   "zoom": 1,
+   "x": 540.0,
+   "y": 2880.0,
+   "ease": "whip",
+   "why": "'on top of that': drop down the sheet",
+   "to": "blocks"
+  },
+  {
+   "t0": 26.05,
+   "t1": 26.6,
+   "zoom": 1,
+   "x": 540.0,
+   "y": 4800.0,
+   "ease": "whip",
+   "why": "next tool",
+   "to": "sketchup"
+  },
+  {
+   "t0": 29.48,
+   "t1": 29.96,
+   "zoom": 1,
+   "x": 1620.0,
+   "y": 4800.0,
+   "ease": "whip",
+   "why": "'including': the neighbour cell",
+   "to": "kitchen"
+  },
+  {
+   "t0": 31.85,
+   "t1": 32.4,
+   "zoom": 1,
+   "x": 2700.0,
+   "y": 4800.0,
+   "ease": "whip",
+   "why": "next tool",
+   "to": "max"
+  },
+  {
+   "t0": 36.95,
+   "t1": 37.5,
+   "zoom": 1,
+   "x": 2700.0,
+   "y": 2880.0,
+   "ease": "whip",
+   "why": "last tool, back up the sheet",
+   "to": "ai"
+  },
+  {
+   "t0": 41.7,
+   "t1": 43.4,
+   "zoom": 0.3333333333333333,
+   "x": 1620.0,
+   "y": 2880.0,
+   "ease": "inout",
+   "why": "zoom extents: every tool is on one sheet",
+   "to": "grid"
+  },
+  {
+   "t0": 47.1,
+   "t1": 47.45,
+   "zoom": 0.56,
+   "x": 1620.0,
+   "y": 2880.0,
+   "ease": "out",
+   "why": "payoff: push into the empty centre as the price lands",
+   "to": "price"
+  },
+  {
+   "t0": 49.85,
+   "t1": 50.85,
+   "zoom": 0.5,
+   "x": 1620.0,
+   "y": 3030.0,
+   "ease": "inout",
+   "why": "make room for the comment field",
+   "to": "cta"
+  }
+ ],
+ "cuts": [],
+ "hero": {
+  "t": 47.14,
+  "what": "25$ lands in the empty centre cell"
+ },
+ "silences": [
+  {
+   "from": 46.68,
+   "to": 47.12
+  }
+ ],
+ "sfx": [
+  {
+   "at": "hook.search",
+   "offset": 0.0,
+   "src": "tick",
+   "gain": 0.16,
+   "why": "first search lands",
+   "t": 3.9
+  },
+  {
+   "at": "hook.sweep",
+   "offset": 0.0,
+   "src": "suck",
+   "gain": 0.22,
+   "why": "searches collapse into the crosshair",
+   "t": 7.63
+  },
+  {
+   "at": "title.hizma",
+   "offset": 0.0,
+   "src": "thud",
+   "gain": 0.15,
+   "why": "the name lands",
+   "t": 9.184
+  },
+  {
+   "at": "title.whip",
+   "offset": 0.0,
+   "src": "whoosh",
+   "gain": 0.17,
+   "why": "first whip",
+   "t": 11.75
+  },
+  {
+   "at": "revit.num",
+   "offset": 0.0,
+   "src": "pluck_hi",
+   "gain": 0.14,
+   "why": "26 GB stops",
+   "t": 15.236
+  },
+  {
+   "at": "autocad.num",
+   "offset": 0.0,
+   "src": "pluck_hi",
+   "gain": 0.12,
+   "why": "3000 stops",
+   "t": 18.444
+  },
+  {
+   "at": "autocad.drop",
+   "offset": 0.0,
+   "src": "whoosh_low",
+   "gain": 0.16,
+   "why": "drop down the sheet",
+   "t": 22.55
+  },
+  {
+   "at": "blocks.num",
+   "offset": 0.0,
+   "src": "pluck_hi",
+   "gain": 0.12,
+   "why": "6000 stops",
+   "t": 24.02
+  },
+  {
+   "at": "sketchup.num",
+   "offset": 0.0,
+   "src": "pluck_hi",
+   "gain": 0.11,
+   "why": "30 stops",
+   "t": 27.64
+  },
+  {
+   "at": "sketchup.slide",
+   "offset": 0.0,
+   "src": "whoosh",
+   "gain": 0.13,
+   "why": "slide to the kitchen tool",
+   "t": 29.48
+  },
+  {
+   "at": "max.draw",
+   "offset": 0.0,
+   "src": "pen",
+   "gain": 0.1,
+   "why": "line art draws",
+   "t": 32.7
+  },
+  {
+   "at": "ai.num",
+   "offset": 0.0,
+   "src": "pluck_hi",
+   "gain": 0.12,
+   "why": "5000 stops",
+   "t": 39.4
+  },
+  {
+   "at": "grid.start",
+   "offset": 0.0,
+   "src": "riser",
+   "gain": 0.2,
+   "why": "zoom extents builds to the question",
+   "t": 41.7
+  },
+  {
+   "at": "price.hit",
+   "offset": 0.0,
+   "src": "impact",
+   "gain": 0.62,
+   "why": "PAYOFF: loudest non-voice sound, in the pause before the price is said",
+   "t": 47.14
+  },
+  {
+   "at": "price.faqat",
+   "offset": 0.0,
+   "src": "sparkle",
+   "gain": 0.1,
+   "why": "'only'",
+   "t": 48.84
+  },
+  {
+   "at": "cta.hizma",
+   "offset": 0.0,
+   "src": "keys",
+   "gain": 0.12,
+   "why": "typing the word",
+   "t": 51.052
+  },
+  {
+   "at": "cta.send",
+   "offset": 0.0,
+   "src": "pluck_hi",
+   "gain": 0.14,
+   "why": "sent",
+   "t": 52.072
+  }
+ ],
+ "captions": [
+  {
+   "from": 0.35,
+   "to": 3.9,
+   "text": "أكثر شي يضيّع وقت المعماري، مو التصميم نفسه.",
+   "src": "vo:L1"
+  },
+  {
+   "from": 3.9,
+   "to": 5.55,
+   "text": "البحث عن الأدوات.",
+   "src": "vo:L2"
+  },
+  {
+   "from": 5.75,
+   "to": 8.3,
+   "text": "تخيّل لو كلها عندك من البداية.",
+   "src": "vo:L3"
+  },
+  {
+   "from": 8.4,
+   "to": 11.45,
+   "text": "هاي هي حزمة المهندس المعماري الشاملة.",
+   "src": "vo:L4"
+  },
+  {
+   "from": 12.2,
+   "to": 17.05,
+   "text": "إذا شغلك على ريفيت، مكتبة فاميليز بحجم ستة وعشرين جيجابايت.",
+   "src": "vo:L5"
+  },
+  {
+   "from": 17.3,
+   "to": 22.75,
+   "text": "لأوتوكاد، أكثر من ثلاثة آلاف بلوك ذكي، تتحكم بأبعادها خلال ثواني.",
+   "src": "vo:L6"
+  },
+  {
+   "from": 23.0,
+   "to": 26.25,
+   "text": "وفوقها، أكثر من ستة آلاف بلوك إضافي.",
+   "src": "vo:L7"
+  },
+  {
+   "from": 26.5,
+   "to": 29.75,
+   "text": "لسكتش أب، أكثر من ثلاثين إضافة احترافية،",
+   "src": "vo:L8"
+  },
+  {
+   "from": 29.8,
+   "to": 31.95,
+   "text": "ومن ضمنها مولّد المطابخ.",
+   "src": "vo:L9"
+  },
+  {
+   "from": 32.3,
+   "to": 36.75,
+   "text": "ولثري دي ماكس، سكربتات تولّد النوافذ والأبواب والمطابخ.",
+   "src": "vo:L10"
+  },
+  {
+   "from": 37.4,
+   "to": 41.65,
+   "text": "وحتى الذكاء الاصطناعي، أكثر من خمسة آلاف برومت جاهز.",
+   "src": "vo:L11"
+  },
+  {
+   "from": 41.85,
+   "to": 44.4,
+   "text": "خلّي أدواتك كلها بمكان واحد.",
+   "src": "vo:L12"
+  },
+  {
+   "from": 44.5,
+   "to": 46.85,
+   "text": "وكم رح تدفع مقابل كل هذا؟",
+   "src": "vo:L13"
+  },
+  {
+   "from": 47.4,
+   "to": 49.65,
+   "text": "خمسة وعشرين دولار فقط.",
+   "src": "vo:L14"
+  },
+  {
+   "from": 50.1,
+   "to": 53.75,
+   "text": "اكتب كلمة حزمة بالتعليقات، ونرسل لك الرابط.",
+   "src": "vo:L15"
+  }
+ ],
+ "texts": [
+  {
+   "id": "hook",
+   "text": "أكثر شي يضيّع وقت المعماري؟",
+   "from": 0.0,
+   "to": 5.7,
+   "role": "hook",
+   "px": 150,
+   "box": [
+    60,
+    380,
+    960,
+    360
+   ]
+  },
+  {
+   "id": "hook2",
+   "text": "البحث عن الأدوات",
+   "from": 4.35,
+   "to": 5.7,
+   "role": "hook",
+   "px": 140,
+   "box": [
+    60,
+    900,
+    960,
+    190
+   ]
+  },
+  {
+   "id": "imagine",
+   "text": "تخيّل لو كلها عندك من البداية",
+   "from": 6.65,
+   "to": 7.63,
+   "px": 122
+  },
+  {
+   "id": "cta-chip",
+   "text": "اكتب «حزمة» بالتعليقات",
+   "from": 2.3,
+   "to": 49.85,
+   "role": "cta",
+   "px": 50,
+   "box": [
+    230,
+    1404,
+    620,
+    90
+   ]
+  },
+  {
+   "id": "name",
+   "text": "حزمة المهندس المعماري الشاملة",
+   "from": 9.884,
+   "to": 11.75,
+   "role": "term",
+   "px": 120,
+   "box": [
+    80,
+    620,
+    920,
+    560
+   ]
+  },
+  {
+   "id": "revit",
+   "text": "مكتبة فاميليز ريفيت",
+   "from": 13.15,
+   "to": 16.85,
+   "role": "term",
+   "px": 78
+  },
+  {
+   "id": "revit-n",
+   "text": "26 GB",
+   "from": 15.236,
+   "to": 16.85,
+   "px": 250
+  },
+  {
+   "id": "autocad",
+   "text": "+3000 بلوك ذكي لأوتوكاد",
+   "from": 18.694,
+   "to": 22.55,
+   "px": 76
+  },
+  {
+   "id": "blocks",
+   "text": "+6000 بلوك إضافي",
+   "from": 24.02,
+   "to": 26.05,
+   "px": 76
+  },
+  {
+   "id": "sketchup",
+   "text": "إضافة احترافية لسكتش أب",
+   "from": 27.55,
+   "to": 29.48,
+   "px": 60
+  },
+  {
+   "id": "sketchup-n",
+   "text": "+30",
+   "from": 27.64,
+   "to": 29.48,
+   "px": 186
+  },
+  {
+   "id": "kitchen",
+   "text": "مولد المطابخ",
+   "from": 30.66,
+   "to": 31.85,
+   "px": 120
+  },
+  {
+   "id": "max",
+   "text": "سكربتات ثري دي ماكس",
+   "from": 33.86,
+   "to": 36.95,
+   "px": 92
+  },
+  {
+   "id": "ai",
+   "text": "+5000 برومت جاهز",
+   "from": 39.7,
+   "to": 41.7,
+   "px": 84
+  },
+  {
+   "id": "question",
+   "text": "كم رح تدفع مقابل كل هذا؟",
+   "from": 44.95,
+   "to": 47.14,
+   "px": 88
+  },
+  {
+   "id": "price",
+   "text": "25$ فقط",
+   "from": 47.44,
+   "to": 55.2,
+   "role": "term",
+   "px": 300
+  },
+  {
+   "id": "cta",
+   "text": "اكتب «حزمة» بالتعليقات",
+   "from": 51.552,
+   "to": 55.2,
+   "role": "cta",
+   "px": 60
+  }
+ ],
+ "terms": [
+  "حزمة المهندس المعماري الشاملة",
+  "ريفيت"
+ ]
+}

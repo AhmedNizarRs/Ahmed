@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>Rimal — The Ultimate Architect Tools Vault (film)</title>
+<link rel="stylesheet" href="film.css">
+</head>
+<body>
+<div id="stage">
+  <canvas id="bg" width="1080" height="1920"></canvas>
+  <div id="world">
+    <!-- (2,0) hook, then title -->
+    <section class="cell" id="c-title">
+      <div class="kicker" id="kicker"><img src="../assets/img/dunes.png" alt=""><span>حزمة المهندس المعماري الشاملة</span></div>
+      <h1 class="hook1" id="hook1" data-words>أكثر شي يضيّع<br>وقت المعماري؟</h1>
+      <p class="hook2" id="hook2"><span data-words>مو التصميم نفسه</span><i class="strike" id="strike"></i></p>
+      <p class="hook3" id="hook3" data-words>البحث عن الأدوات</p>
+      <p class="imagine" id="imagine" data-words>تخيّل لو كلها<br>عندك من البداية</p>
+      <div id="pills"></div>
+      <div class="title" id="title">
+        <img class="t-logo" id="t-logo" src="../assets/img/dunes.png" alt="">
+        <p class="t-brand" id="t-brand" dir="ltr">RIMAL INTERIORS</p>
+        <p class="t-1" id="t-1" data-words>حزمة</p>
+        <p class="t-2" id="t-2" data-words>المهندس المعماري</p>
+        <p class="t-3" id="t-3" data-words>الشاملة</p>
+        <div class="dim" id="t-dim"><i></i></div>
+        <p class="mono t-en" id="t-en" dir="ltr">THE ULTIMATE ARCHITECT TOOLS VAULT</p>
+      </div>
+    </section>
+
+    <!-- (1,0) Revit -->
+    <section class="cell" id="c-revit">
+      <p class="tag" id="revit-tag" dir="ltr"><b>01</b> REVIT</p>
+      <div class="numrow" id="revit-num" dir="ltr" style="top:292px;right:70px"><span class="num" data-count="26" style="font-size:250px"></span><span class="unit" style="font-size:112px">GB</span></div>
+      <p class="cap" id="revit-cap" style="top:548px;right:70px;font-size:78px" data-words>مكتبة فاميليز ريفيت</p>
+      <div class="vp" id="vp-revit" data-clip="revit" data-n="477" style="left:70px;top:690px;width:940px;height:690px"></div>
+    </section>
+
+    <!-- (0,0) AutoCAD dynamic blocks -->
+    <section class="cell" id="c-autocad">
+      <p class="tag" id="autocad-tag" dir="ltr"><b>02</b> AUTOCAD</p>
+      <div class="vp" id="vp-autocad" data-clip="autocad" data-n="286" style="left:70px;top:340px;width:940px;height:700px">
+        <div class="plate" id="autocad-plate"><span data-words>تتحكم بأبعادها خلال ثواني</span><div class="dim grips" id="autocad-dim"><i></i></div></div>
+      </div>
+      <div class="numrow" id="autocad-num" dir="ltr" style="top:1052px;right:70px"><span class="plus" style="font-size:150px">+</span><span class="num" data-count="3000" style="font-size:220px"></span></div>
+      <p class="cap" id="autocad-cap" style="top:1284px;right:70px;font-size:76px" data-words>بلوك ذكي لأوتوكاد</p>
+    </section>
+
+    <!-- (0,1) bonus block library -->
+    <section class="cell" id="c-blocks">
+      <p class="tag" id="blocks-tag" dir="ltr"><b>03</b> AUTOCAD · BONUS</p>
+      <div class="numrow" id="blocks-num" dir="ltr" style="top:310px;left:70px"><span class="plus" style="font-size:150px">+</span><span class="num" data-count="6000" style="font-size:220px"></span></div>
+      <p class="cap" id="blocks-cap" style="top:342px;right:70px;font-size:84px;line-height:1.12" data-words>بلوك<br>إضافي</p>
+      <div class="vp" id="vp-blocks" data-clip="blocks" data-n="600" data-off="70" style="left:70px;top:580px;width:940px;height:793px"></div>
+    </section>
+
+    <!-- (0,2) SketchUp extensions -->
+    <section class="cell" id="c-sketchup">
+      <p class="tag" id="sketchup-tag" dir="ltr"><b>04</b> SKETCHUP</p>
+      <div class="vp" id="vp-plgn" data-clip="plgn" data-n="270" style="left:70px;top:340px;width:940px;height:648px"></div>
+      <div class="vp card" id="vp-wind" data-clip="wind" data-n="291" style="left:70px;top:850px;width:560px;height:466px"></div>
+      <div class="numrow" id="sketchup-num" dir="ltr" style="top:1002px;right:70px"><span class="plus" style="font-size:124px">+</span><span class="num" data-count="30" style="font-size:186px"></span></div>
+      <p class="cap" id="sketchup-cap" style="top:1196px;right:70px;font-size:60px;line-height:1.3" data-words>إضافة احترافية<br>لسكتش أب</p>
+    </section>
+
+    <!-- (1,2) kitchen generator -->
+    <section class="cell" id="c-kitchen">
+      <p class="tag" id="kitchen-tag" dir="ltr"><b>05</b> SKETCHUP</p>
+      <p class="cap soft" id="kitchen-pre" style="top:318px;right:70px;font-size:56px" data-words>ومن ضمنها</p>
+      <p class="cap" id="kitchen-cap" style="top:386px;right:70px;font-size:128px" data-words>مولد المطابخ</p>
+      <div class="vp" id="vp-ktchn" data-clip="ktchn" data-n="480" style="left:70px;top:620px;width:940px;height:642px"></div>
+      <div class="dim" id="kitchen-dim" style="left:70px;top:1296px;width:940px"><i></i></div>
+      <p class="mono" id="kitchen-en" dir="ltr" style="top:1322px;left:70px">KITCHEN GENERATOR</p>
+    </section>
+
+    <!-- (2,2) 3ds Max scripts: drawn, not filmed -->
+    <section class="cell" id="c-max">
+      <p class="tag" id="max-tag" dir="ltr"><b>06</b> 3DS MAX</p>
+      <p class="cap" id="max-cap" style="top:316px;right:70px;font-size:92px" data-words>سكربتات ثري دي ماكس</p>
+      <div class="tabs" id="max-tabs"><span id="tab-w">النوافذ</span><span id="tab-d">الأبواب</span><span id="tab-k">المطابخ</span></div>
+      <svg id="max-art" viewBox="0 0 800 740" width="800" height="740" style="left:140px;top:600px"></svg>
+      <p class="mono" id="max-sch" dir="ltr" style="top:1348px;left:140px">SCHEMATIC</p>
+    </section>
+
+    <!-- (2,1) AI prompts -->
+    <section class="cell" id="c-ai">
+      <p class="tag" id="ai-tag" dir="ltr"><b>07</b> AI</p>
+      <div class="prompts" id="ai-prompts" dir="ltr"><div id="ai-scroll"></div></div>
+      <div class="ai-veil"></div>
+      <div class="numrow" id="ai-num" dir="ltr" style="top:560px;right:70px"><span class="plus" style="font-size:170px">+</span><span class="num" data-count="5000" style="font-size:250px"></span></div>
+      <p class="cap" id="ai-cap" style="top:830px;right:70px;font-size:104px" data-words>برومت جاهز</p>
+      <p class="cap soft" id="ai-cap2" style="top:968px;right:70px;font-size:62px" data-words>للذكاء الاصطناعي</p>
+      <p class="mono" id="ai-ex" dir="ltr" style="top:1338px;left:70px">EXAMPLE PROMPTS</p>
+    </section>
+
+    <!-- (1,1) the empty centre: question, then price -->
+    <section class="cell" id="c-price">
+      <p class="question" id="question" data-words>كم رح<br>تدفع مقابل<br>كل هذا؟</p>
+      <img class="p-logo" id="p-logo" src="../assets/img/dunes.png" alt="">
+      <p class="p-top" id="p-top" data-words>الحزمة كاملة</p>
+      <p class="p-price" id="p-price" dir="ltr"><span>25</span><span class="cur">$</span></p>
+      <p class="p-only" id="p-only" data-words>فقط</p>
+    </section>
+
+    <div class="scrim" id="scrim"></div>
+  </div>
+
+  <!-- screen space: the standing CTA that opens into the comment field -->
+  <div id="chip">
+    <span class="chip-label" id="chip-label">اكتب <b>«حزمة»</b> بالتعليقات</span>
+    <span class="chip-typed" id="chip-typed"></span><i class="caret" id="caret"></i>
+    <span class="chip-send" id="chip-send"><svg viewBox="0 0 48 48" width="48" height="48"><path d="M34 24H12M21 14l-10 10 10 10" fill="none" stroke="#1a0f0a" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+  </div>
+  <p id="cta-top">اكتب بالتعليقات</p>
+  <p id="cta-bot" data-words>ونرسل لك الرابط</p>
+
+  <svg id="cross" width="1080" height="1920" viewBox="0 0 1080 1920">
+    <g id="cross-g"><path d="M-46 0H-13M13 0H46M0 -46V-13M0 13V46" /><rect x="-9" y="-9" width="18" height="18"/><circle id="cross-ring" r="12"/></g>
+  </svg>
+</div>
+<script src="film.js"></script>
+</body>
+</html>

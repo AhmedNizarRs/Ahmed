@@ -1,0 +1,8 @@
+frames/
+stills/
+footage/
+node_modules/
+out/premix.wav
+out/mix.wav
+qa/
+*.log
