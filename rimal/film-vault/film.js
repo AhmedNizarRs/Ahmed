@@ -298,9 +298,9 @@
     tag("revit-tag", "revit"); tag("autocad-tag", "autocad"); tag("blocks-tag", "blocks"); tag("sketchup-tag", "sketchup"); tag("kitchen-tag", "kitchen"); tag("max-tag", "max"); tag("ai-tag", "ai");
 
     words($("revit-cap"), t, c["revit.land"] + 0.12);
-    counter($("revit-num"), t, c["L5.num"], { start: c["revit.land"] + 0.18 });
+    counter($("revit-num"), t, c["L5.num"], { start: Math.max(c["revit.land"] + 0.18, c["L5.num"] - 1.6) });
 
-    counter($("autocad-num"), t, c["L6.num"], { start: c["autocad.land"] + 0.18 });
+    counter($("autocad-num"), t, c["L6.num"], { start: Math.max(c["autocad.land"] + 0.18, c["L6.num"] - 1.6) });
     words($("autocad-cap"), t, c["L6.num"] - 0.25);
     const pl = $("autocad-plate"), pa = eOut(prog(t, c["L6.control"] - 0.3, 0.45));
     pl.style.opacity = clamp(pa * 2).toFixed(3); pl.style.transform = `translateY(${((1 - pa) * 40).toFixed(2)}px)`;
@@ -308,10 +308,10 @@
     const ad = $("autocad-dim"), ae = eIO(prog(t, c["L6.control"], 0.8));
     ad.style.width = lerp(260, 810, ae).toFixed(2) + "px"; ad.style.opacity = prog(t, c["L6.control"] - 0.15, 0.15).toFixed(3);
 
-    counter($("blocks-num"), t, c["L7.num"], { start: c["blocks.land"] + 0.18 });
+    counter($("blocks-num"), t, c["L7.num"], { start: Math.max(c["blocks.land"] + 0.18, c["L7.num"] - 1.6) });
     words($("blocks-cap"), t, c["blocks.land"] + 0.1, { stag: 0.12 });
 
-    counter($("sketchup-num"), t, c["L8.num"], { start: c["sketchup.land"] + 0.18 });
+    counter($("sketchup-num"), t, c["L8.num"], { start: Math.max(c["sketchup.land"] + 0.18, c["L8.num"] - 1.6) });
     words($("sketchup-cap"), t, c["sketchup.land"] + 0.12, { stag: 0.09 });
 
     words($("kitchen-pre"), t, c["kitchen.land"] - 0.15);
@@ -336,7 +336,7 @@
     rise($("max-sch"), t, wIn + 0.4);
 
     $("ai-scroll").style.transform = `translateY(${(-((t - c["ai.land"]) * 46) - 180).toFixed(2)}px)`;
-    counter($("ai-num"), t, c["L11.num"], { start: c["ai.land"] + 0.18 });
+    counter($("ai-num"), t, c["L11.num"], { start: Math.max(c["ai.land"] + 0.18, c["L11.num"] - 1.6) });
     words($("ai-cap"), t, c["L11.num"] - 0.2, { stag: 0.1 });
     words($("ai-cap2"), t, c["L11.num"] + 0.12, { stag: 0.1 });
     rise($("ai-ex"), t, c["ai.land"] + 0.3);

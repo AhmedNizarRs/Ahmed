@@ -2,11 +2,11 @@
 
 Code-rendered motion graphics: every frame is a pure function of time (`film.js` → `seek(t)`), driven by `timeline.json`.
 
-**Status:** delivered as a sound-effects-only version (`out/rimal-architect-vault-sfx-only.mp4`, no music); the earlier music + SFX cut is `out/rimal-architect-vault-no-voice.mp4`. The ElevenLabs voiceover could not be generated (service reported "free generations are busy" three times, nothing charged). The picture is timed to *estimated* line lengths; when the real voice exists everything re-times itself.
+**Status:** final cut = `out/rimal-architect-vault-voice-sfx.mp4`: ElevenLabs voiceover (voice "مؤمل العباس", eleven_v4, Iraqi dialect) + sound effects, no music. Earlier cuts without the voice are kept in `out/` (`-sfx-only`, `-no-voice`). Voice take: `vo/raw.mp3`, cut into 15 lines by `make_marks.py` + `cut_vo.py`; every beat in the film is derived from those measured lines.
 
-## Add the voice (script in TREATMENT.md, voice "مؤمل العباس", model eleven_v4)
+## Replace the voice (script in TREATMENT.md)
 1. Generate the 15 lines as one take → `vo/raw.mp3`.
-2. `python3 cut_vo.py words vo/raw.mp3` → word times and pauses; write `vo/marks.json` (see the docstring in `cut_vo.py`).
+2. `python3 cut_vo.py words vo/raw.mp3` → word times; update the word times in `make_marks.py` and run it → `vo/marks.json`.
 3. `python3 cut_vo.py cut vo/raw.mp3` → `vo/lines.json`.
 4. `python3 build_timeline.py && python3 mix.py --nomusic` (voice + sound effects only; drop `--nomusic` to bring the score back, ducked under the voice).
 5. Re-render and encode: `./extract_footage.sh <dir of Drive clips>` (once), `node render.js frames 0 1656` (split in four ranges to go faster), `python3 merge_blur.py frames`, `./encode.sh rimal-architect-vault 1500`.

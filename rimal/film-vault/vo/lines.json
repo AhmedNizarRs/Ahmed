@@ -1,0 +1,120 @@
+[
+ {
+  "id": "L1",
+  "file": "vo/L1.wav",
+  "dur": 3.5,
+  "cues": {
+   "mo": 2.24
+  }
+ },
+ {
+  "id": "L2",
+  "file": "vo/L2.wav",
+  "dur": 1.715,
+  "cues": {}
+ },
+ {
+  "id": "L3",
+  "file": "vo/L3.wav",
+  "dur": 2.255,
+  "cues": {}
+ },
+ {
+  "id": "L4",
+  "file": "vo/L4.wav",
+  "dur": 2.69,
+  "cues": {
+   "hizma": 0.57
+  }
+ },
+ {
+  "id": "L5",
+  "file": "vo/L5.wav",
+  "dur": 4.38,
+  "cues": {
+   "lib": 1.46,
+   "num": 3.72
+  }
+ },
+ {
+  "id": "L6",
+  "file": "vo/L6.wav",
+  "dur": 5.185,
+  "cues": {
+   "num": 2.18,
+   "control": 3.02
+  }
+ },
+ {
+  "id": "L7",
+  "file": "vo/L7.wav",
+  "dur": 2.905,
+  "cues": {
+   "num": 1.975
+  }
+ },
+ {
+  "id": "L8",
+  "file": "vo/L8.wav",
+  "dur": 3.105,
+  "cues": {
+   "num": 1.97
+  }
+ },
+ {
+  "id": "L9",
+  "file": "vo/L9.wav",
+  "dur": 1.97,
+  "cues": {
+   "kitchen": 0.785
+  }
+ },
+ {
+  "id": "L10",
+  "file": "vo/L10.wav",
+  "dur": 4.295,
+  "cues": {
+   "scripts": 1.115,
+   "windows": 2.235,
+   "doors": 2.915,
+   "kitchens": 3.595
+  }
+ },
+ {
+  "id": "L11",
+  "file": "vo/L11.wav",
+  "dur": 3.845,
+  "cues": {
+   "num": 2.88
+  }
+ },
+ {
+  "id": "L12",
+  "file": "vo/L12.wav",
+  "dur": 2.175,
+  "cues": {}
+ },
+ {
+  "id": "L13",
+  "file": "vo/L13.wav",
+  "dur": 1.76,
+  "cues": {}
+ },
+ {
+  "id": "L14",
+  "file": "vo/L14.wav",
+  "dur": 1.805,
+  "cues": {
+   "faqat": 1.38
+  }
+ },
+ {
+  "id": "L15",
+  "file": "vo/L15.wav",
+  "dur": 3.215,
+  "cues": {
+   "hizma": 0.855,
+   "send": 1.995
+  }
+ }
+]
