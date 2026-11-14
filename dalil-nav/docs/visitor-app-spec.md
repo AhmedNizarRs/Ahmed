@@ -1,4 +1,8 @@
-# Visitor app: build spec (next task)
+# Visitor app: original Phase 1 spec
+
+> Historical: the first brief. The app has since been redesigned twice; the current design is in `redesign.md`,
+> the moving arrow and camera line in `motion-and-camera.md`, site setup in `institution-setup.md`.
+> The acceptance checks below are still covered by `npm test`.
 
 Goal: the app a building's **visitors** use after DALIL has mapped that building. Match `design/visitor-app-mockup.png`.
 

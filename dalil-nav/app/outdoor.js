@@ -1,9 +1,9 @@
 // "Getting here": the building on a real street map, with the floor plan layered on top.
 // Renderer: MapLibre GL JS (vendor/maplibre, BSD-3), loaded only when this view opens.
-// Street map: OpenFreeMap vector tiles (free, no key; attribution shown by MapLibre).
+// Street maps: providers.js (OpenFreeMap and VersaTiles free; Esri, MapTiler, Stadia, Mapbox with the building's key),
+// tried in order with automatic failover, ending on a plain map that works offline.
 // Building outline: Overture Maps (ODbL) when the map file carries it, otherwise the plan's own outline.
-
-export const STYLE_URL = 'https://tiles.openfreemap.org/styles/positron';
+import { providerOrder, loadStyle, plainStyle, PLAIN } from './providers.js';
 
 // Plan metres -> [lng, lat] using the map's `geo` (origin = plan 0,0; bearing = plan +y, clockwise from north).
 export function geoTransform(geo) {
@@ -48,57 +48,70 @@ export function loadMapLibre(base = 'vendor/maplibre/') {
   });
 }
 
-// Recolour the light OpenFreeMap style for the dark theme (no second tile source needed).
-function darken(style) {
-  const fill = id => /water/.test(id) ? '#16222E' : /park|grass|wood|landcover|landuse/.test(id) ? '#171C19' : /building/.test(id) ? '#22262C' : '#14161A';
-  for (const l of style.layers) {
-    const p = l.paint ||= {};
-    if (l.type === 'background') p['background-color'] = '#0F1114';
-    else if (l.type === 'fill') { p['fill-color'] = fill(l.id); delete p['fill-pattern']; p['fill-outline-color'] = '#2A2E35'; }
-    else if (l.type === 'line') p['line-color'] = /water|river/.test(l.id) ? '#1E3042' : /boundary|admin/.test(l.id) ? '#3A3F47' : '#2C3036';
-    else if (l.type === 'symbol' && l.layout?.['text-field']) { p['text-color'] = '#8A919B'; p['text-halo-color'] = '#0F1114'; }
-  }
-  return style;
-}
-
-/** Open the outdoor map in `el`. Returns a controller, or throws if MapLibre can't load. */
-export async function createOutdoorMap(el, { map, dark, lang, label, onStatus, attribution }) {
+/** Open the outdoor map in `el`. Returns a controller, or throws if MapLibre can't load.
+ *  providers: { choice, cfg }. onProvider(active, failedNames) reports which map is showing. */
+export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvider, attribution, providers = {} }) {
   const maplibregl = await loadMapLibre();
-  let style, streets = true;
-  try {
-    const r = await fetch(STYLE_URL, { cache: 'force-cache' }); if (!r.ok) throw new Error(r.status);
-    style = await r.json(); if (dark) style = darken(style);
-  } catch {
-    streets = false;
-    style = { version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': dark ? '#0F1114' : '#EEEDE8' } }] };
+  const order = providerOrder(providers.choice || 'auto', providers.cfg || {}), failed = [];
+  let idx = -1, active = PLAIN;
+  async function nextStyle() {
+    while (++idx < order.length) {
+      const p = order[idx];
+      try { const s = await loadStyle(p, { dark, cfg: providers.cfg || {} }); active = p; return s; } catch { failed.push(p.name); }
+    }
+    active = PLAIN; return plainStyle(dark);
   }
+  const style = await nextStyle();
   const gj = floorGeoJSON(map);
   const m = new maplibregl.Map({ container: el, style, bounds: gj.bounds, fitBoundsOptions: { padding: 60 }, attributionControl: false, maxZoom: 20.5 });
-  m.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: attribution }), 'bottom-right');
-  const ready = new Promise(res => m.on('load', res));
-  await ready;
-  const accent = '#FFC700', ink = dark ? '#E9E7E1' : '#2B2E33';
-  m.addSource('outline', { type: 'geojson', data: gj.outline });
-  m.addSource('walls', { type: 'geojson', data: gj.walls });
-  m.addSource('entrances', { type: 'geojson', data: gj.entrances });
-  m.addSource('me', { type: 'geojson', data: { type: 'FeatureCollection', features: [] } });
-  m.addLayer({ id: 'outline-fill', type: 'fill', source: 'outline', paint: { 'fill-color': accent, 'fill-opacity': dark ? .12 : .18 } });
-  m.addLayer({ id: 'outline-line', type: 'line', source: 'outline', paint: { 'line-color': accent, 'line-width': 2 } });
-  m.addLayer({ id: 'walls', type: 'line', source: 'walls', minzoom: 16.5, paint: { 'line-color': ink, 'line-opacity': .8, 'line-width': ['interpolate', ['linear'], ['zoom'], 16.5, .5, 18, 1, 20, 1.8] } });
-  m.addLayer({ id: 'entr-ring', type: 'circle', source: 'entrances', paint: { 'circle-radius': 8, 'circle-color': '#15130A', 'circle-stroke-color': accent, 'circle-stroke-width': 4 } });
-  if (style.glyphs) m.addLayer({ id: 'entr-label', type: 'symbol', source: 'entrances', layout: { 'text-field': ['get', lang === 'ar' ? 'nameAr' : 'nameEn'], 'text-size': 12, 'text-offset': [0, 1.5], 'text-anchor': 'top', 'text-font': ['Noto Sans Regular'], 'text-optional': true }, paint: { 'text-color': ink, 'text-halo-color': dark ? '#0F1114' : '#FFFFFF', 'text-halo-width': 1.5 } });
-  m.addLayer({ id: 'me-acc', type: 'circle', source: 'me', filter: ['==', ['get', 'kind'], 'acc'], paint: { 'circle-color': '#8DB6FF', 'circle-opacity': .15, 'circle-radius': ['get', 'r'] } });
-  m.addLayer({ id: 'me-dot', type: 'circle', source: 'me', filter: ['==', ['get', 'kind'], 'dot'], paint: { 'circle-radius': 7, 'circle-color': '#FFFFFF', 'circle-stroke-color': '#3B7BFF', 'circle-stroke-width': 3 } });
+  const custom = [attribution, active.attribution].filter(Boolean).join(' · ');
+  const attr = new maplibregl.AttributionControl({ compact: true, customAttribution: custom });
+  m.addControl(attr, 'bottom-right');
+  const accent = '#FFC700', ink = dark ? '#E9E7E1' : '#2B2E33', OURS = new Set(['outline', 'walls', 'entrances', 'me']);
+  let meData = { type: 'FeatureCollection', features: [] };
+  // DALIL's own layers go on top of whichever street map is showing (again after every style switch).
+  const addOverlays = () => {
+    if (m.getSource('outline')) return;
+    m.addSource('outline', { type: 'geojson', data: gj.outline });
+    m.addSource('walls', { type: 'geojson', data: gj.walls });
+    m.addSource('entrances', { type: 'geojson', data: gj.entrances });
+    m.addSource('me', { type: 'geojson', data: meData });
+    m.addLayer({ id: 'outline-fill', type: 'fill', source: 'outline', paint: { 'fill-color': accent, 'fill-opacity': dark ? .12 : .18 } });
+    m.addLayer({ id: 'outline-line', type: 'line', source: 'outline', paint: { 'line-color': accent, 'line-width': 2 } });
+    m.addLayer({ id: 'walls', type: 'line', source: 'walls', minzoom: 16.5, paint: { 'line-color': ink, 'line-opacity': .8, 'line-width': ['interpolate', ['linear'], ['zoom'], 16.5, .5, 18, 1, 20, 1.8] } });
+    m.addLayer({ id: 'entr-ring', type: 'circle', source: 'entrances', paint: { 'circle-radius': 8, 'circle-color': '#15130A', 'circle-stroke-color': accent, 'circle-stroke-width': 4 } });
+    if (m.getStyle().glyphs) m.addLayer({ id: 'entr-label', type: 'symbol', source: 'entrances', layout: { 'text-field': ['get', lang === 'ar' ? 'nameAr' : 'nameEn'], 'text-size': 12, 'text-offset': [0, 1.5], 'text-anchor': 'top', 'text-font': ['Noto Sans Regular'], 'text-optional': true }, paint: { 'text-color': ink, 'text-halo-color': dark ? '#0F1114' : '#FFFFFF', 'text-halo-width': 1.5 } });
+    m.addLayer({ id: 'me-acc', type: 'circle', source: 'me', filter: ['==', ['get', 'kind'], 'acc'], paint: { 'circle-color': '#8DB6FF', 'circle-opacity': .15, 'circle-radius': ['get', 'r'] } });
+    m.addLayer({ id: 'me-dot', type: 'circle', source: 'me', filter: ['==', ['get', 'kind'], 'dot'], paint: { 'circle-radius': 7, 'circle-color': '#FFFFFF', 'circle-stroke-color': '#3B7BFF', 'circle-stroke-width': 3 } });
+  };
+  m.on('style.load', addOverlays);
+  // Failover once the style is in: if its tiles keep failing and none arrive, move to the next map.
+  // (Listening from the start: failed tiles can arrive before the map's 'load' event.)
+  let ctl = null, loads = 0, errs = 0, t0 = performance.now(), switching = false;
+  m.on('data', e => { if (e.dataType === 'source' && e.tile && !OURS.has(e.sourceId)) loads++; });
+  m.on('error', async e => {
+    if (OURS.has(e.sourceId) || active === PLAIN || switching) return;
+    errs++;
+    if (loads > 0 || errs < 3 || performance.now() - t0 > 20000) return;
+    switching = true; failed.push(active.name);
+    const s = await nextStyle(); loads = 0; errs = 0; t0 = performance.now();
+    m.setStyle(s); switching = false;
+    if (ctl) { ctl.provider = active; ctl.streets = active !== PLAIN; }
+    onProvider?.(active, failed.slice());
+  });
+  await new Promise(res => { m.once('load', res); setTimeout(res, 8000); });
+  if (m.isStyleLoaded()) addOverlays();
   const mainEntr = gj.entrances.features.find(f => f.properties.main) || gj.entrances.features[0];
   const target = mainEntr ? mainEntr.geometry.coordinates : [(gj.bounds[0][0] + gj.bounds[1][0]) / 2, (gj.bounds[0][1] + gj.bounds[1][1]) / 2];
   let watch = null;
-  const ctl = {
-    map: m, streets, target, geojson: gj,
+  ctl = {
+    map: m, streets: active !== PLAIN, provider: active, failed, target, geojson: gj,
     setMe(lng, lat, acc) {
       const mpp = 156543.03 * Math.cos(lat * Math.PI / 180) / 2 ** m.getZoom();
-      m.getSource('me').setData({ type: 'FeatureCollection', features: [
+      meData = { type: 'FeatureCollection', features: [
         { type: 'Feature', properties: { kind: 'acc', r: Math.max(8, acc / mpp) }, geometry: { type: 'Point', coordinates: [lng, lat] } },
-        { type: 'Feature', properties: { kind: 'dot' }, geometry: { type: 'Point', coordinates: [lng, lat] } }] });
+        { type: 'Feature', properties: { kind: 'dot' }, geometry: { type: 'Point', coordinates: [lng, lat] } }] };
+      m.getSource('me')?.setData(meData);
     },
     locate() {
       if (!navigator.geolocation) { onStatus?.('unavailable'); return; }

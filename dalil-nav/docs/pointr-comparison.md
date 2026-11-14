@@ -16,8 +16,9 @@ don't publish. Never present this table publicly as a "we beat them" claim: comp
 | MapScale: "Auto room/furniture identification", "Automatic path generation", "minutes, not weeks" | Mapper: **Find places in drawing** reads room numbers, lifts, stairs, toilets and other symbols from the CAD; walkable map and routes are automatic. Kennedy Library Level 1: 70 places in about 2 s | ✓ built for CAD; scanned/PDF plans still traced by hand |
 | Sharing (iMessage, link) | **Share route**: link + QR code, opens with the same start and destination (works for hospital appointment SMS/WhatsApp) | ✓ built |
 | Kiosk ("Multi-platform across Mobile, Web and Kiosk") | **Kiosk mode** (`#kiosk`): fixed location, QR to continue on a phone, resets after 90 s idle | ✓ built |
-| Blue dot: "Bluetooth Low Energy", "Sub-3 meter accuracy", beacons with "5+ years battery life" | No beacons, no batteries: location is exact at every tag (NFC/QR), steps in between | Different by design. Next: phone motion sensors between tags |
-| Wayfinding / search analytics, heatmaps, footfall | — | Next: needs a backend (facility manager dashboard, business model #2) |
+| Blue dot: "Bluetooth Low Energy", "Sub-3 meter accuracy", beacons with "5+ years battery life" | No beacons, no batteries: exact at every sign (NFC tap or QR scan); in between, the **phone's compass and step counter** move the arrow along the route (an estimate, corrected at corners and signs) | ✓ built (estimate between signs; no accuracy figure until field-tested) |
+| AR wayfinding (camera) | **Camera mode**: a yellow guide line drawn on the floor ahead, destination post, "turn around" hints; reads sign QR codes to re-locate and re-route | ✓ built (field test pending) |
+| Wayfinding / search analytics, heatmaps, footfall | Anonymous event hooks (searches with no result, routes, help pressed, step reached), off by default, sent to the client's endpoint | Hooks ✓ built; dashboard next (business model #2) |
 | "Indoor-to-outdoor campus wayfinding" | — | Next: outdoor paths between buildings |
 | Integrations: SDKs (iOS/Android/Web), REST API, webhooks, Epic MyChart, IMDF | Deep links (`#at-…&to-…`), open JSON map format | Next: IMDF export, embeddable widget |
 
@@ -32,8 +33,9 @@ don't publish. Never present this table publicly as a "we beat them" claim: comp
 
 ## Next, in order
 
-1. Facility dashboard: closures on/off, rename rooms, search and route analytics (privacy-safe).
-2. Import a room list (Excel/CSV) to name rooms, e.g. from the building's directory.
-3. Motion sensors (steps + compass) between tags, re-anchored at each tag.
-4. Outdoor paths between buildings for campuses.
-5. IMDF export and an embeddable widget for the client's own app or website.
+1. Field-test the moving arrow and camera line on Android and iPhone in a real building (`motion-and-camera.md`).
+2. Facility dashboard: closures on/off, rename rooms, read the anonymous usage counts.
+3. Import a room list (Excel/CSV) to name rooms, e.g. from the building's directory.
+4. Print-ready sign sheets from the Mapper (QR + node name + braille reference).
+5. Outdoor paths between buildings for campuses.
+6. IMDF export and an embeddable widget for the client's own app or website.

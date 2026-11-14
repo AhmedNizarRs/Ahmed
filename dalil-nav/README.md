@@ -8,7 +8,7 @@ Indoor navigation for large buildings: a floor plan goes in, the visitor gets tu
 | `app/` | Visitor app (installable PWA). Run `npm run serve` here and open `http://localhost:8080/app/`. Spec: `docs/visitor-app-spec.md`. |
 | `data/` | Test plans (a real hospital DXF and a sample) and exported maps. |
 | `design/` | Visitor app mockup. |
-| `docs/` | Map file format and the visitor app spec. |
+| `docs/` | Map file format, the visitor app design (`redesign.md`), moving arrow and camera line (`motion-and-camera.md`), setting up a client site (`institution-setup.md`), map and data providers. |
 | `tests/` | Playwright tests: the Mapper (`test_mapper.py`) and the visitor app (`npm test`). |
 
 Claude Code reads `CLAUDE.md` automatically, so it already has the project context.

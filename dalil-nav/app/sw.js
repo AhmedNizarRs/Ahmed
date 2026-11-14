@@ -1,8 +1,9 @@
 // DALIL visitor app service worker: works offline once loaded.
 // Bump VERSION whenever app files change.
-const VERSION = 'dalil-app-v5';
+const VERSION = 'dalil-app-v6';
 const SHELL = [
-  './', 'index.html', 'styles.css', 'app.js', 'i18n.js', 'mapview.js', 'router.js', 'outdoor.js', 'vendor/qrcode.js', 'maps.json', 'manifest.webmanifest',
+  './', 'index.html', 'styles.css', 'app.js', 'i18n.js', 'mapview.js', 'router.js', 'outdoor.js', 'providers.js', 'tracker.js', 'camera.js',
+  'vendor/qrcode.js', 'vendor/jsqr/jsQR.js', 'maps.json', 'config.json', 'manifest.webmanifest',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
   'fonts/geist-latin.woff2', 'fonts/plex-arabic-dalil.woff2',
 ];

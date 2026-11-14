@@ -1,0 +1,15 @@
+{
+  "format": "dalil-config",
+  "version": 1,
+  "_readme": "One file per institution. Leave a value empty (null or \"\") when you don't have it: the app hides what it can't support and never makes up a phone number or a key. See docs/institution-setup.md.",
+  "institution": { "name": null, "nameAr": null, "website": null },
+  "help": { "phone": null, "label": "Reception", "labelAr": "الاستقبال" },
+  "buildings": {},
+  "maps": {
+    "order": ["openfreemap", "versatiles"],
+    "keys": { "esri": "", "maptiler": "", "stadia": "", "mapbox": "" },
+    "stadiaDomainAuth": false
+  },
+  "analytics": { "endpoint": null },
+  "features": { "camera": true, "motion": true }
+}

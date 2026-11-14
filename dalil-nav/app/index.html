@@ -1,16 +1,16 @@
 <!doctype html>
-<html lang="en" dir="ltr" data-theme="dark">
+<html lang="en" dir="ltr" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DALIL · دليل</title>
-<meta name="description" content="Indoor directions for this building: search a place, review the route and follow spoken turn-by-turn steps.">
-<meta name="theme-color" content="#0C0D10">
+<meta name="description" content="Indoor directions for this building: search a place, then follow a big arrow, a yellow line in the camera view and spoken steps.">
+<meta name="theme-color" content="#FFFFFF">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="styles.css">
 </head>
@@ -26,295 +26,320 @@
   <div id="bootError" class="boot-error" hidden>
     <p class="boot-err-title" data-i18n="loadFail">Couldn’t load the building map.</p>
     <p class="muted" data-i18n="loadFailHint">Check your connection and try again.</p>
-    <button id="btnRetry" class="btn btn-primary" type="button" data-i18n="retry">Try again</button>
+    <button id="btnRetry" class="btn primary" type="button" data-i18n="retry">Try again</button>
   </div>
 </div>
 
 <div id="app" class="app">
-  <!-- The map is the canvas of the app -->
-  <div id="mainMap" class="map-view main-map" role="region"></div>
 
-  <header class="topbar">
-    <div class="brand" aria-label="DALIL">
-      <svg class="brand-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
-      <span class="brand-word"><span class="brand-en">DALIL</span><span class="brand-ar" lang="ar">دليل</span></span>
+  <!-- ================= HOME ================= -->
+  <section id="pgHome" class="page" data-page="home">
+    <header class="bar">
+      <div class="brand" aria-label="DALIL">
+        <svg class="brand-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
+        <span class="brand-word"><span class="brand-en">DALIL</span><span class="brand-ar" lang="ar">دليل</span></span>
+      </div>
+      <div class="bar-end">
+        <button class="pill help-btn" type="button" data-help><span class="ico" data-ico="help"></span><span data-i18n="help">Help</span></button>
+        <button id="btnLang" class="pill lang-btn" type="button" data-i18n-aria="switchLang"><span data-i18n="langBtn">عربي</span></button>
+      </div>
+    </header>
+    <main class="page-body">
+      <p id="bldName" class="bld-name"></p>
+      <h1 class="home-title" data-i18n="homeTitle">Where do you want to go?</h1>
+      <button id="btnSearchOpen" class="search-btn" type="button"><span class="ico" data-ico="search"></span><span data-i18n="searchBtn">Search for a room or place</span></button>
+      <div class="from-card">
+        <span class="from-dot" aria-hidden="true"></span>
+        <span class="from-text"><span class="from-label" data-i18n="startFrom">Starting from</span><strong id="fromName">—</strong></span>
+        <button id="btnFrom" class="link-btn" type="button" data-i18n="change">Change</button>
+      </div>
+      <h2 class="sec-title" data-i18n="nearestTitle">Find the nearest</h2>
+      <ul id="tiles" class="tiles"></ul>
+      <section id="secSaved" class="sec" hidden><h2 class="sec-title" data-i18n="secSaved">Saved places</h2><ul id="savedList" class="rows"></ul></section>
+      <section id="secRecent" class="sec" hidden><h2 class="sec-title" data-i18n="secRecent">Recent</h2><ul id="recentList" class="rows"></ul></section>
+      <ul class="rows more">
+        <li><button id="btnFloorMap" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="map"></span></span><span class="r-main"><span class="r-name" data-i18n="floorMap">Floor map</span><span class="r-sub" data-i18n="floorMapSub">See every floor and tap a place</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li id="liGettingHere" hidden><button id="btnGettingHere" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="building"></span></span><span class="r-main"><span class="r-name" data-i18n="gettingHere">Getting here</span><span id="ghSub" class="r-sub" data-i18n="gettingHereSub">Street map and directions to the entrance</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnScanHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="qr"></span></span><span class="r-main"><span class="r-name" data-i18n="scanSign">Scan a DALIL sign</span><span class="r-sub" data-i18n="scanSignSub">Tells the app exactly where you are</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnSettings" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="gear"></span></span><span class="r-main"><span class="r-name" data-i18n="settings">Settings</span><span class="r-sub" data-i18n="settingsSub">Language, text size, voice</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+      </ul>
+      <p class="fine" data-i18n="aboutShort">DALIL helps you find your way inside. Building signs and staff always come first.</p>
+    </main>
+  </section>
+
+  <!-- ================= SEARCH ================= -->
+  <section id="pgSearch" class="page" data-page="search" hidden>
+    <header class="bar search-bar">
+      <button id="btnSearchBack" class="icon-btn" type="button" data-i18n-aria="back" data-back><span class="ico flip-rtl" data-ico="back"></span></button>
+      <div class="search-field">
+        <span class="ico" data-ico="search" aria-hidden="true"></span>
+        <label for="search" class="sr-only" data-i18n="searchLabel">Search places</label>
+        <input id="search" type="search" autocomplete="off" enterkeyhint="search" data-i18n-ph="searchPh" placeholder="Room number, name or service" aria-controls="results" aria-describedby="resultsStatus">
+        <button id="btnSearchClear" class="icon-btn sm" type="button" data-i18n-aria="clearSearch" hidden><span class="ico" data-ico="close"></span></button>
+      </div>
+    </header>
+    <main class="page-body">
+      <div id="searchFilters" class="chips" role="group" data-i18n-aria="filtersLabel"></div>
+      <p id="resultsStatus" class="sr-only" role="status"></p>
+      <section id="secSearches" class="sec" hidden>
+        <div class="sec-head"><h2 class="sec-title" data-i18n="recentSearches">Recent searches</h2><button id="btnClearSearches" class="link-btn" type="button" data-i18n="clear">Clear</button></div>
+        <ul id="recentSearches" class="rows"></ul>
+      </section>
+      <p id="searchHint" class="hint" data-i18n="searchHint">Type a room number, a name or a service.</p>
+      <ul id="results" class="rows"></ul>
+      <div id="noResults" class="empty" hidden><p id="noResultsTitle" class="empty-title"></p><p class="muted" data-i18n="noResultsHint">Try a room number such as 104.</p></div>
+    </main>
+  </section>
+
+  <!-- ================= ROUTE READY ================= -->
+  <section id="pgRoute" class="page" data-page="route" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <div class="bar-end">
+        <button class="pill help-btn" type="button" data-help><span class="ico" data-ico="help"></span><span data-i18n="help">Help</span></button>
+      </div>
+    </header>
+    <main class="page-body">
+      <div class="dest-head">
+        <span id="placeIco" class="dest-ico" aria-hidden="true"></span>
+        <div class="dest-text"><h1 id="destName" class="dest-name" tabindex="-1"></h1><p id="destMeta" class="dest-meta"></p></div>
+      </div>
+      <div id="routeMap" class="map-view route-map" role="img"></div>
+      <div id="routeStats" class="stats" hidden>
+        <p class="stat-line"><strong id="statEta"></strong><span class="stat-sep" aria-hidden="true">·</span><strong id="statDist"></strong></p>
+        <p id="routeVia" class="via" hidden></p>
+      </div>
+      <div id="routeMsg" class="route-msg" role="status"></div>
+      <ul id="placeFacts" class="facts"></ul>
+      <label class="switch-row" for="optStepFree">
+        <span class="sw-ico"><span class="ico" data-ico="wheel"></span></span>
+        <span class="sw-text"><strong data-i18n="stepFree">Avoid stairs</strong><small data-i18n="stepFreeHint">Step-free route: lifts and wide doors only</small></span>
+        <input id="optStepFree" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span>
+      </label>
+      <button id="btnStart" class="btn primary xl" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="start">Start</span></button>
+      <button id="btnStartCam" class="btn secondary" type="button"><span class="ico" data-ico="camera"></span><span class="btn-2l"><span data-i18n="startCam">Start with camera</span><small data-i18n="startCamHint">A yellow line on the floor in the camera view</small></span></button>
+      <div class="pair">
+        <button id="btnFav" class="btn tertiary" type="button" aria-pressed="false"><span class="ico" data-ico="heart"></span><span id="favText" data-i18n="save">Save</span></button>
+        <button id="btnShare" class="btn tertiary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="share">Share</span></button>
+      </div>
+      <details id="secPreview" class="steps-box" hidden><summary id="stepsSummary"></summary><ol id="previewSteps" class="step-rows"></ol></details>
+      <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
+    </main>
+  </section>
+
+  <!-- ================= WHERE AM I ================= -->
+  <section id="pgWhere" class="page" data-page="where" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+    </header>
+    <main class="page-body">
+      <h1 class="page-title" data-i18n="whereTitle">Where are you?</h1>
+      <div class="scan-card">
+        <h2 class="card-title"><span class="ico" data-ico="qr"></span><span data-i18n="whereScan">Scan the code on a DALIL sign</span></h2>
+        <div id="scanView" class="scan-view" hidden><video id="scanVideo" playsinline muted autoplay></video><span class="scan-frame" aria-hidden="true"></span></div>
+        <p id="scanStatus" class="muted" role="status"></p>
+        <button id="btnScanStart" class="btn primary" type="button"><span class="ico" data-ico="camera"></span><span data-i18n="whereScanBtn">Open the camera</span></button>
+      </div>
+      <p id="nfcLine" class="nfc-line" hidden><span class="ico" data-ico="nfc"></span><span id="nfcStatus" data-i18n="whereNfc">Or hold the top of your phone on the DALIL tag</span></p>
+      <h2 class="sec-title" data-i18n="whereList">Or choose where you are</h2>
+      <div class="search-field small"><span class="ico" data-ico="search" aria-hidden="true"></span><label for="whereFilter" class="sr-only" data-i18n="whereFilter">Type to find a place</label><input id="whereFilter" type="search" autocomplete="off" data-i18n-ph="whereFilter"></div>
+      <ul id="tagList" class="rows"></ul>
+    </main>
+  </section>
+
+  <!-- ================= FLOOR MAP ================= -->
+  <section id="pgMap" class="page page-full" data-page="map" hidden>
+    <div id="mainMap" class="map-view main-map" role="region"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="mapTitle" class="map-title"></p>
+    </header>
+    <div class="map-ctrls">
+      <div id="floorRail" class="floor-switch" role="group"></div>
+      <div class="zoom-group">
+        <button id="btnZoomIn" class="ctrl" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
+        <button id="btnZoomOut" class="ctrl" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+      </div>
+      <button id="btnRecenter" class="ctrl solo" type="button" data-i18n-aria="recenter"><span class="ico" data-ico="locate"></span></button>
     </div>
-    <button id="btnLang" class="icon-btn glass lang-btn" type="button" data-i18n-aria="switchLang"><span data-i18n="langShort">ع</span></button>
-    <button id="btnSettings" class="icon-btn glass" type="button" data-i18n-aria="openSettings"><span class="ico" data-ico="gear"></span></button>
-  </header>
-
-  <div class="map-ctrls">
-    <div id="floorRail" class="floor-switch glass" role="group"></div>
-    <div class="zoom-group glass">
-      <button id="btnZoomIn" class="ctrl" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
-      <button id="btnZoomOut" class="ctrl" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+    <div class="map-foot">
+      <div id="pinCard" class="pin-card" hidden>
+        <div class="pin-head"><span class="ico" data-ico="pin"></span><strong id="pinText"></strong><button id="btnClosePin" class="icon-btn sm" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+        <div class="pair"><button id="btnPinGo" class="btn primary" type="button" data-i18n="pinGo">Directions here</button><button id="btnPinSave" class="btn secondary" type="button" data-i18n="pinSave">Save as my spot</button></div>
+      </div>
+      <p id="mapTip" class="map-tip" data-i18n="mapTip">Tap a place for directions, or tap the floor to drop a pin.</p>
     </div>
-    <button id="btnRecenter" class="ctrl glass solo" type="button" data-i18n-aria="recenter"><span class="ico" data-ico="locate"></span></button>
-  </div>
+  </section>
 
-  <!-- ============ BOTTOM SHEET ============ -->
-  <section id="sheet" class="sheet" data-view="browse" aria-label="DALIL">
-    <div class="sheet-grip">
-      <button id="btnGrip" class="grip" type="button" data-i18n-aria="expandPanel"><span></span></button>
-      <div class="search-row">
-        <button id="btnSearchBack" class="icon-btn flat" type="button" data-i18n-aria="back"><span class="ico flip-rtl" data-ico="back"></span></button>
-        <div class="search-field">
-          <span class="ico" data-ico="search" aria-hidden="true"></span>
-          <label for="search" class="sr-only" data-i18n="searchLabel">Search places</label>
-          <input id="search" type="search" autocomplete="off" enterkeyhint="search" data-i18n-ph="searchPh" placeholder="Search for a room, place, or service" aria-controls="results" aria-describedby="resultsStatus">
-          <button id="btnScan" class="icon-btn flat sm" type="button" data-i18n-aria="scan"><span class="ico" data-ico="scan"></span></button>
+  <!-- ================= SETTINGS ================= -->
+  <section id="pgSettings" class="page" data-page="settings" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="settings">Settings</h1>
+    </header>
+    <main class="page-body settings">
+      <fieldset class="set-group"><legend data-i18n="language">Language</legend>
+        <div class="choice">
+          <label><input type="radio" name="lang" value="en"><span>English</span></label>
+          <label><input type="radio" name="lang" value="ar"><span lang="ar">العربية</span></label>
         </div>
+      </fieldset>
+      <fieldset class="set-group"><legend data-i18n="textSize">Text size</legend>
+        <div class="choice three">
+          <label><input type="radio" name="textSize" value="normal"><span class="ts ts1">A</span><small data-i18n="size_normal">Normal</small></label>
+          <label><input type="radio" name="textSize" value="large"><span class="ts ts2">A</span><small data-i18n="size_large">Large</small></label>
+          <label><input type="radio" name="textSize" value="xl"><span class="ts ts3">A</span><small data-i18n="size_xl">Extra large</small></label>
+        </div>
+      </fieldset>
+      <fieldset class="set-group"><legend data-i18n="appearance">Look</legend>
+        <div class="choice three">
+          <label><input type="radio" name="theme" value="light"><span data-i18n="theme_light">Light</span></label>
+          <label><input type="radio" name="theme" value="dark"><span data-i18n="theme_dark">Dark</span></label>
+          <label><input type="radio" name="theme" value="system"><span data-i18n="theme_system">Same as phone</span></label>
+        </div>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_contrast">High contrast</strong><small data-i18n="set_contrastHint">Black, white and yellow only</small></span><input id="setContrast" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_motion">Reduce motion</strong><small data-i18n="set_motionHint">No moving animations</small></span><input id="setMotion" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+      </fieldset>
+      <fieldset class="set-group"><legend data-i18n="directions">Directions</legend>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_voice">Speak the directions</strong><small data-i18n="set_voiceHint">Reads each step aloud</small></span><input id="setVoice" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_vibrate">Vibrate on turns</strong><small data-i18n="set_vibrateHint">A short buzz before each turn</small></span><input id="setVibrate" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_stepfree">Always avoid stairs</strong><small data-i18n="set_stepfreeHint">Start every route as step-free</small></span><input id="setStepFree" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_sensors">Use motion sensors</strong><small data-i18n="set_sensorsHint">The arrow turns with your phone and moves as you walk</small></span><input id="setSensors" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <p class="set-label" id="paceLabel" data-i18n="pace">Walking pace</p>
+        <div class="choice three" role="radiogroup" aria-labelledby="paceLabel">
+          <label><input type="radio" name="pace" value="slow"><span data-i18n="pace_slow">Slow</span></label>
+          <label><input type="radio" name="pace" value="normal"><span data-i18n="pace_normal">Normal</span></label>
+          <label><input type="radio" name="pace" value="fast"><span data-i18n="pace_fast">Fast</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="set-group" id="setMapSec"><legend data-i18n="mapData">Building map</legend>
+        <label class="field"><span data-i18n="building">Building</span><select id="setBuilding"></select></label>
+        <label class="field"><span data-i18n="mapStyle">Street map</span><select id="setProvider"></select></label>
+        <label class="btn secondary file-btn"><span class="ico" data-ico="map"></span><span data-i18n="loadMap">Load a map file</span><input id="fileMap" type="file" accept=".json,application/json"></label>
+        <p id="loadMsg" class="muted" role="status"></p>
+      </fieldset>
+      <section class="set-group about"><h2 class="legend" data-i18n="about">About</h2>
+        <p data-i18n="aboutText">DALIL is a supplementary wayfinding aid.</p>
+        <p class="warn-note"><span class="ico" data-ico="alert"></span><span data-i18n="notEmergency">Not for emergencies.</span></p>
+        <p class="muted" data-i18n="privacyLocal">Your saved places and history stay on this phone.</p>
+        <p id="privacyStats" class="muted" data-i18n="privacyStats" hidden></p>
+        <p class="muted small">Maps: MapLibre (BSD-3), OpenFreeMap, VersaTiles, OpenStreetMap contributors (ODbL), Overture Maps (ODbL). QR: jsQR (Apache-2.0), qrcode-generator (MIT).</p>
+      </section>
+    </main>
+  </section>
+
+  <!-- ================= GETTING HERE ================= -->
+  <section id="pgOutdoor" class="page page-full outdoor" data-page="outdoor" hidden>
+    <div id="outMap" class="out-map" role="region"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="outBuilding" class="map-title"></p>
+    </header>
+    <div class="out-panel">
+      <p id="outStatus" class="out-status" role="status"></p>
+      <button id="btnMyLoc" class="btn secondary" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="showMyLocation">Show my location</span></button>
+      <div class="pair">
+        <a id="lnkGmaps" class="btn primary" href="#" target="_blank" rel="noopener" data-i18n="dirGoogle">Directions in Google Maps</a>
+        <a id="lnkAmaps" class="btn secondary" href="#" target="_blank" rel="noopener" data-i18n="dirApple">Apple Maps</a>
       </div>
+      <label class="field inline"><span data-i18n="mapStyle">Street map</span><select id="outProvider"></select></label>
     </div>
+  </section>
 
-    <div class="sheet-body">
-      <!-- BROWSE -->
-      <div id="viewBrowse" class="view">
-        <button id="btnPlace" class="where" type="button"><span class="ico" data-ico="building" aria-hidden="true"></span><span id="placePill" class="where-text"></span><span class="ico where-chev" data-ico="chevDown" aria-hidden="true"></span></button>
-        <button id="btnGettingHere" class="getting-here" type="button" hidden>
-          <span class="gh-ico"><span class="ico" data-ico="building"></span></span>
-          <span class="gh-text"><span class="gh-title" data-i18n="gettingHere">Getting here</span><span id="ghSub" class="gh-sub" data-i18n="gettingHereSub">Street map and directions to the entrance</span></span>
-          <span class="ico chev-fwd" data-ico="chevDown" aria-hidden="true"></span>
-        </button>
-        <div class="from-row">
-          <span class="from-dot" aria-hidden="true"></span>
-          <span class="from-label" data-i18n="youAreAt">You are at</span>
-          <strong id="fromName" class="from-name">—</strong>
-          <button id="btnFrom" class="text-btn" type="button" data-i18n="change">Change</button>
+  <!-- ================= NAVIGATION ================= -->
+  <section id="nav" class="page nav" data-page="nav" hidden>
+    <div class="sign">
+      <div class="sign-row">
+        <div id="navArrow" class="sign-arrow" aria-hidden="true">
+          <svg class="arrow-big" viewBox="0 0 100 100"><path d="M50 6 88 52H64v42H36V52H12z"/></svg>
+          <span id="navIco" class="sign-ico"></span>
         </div>
-        <h2 class="sec-title" data-i18n="findNearest">Find the nearest</h2>
-        <div class="cats" role="group" data-i18n-aria="findNearest">
-          <button class="cat" type="button" data-cat="toilet"><span class="cat-ico" data-cat-ico="toilet"></span><span data-i18n="cat_toilet">Restroom</span></button>
-          <button class="cat" type="button" data-cat="lift"><span class="cat-ico" data-cat-ico="lift"></span><span data-i18n="cat_lift">Elevator</span></button>
-          <button class="cat" type="button" data-cat="stairs"><span class="cat-ico" data-cat-ico="stairs"></span><span data-i18n="cat_stairs">Stairs</span></button>
-          <button class="cat" type="button" data-cat="prayer"><span class="cat-ico" data-cat-ico="prayer"></span><span data-i18n="cat_prayer">Prayer</span></button>
-          <button class="cat" type="button" data-cat="cafe"><span class="cat-ico" data-cat-ico="cafe"></span><span data-i18n="cat_cafe">Café</span></button>
-          <button class="cat" type="button" data-cat="help"><span class="cat-ico" data-cat-ico="reception"></span><span data-i18n="cat_help">Help desk</span></button>
-        </div>
-        <section id="secSaved" class="sec" hidden><h2 class="sec-title" data-i18n="secSaved">Saved</h2><ul id="savedList" class="rail"></ul></section>
-        <section id="secRecent" class="sec" hidden><h2 class="sec-title" data-i18n="secRecent">Recent</h2><ul id="recentList" class="rail"></ul></section>
-        <section id="secKey" class="sec"><h2 id="keyTitle" class="sec-title" data-i18n="secKey">Key places here</h2><ul id="keyList" class="list"></ul></section>
-        <p class="hint"><span class="ico" data-ico="pin" aria-hidden="true"></span><span data-i18n="pinHelp">Tap the map to choose any spot, for example where you parked.</span></p>
-      </div>
-
-      <!-- SEARCH -->
-      <div id="viewSearch" class="view" hidden>
-        <div id="searchFilters" class="filters" role="group" data-i18n-aria="filtersLabel"></div>
-        <div id="resultsStatus" class="sr-only" aria-live="polite"></div>
-        <section id="secSearches" class="sec" hidden>
-          <div class="sec-head"><h2 class="sec-title" data-i18n="recentSearches">Recent searches</h2><button id="btnClearSearches" class="text-btn" type="button" data-i18n="clear">Clear</button></div>
-          <ul id="recentSearches" class="list compact"></ul>
-        </section>
-        <p id="searchHint" class="empty-hint" data-i18n="searchEmptyHint">Type a room number, a name or a service.</p>
-        <ul id="results" class="list"></ul>
-        <div id="noResults" class="empty" hidden>
-          <span class="empty-ico ico" data-ico="search" aria-hidden="true"></span>
-          <p id="noResultsTitle" class="empty-title"></p>
-          <p class="muted" data-i18n="noResultsHint">Try a room number such as 104.</p>
+        <div class="sign-text">
+          <p id="navStepNum" class="sign-num"></p>
+          <p id="navStepText" class="sign-main" tabindex="-1"></p>
+          <p id="navStepSub" class="sign-sub"></p>
         </div>
       </div>
-
-      <!-- PLACE (destination + route) -->
-      <div id="viewPlace" class="view" hidden>
-        <div class="place-head">
-          <span id="placeIco" class="place-ico" aria-hidden="true"></span>
-          <div class="place-titles">
-            <h2 id="destName" class="place-name" tabindex="-1" data-i18n="chooseDest">Choose a destination</h2>
-            <p id="destMeta" class="place-meta"></p>
-          </div>
-          <button id="btnClosePlace" class="icon-btn flat" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button>
+      <p id="navMode" class="sign-status"><span class="status-dot" aria-hidden="true"></span><span id="navModeText"></span></p>
+    </div>
+    <div class="nav-view">
+      <div id="navMap" class="map-view nav-map" aria-hidden="true"></div>
+      <div id="navCam" class="nav-cam" hidden></div>
+      <div class="view-top">
+        <button id="btnSteps" class="pill solid" type="button"><span class="ico" data-ico="list"></span><span data-i18n="stepsBtn">Steps</span></button>
+        <div class="seg" role="group" data-i18n-aria="viewLabel">
+          <button id="btnViewMap" type="button" aria-pressed="true"><span class="ico" data-ico="map"></span><span data-i18n="viewMap">Map</span></button>
+          <button id="btnViewCam" type="button" aria-pressed="false"><span class="ico" data-ico="camera"></span><span data-i18n="viewCam">Camera</span></button>
         </div>
-        <div id="routeStats" class="route-card" hidden>
-          <div class="stat"><span class="stat-val" id="statEta">—</span><span class="stat-label" data-i18n="eta">ETA</span></div>
-          <div class="stat"><span class="stat-val" id="statDist">—</span><span class="stat-label" data-i18n="distance">Distance</span></div>
-          <div id="routeVia" class="via" hidden></div>
-        </div>
-        <p id="routeMsg" class="route-msg" role="status"></p>
-        <div class="place-actions" role="group" data-i18n-aria="placeActions">
-          <button id="btnStart" class="btn btn-primary btn-start" type="button" disabled><span class="ico" data-ico="route" aria-hidden="true"></span><span data-i18n="start">Start Navigation</span></button>
-          <button id="btnFav" class="icon-btn tonal" type="button" aria-pressed="false" data-i18n-aria="save"><span class="ico" data-ico="heart"></span></button>
-          <button id="btnShare" class="icon-btn tonal" type="button" data-i18n-aria="share"><span class="ico" data-ico="share"></span></button>
-        </div>
-        <label class="switch-row" for="optStepFree">
-          <span class="ico" data-ico="wheel" aria-hidden="true"></span>
-          <span class="sw-text"><span class="sw-title" data-i18n="stepFree">Step-free route</span><span class="sw-hint" data-i18n="stepFreeHint">Uses lifts, avoids stairs and narrow doors</span></span>
-          <input type="checkbox" id="optStepFree" role="switch">
-        </label>
-        <ul id="placeFacts" class="facts"></ul>
-        <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
-        <section id="secPreview" class="sec" hidden>
-          <h2 class="sec-title" data-i18n="steps">Steps</h2>
-          <ol id="previewSteps" class="preview-steps"></ol>
-        </section>
       </div>
-
-      <!-- DROPPED PIN -->
-      <div id="viewPin" class="view" hidden>
-        <div class="place-head">
-          <span class="place-ico" aria-hidden="true"><span class="ico" data-ico="pin"></span></span>
-          <div class="place-titles"><h2 class="place-name" data-i18n="pinName">Dropped pin</h2><p id="pinText" class="place-meta"></p></div>
-          <button id="btnClosePin" class="icon-btn flat" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button>
-        </div>
-        <div id="pinCard" class="place-actions">
-          <button id="btnPinGo" class="btn btn-primary btn-start" type="button"><span class="ico" data-ico="route" aria-hidden="true"></span><span data-i18n="pinGo">Directions here</span></button>
-          <button id="btnPinSave" class="btn btn-tonal" type="button" data-i18n="pinSave">Save as my spot</button>
-        </div>
+      <p id="camHint" class="cam-hint" role="status" hidden></p>
+      <p id="camNote" class="cam-note" hidden></p>
+      <p id="navFloor" class="floor-ahead" hidden><span class="ico" data-ico="building"></span><span id="navFloorText"></span></p>
+    </div>
+    <div class="nav-foot">
+      <div class="nav-info">
+        <p class="nav-dest"><span id="navDest"></span><span id="navRemain" class="nav-remain"></span></p>
+        <div id="navProgress" class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="progressLabel"><span></span></div>
+      </div>
+      <button id="btnTag" class="btn primary" type="button" hidden></button>
+      <button id="btnFloorDone" class="btn primary" type="button" hidden></button>
+      <div class="nav-actions">
+        <button id="btnEndNav" class="btn act" type="button"><span class="ico" data-ico="stop"></span><span data-i18n="stop">Stop</span></button>
+        <button id="btnPrev" class="btn act sq" type="button" data-i18n-aria="prevStep"><span class="ico flip-rtl" data-ico="back"></span></button>
+        <button id="btnRepeat" class="btn act" type="button"><span class="ico" data-ico="volume"></span><span data-i18n="repeat">Repeat</span></button>
+        <button id="btnNext" class="btn act next" type="button"><span data-i18n="next">Next</span><span class="ico flip-rtl" data-ico="fwd"></span></button>
       </div>
     </div>
   </section>
 
-  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+  <!-- Arrived -->
+  <div id="arrived" class="overlay arrived" hidden>
+    <div class="arrived-card" role="dialog" aria-modal="true" aria-labelledby="arrivedTitle">
+      <svg class="arrived-mark" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="29"/><path d="m19 33 9 9 17-19"/></svg>
+      <h2 id="arrivedTitle" tabindex="-1" data-i18n="arrived">You have arrived</h2>
+      <p id="arrivedName" class="arrived-name"></p>
+      <p id="arrivedStats" class="muted"></p>
+      <p class="muted" data-i18n="arrivedHint">Look for the sign to make sure.</p>
+      <button id="btnArrivedDone" class="btn primary xl" type="button" data-i18n="done">Done</button>
+      <button id="btnArrivedSave" class="btn secondary" type="button" data-i18n="savePlace">Save this place</button>
+    </div>
+  </div>
+
+  <!-- All steps (during navigation) -->
+  <dialog id="dlgSteps" class="sheet-dlg" aria-labelledby="stepsTitle">
+    <div class="dlg-head"><h2 id="stepsTitle" data-i18n="stepsTitle">All steps</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <ol id="stepList" class="step-rows"></ol>
+    <button id="btnSim" class="btn secondary" type="button" aria-pressed="false"><span class="ico" data-ico="play"></span><span class="ctrl-txt" data-i18n="previewWalk">Watch a preview walk</span></button>
+    <p class="muted small" data-i18n="previewNote">The preview walks the route for you. It is not your real position.</p>
+  </dialog>
+
+  <!-- Help -->
+  <dialog id="dlgHelp" class="sheet-dlg" aria-labelledby="helpTitle">
+    <div class="dlg-head"><h2 id="helpTitle" data-i18n="helpTitle">Need help?</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <a id="helpCall" class="btn primary" href="#" hidden><span class="ico" data-ico="phone"></span><span id="helpCallText"></span></a>
+    <button id="helpDesk" class="btn secondary" type="button" hidden><span class="ico" data-ico="info"></span><span data-i18n="helpDesk">Take me to the help desk</span></button>
+    <button id="helpScan" class="btn secondary" type="button"><span class="ico" data-ico="qr"></span><span data-i18n="helpScan">Scan a DALIL sign</span></button>
+    <button id="helpShow" class="btn secondary" type="button" aria-expanded="false" aria-controls="staffCard"><span class="ico" data-ico="staff"></span><span data-i18n="helpShow">Show this to a member of staff</span></button>
+    <div id="staffCard" class="staff-card" hidden></div>
+    <p class="muted" data-i18n="helpAsk">Any member of staff can help you find your way.</p>
+  </dialog>
+
+  <!-- Share -->
+  <dialog id="dlgShare" class="sheet-dlg" aria-labelledby="shareTitle">
+    <div class="dlg-head"><h2 id="shareTitle" data-i18n="shareTitle">Share these directions</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div id="shareQR" class="qr big"></div>
+    <p class="muted" data-i18n="shareHint">Scan with a phone camera, or send the link.</p>
+    <input id="shareUrl" class="share-url" type="text" readonly aria-label="Link">
+    <div class="pair">
+      <button id="btnShareCopy" class="btn secondary" type="button" data-i18n="copy">Copy link</button>
+      <button id="btnShareNative" class="btn primary" type="button" data-i18n="shareNative">Share…</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
 </div>
 
-<!-- ============ NAVIGATION ============ -->
-<section id="nav" class="nav" aria-labelledby="navStepText" hidden>
-  <div id="navMap" class="map-view nav-map" role="img"></div>
-  <div class="nav-top">
-    <div class="instr">
-      <span id="navIco" class="instr-ico" aria-hidden="true"></span>
-      <div class="instr-text">
-        <p id="navStepNum" class="instr-num"></p>
-        <h2 id="navStepText" class="instr-main" tabindex="-1"></h2>
-        <p id="navStepSub" class="instr-sub"></p>
-      </div>
-    </div>
-    <div id="navFloor" class="floor-banner" hidden><span class="ico" data-ico="building" aria-hidden="true"></span><span id="navFloorText"></span></div>
-    <button id="btnTag" class="btn btn-tag" type="button" hidden><span class="ico" data-ico="check" aria-hidden="true"></span><span data-i18n="imAtTag">I'm at this tag</span></button>
-  </div>
-  <div class="nav-panel">
-    <div class="nav-panel-head">
-      <div id="navMode" class="mode-badge"><span class="mode-dot" aria-hidden="true"></span><span id="navModeText"></span></div>
-      <button id="btnEndNav" class="icon-btn tonal end-btn" type="button" data-i18n-aria="endNav"><span class="ico" data-ico="close"></span></button>
-    </div>
-    <div id="navProgress" class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="progressLabel"><span></span></div>
-    <div class="nav-dest">
-      <div class="nav-dest-name"><p class="muted small" data-i18n="goingTo">Going to</p><strong id="navDest"></strong></div>
-      <div class="nav-remain"><strong id="navRemain"></strong><span id="navRemainTime" class="muted small"></span></div>
-    </div>
-    <div class="nav-ctrls">
-      <button id="btnPrev" class="ctrl-btn" type="button" data-i18n-aria="prevStep"><span class="ico flip-rtl" data-ico="back"></span></button>
-      <button id="btnNext" class="btn btn-primary nav-next" type="button"><span data-i18n="next">Next</span><span class="ico flip-rtl" data-ico="back" style="transform:scaleX(-1)"></span></button>
-      <button id="btnRepeat" class="ctrl-btn" type="button" data-i18n-aria="repeat"><span class="ico" data-ico="volume"></span></button>
-      <button id="btnSim" class="ctrl-btn" type="button" aria-pressed="false"><span class="ico" data-ico="play"></span><span class="ctrl-txt" data-i18n="preview">Preview</span></button>
-    </div>
-    <details class="all-steps">
-      <summary><span class="ico" data-ico="list" aria-hidden="true"></span><span data-i18n="allSteps">All steps</span></summary>
-      <ol id="stepList" class="step-list"></ol>
-    </details>
-  </div>
-</section>
-
-<!-- ============ ARRIVAL ============ -->
-<section id="arrived" class="arrived" role="dialog" aria-modal="true" aria-labelledby="arrivedTitle" hidden>
-  <div class="arrived-card">
-    <div class="arrived-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17"/><path d="m12.5 20.5 5 5 10-11"/></svg></div>
-    <h2 id="arrivedTitle" tabindex="-1" data-i18n="arrived">You have arrived</h2>
-    <p id="arrivedName" class="arrived-name"></p>
-    <p id="arrivedStats" class="muted"></p>
-    <button id="btnArrivedDone" class="btn btn-primary" type="button"><span data-i18n="done">Done</span></button>
-    <button id="btnArrivedSave" class="btn btn-tonal" type="button" data-i18n="savePlace">Save this place</button>
-  </div>
-</section>
-
-<!-- ============ SETTINGS ============ -->
-<section id="settings" class="page" aria-labelledby="setTitle" hidden>
-  <header class="page-head">
-    <button id="btnSettingsBack" class="icon-btn flat" type="button" data-i18n-aria="back"><span class="ico flip-rtl" data-ico="back"></span></button>
-    <h1 id="setTitle" data-i18n="settings">Settings</h1>
-  </header>
-  <div class="page-body">
-    <section class="set-sec">
-      <h2 class="sec-title" data-i18n="appearance">Appearance</h2>
-      <div class="set-card">
-        <div class="seg" role="radiogroup" data-i18n-aria="theme">
-          <label><input type="radio" name="theme" value="system"><span data-i18n="theme_system">System</span></label>
-          <label><input type="radio" name="theme" value="dark"><span data-i18n="theme_dark">Dark</span></label>
-          <label><input type="radio" name="theme" value="light"><span data-i18n="theme_light">Light</span></label>
-        </div>
-      </div>
-    </section>
-    <section class="set-sec">
-      <h2 class="sec-title" data-i18n="language">Language</h2>
-      <div class="set-card">
-        <div class="seg" role="radiogroup" data-i18n-aria="language">
-          <label><input type="radio" name="lang" value="en"><span>English</span></label>
-          <label><input type="radio" name="lang" value="ar"><span lang="ar">العربية</span></label>
-        </div>
-      </div>
-    </section>
-    <section class="set-sec">
-      <h2 class="sec-title" data-i18n="navigation">Navigation</h2>
-      <div class="set-card">
-        <label class="toggle"><span class="tg-text"><span data-i18n="set_stepfree">Step-free routes</span><small data-i18n="set_stepfreeHint"></small></span><input type="checkbox" id="setStepFree" role="switch"></label>
-        <label class="toggle"><span class="tg-text"><span data-i18n="set_voice">Spoken directions</span><small data-i18n="set_voiceHint"></small></span><input type="checkbox" id="setVoice" role="switch"></label>
-        <label class="toggle"><span class="tg-text"><span data-i18n="set_vibrate">Vibrate on turns</span><small data-i18n="set_vibrateHint"></small></span><input type="checkbox" id="setVibrate" role="switch"></label>
-      </div>
-    </section>
-    <section class="set-sec">
-      <h2 class="sec-title" data-i18n="accessibility">Accessibility</h2>
-      <div class="set-card">
-        <label class="toggle"><span class="tg-text"><span data-i18n="set_large">Large text</span><small data-i18n="set_largeHint"></small></span><input type="checkbox" id="setLarge" role="switch"></label>
-        <label class="toggle"><span class="tg-text"><span data-i18n="set_contrast">High contrast</span><small data-i18n="set_contrastHint"></small></span><input type="checkbox" id="setContrast" role="switch"></label>
-        <label class="toggle"><span class="tg-text"><span data-i18n="set_motion">Reduce motion</span><small data-i18n="set_motionHint"></small></span><input type="checkbox" id="setMotion" role="switch"></label>
-      </div>
-    </section>
-    <section class="set-sec" id="setMapSec">
-      <h2 class="sec-title" data-i18n="mapData">Building map</h2>
-      <div class="set-card">
-        <label for="setBuilding" class="set-label" data-i18n="building">Building</label>
-        <select id="setBuilding"></select>
-        <label class="file-btn"><input type="file" id="fileMap" accept=".json,application/json"><span data-i18n="loadMap">Load a map file</span></label>
-        <p id="loadMsg" class="muted small" role="status"></p>
-      </div>
-    </section>
-    <p class="muted small about" data-i18n="about">DALIL is a supplementary wayfinding aid.</p>
-  </div>
-</section>
-
-<!-- ============ GETTING HERE (street map) ============ -->
-<section id="outdoor" class="page outdoor-page" aria-labelledby="outTitle" hidden>
-  <header class="page-head">
-    <button id="btnOutdoorBack" class="icon-btn flat" type="button" data-i18n-aria="back"><span class="ico flip-rtl" data-ico="back"></span></button>
-    <h1 id="outTitle" data-i18n="gettingHere">Getting here</h1>
-  </header>
-  <div id="outMap" class="out-map" role="region"></div>
-  <div class="out-card">
-    <p id="outBuilding" class="out-bld"></p>
-    <p id="outStatus" class="out-status" role="status"></p>
-    <div class="out-actions">
-      <a id="lnkGmaps" class="btn btn-primary" target="_blank" rel="noopener"><span class="ico" data-ico="route" aria-hidden="true"></span><span data-i18n="dirGoogle">Directions in Google Maps</span></a>
-      <a id="lnkAmaps" class="btn btn-tonal" target="_blank" rel="noopener" data-i18n="dirApple">Apple Maps</a>
-      <button id="btnMyLoc" class="btn btn-tonal" type="button"><span class="ico" data-ico="locate" aria-hidden="true"></span><span data-i18n="showMyLocation">Show my location</span></button>
-    </div>
-  </div>
-</section>
-
-<!-- ============ DIALOGS ============ -->
-<dialog id="dlgTag" class="sheet-dialog" aria-labelledby="dlgTagTitle">
-  <form method="dialog" class="dlg-inner">
-    <h2 id="dlgTagTitle" data-i18n="whereAreYou">Where are you?</h2>
-    <p id="nfcStatus" class="muted" role="status"></p>
-    <p class="muted small" data-i18n="pickTag">Choose the DALIL tag you are standing at.</p>
-    <ul id="tagList" class="list"></ul>
-    <button class="btn btn-quiet" value="cancel" data-i18n="cancel">Cancel</button>
-  </form>
-</dialog>
-<dialog id="dlgShare" class="sheet-dialog" aria-labelledby="dlgShareTitle">
-  <form method="dialog" class="dlg-inner share-inner">
-    <h2 id="dlgShareTitle" data-i18n="shareTitle">Share these directions</h2>
-    <p class="muted small" data-i18n="shareHint">Scan with a phone camera, or send the link.</p>
-    <div id="shareQR" class="share-qr"></div>
-    <label for="shareUrl" class="sr-only">Link</label>
-    <input id="shareUrl" class="share-url" type="text" readonly>
-    <div class="share-actions">
-      <button id="btnShareNative" class="btn btn-primary" type="button"><span data-i18n="shareNative">Share…</span></button>
-      <button id="btnShareCopy" class="btn btn-tonal" type="button" data-i18n="copy">Copy link</button>
-    </div>
-    <button class="btn btn-quiet" value="close" data-i18n="close">Close</button>
-  </form>
-</dialog>
-
 <script src="vendor/qrcode.js"></script>
-<script src="app.js" type="module"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

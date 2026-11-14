@@ -1,56 +1,82 @@
-// DALIL visitor app. No build step, no dependencies (QR codes: vendor/qrcode.js, MIT).
-// Modules: i18n.js (strings, icons) · mapview.js (map renderer) · router.js (on-device routing).
+// DALIL visitor app. No build step. Pages: Home, Search, Route, Where am I, Floor map, Settings, Getting here, Navigation.
+// Modules: i18n.js (strings, icons) · mapview.js (floor plan) · router.js (on-device routing) · tracker.js (compass and
+// steps) · camera.js (camera guide line, QR) · outdoor.js + providers.js (street maps). QR codes: vendor/qrcode.js (MIT).
 import { Router } from './router.js';
-import { STR, CHIP_CATS, CAT_WORDS, CAT_ICONS, TURN_ICONS, UI, svgIco } from './i18n.js';
+import { STR, TILE_CATS, CAT_WORDS, CAT_ICONS, TURN_ICONS, TURN_ANGLE, UI, svgIco } from './i18n.js';
 import { MapView, BASE } from './mapview.js';
 import { geoTransform, haversine } from './outdoor.js';
+import { Tracker, Follower, wrap180 } from './tracker.js';
+import { CameraGuide, QRScanner, openCamera, closeCamera, cameraError } from './camera.js';
+import { availableProviders } from './providers.js';
 
 /* =========================================================================
-   Settings and storage (every read/write guarded: private mode may throw)
+   Settings, storage and the building's config (every read/write guarded: private mode may throw)
    ========================================================================= */
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
 };
 const mq = q => window.matchMedia && window.matchMedia(q).matches;
+const SETTINGS_V = 2;
+const saved0 = store.get('dalil.settings', {});
+if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; delete saved0.theme; delete saved0.large; saved0.v = SETTINGS_V; }
 const settings = Object.assign({
-  lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
-  theme: 'dark', voice: true, vibrate: true, stepFree: false, large: false,
+  v: SETTINGS_V, lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
+  theme: 'light', textSize: 'normal', voice: true, vibrate: true, stepFree: false, sensors: true, pace: 'normal', mapProvider: 'auto',
   contrast: mq('(prefers-contrast: more)'), motion: mq('(prefers-reduced-motion: reduce)'),
-}, store.get('dalil.settings', {}));
+}, saved0);
 const saveSettings = () => store.set('dalil.settings', settings);
+const STRIDE = { slow: 0.55, normal: 0.68, fast: 0.78 };
+const SPEED = { slow: 0.8, normal: 1.1, fast: 1.35 };
 const T = () => STR[settings.lang];
 const t = (key, ...a) => { const v = T()[key] ?? STR.en[key] ?? key; return typeof v === 'function' ? v(...a) : v; };
+const DEFAULT_CFG = { institution: {}, help: {}, buildings: {}, maps: { order: ['openfreemap', 'versatiles'], keys: {} }, analytics: { endpoint: null }, features: { camera: true, motion: true } };
+let cfg = DEFAULT_CFG;
+async function loadConfig() {
+  try { const r = await fetch('config.json', { cache: 'no-cache' }); if (r.ok) { const c = await r.json(); cfg = { ...DEFAULT_CFG, ...c, maps: { ...DEFAULT_CFG.maps, ...c.maps }, features: { ...DEFAULT_CFG.features, ...c.features } }; } } catch { /* defaults */ }
+}
+const helpCfg = () => ({ ...cfg.help, ...(cfg.buildings?.[state.map?.building.id]?.help || {}) });
 
 /* =========================================================================
    State
    ========================================================================= */
 const state = {
-  maps: [],            // every loaded dalil-map (one per floor)
-  map: null,           // the floor the visitor is on
-  viewMap: null,       // the floor shown on the map (can differ while browsing floors)
-  fromId: null,        // where the visitor is (point id on state.map)
-  toKey: null,         // destination "<floorId>|<pointId>" in the current building
-  chip: null, view: 'browse', filter: 'all', previewAll: false, kiosk: null,
-  saved: store.get('dalil.saved', []),
+  maps: [], map: null, viewMap: null, fromId: null, toKey: null, chip: null, filter: 'all', kiosk: null,
+  routeLeg: 0, saved: store.get('dalil.saved', []),
 };
-const spoken = [];     // for tests and debugging
+const spoken = [];
 const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const ico = name => svgIco(UI[name] || '');
 const catIco = c => svgIco(CAT_ICONS[c] || CAT_ICONS.room);
-const fillIcons = (root = document) => {
-  root.querySelectorAll('[data-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = ico(el.dataset.ico); });
-  root.querySelectorAll('[data-cat-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = catIco(el.dataset.catIco); });
-};
-
+const fillIcons = (root = document) => root.querySelectorAll('[data-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = ico(el.dataset.ico); });
 const pt = id => state.map?.points.find(p => p.id === id) || null;
 const pname = p => p ? (settings.lang === 'ar' ? (p.nameAr || p.nameEn) : (p.nameEn || p.nameAr)) : '';
-const pnameOther = p => settings.lang === 'ar' ? p.nameEn : p.nameAr;
 const catName = c => T().cats[c] || STR.en.cats[c] || c;
 const mode = () => settings.stepFree ? 'chair' : 'walk';
 const isService = c => ['toilet', 'toilet_acc', 'lift', 'stairs', 'ramp', 'prayer', 'wudu', 'cafe', 'reception', 'entrance', 'exit', 'baby'].includes(c);
+const coarse = () => mq('(pointer: coarse)');
+const cap = s => s[0].toUpperCase() + s.slice(1);
+
+/* =========================================================================
+   Privacy-safe usage counts for the building (off unless config.analytics.endpoint is set).
+   No device id, no names, no positions: only which places are searched for and routed to.
+   ========================================================================= */
+const analytics = {
+  q: [], sent: [],
+  add(e, p = {}) {
+    if (!cfg.analytics?.endpoint) return;
+    this.q.push({ e, t: Math.floor(Date.now() / 3.6e6) * 3.6e6, b: state.map?.building.id, f: state.map?.floor.id, lang: settings.lang, ...p });
+    if (this.q.length >= 20) this.flush();
+  },
+  flush() {
+    const url = cfg.analytics?.endpoint; if (!url || !this.q.length) return;
+    const body = JSON.stringify({ v: 1, events: this.q.splice(0) }); this.sent.push(body);
+    try { if (!navigator.sendBeacon?.(url, new Blob([body], { type: 'application/json' }))) fetch(url, { method: 'POST', body, keepalive: true, headers: { 'Content-Type': 'application/json' } }).catch(() => { }); } catch { }
+  },
+};
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') analytics.flush(); });
 
 /* =========================================================================
    Routing (stored routes for v1 files, otherwise on the phone from map.nav)
@@ -104,6 +130,8 @@ function planRoute(fm, fromId, tm, toId, m = mode()) {
   return best;
 }
 const planTo = (key, m = mode()) => { const d = resolve(key); return d ? planRoute(state.map, state.fromId, d.m, d.p.id, m) : null; };
+// Walking time at the visitor's own pace (route files assume about 1.1 m/s).
+const secsFor = plan => plan ? Math.round(plan.seconds * SPEED.normal / SPEED[settings.pace]) : 0;
 function transferStep(via) {
   const fEn = STR.en.floorName(via.toMap.floor), fAr = STR.ar.floorName(via.toMap.floor);
   return via.lift
@@ -122,6 +150,7 @@ function planSteps(plan) {
 }
 const fmtM = d => t('m', Math.max(1, Math.round(d)));
 const fmtMin = s => t('min', Math.max(1, Math.round(s / 60)));
+const fmtDist = d => d < 1000 ? fmtM(d) : t('km', (d / 1000).toFixed(d < 10000 ? 1 : 0));
 const floorShort = f => /^(ground|g)$/i.test(f.id) || /^ground$/i.test(f.name) ? t('floorG') : /(\d+)/.test(f.name || '') ? f.name.match(/(\d+)/)[1] : String(f.name || f.id).slice(0, 3);
 const floorName = f => t('floorName', f);
 
@@ -181,13 +210,13 @@ function speak(text) {
     u.lang = lang === 'ar' ? 'ar-AE' : 'en-GB';
     const v = voices.find(v => v.lang.toLowerCase().replace('_', '-') === u.lang.toLowerCase()) || voices.find(v => v.lang.toLowerCase().startsWith(lang));
     if (v) u.voice = v;
-    u.rate = .95; speechSynthesis.speak(u);
+    u.rate = settings.pace === 'slow' ? .85 : .95; speechSynthesis.speak(u);
   } catch { /* speech is optional */ }
 }
 function announce(text, assertive = false) { const el = assertive ? $('#liveAssertive') : $('#live'); el.textContent = ''; setTimeout(() => { el.textContent = text; }, 30); }
 function buzz(pattern) { if (settings.vibrate && navigator.vibrate) try { navigator.vibrate(pattern); } catch { } }
 let toastTimer;
-function toast(text, ms = 3200) { const el = $('#toast'); el.textContent = text; el.hidden = false; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, ms); }
+function toast(text, ms = 3600) { const el = $('#toast'); el.textContent = text; el.hidden = false; el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; clearTimeout(toastTimer); toastTimer = setTimeout(() => { el.hidden = true; }, ms); }
 
 /* =========================================================================
    Loading maps
@@ -212,9 +241,60 @@ async function loadFile(file) {
 }
 
 /* =========================================================================
+   Pages: one at a time, each with a Back button; the phone's back button works too
+   ========================================================================= */
+const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav' };
+const stack = ['home'];
+let pageNow = 'home';
+function display(name) {
+  if (!PAGES[name]) name = 'home';
+  if (name === 'route' && !destRef()) name = 'home';
+  if (name === 'nav' && !nav.active) name = state.toKey ? 'route' : 'home';
+  const prev = pageNow;
+  for (const [k, sel] of Object.entries(PAGES)) $(sel).hidden = k !== name;
+  pageNow = name;
+  document.documentElement.classList.toggle('navigating', name === 'nav');
+  if (prev !== name) leavePage(prev, name);
+  enterPage(name, prev);
+}
+function go(name) {
+  if (name === pageNow) { enterPage(name, name); return; }
+  stack.push(name); try { history.pushState({ dalil: stack.length }, ''); } catch { }
+  display(name);
+}
+function back() { if (stack.length > 1) history.back(); else display('home'); }
+function goHome() {
+  const n = stack.length - 1; stack.length = 1;
+  if (n > 0) { try { history.go(-n); } catch { } }
+  display('home');
+}
+window.addEventListener('popstate', e => {
+  const n = e.state?.dalil || 1;
+  stack.length = Math.max(1, Math.min(stack.length, n));
+  display(stack[stack.length - 1] || 'home');
+});
+function enterPage(name, prev) {
+  if (name === 'home') renderHome();
+  else if (name === 'search') { renderSearch(); if (prev !== 'search') requestAnimationFrame(() => $('#search').focus()); }
+  else if (name === 'route') { state.routeLeg = 0; renderRoute(); if (prev !== 'route') requestAnimationFrame(() => $('#destName').focus({ preventScroll: true })); }
+  else if (name === 'where') renderWhere();
+  else if (name === 'map') { state.viewMap ||= state.map; renderFloorMap(); }
+  else if (name === 'settings') renderSettings();
+  else if (name === 'outdoor') openOutdoor();
+  if (!['nav', 'route', 'search', 'home'].includes(name) && prev !== name) requestAnimationFrame(() => $(PAGES[name]).querySelector('[data-back]')?.focus?.({ preventScroll: true }));
+}
+function leavePage(name) {
+  if (name === 'where') stopWhere();
+  if (name === 'map') { pinPoint = null; $('#pinCard').hidden = true; }
+  if (name === 'outdoor') { outdoorSeq++; outdoorCtl?.destroy(); outdoorCtl = null; }
+  if (name === 'nav' && nav.active) endNav({ silent: true });
+  if (name === 'search') { $('#search').value = ''; state.filter = 'all'; }
+}
+
+/* =========================================================================
    Location and destination
    ========================================================================= */
-let mainMap, navMap;
+let routeMap, mainMap, navMap;
 const defaultFrom = map => (map.points.find(p => p.category === 'entrance' && p.dalilNode) || map.points.find(p => p.dalilNode) || map.points[0])?.id || null;
 function selectFloor(map, { keepFrom = false } = {}) {
   state.map = map; state.viewMap = map;
@@ -222,186 +302,72 @@ function selectFloor(map, { keepFrom = false } = {}) {
   if (!resolve(state.toKey)) state.toKey = null;
   state.chip = null;
   store.set('dalil.last', { b: map.building.id, f: map.floor.id });
-  $('#ghSub').textContent = t('gettingHereSub'); $('#ghSub').classList.remove('near'); proximityHint();
-  navMap.setMap(map);
-  if (!state.toKey && state.view === 'place') setView('browse');
+  $('#ghSub').textContent = t('gettingHereSub'); proximityHint();
   renderAll();
 }
 function setFrom(id, { say = true, confirm = false } = {}) {
   const p = pt(id); if (!p) return false;
   state.fromId = id; state.viewMap = state.map;
-  if (state.toKey === keyOf(state.map, p)) { state.toKey = null; if (state.view === 'place') setView('browse'); }
+  if (state.toKey === keyOf(state.map, p)) state.toKey = null;
   renderAll();
   if (say) { const msg = confirm ? t('confirmed', pname(p)) : t('locSet', pname(p)); announce(msg); toast(msg); }
+  if (confirm) analytics.add('tag', { at: id });
   return true;
 }
 function setDest(key, { chip = null, say = true } = {}) {
   const d = resolve(key); if (!d) return;
-  state.toKey = key; state.chip = chip; state.previewAll = false; state.viewMap = state.map;
-  $('#search').value = '';
-  setView('place');
-  renderAll();
-  if (say) { const r = planTo(key); announce(r ? t('routeTo', pname(d.p), fmtM(r.distance_m), fmtMin(r.seconds)) : pname(d.p)); }
-  requestAnimationFrame(() => $('#destName').focus({ preventScroll: true }));
+  state.toKey = key; state.chip = chip; state.viewMap = state.map;
+  go('route');
+  const r = planTo(key);
+  if (say) announce(r ? t('routeTo', pname(d.p), fmtM(r.distance_m), fmtMin(secsFor(r))) : pname(d.p));
+  analytics.add('route', { to: d.p.virtual ? 'pin' : d.p.id, cat: d.p.category, ok: !!r });
 }
-function clearDest() { state.toKey = null; state.chip = null; setView('browse'); renderAll(); }
-
-/* =========================================================================
-   Bottom sheet: peek / half / full, draggable, keyboard-operable
-   ========================================================================= */
-const sheetEl = () => $('#sheet');
-const wide = () => mq('(min-width: 900px)');
-const SNAPS = { browse: ['peek', 'half', 'full'], search: ['full'], place: ['peek', 'half', 'full'], pin: ['fit'] };
-let snap = 'half';
-function sheetHeights() {
-  const el = sheetEl(), full = el.offsetHeight, H = $('#app').clientHeight, grip = $('.sheet-grip').offsetHeight;
-  let peek = grip + 54;
-  if (state.view === 'place') peek = 22 + $('#viewPlace .place-head').offsetHeight + ($('#routeStats').hidden ? 0 : $('#routeStats').offsetHeight + 16) + 18;
-  const fit = Math.min(full, 22 + ($('#viewPin').scrollHeight || 160) + 32);
-  return { peek: Math.min(full, peek), half: Math.min(full, Math.max(peek + 80, Math.round(H * .52))), full, fit };
-}
-function applySheet(animate = true) {
-  const el = sheetEl();
-  if (wide()) { document.documentElement.style.setProperty('--sheet-vis', '0px'); el.style.removeProperty('--sheet-y'); return; }
-  const h = sheetHeights(), vis = h[snap] ?? h.half;
-  el.classList.toggle('dragging', !animate);
-  el.style.setProperty('--sheet-y', `${Math.max(0, h.full - vis)}px`);
-  document.documentElement.style.setProperty('--sheet-vis', `${vis}px`);
-  el.dataset.snap = snap;
-  $('.sheet-body').style.overflowY = snap === 'peek' ? 'hidden' : '';
-  $('#btnGrip').setAttribute('aria-label', t(snap === 'full' ? 'collapsePanel' : 'expandPanel'));
-  $('#btnGrip').setAttribute('aria-expanded', String(snap === 'full'));
-}
-function setSnap(s, animate = true) { snap = (SNAPS[state.view] || ['half']).includes(s) ? s : SNAPS[state.view][0]; applySheet(animate); fitMain(animate); }
-function setView(v) {
-  state.view = v; sheetEl().dataset.view = v;
-  for (const [id, name] of [['#viewBrowse', 'browse'], ['#viewSearch', 'search'], ['#viewPlace', 'place'], ['#viewPin', 'pin']]) $(id).hidden = name !== v;
-  const want = { browse: snap === 'full' || snap === 'fit' ? 'half' : snap, search: 'full', place: 'half', pin: 'fit' }[v];
-  $('.sheet-body').scrollTop = 0;
-  requestAnimationFrame(() => setSnap(want));
-}
-function bindSheet() {
-  const grip = $('.sheet-grip'); let drag = null, justDragged = false;
-  grip.addEventListener('pointerdown', e => {
-    if (wide() || e.target.closest('input, .search-field button, #btnSearchBack')) return;
-    const h = sheetHeights(); drag = { y: e.clientY, vis: h[snap] ?? h.half, h, moved: false };
-  });
-  // Track the drag on the window: the finger soon leaves the handle, and capturing on press would swallow taps.
-  window.addEventListener('pointermove', e => {
-    if (!drag) return; const dy = e.clientY - drag.y;
-    if (!drag.moved && Math.abs(dy) > 5) drag.moved = true;
-    if (!drag.moved) return;
-    const vis = Math.max(drag.h.peek * .7, Math.min(drag.h.full, drag.vis - dy));
-    sheetEl().classList.add('dragging'); sheetEl().style.setProperty('--sheet-y', `${drag.h.full - vis}px`);
-    document.documentElement.style.setProperty('--sheet-vis', `${vis}px`); drag.cur = vis;
-  });
-  const end = () => {
-    if (!drag) return; const d = drag; drag = null; sheetEl().classList.remove('dragging');
-    if (!d.moved) return;
-    justDragged = true; setTimeout(() => { justDragged = false; }, 50);
-    const allowed = SNAPS[state.view] || ['half'];
-    const best = allowed.reduce((a, s) => Math.abs(d.h[s] - d.cur) < Math.abs(d.h[a] - d.cur) ? s : a, allowed[0]);
-    setSnap(best);
-  };
-  window.addEventListener('pointerup', end); window.addEventListener('pointercancel', end);
-  $('#btnGrip').addEventListener('click', () => { if (justDragged) return; const allowed = SNAPS[state.view]; setSnap(allowed[(allowed.indexOf(snap) + 1) % allowed.length]); });
-  window.addEventListener('resize', () => { applySheet(false); fitMain(false); });
-}
-
-/* =========================================================================
-   Rendering
-   ========================================================================= */
 function renderAll() {
   if (!state.map) return;
-  renderTopbar(); renderFloorRail(); renderBrowse();
-  if (state.view === 'search') renderSearch();
-  if (state.view === 'place') renderPlace();
-  renderMap(); renderSettings();
-}
-function renderTopbar() {
-  $('#placePill').innerHTML = `<bdi>${esc(state.map.building.name)}</bdi> · <bdi>${esc(floorName(state.map.floor))}</bdi>`;
-  $('#btnPlace').setAttribute('aria-label', `${t('building')}: ${state.map.building.name}, ${floorName(state.map.floor)}`);
-}
-function renderFloorRail() {
-  const rail = $('#floorRail'), floors = [...bFloors()].reverse();
-  rail.hidden = floors.length < 2;
-  rail.setAttribute('aria-label', t('floorsLabel'));
-  rail.innerHTML = floors.map(f => `<button class="floor-btn${f === state.map ? ' here' : ''}" type="button" data-floor="${esc(f.floor.id)}" aria-pressed="${f === state.viewMap}" aria-label="${esc(t('viewFloor', floorName(f.floor)))}${f === state.map ? '. ' + esc(t('yourFloor')) : ''}">${esc(floorShort(f.floor))}</button>`).join('');
-}
-function renderMap() {
-  const vm = state.viewMap; if (!vm) return;
-  mainMap.setMap(vm);
-  const dest = destRef(), from = pt(state.fromId);
-  const plan = dest && !(dest.m === state.map && dest.p.id === state.fromId) && state.view === 'place' ? planTo(state.toKey) : null;
-  mainMap.setYou(vm === state.map ? from : null, from?.facingDeg ?? 90);
-  const leg = plan?.legs.find(l => l.map === vm);
-  mainMap.setRoute(leg && leg.route.distance_m > 0 ? leg.route.path : null);
-  if (state.view === 'pin' && pinPoint) mainMap.setDest(pinPoint);
-  else if (dest && state.view === 'place') {
-    if (dest.m === vm) mainMap.setDest(dest.p);
-    else if (plan?.via && plan.legs[0].map === vm) mainMap.setDest(plan.via.pa, t('toFloor', floorName(dest.m.floor)));
-    else mainMap.setDest(null);
-  } else mainMap.setDest(null);
-  mainMap.hidePoints([vm === state.map ? state.fromId : null, state.view === 'place' && dest?.m === vm ? dest.p.id : null, state.view === 'place' && plan?.via && plan.legs[0].map === vm ? plan.via.pa.id : null]);
-  $('#mainMap').setAttribute('aria-label', t('mapOf', vm.building.name, floorName(vm.floor)));
-  fitMain();
-}
-function fitMain(animate = true) {
-  if (!mainMap?.map) return;
-  const vm = state.viewMap, dest = destRef();
-  const plan = state.view === 'place' && dest ? planTo(state.toKey) : null, leg = plan?.legs.find(l => l.map === vm);
-  let pts = vm.plan.walls.flat();
-  if (leg && leg.route.distance_m > 0) pts = leg.route.path;
-  else if (state.view === 'pin' && pinPoint) pts = [[pinPoint.x - 12, pinPoint.y - 12], [pinPoint.x + 12, pinPoint.y + 12]];
-  const top = ($('.topbar').offsetHeight || 64) + 12, vis = wide() ? 0 : parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sheet-vis')) || 0;
-  mainMap.fit({ pts, padTop: top, padBot: wide() ? 28 : vis + 20, padL: wide() ? 440 : 24, padR: 76, maxK: leg ? 3.2 : 2.6 }, animate);
+  renderHome();
+  if (pageNow === 'search') renderSearch();
+  if (pageNow === 'route') renderRoute();
+  if (pageNow === 'map') renderFloorMap();
+  if (pageNow === 'where') renderWhere();
+  renderSettings();
 }
 
-/* ---------- Rows and cards ---------- */
-function rowHTML(m, p, { dist = null, floor = false, extra = '', q = '' } = {}) {
-  const sub = catName(p.category);
+/* ---------- Rows ---------- */
+function rowHTML(m, p, { dist = null, floor = false, q = '' } = {}) {
   return `<li><button class="row-btn" type="button" data-pick="${esc(keyOf(m, p))}"${q ? ` data-q="${esc(q)}"` : ''}>
     <span class="r-ico${isService(p.category) ? ' svc' : ''}">${catIco(p.category)}</span>
-    <span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(sub)}</span></span>
-    <span class="r-end">${dist != null ? `<span>${esc(fmtM(dist))}</span>` : ''}${floor ? `<span class="badge floor">${esc(floorShort(m.floor))}</span>` : ''}${extra}</span></button></li>`;
-}
-function cardHTML(key, m, p, sub) {
-  return `<li><button class="card-btn" type="button" data-pick="${esc(key)}"><span class="r-ico${isService(p.category) ? ' svc' : ''}">${catIco(p.category)}</span><span class="c-name">${esc(pname(p))}</span><span class="c-sub">${esc(sub)}</span></button></li>`;
+    <span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(catName(p.category))}${floor ? ` · ${esc(floorName(m.floor))}` : ''}</span></span>
+    <span class="r-end">${dist != null ? `<span>${esc(fmtM(dist))}</span>` : ''}</span></button></li>`;
 }
 const presentCats = () => { const s = new Set(); for (const m of bFloors()) for (const p of m.points) s.add(p.category); return s; };
 
-/* ---------- Browse ---------- */
-function renderBrowse() {
-  const from = pt(state.fromId), multi = bFloors().length > 1, here = presentCats();
-  $('#fromName').textContent = from ? pname(from) : '—';
-  $('#btnGettingHere').hidden = !state.map.geo;
-  $$('.cat[data-cat]').forEach(c => { c.hidden = !CHIP_CATS[c.dataset.cat].some(k => here.has(k)); c.classList.toggle('is-active', c.dataset.cat === state.chip); });
-  const bid = state.map.building.id, distSub = (m, p) => { const d = m === state.map ? distFor(m, from, p) : null; return [multi ? floorName(m.floor) : '', d != null ? fmtM(d) : ''].filter(Boolean).join(' · ') || catName(p.category); };
-  // Saved (this building) and My spot
-  const saved = state.saved.map(k => { const [b, f, id] = k.split('/'); if (b !== bid) return null; const m = mapByFloor(f), p = m && pointOf(m, id); return p ? { key: `${f}|${id}`, m, p } : null; }).filter(Boolean);
-  const sp = store.get('dalil.spot', null); if (sp && sp.b === bid) { const m = mapByFloor(sp.f), p = m && pointOf(m, '@spot'); if (p) saved.unshift({ key: `${sp.f}|@spot`, m, p }); }
+/* ---------- Home ---------- */
+function renderHome() {
+  if (!state.map) return;
+  const from = pt(state.fromId), multi = bFloors().length > 1, here = presentCats(), bid = state.map.building.id;
+  const inst = settings.lang === 'ar' ? (cfg.institution?.nameAr || cfg.institution?.name) : cfg.institution?.name;
+  $('#bldName').innerHTML = `<bdi>${esc([inst, state.map.building.name].filter(Boolean).join(' · '))}</bdi>`;
+  $('#fromName').textContent = from ? `${pname(from)}${multi ? ` · ${floorName(state.map.floor)}` : ''}` : t('fromUnknown');
+  $('#liGettingHere').hidden = !state.map.geo;
+  // Tiles: the essentials this building has, with the walk to the nearest one
+  const cats = Object.keys(TILE_CATS).filter(c => TILE_CATS[c].some(k => here.has(k))).slice(0, 6);
+  $('#tiles').innerHTML = cats.map(c => {
+    let best = null;
+    for (const p of state.map.points) if (TILE_CATS[c].includes(p.category) && p.id !== state.fromId) { const d = distFor(state.map, from, p); if (d != null && (best == null || d < best)) best = d; }
+    return `<li><button class="tile" type="button" data-cat="${c}" aria-label="${esc(t('nearestOf', t('cat_' + c)))}${best != null ? ', ' + esc(fmtM(best)) : ''}"><span class="tile-ico">${catIco(c === 'help' ? 'help' : TILE_CATS[c][0])}</span><span><span class="tile-name">${esc(t('cat_' + c))}</span>${best != null ? `<span class="tile-sub">${esc(fmtM(best))}</span>` : ''}</span></button></li>`;
+  }).join('');
+  // Saved places (this building) and My spot
+  const saved = state.saved.map(k => { const [b, f, id] = k.split('/'); if (b !== bid) return null; const m = mapByFloor(f), p = m && pointOf(m, id); return p ? { m, p } : null; }).filter(Boolean);
+  const sp = store.get('dalil.spot', null); if (sp && sp.b === bid) { const m = mapByFloor(sp.f), p = m && pointOf(m, '@spot'); if (p) saved.unshift({ m, p }); }
   $('#secSaved').hidden = !saved.length;
-  $('#savedList').innerHTML = saved.map(s => cardHTML(s.key, s.m, s.p, distSub(s.m, s.p))).join('');
-  // Recent destinations
-  const recent = store.get('dalil.recent', []).filter(r => r.b === bid).map(r => { const d = resolve(r.k); return d ? { key: r.k, ...d } : null; }).filter(Boolean).slice(0, 8);
+  $('#savedList').innerHTML = saved.map(s => rowHTML(s.m, s.p, { dist: s.m === state.map ? distFor(s.m, from, s.p) : null, floor: multi })).join('');
+  const recent = store.get('dalil.recent', []).filter(r => r.b === bid).map(r => resolve(r.k)).filter(Boolean).filter(r => !saved.some(s => s.m === r.m && s.p.id === r.p.id)).slice(0, 4);
   $('#secRecent').hidden = !recent.length;
-  $('#recentList').innerHTML = recent.map(r => cardHTML(r.key, r.m, r.p, distSub(r.m, r.p))).join('');
-  // Frequent (from this phone's own history), otherwise the essentials of this floor
-  const freq = Object.entries(store.get('dalil.freq', {})).filter(([k, n]) => n >= 2 && k.startsWith(bid + '/')).sort((a, b) => b[1] - a[1]).map(([k]) => resolve(k.slice(bid.length + 1))).filter(Boolean).slice(0, 5);
-  let items = freq;
-  if (!items.length) {
-    const want = ['entrance', 'reception', 'toilet', 'toilet_acc', 'lift', 'cafe', 'prayer', 'baby'], seen = new Set();
-    items = state.map.points.filter(p => want.includes(p.category) && p.id !== state.fromId)
-      .map(p => ({ m: state.map, p, d: distFor(state.map, from, p) })).sort((a, b) => (a.d ?? 1e9) - (b.d ?? 1e9))
-      .filter(x => { const c = x.p.category.replace('_acc', ''); if (seen.has(c)) return false; seen.add(c); return true; }).slice(0, 5);
-  }
-  $('#keyTitle').textContent = t(freq.length ? 'secFrequent' : 'secKey');
-  $('#secKey').hidden = !items.length;
-  $('#keyList').innerHTML = items.map(x => rowHTML(x.m, x.p, { dist: x.m === state.map ? (x.d ?? distFor(x.m, from, x.p)) : null, floor: multi && x.m !== state.map })).join('');
+  $('#recentList').innerHTML = recent.map(r => rowHTML(r.m, r.p, { dist: r.m === state.map ? distFor(r.m, from, r.p) : null, floor: multi })).join('');
 }
 
 /* ---------- Search ---------- */
-const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ًͯ-ٰٟـ]/g, '')
+const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ًͯ-ٰٟـ]/g, '')
   .replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();
 const FILTERS = { rooms: ['room'], toilets: ['toilet', 'toilet_acc', 'baby'], lifts: ['lift', 'stairs', 'ramp'], food: ['cafe'], prayer: ['prayer', 'wudu'], services: ['reception', 'entrance', 'exit'] };
 const FILTER_LABEL = { rooms: 'filterRooms', toilets: 'filterToilets', lifts: 'filterLifts', food: 'filterFood', prayer: 'filterPrayer', services: 'filterServices' };
@@ -427,19 +393,22 @@ function renderFilters() {
   const here = presentCats(), multi = bFloors().length > 1;
   const list = ['all', ...(multi ? ['floor'] : []), ...Object.keys(FILTERS).filter(k => FILTERS[k].some(c => here.has(c)))];
   if (!list.includes(state.filter)) state.filter = 'all';
-  $('#searchFilters').innerHTML = list.map(k => `<button class="filter" type="button" data-filter="${k}" aria-pressed="${state.filter === k}">${esc(t(k === 'all' ? 'filterAll' : k === 'floor' ? 'filterFloor' : FILTER_LABEL[k]))}</button>`).join('');
+  $('#searchFilters').innerHTML = list.map(k => `<button class="chip" type="button" data-filter="${k}" aria-pressed="${state.filter === k}">${esc(t(k === 'all' ? 'filterAll' : k === 'floor' ? 'filterFloor' : FILTER_LABEL[k]))}</button>`).join('');
 }
+let searchTimer = 0;
 function renderSearch() {
+  if (!state.map) return;
   renderFilters();
-  const q = $('#search').value.trim(), browsing = !q && state.filter !== 'all' && state.filter !== 'floor';
+  const q = $('#search').value.trim(), browsing = !q && state.filter !== 'all';
+  $('#btnSearchClear').hidden = !q;
   const searches = store.get('dalil.searches', []);
   $('#secSearches').hidden = !!q || browsing || !searches.length;
   $('#recentSearches').innerHTML = searches.map(s => `<li><button class="row-btn" type="button" data-search="${esc(s)}"><span class="r-ico">${ico('history')}</span><span class="r-main"><span class="r-name">${esc(s)}</span></span></button></li>`).join('');
-  $('#searchHint').hidden = !!q || browsing || state.filter === 'floor';
-  if (!q && !browsing && state.filter !== 'floor') { $('#results').innerHTML = ''; $('#noResults').hidden = true; return; }
+  $('#searchHint').hidden = !!q || browsing;
+  if (!q && !browsing) { $('#results').innerHTML = ''; $('#noResults').hidden = true; $('#resultsStatus').textContent = ''; return; }
   const res = searchPoints(q), multi = bFloors().length > 1;
   $('#noResults').hidden = res.length > 0;
-  $('#noResultsTitle').textContent = t('noResultsFor', q);
+  $('#noResultsTitle').textContent = q ? t('noResultsFor', q) : t('noResults');
   let html = '', group = null;
   for (const r of res.slice(0, 80)) {
     const g = r.m === state.map ? 'here' : r.m.floor.id;
@@ -448,15 +417,15 @@ function renderSearch() {
   }
   $('#results').innerHTML = html;
   $('#resultsStatus').textContent = res.length ? t('results', res.length) : t('noResults');
+  clearTimeout(searchTimer);
+  if (q && !res.length) searchTimer = setTimeout(() => analytics.add('search_none', { q: q.slice(0, 40) }), 1500);
 }
-function openSearch() { if (state.view !== 'search') { setView('search'); renderSearch(); } }
-function closeSearch() { $('#search').value = ''; state.filter = 'all'; setView(state.toKey ? 'place' : 'browse'); renderAll(); }
 function rememberSearch(q) { q = (q || '').trim(); if (!q) return; const s = store.get('dalil.searches', []).filter(x => x.toLowerCase() !== q.toLowerCase()); s.unshift(q); store.set('dalil.searches', s.slice(0, 6)); }
 
 /* ---------- Nearest of a category ---------- */
 function pickNearest(cat) {
   const label = t('cat_' + cat), cands = [];
-  for (const m of bFloors()) for (const p of m.points) if (CHIP_CATS[cat].includes(p.category) && !(m === state.map && p.id === state.fromId)) cands.push({ m, p });
+  for (const m of bFloors()) for (const p of m.points) if (TILE_CATS[cat].includes(p.category) && !(m === state.map && p.id === state.fromId)) cands.push({ m, p });
   if (!cands.length) { const msg = t('noneOfCat', label); toast(msg); announce(msg); return; }
   let best = null; const from = pt(state.fromId);
   for (const { m, p } of cands.filter(c => c.m === state.map)) { const d = distFor(m, from, p); if (d != null && (!best || d < best.d)) best = { m, p, d }; }
@@ -473,17 +442,17 @@ function setStepFree(on) {
   announce(t(on ? 'stepFreeOn' : 'stepFreeOff'));
 }
 
-/* ---------- Place (destination + route review) ---------- */
+/* ---------- Route ready ---------- */
 const roomNo = p => { if (['lift', 'stairs', 'pin', 'corridor'].includes(p.category)) return null; const m = (p.nameEn || '').match(/\(?\b([A-Z]?\d{2,4}[A-Z]?)\b\)?\s*$/); return m ? m[1] : null; };
-function renderPlace() {
+function renderRoute() {
   const dest = destRef(); if (!dest) return;
   const to = dest.p, here = dest.m === state.map && state.fromId === to.id;
   const route = here ? null : planTo(state.toKey), multi = bFloors().length > 1;
   $('#placeIco').innerHTML = catIco(to.category);
   $('#destName').textContent = pname(to);
-  $('#destMeta').innerHTML = `<span class="meta-line">${multi || dest.m !== state.map ? `<span class="badge floor">${esc(floorName(dest.m.floor))}</span>` : ''}<span>${esc(catName(to.category))}</span></span><bdi class="meta-bld">${esc(dest.m.building.name)}</bdi>`;
-  const isSaved = isFav(state.toKey), fav = $('#btnFav');
-  fav.setAttribute('aria-pressed', String(isSaved)); fav.setAttribute('aria-label', t(isSaved ? 'unsave' : 'save'));
+  $('#destMeta').innerHTML = [`<span>${esc(catName(to.category))}</span>`, multi || dest.m !== state.map ? `<span class="badge">${esc(floorName(dest.m.floor))}</span>` : '', `<bdi>${esc(dest.m.building.name)}</bdi>`].join('');
+  const isSaved = isFav(state.toKey);
+  $('#btnFav').setAttribute('aria-pressed', String(isSaved)); $('#favText').textContent = t(isSaved ? 'saved' : 'save');
   const msg = $('#routeMsg'); msg.className = 'route-msg'; msg.innerHTML = '';
   if (here) msg.textContent = t('alreadyHere');
   else if (!route && settings.stepFree) { msg.className = 'route-msg warn'; msg.innerHTML = `<strong>${esc(t('noStepFreeTitle'))}</strong>${esc(t('noStepFreeBody'))}`; }
@@ -491,28 +460,41 @@ function renderPlace() {
   else if (route.closures) msg.textContent = t('closureNote');
   $('#routeStats').hidden = !route;
   if (route) {
-    $('#statEta').textContent = fmtMin(route.seconds);
+    $('#statEta').textContent = t('walkTime', fmtMin(secsFor(route)));
     $('#statDist').textContent = fmtM(route.distance_m);
     $('#routeVia').hidden = !route.via;
-    if (route.via) $('#routeVia').innerHTML = `${svgIco(TURN_ICONS[route.via.lift ? 'lift' : 'stairs'], 'ico')}<span>${esc(t(route.via.lift ? 'viaLift' : 'viaStairs', floorName(route.via.toMap.floor)))}</span>`;
+    if (route.via) $('#routeVia').innerHTML = `${svgIco(TURN_ICONS[route.via.lift ? 'lift' : 'stairs'])}<span>${esc(t(route.via.lift ? 'viaLift' : 'viaStairs', floorName(route.via.toMap.floor)))}</span>`;
   }
-  $('#btnStart').disabled = !route;
+  $('#btnStart').disabled = !route; $('#btnStartCam').disabled = !route;
+  $('#btnStartCam').hidden = !!state.kiosk || cfg.features.camera === false || !navigator.mediaDevices?.getUserMedia;
   $('#btnShare').hidden = !route;
   $('#optStepFree').checked = settings.stepFree;
-  // Facts: room number and step-free access
   const facts = [], rn = roomNo(to);
-  if (rn) facts.push(`<li>${ico('pin')}${esc(t('factRoom', rn))}</li>`);
-  if (to.category === 'toilet_acc') facts.push(`<li class="ok">${ico('wheel')}${esc(t('accToilet'))}</li>`);
-  if (!here) { const chair = settings.stepFree ? route : planTo(state.toKey, 'chair'); facts.push(chair ? `<li class="ok">${ico('check')}${esc(t('accYes'))}</li>` : `<li class="no">${ico('alert')}${esc(t('accNo'))}</li>`); }
+  const fi = n => `<span class="ico">${ico(n)}</span>`;
+  if (rn) facts.push(`<li>${fi('pin')}${esc(t('factRoom', rn))}</li>`);
+  if (to.category === 'toilet_acc') facts.push(`<li class="ok">${fi('wheel')}${esc(t('accToilet'))}</li>`);
+  if (!here) { const chair = settings.stepFree ? route : planTo(state.toKey, 'chair'); facts.push(chair ? `<li class="ok">${fi('check')}${esc(t('accYes'))}</li>` : `<li class="no">${fi('alert')}${esc(t('accNo'))}</li>`); }
   $('#placeFacts').innerHTML = facts.join('');
-  $$('#placeFacts .ico, #placeFacts svg').forEach(s => s.classList.add('ico'));
-  // Route preview
   const prev = route ? planSteps(route).steps.filter(s => s.kind === 'move' || s.kind === 'node' || s.kind === 'floor' || s.kind === 'arrive') : [];
-  const show = state.previewAll ? prev : prev.slice(0, 4);
   $('#secPreview').hidden = !prev.length;
-  $('#previewSteps').innerHTML = show.map(s => `<li class="${s.kind === 'floor' ? 'floor' : ''}"><span class="p-ico">${svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight)}</span><span>${esc(stepText(s))}</span></li>`).join('')
-    + (prev.length > show.length ? `<li><button id="btnAllSteps" class="text-btn" type="button">${esc(t('moreSteps', prev.length))}</button></li>` : '');
+  $('#stepsSummary').textContent = t('allSteps', prev.length);
+  $('#previewSteps').innerHTML = prev.map(s => `<li><span class="p-ico">${svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight)}</span><span>${esc(stepText(s))}</span></li>`).join('');
   const kq = $('#kioskQR'); kq.hidden = !(state.kiosk && route); if (state.kiosk && route) kq.querySelector('.qr').innerHTML = qrSvg(shareLink());
+  renderRouteMap(route, dest);
+}
+function renderRouteMap(route, dest) {
+  const leg = route?.legs[Math.min(state.routeLeg, (route?.legs.length || 1) - 1)], m = leg?.map || dest.m;
+  routeMap.setMap(m);
+  routeMap.setRoute(leg && leg.route.distance_m > 0 ? leg.route.path : null);
+  const from = pt(state.fromId);
+  routeMap.setYou(m === state.map ? from : null, from?.facingDeg ?? 90);
+  if (dest.m === m) routeMap.setDest(dest.p);
+  else if (route?.via && route.legs[0].map === m) routeMap.setDest(route.via.pa, t('toFloor', floorName(dest.m.floor)));
+  else routeMap.setDest(null);
+  routeMap.hidePoints([m === state.map ? state.fromId : null, dest.m === m ? dest.p.id : null, route?.via?.pa?.id]);
+  $('#routeMap').setAttribute('aria-label', t('routeMap', pname(dest.p)));
+  const pts = leg && leg.route.distance_m > 0 ? leg.route.path : [[dest.p.x - 15, dest.p.y - 15], [dest.p.x + 15, dest.p.y + 15]];
+  requestAnimationFrame(() => routeMap.fit({ pts, padTop: 28, padBot: 28, padL: 28, padR: 28, maxK: 3 }, false));
 }
 
 /* ---------- Saved ---------- */
@@ -522,7 +504,7 @@ function toggleFav(key, force) {
   const k = favKey(key), has = state.saved.includes(k), want = force ?? !has;
   if (want && !has) state.saved.push(k); if (!want && has) state.saved = state.saved.filter(x => x !== k);
   store.set('dalil.saved', state.saved);
-  renderBrowse(); if (state.view === 'place') renderPlace();
+  renderHome(); if (pageNow === 'route') renderRoute();
   return want;
 }
 function rememberTrip(key) {
@@ -531,73 +513,244 @@ function rememberTrip(key) {
   const f = store.get('dalil.freq', {}); f[`${bid}/${key}`] = (f[`${bid}/${key}`] || 0) + 1; store.set('dalil.freq', f);
 }
 
+/* ---------- Floor map (browse every floor, drop a pin) ---------- */
+let pinPoint = null;
+function renderFloorMap() {
+  const vm = state.viewMap || state.map; if (!vm || pageNow !== 'map') return;
+  mainMap.setMap(vm);
+  const from = pt(state.fromId);
+  mainMap.setYou(vm === state.map ? from : null, from?.facingDeg ?? 90);
+  mainMap.setRoute(null);
+  mainMap.setDest(pinPoint && pinPoint.f === vm.floor.id ? pinPoint : null);
+  mainMap.hidePoints([vm === state.map ? state.fromId : null]);
+  $('#mapTitle').innerHTML = `<bdi>${esc(vm.building.name)}</bdi> · <bdi>${esc(floorName(vm.floor))}</bdi>`;
+  $('#mainMap').setAttribute('aria-label', t('mapOf', vm.building.name, floorName(vm.floor)) + ' ' + t('mapTip'));
+  const floors = [...bFloors()].reverse(), rail = $('#floorRail');
+  rail.setAttribute('aria-label', t('floorsLabel'));
+  rail.innerHTML = floors.length < 2 ? '' : floors.map(f => `<button class="floor-btn${f === state.map ? ' here' : ''}" type="button" data-floor="${esc(f.floor.id)}" aria-pressed="${f === vm}" aria-label="${esc(t('viewFloor', floorName(f.floor)))}${f === state.map ? '. ' + esc(t('yourFloor')) : ''}">${esc(floorShort(f.floor))}</button>`).join('');
+  $('#mapTip').hidden = !!pinPoint;
+  requestAnimationFrame(() => mainMap.fit({ pts: vm.plan.walls.flat(), padTop: 96, padBot: pinPoint ? 200 : 80, padL: 20, padR: 84, maxK: 2.6 }, false));
+}
+function onMapTap({ x, y }) {
+  const vm = state.viewMap, R = routerOf(vm);
+  if (!R) return;
+  if (!R.walkable(x, y)) { toast(t('pinOutside')); return; }
+  pinPoint = { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, f: vm.floor.id };
+  $('#pinText').textContent = t('pinAt', floorName(vm.floor));
+  $('#pinCard').hidden = false; $('#mapTip').hidden = true;
+  mainMap.setDest(pinPoint);
+  announce(t('pinAt', floorName(vm.floor)));
+}
+const pinKey = () => pinPoint ? `${pinPoint.f}|@${pinPoint.x},${pinPoint.y}` : null;
+
+/* ---------- Where am I (QR sign, NFC tag, or a list) ---------- */
+let whereScan = null, whereStream = null, nfcCtl = null;
+function renderWhere() {
+  if (!state.map) return;
+  const q = norm($('#whereFilter').value), floors = [state.map, ...bFloors().filter(m => m !== state.map)], multi = floors.length > 1;
+  let html = '';
+  for (const m of floors) {
+    const pts = m.points.filter(p => !q || norm(`${p.nameEn} ${p.nameAr} ${catName(p.category)}`).includes(q))
+      .sort((a, b) => (b.dalilNode - a.dalilNode) || pname(a).localeCompare(pname(b)));
+    if (!pts.length) continue;
+    if (multi) html += `<li class="group-title" role="presentation">${esc(floorName(m.floor))}</li>`;
+    html += pts.map(p => `<li><button class="row-btn" type="button" data-where="${esc(keyOf(m, p))}"><span class="r-ico${p.dalilNode ? ' svc' : ''}">${p.dalilNode ? ico('qr') : catIco(p.category)}</span><span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(p.dalilNode ? t('dalilTag') : catName(p.category))}</span></span>${m === state.map && p.id === state.fromId ? `<span class="r-end"><span class="ico">${ico('check')}</span></span>` : ''}</button></li>`).join('');
+  }
+  $('#tagList').innerHTML = html;
+  if ('NDEFReader' in window && !nfcCtl) startNfc();
+}
+function startNfc() {
+  $('#nfcLine').hidden = false;
+  nfcCtl = new AbortController();
+  try {
+    const reader = new window.NDEFReader();
+    reader.scan({ signal: nfcCtl.signal }).then(() => { $('#nfcStatus').textContent = t('nfcReady'); }).catch(() => { $('#nfcStatus').textContent = t('nfcFail'); });
+    reader.onreading = ev => {
+      const dec = new TextDecoder();
+      for (const rec of ev.message.records) if (['url', 'absolute-url', 'text'].includes(rec.recordType)) { if (useTagText(dec.decode(rec.data))) return; }
+      $('#nfcStatus').textContent = t('nfcUnknown');
+    };
+  } catch { $('#nfcStatus').textContent = t('nfcFail'); }
+}
+/** A tag or sign was read (NFC or QR). Returns true when it was a DALIL point we know. */
+function useTagText(text) {
+  const link = parseLink(text);
+  if (!link.at) return false;
+  if (nav.active) return navTag(link);
+  if (!applyLink(link, { fromTag: true })) return false;
+  buzz([40]);
+  if (pageNow === 'where') back();
+  return true;
+}
+async function startWhereScan() {
+  const status = $('#scanStatus');
+  $('#scanView').hidden = false; $('#btnScanStart').hidden = true; status.textContent = t('whereScanning');
+  try {
+    whereStream = await openCamera($('#scanVideo'));
+    if (pageNow !== 'where') { stopWhere(); return; }
+    whereScan = new QRScanner($('#scanVideo'), text => { if (!useTagText(text)) status.textContent = t('scanUnknown'); }).start();
+  } catch (e) { $('#scanView').hidden = true; $('#btnScanStart').hidden = false; status.textContent = t('scan' + cap(cameraError(e))); }
+}
+function stopWhere() {
+  whereScan?.stop(); whereScan = null; closeCamera($('#scanVideo'), whereStream); whereStream = null;
+  nfcCtl?.abort(); nfcCtl = null;
+  $('#scanView').hidden = true; $('#btnScanStart').hidden = false; $('#scanStatus').textContent = ''; $('#whereFilter').value = '';
+}
+
 /* ---------- Settings page ---------- */
+function providerOptions() {
+  const opts = [['auto', t('provider_auto')], ...availableProviders(cfg.maps).map(p => [p.id, `${t(p.kind === 'satellite' ? 'kindSatellite' : 'kindStreets')} · ${p.name} (${p.key ? t('provKey') : t('provFree')})`]), ['plain', t('provider_plain')]];
+  return opts.map(([v, l]) => `<option value="${esc(v)}" ${settings.mapProvider === v ? 'selected' : ''}>${esc(l)}</option>`).join('');
+}
 function renderSettings() {
-  $$('input[name="lang"]').forEach(r => { r.checked = r.value === settings.lang; });
-  $$('input[name="theme"]').forEach(r => { r.checked = r.value === settings.theme; });
+  for (const [name, val] of [['lang', settings.lang], ['theme', settings.theme], ['textSize', settings.textSize], ['pace', settings.pace]]) $$(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
   $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree;
-  $('#setLarge').checked = settings.large; $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion;
+  $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion; $('#setSensors').checked = settings.sensors;
   $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${m.building.name} · ${floorName(m.floor)}`)}</option>`).join('');
+  $('#setProvider').innerHTML = providerOptions();
+  $('#privacyStats').hidden = !cfg.analytics?.endpoint;
 }
-function openSettings(section) {
-  $('#settings').hidden = false; $('#app').inert = true;
-  if (section) $(section)?.scrollIntoView({ block: 'start' });
-  $('#btnSettingsBack').focus();
-}
-function closeSettings() { $('#settings').hidden = true; $('#app').inert = false; $('#btnSettings').focus(); }
-function resolvedTheme() { return settings.theme === 'system' ? (mq('(prefers-color-scheme: light)') ? 'light' : 'dark') : settings.theme; }
+function resolvedTheme() { return settings.theme === 'system' ? (mq('(prefers-color-scheme: dark)') ? 'dark' : 'light') : settings.theme; }
 function applyDisplay() {
   const h = document.documentElement;
   h.lang = settings.lang; h.dir = settings.lang === 'ar' ? 'rtl' : 'ltr';
   h.dataset.theme = resolvedTheme();
-  h.classList.toggle('large', settings.large); h.classList.toggle('contrast', settings.contrast); h.classList.toggle('reduce-motion', settings.motion);
+  h.classList.toggle('ts-large', settings.textSize === 'large'); h.classList.toggle('ts-xl', settings.textSize === 'xl');
+  h.classList.toggle('contrast', settings.contrast); h.classList.toggle('reduce-motion', settings.motion);
   $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   $$('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
-  $('meta[name="theme-color"]').content = settings.contrast ? '#000000' : resolvedTheme() === 'light' ? '#E4E2DC' : '#0C0D10';
+  $('meta[name="theme-color"]').content = settings.contrast ? '#000000' : resolvedTheme() === 'dark' ? '#111214' : '#FFFFFF';
 }
 function rerenderAll() {
   applyDisplay();
   if (!state.map) return;
-  mainMap.renderPoints(); navMap.renderPoints();
-  renderAll(); applySheet(false);
-  if (nav.active) renderNavStep();
+  for (const v of [routeMap, mainMap, navMap]) v.renderPoints();
+  renderAll();
+  if (nav.active) { renderNavStep(); renderMode(); }
 }
 function setLang(l) { settings.lang = l; saveSettings(); rerenderAll(); }
 
 /* =========================================================================
-   Navigation
+   Navigation: the sign (big arrow + step), the map or the camera, and the controls
+   Modes: 'steps' (tap Next as you walk), 'track' (compass + step counter move you along),
+   and the simulated preview (clearly labelled, never your real position).
    ========================================================================= */
-const nav = { active: false, plan: null, legs: [], steps: [], leg: -1, i: 0, pos: 0, sim: false, dwell: 0, raf: 0, last: 0, rot: 0, toKey: null };
-function startNav() {
+const tracker = new Tracker();
+const nav = { active: false, plan: null, legs: [], steps: [], leg: -1, i: 0, pos: 0, sim: false, dwell: 0, raf: 0, last: 0, rot: null, toKey: null,
+  mode: 'steps', view: 'map', follower: null, arrow: 0, soonFor: -1, started: 0, loop: 0, everStepped: false, pending: false, here: null, pathDir: 0 };
+let camGuide = null, navScan = null;
+function startNav({ camera = false } = {}) {
   const plan = planTo(state.toKey); if (!plan) return;
+  // Ask for motion access inside this tap: iPhones only allow it from a user gesture.
+  const wantMotion = settings.sensors && cfg.features.motion !== false && !state.kiosk;
+  const sensors = wantMotion ? tracker.start() : null;
   const { legs, steps } = planSteps(plan), dest = destRef();
   rememberTrip(state.toKey);
-  Object.assign(nav, { active: true, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null });
-  $('#app').inert = true; $('#nav').hidden = false;
-  $('#navDest').textContent = pname(dest.p);
-  renderMode(); renderStepList();
-  goStep(0, { focus: true, intro: t('navStarted', pname(dest.p)) + ' ' + t('modeStepHint') });
+  Object.assign(nav, { active: true, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null, mode: 'steps',
+    view: 'map', follower: null, arrow: 0, soonFor: -1, started: performance.now(), everStepped: false, pending: !!sensors });
+  $('#nav').classList.remove('tracking');
+  go('nav');
+  $('#navDest').textContent = t('toDest', pname(dest.p));
+  goStep(0, { focus: true, intro: t('navStarted', pname(dest.p)) });
+  renderMode();
+  if (camera) setView('cam');
+  analytics.add('nav_start', { to: dest.p.virtual ? 'pin' : dest.p.id, view: camera ? 'cam' : 'map' });
+  if (sensors) sensors.then(s => {
+    nav.pending = false;
+    if (!nav.active) return;
+    if (s.orientation && s.motion) enableTracking();
+    else {
+      if ((s.denied || coarse() || nav.view === 'cam') && $('#arrived').hidden) toast(t(s.denied ? 'sensorsDenied' : 'sensorsNone'));
+      if (nav.view === 'cam') setView('map');
+      renderMode();
+    }
+  });
+  startLoop();
 }
-function endNav() {
-  stopSim(); nav.active = false;
+function endNav({ silent = false } = {}) {
+  if (!nav.active) return;
+  stopSim(); saveCalibration();
+  if (nav.i < nav.steps.length - 1) analytics.add('nav_stop', { step: nav.i + 1, of: nav.steps.length });
+  nav.active = false; cancelAnimationFrame(nav.loop);
+  tracker.onStep = null; tracker.stop(); tracker.reset();
+  stopCam();
   try { speechSynthesis?.cancel(); } catch { }
-  $('#nav').hidden = true; $('#arrived').hidden = true; $('#nav').inert = false; $('#app').inert = false;
-  renderAll();
-  ($('#btnStart').disabled ? $('#search') : $('#btnStart')).focus();
+  $('#arrived').hidden = true; if ($('#dlgSteps').open) $('#dlgSteps').close();
+  if (!silent && pageNow === 'nav') back();
+}
+// Prior for the compass → plan angle: what this phone learned here before, else the building's bearing.
+function priorFor(map) {
+  const st = store.get('dalil.cal', {})[`${map.building.id}|${map.floor.id}`];
+  if (st && Date.now() - st.t < 30 * 864e5 && st.abs === tracker.absolute) return { beta: st.beta, trusted: true, weight: 4 };
+  if (map.geo && tracker.absolute) return { beta: map.geo.bearing - (map.geo.declination || 0), trusted: true, weight: 3 };
+  return null;
+}
+function saveCalibration() {
+  const f = nav.follower, leg = nav.legs[nav.leg]; if (!f || !leg || f.samples < 6 || f.beta == null) return;
+  const all = store.get('dalil.cal', {}); all[`${leg.map.building.id}|${leg.map.floor.id}`] = { beta: Math.round(f.beta * 10) / 10, abs: tracker.absolute, t: Date.now() }; store.set('dalil.cal', all);
+}
+function enableTracking() {
+  const leg = nav.legs[nav.steps[nav.i].leg];
+  nav.mode = 'track';
+  nav.follower = new Follower({ stride: STRIDE[settings.pace] });
+  const pr = priorFor(leg.map); if (pr) nav.follower.setPrior(pr.beta, { weight: pr.weight, trusted: pr.trusted });
+  nav.follower.setLeg(leg.route.path, leg.cum); nav.follower.anchor(nav.pos, { learn: false });
+  tracker.onStep = onTrackerStep;
+  $('#nav').classList.add('tracking');
+  renderMode(); updateNavPos(false);
+}
+function onTrackerStep() {
+  if (!nav.active || nav.mode !== 'track' || nav.sim) return;
+  const s = nav.steps[nav.i];
+  if (s.kind === 'floor' || s.kind === 'arrive') return;          // in the lift or on the stairs: wait for "I'm on Level 2"
+  nav.everStepped = true;
+  const wasWrong = nav.follower.wrong;
+  nav.pos = nav.follower.step(tracker.heading, { steady: tracker.steady() });
+  if (nav.follower.wrong && !wasWrong) { speak(t('wrongWay')); announce(t('wrongWay'), true); buzz([300, 100, 300]); }
+  syncStepToPos();
+  updateNavPos(false);
+  renderMode();
+}
+// Tracking moves the position; the current step follows it.
+function syncStepToPos() {
+  let i = nav.i;
+  while (i < nav.steps.length - 1) {
+    const s = nav.steps[i], n = nav.steps[i + 1];
+    if (s.kind === 'floor' || n.leg !== s.leg) break;
+    const L = nav.legs[s.leg].L;
+    if (n.kind === 'floor' || n.kind === 'arrive') { if (nav.pos >= L - 0.8) i++; else break; }
+    else if (s.kind === 'move' ? nav.pos >= s.d1 - 0.5 : nav.pos >= s.d0 + (s.kind === 'node' ? 2 : 0.3)) i++;
+    else break;
+  }
+  if (i !== nav.i) goStep(i, { keepPos: true });
+  // Heads-up a few metres before the next turn.
+  const s = nav.steps[nav.i], n = nav.steps[nav.i + 1];
+  if (s?.kind === 'move' && n && nav.soonFor !== nav.i) {
+    const rem = s.d1 - nav.pos, turn = n.kind === 'move' && n.turn !== 'straight';
+    if (rem <= 6 && rem > 1.2 && (turn || n.kind === 'floor' || n.kind === 'arrive')) {
+      nav.soonFor = nav.i;
+      const msg = n.kind === 'arrive' ? t('aheadDest', pname(resolve(nav.toKey)?.p), fmtM(rem)) : t('soon', fmtM(rem), stepShort(n));
+      speak(msg); announce(msg); buzz([60]);
+    }
+  }
 }
 function renderMode() {
-  $('#navMode').classList.toggle('preview', nav.sim);
-  $('#navModeText').textContent = t(nav.sim ? 'modePreviewShort' : 'modeStepShort');
-  $('#navMode').title = t(nav.sim ? 'modePreviewHint' : 'modeStepHint');
+  const m = nav.sim ? 'preview' : nav.mode === 'steps' ? (nav.pending ? 'still' : 'steps')
+    : nav.follower?.wrong ? 'wrong' : !nav.follower?.usable ? 'align' : !nav.everStepped && performance.now() - nav.started > 6000 ? 'still' : 'follow';
+  const el = $('#navMode'); el.dataset.mode = m;
+  $('#navModeText').textContent = t({ preview: 'modePreview', steps: 'modeSteps', still: 'modeStill', wrong: 'modeWrong', align: 'modeAlign', follow: 'modeFollow' }[m]);
+  el.title = t(m === 'steps' ? 'modeStepsHint' : m === 'preview' ? 'previewNote' : 'modeFollowHint');
+  $('#camNote').textContent = nav.mode === 'track' && nav.follower?.usable ? t('camNote') : t('camAlign');
 }
 function renderStepList() {
-  $('#stepList').innerHTML = nav.steps.map((s, i) => `<li data-i="${i}" class="${i === nav.i ? 'is-current' : i < nav.i ? 'is-done' : ''}" ${i === nav.i ? 'aria-current="step"' : ''}>${esc(stepText(s))}</li>`).join('');
+  $('#stepList').innerHTML = nav.steps.map((s, i) => `<li class="${i === nav.i ? 'is-current' : i < nav.i ? 'is-done' : ''}" ${i === nav.i ? 'aria-current="step"' : ''}><button class="step-btn" type="button" data-step="${i}"><span class="p-ico">${svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight)}</span><span class="s-text">${esc(stepText(s))}</span></button></li>`).join('');
 }
-function goStep(i, { focus = false, speakIt = true, intro = '' } = {}) {
+function goStep(i, { focus = false, speakIt = true, intro = '', keepPos = false } = {}) {
   i = Math.max(0, Math.min(nav.steps.length - 1, i));
   const prev = nav.i; nav.i = i; nav.dwell = 0;
-  const s = nav.steps[i]; nav.pos = s.d0;
+  const s = nav.steps[i];
+  if (!keepPos) { nav.pos = s.d0; if (nav.follower && nav.leg === s.leg) nav.follower.anchor(nav.pos, { learn: false }); }
   renderNavStep();
   if (speakIt) {
     const text = stepText(s);
@@ -608,102 +761,227 @@ function goStep(i, { focus = false, speakIt = true, intro = '' } = {}) {
       else if (s.kind === 'node') buzz([200]); else if (s.kind === 'floor') buzz([120, 80, 120]); else if (s.kind === 'arrive') buzz([100, 60, 100, 60, 260]);
     }
   }
-  if (focus) $('#navStepText').focus();
+  if (focus) $('#navStepText').focus({ preventScroll: true });
   if (s.kind === 'arrive') { stopSim(); setTimeout(showArrival, 700); }
 }
 function renderNavStep() {
   const s = nav.steps[nav.i];
   $('#navIco').innerHTML = svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight);
-  $('.instr').classList.toggle('floor', s.kind === 'floor');
   $('#navStepNum').textContent = t('stepOf', nav.i + 1, nav.steps.length);
   $('#navStepText').textContent = stepText(s);
-  $('#btnTag').hidden = s.kind !== 'node';
+  const tag = s.kind === 'node' ? pointOf(nav.legs[s.leg].map, s.node) : null;
+  $('#btnTag').hidden = !tag; if (tag) $('#btnTag').textContent = t('atTag', pname(tag));
+  const fl = s.kind === 'floor' ? nav.plan.via.toMap.floor : null;
+  $('#btnFloorDone').hidden = !fl; if (fl) $('#btnFloorDone').textContent = t('onFloor', floorName(fl));
   $('#btnPrev').disabled = nav.i === 0; $('#btnNext').disabled = nav.i >= nav.steps.length - 1;
-  $('#navDest').textContent = pname(resolve(nav.toKey)?.p);
   const ahead = s.kind !== 'floor' && nav.steps.slice(nav.i + 1, nav.i + 3).find(x => x.kind === 'floor');
   $('#navFloor').hidden = !ahead;
   if (ahead) $('#navFloorText').textContent = t('floorAhead', floorName(nav.plan.via.toMap.floor));
   renderStepList();
-  $('#navMap').setAttribute('aria-label', t('mapAlt'));
   updateNavPos(true);
 }
+function legChanged(prevLeg, leg) {
+  const f = nav.follower; if (!f) return;
+  const a = prevLeg?.map.geo, b = leg.map.geo;
+  if (prevLeg && a && b) f.shiftFrame(b.bearing - a.bearing); else if (prevLeg) f.resetFrame();
+  if (f.prior == null && f.samples < 1) { const pr = priorFor(leg.map); if (pr) f.setPrior(pr.beta, { weight: pr.weight, trusted: pr.trusted }); }
+  f.setLeg(leg.route.path, leg.cum); f.anchor(nav.pos, { learn: false });
+}
+function facingNow() { return nav.mode === 'track' && nav.follower?.usable && !nav.sim ? nav.follower.facingPlan(tracker.heading) : null; }
 function updateNavPos(animate) {
+  if (!nav.active) return;
   const s = nav.steps[nav.i], leg = nav.legs[s.leg], path = leg.route.path;
   if (nav.leg !== s.leg) {
-    nav.leg = s.leg; nav.rot = null; navMap.setMap(leg.map);
+    const prevLeg = nav.legs[nav.leg]; nav.leg = s.leg; nav.rot = null; navMap.setMap(leg.map);
     const d = resolve(nav.toKey); navMap.setDest(d && d.m === leg.map ? d.p : nav.plan.via?.pa || null, d && d.m !== leg.map ? t('toFloor', floorName(d.m.floor)) : '');
+    legChanged(prevLeg, leg);
     animate = false;
   }
   const p = pointAt(path, leg.cum, nav.pos), next = nav.steps[nav.i + 1];
   let sub = '';
-  if (s.kind === 'move') sub = t('left', fmtM(s.d1 - nav.pos));
+  if (s.kind === 'move') sub = t('left', fmtM(Math.max(0, s.d1 - nav.pos)));
   if (next && s.kind !== 'arrive') sub += (sub ? '  ·  ' : '') + `${t('then')}: ${stepShort(next)}`;
   $('#navStepSub').textContent = sub;
   const total = nav.legs.reduce((a, l) => a + l.L, 0) || 1;
   const remain = Math.max(0, leg.L - nav.pos) + nav.legs.slice(s.leg + 1).reduce((a, l) => a + l.L, 0);
-  $('#navRemain').textContent = fmtM(remain);
-  $('#navRemainTime').textContent = t('remainTime', fmtMin(nav.plan.seconds * remain / total));
+  $('#navRemain').textContent = t('remain', fmtM(remain), fmtMin(secsFor(nav.plan) * remain / total));
   const pct = Math.round(100 * (1 - remain / total));
   $('#navProgress span').style.width = `${pct}%`; $('#navProgress').setAttribute('aria-valuenow', String(pct));
   navMap.setRoute([[p.x, p.y]].concat(path.slice(p.i)), path.slice(0, p.i).concat([[p.x, p.y]]));
-  const h = headingAt(path, leg.cum, nav.pos + (s.kind === 'move' ? 0 : 0.01));
+  const h = headingAt(path, leg.cum, nav.pos + (s.kind === 'move' ? 0 : 0.01)), face = facingNow();
+  nav.here = p; nav.pathDir = h;
   const [px, py] = navMap.px(p.x, p.y);
-  let rot = -90 + h;
+  let rot = -90 + (face ?? h);
   if (nav.rot != null) { while (rot - nav.rot > 180) rot -= 360; while (rot - nav.rot < -180) rot += 360; }
   nav.rot = rot;
-  // Keep "you" in the open band between the instruction card and the panel, low enough to see what's ahead.
-  const [vw, vh] = navMap.size(), top = $('.nav-top').getBoundingClientRect().bottom, bot = $('.nav-panel').getBoundingClientRect().top;
-  const ay = Math.min(.9, Math.max(.35, (top + (bot - top) * .78) / vh));
-  navMap.setCam({ x: px, y: py, k: Math.max(.6, Math.min(3.2, vw / (24 * BASE))), rot, tilt: 50, ax: .5, ay }, animate);
-  navMap.setYou({ x: p.x, y: p.y }, h);
+  const [vw] = navMap.size();
+  navMap.setCam({ x: px, y: py, k: Math.max(.6, Math.min(3.2, vw / (22 * BASE))), rot, tilt: 48, ax: .5, ay: .72 }, animate);
+  navMap.setYou({ x: p.x, y: p.y }, face ?? h);
+  if (face == null) drawArrow();
 }
-function confirmTag() { const s = nav.steps[nav.i]; if (s.kind !== 'node') return; setFrom(s.node, { say: true, confirm: true }); buzz([40]); goStep(nav.i + 1); }
+// The big arrow: live (where to walk, relative to where you face) when tracking, else the step's turn.
+function arrowGoal() {
+  const s = nav.steps[nav.i], face = facingNow();
+  if (['floor', 'arrive'].includes(s.kind) || (s.kind === 'node' && face == null)) return null;
+  if (face == null) return TURN_ANGLE[s.turn] ?? 0;
+  const leg = nav.legs[s.leg], a = pointAt(leg.route.path, leg.cum, nav.pos), b = pointAt(leg.route.path, leg.cum, Math.min(leg.L, nav.pos + 3));
+  const dir = Math.hypot(b.x - a.x, b.y - a.y) > 0.2 ? Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI : nav.pathDir;
+  return -wrap180(dir - face);
+}
+function drawArrow(smooth = false) {
+  const goal = arrowGoal(), el = $('#navArrow');
+  el.classList.toggle('icon', goal == null);
+  if (goal == null) return;
+  nav.arrow = smooth ? nav.arrow + 0.22 * wrap180(goal - nav.arrow) : goal;
+  el.querySelector('.arrow-big').style.transform = `rotate(${nav.arrow.toFixed(1)}deg)`;
+  el.dataset.angle = String(Math.round(wrap180(nav.arrow)));
+}
+// One loop while navigating: live arrow, heading-up map and the camera line.
+function startLoop() {
+  cancelAnimationFrame(nav.loop);
+  let lastMap = 0, lastMode = 0;
+  const tick = now => {
+    if (!nav.active) return;
+    if (nav.mode === 'track' && !nav.sim && nav.follower?.usable) {
+      drawArrow(!settings.motion);
+      if (now - lastMap > 120 && nav.view === 'map') { lastMap = now; updateNavPos(false); }
+    }
+    if (nav.view === 'cam' && camGuide) camGuide.update(camFrame());
+    if (now - lastMode > 1000) { lastMode = now; renderMode(); }
+    nav.loop = requestAnimationFrame(tick);
+  };
+  nav.loop = requestAnimationFrame(tick);
+}
+function camFrame() {
+  const s = nav.steps[nav.i], leg = nav.legs[s.leg];
+  if (!leg || !tracker.R || !(nav.mode === 'track' && nav.follower?.usable) || nav.sim) return null;
+  const p = pointAt(leg.route.path, leg.cum, nav.pos), last = nav.legs.length - 1 === s.leg, d = resolve(nav.toKey);
+  const target = last ? d?.p : nav.plan.via?.pa;
+  return { R: tracker.R, beta: nav.follower.beta, pos: p, ahead: [[p.x, p.y], ...leg.route.path.slice(p.i)], dest: target ? { x: target.x, y: target.y, label: last ? pname(d.p) : t('toFloor', floorName(nav.plan.via.toMap.floor)) } : null, motion: !settings.motion };
+}
+async function setView(v) {
+  if (v === 'cam' && (state.kiosk || cfg.features.camera === false)) return;
+  if (v === 'cam' && nav.mode !== 'track' && !nav.pending) { toast(t(settings.sensors ? 'sensorsNone' : 'camNeedsSensors')); return; }
+  nav.view = v;
+  $('#btnViewMap').setAttribute('aria-pressed', String(v === 'map')); $('#btnViewCam').setAttribute('aria-pressed', String(v === 'cam'));
+  $('#navCam').hidden = v !== 'cam'; $('#navMap').hidden = v === 'cam'; $('#camNote').hidden = v !== 'cam';
+  if (v === 'map') { stopCam(); updateNavPos(false); return; }
+  camGuide ||= new CameraGuide($('#navCam'), { onHint: h => { const el = $('#camHint'); el.hidden = !h; if (h) el.textContent = t('camHint' + cap(h)); } });
+  try {
+    if (camGuide.running) return;
+    await camGuide.start();
+    if (!nav.active || nav.view !== 'cam') { stopCam(); return; }
+    navScan = new QRScanner(camGuide.video, text => { useTagText(text); }).start();
+  } catch (e) {
+    toast(t('cam' + cap(cameraError(e))));
+    if (nav.active) setView('map');
+  }
+}
+function stopCam() { navScan?.stop(); navScan = null; camGuide?.stop(); $('#camHint').hidden = true; }
+// Closest point of a path to (x, y): its distance and how far along the path it is.
+function projectOnPath(path, cum, x, y) {
+  let best = { d: Infinity, s: 0 };
+  for (let i = 1; i < path.length; i++) {
+    const [ax, ay] = path[i - 1], [bx, by] = path[i], dx = bx - ax, dy = by - ay, L2 = dx * dx + dy * dy;
+    const f = L2 ? Math.max(0, Math.min(1, ((x - ax) * dx + (y - ay) * dy) / L2)) : 0, d = Math.hypot(ax + f * dx - x, ay + f * dy - y);
+    if (d < best.d) best = { d, s: cum[i - 1] + f * (cum[i] - cum[i - 1]) };
+  }
+  return best;
+}
+// The step that covers distance s on leg li.
+function stepAt(li, s) {
+  const L = nav.legs[li].L; let k = -1;
+  nav.steps.forEach((x, i) => { if (x.leg !== li || x.kind === 'floor' || (x.kind === 'arrive' && s < L - 0.6)) return; if (x.d0 <= s + 0.05) k = i; });
+  return Math.max(0, k);
+}
+// A DALIL tag or sign during navigation: on (or next to) the route it confirms where you are; elsewhere it plans again from there.
+function navTag(link) {
+  const li = nav.steps[nav.i].leg, leg = nav.legs[li];
+  const m = link.b ? state.maps.find(x => x.building.id === link.b && (!link.f || x.floor.id === link.f)) : leg.map;
+  const p = m && pointOf(m, link.at);
+  if (!p || m.building.id !== leg.map.building.id) { toast(t('scanUnknown')); return false; }
+  buzz([40]);
+  if (m === leg.map) {
+    const pr = projectOnPath(leg.route.path, leg.cum, p.x, p.y);
+    if (pr.d < 2.5) {
+      nav.pos = pr.s; nav.follower?.anchor(pr.s);
+      toast(t('tagConfirmed', pname(p)));
+      const i = stepAt(li, pr.s), s = nav.steps[i];
+      goStep(s.kind === 'node' && s.node === p.id ? Math.min(nav.steps.length - 1, i + 1) : i, { keepPos: true });
+      return true;
+    }
+  }
+  rerouteFrom(m, link.at);
+  return true;
+}
+function rerouteFrom(m, pointId) {
+  const keep = nav.follower;
+  if (m !== state.map) selectFloor(m); state.fromId = pointId;
+  const plan = planTo(nav.toKey);
+  if (!plan) { toast(t('noRoute')); return; }
+  const { legs, steps } = planSteps(plan);
+  Object.assign(nav, { plan, legs, steps, leg: -1, i: 0, pos: 0, soonFor: -1 });
+  if (keep) { const pr = priorFor(legs[0].map); if (!pr) keep.resetFrame(); }
+  const msg = t('rerouted', pname(pt(pointId)));
+  toast(msg);
+  goStep(0, { intro: msg });
+  analytics.add('reroute', { at: pointId });
+}
+function confirmTag() {
+  const s = nav.steps[nav.i]; if (s.kind !== 'node') return;
+  const leg = nav.legs[s.leg];
+  if (leg.map === state.map) setFrom(s.node, { say: true, confirm: true });
+  else toast(t('tagConfirmed', pname(pointOf(leg.map, s.node))));
+  nav.follower?.anchor(s.d0); buzz([40]);
+  goStep(nav.i + 1, { keepPos: !!nav.follower });
+}
+function confirmFloor() { const s = nav.steps[nav.i]; if (s.kind !== 'floor') return; buzz([40]); goStep(nav.i + 1); }
 function toggleSim() { nav.sim ? stopSim() : startSim(); }
 function startSim() {
   if (nav.steps[nav.i].kind === 'arrive') goStep(0);
   nav.sim = true; nav.last = performance.now(); renderMode();
-  const b = $('#btnSim'); b.setAttribute('aria-pressed', 'true'); b.querySelector('.ctrl-txt').textContent = t('pause'); b.querySelector('.ico').innerHTML = ico('pause');
+  const b = $('#btnSim'); b.setAttribute('aria-pressed', 'true'); b.querySelector('.ctrl-txt').textContent = t('previewStop'); b.querySelector('.ico').innerHTML = ico('pause');
   const tick = now => {
     if (!nav.sim) return;
     const dt = Math.min(.1, (now - nav.last) / 1000); nav.last = now;
     const s = nav.steps[nav.i];
-    if (s.kind === 'move') { nav.pos = Math.min(s.d1, nav.pos + 3 * dt); updateNavPos(false); if (nav.pos >= s.d1 - 1e-6) goStep(nav.i + 1); }
-    else if (s.kind !== 'arrive') { nav.dwell += dt; if (nav.dwell > 1.6) { if (s.kind === 'node') setFrom(s.node, { say: false }); goStep(nav.i + 1); } }
+    if (s.kind === 'move') { nav.pos = Math.min(s.d1, nav.pos + 2.5 * dt); updateNavPos(false); if (nav.pos >= s.d1 - 1e-6) goStep(nav.i + 1); }
+    else if (s.kind !== 'arrive') { nav.dwell += dt; if (nav.dwell > 1.6) { if (s.kind === 'node' && nav.legs[s.leg].map === state.map) setFrom(s.node, { say: false }); goStep(nav.i + 1); } }
     nav.raf = requestAnimationFrame(tick);
   };
   nav.raf = requestAnimationFrame(tick);
 }
 function stopSim() {
-  nav.sim = false; cancelAnimationFrame(nav.raf);
-  const b = $('#btnSim'); b.setAttribute('aria-pressed', 'false'); b.querySelector('.ctrl-txt').textContent = t('preview'); b.querySelector('.ico').innerHTML = ico('play');
-  if (nav.active) renderMode();
+  const was = nav.sim; nav.sim = false; cancelAnimationFrame(nav.raf);
+  const b = $('#btnSim'); b.setAttribute('aria-pressed', 'false'); b.querySelector('.ctrl-txt').textContent = t('previewWalk'); b.querySelector('.ico').innerHTML = ico('play');
+  if (nav.active) { renderMode(); if (was && nav.follower) nav.follower.anchor(nav.pos, { learn: false }); }
 }
 function showArrival() {
   if (!nav.active) return;
   const to = resolve(nav.toKey)?.p;
   $('#arrivedName').textContent = pname(to);
-  $('#arrivedStats').textContent = `${fmtM(nav.plan.distance_m)} · ${fmtMin(nav.plan.seconds)}`;
+  $('#arrivedStats').textContent = `${fmtM(nav.plan.distance_m)} · ${fmtMin(secsFor(nav.plan))}`;
   $('#btnArrivedSave').textContent = isFav(nav.toKey) ? t('saved') : t('savePlace');
-  $('#arrived').hidden = false; $('#nav').inert = true;
+  $('#arrived').hidden = false;
   $('#arrivedTitle').focus();
+  analytics.add('arrive', { to: to?.virtual ? 'pin' : to?.id, s: Math.round((performance.now() - nav.started) / 1000) });
 }
 function finishArrival() {
-  $('#nav').inert = false;
   const d = resolve(nav.toKey);
+  endNav({ silent: true });
   if (d && !d.p.virtual) { if (d.m !== state.map) selectFloor(d.m); state.fromId = d.p.id; }
-  state.toKey = null; state.chip = null; setView('browse');
-  endNav();
-  navMap.setMap(state.map); nav.leg = -1;
+  state.toKey = null; state.chip = null;
+  goHome(); renderAll();
 }
 
 /* =========================================================================
    Deep links and DALIL tags
-   #at-P013 · #at-P001&to-P007 · #b=<building>&f=<floor>&at-P001 · /t/<b>/<f>/<p> (NFC) · #kiosk
+   #at-P013 · #at-P001&to-P007 · #b=<building>&f=<floor>&at-P001 · /t/<b>/<f>/<p> (NFC, QR) · #kiosk
    ========================================================================= */
 function parseLink(href) {
   const out = {};
   let u; try { u = new URL(href, location.href); } catch { return out; }
-  const tag = s => { const m = s.match(/(?:^|\/)t\/([^/]+)\/([^/]+)\/([^/?#]+)/); if (m) { out.b = decodeURIComponent(m[1]); out.f = decodeURIComponent(m[2]); out.at = decodeURIComponent(m[3]); } };
+  const tag = s => { const m = s.match(/(?:^|\/)t\/([^/]+)\/([^/]+)\/([^/?#&]+)/); if (m) { out.b = decodeURIComponent(m[1]); out.f = decodeURIComponent(m[2]); out.at = decodeURIComponent(m[3]); } };
   tag(u.pathname);
   if (u.searchParams.get('t')) tag('t/' + u.searchParams.get('t'));
   for (const k of ['b', 'f', 'at', 'to']) if (u.searchParams.get(k)) out[k] = u.searchParams.get(k);
@@ -728,6 +1006,7 @@ function applyLink(link, { fromTag = false } = {}) {
     if (!map) { if (fromTag) toast(t('nfcUnknown')); return false; }
   } else if (link.at && !map.points.some(p => p.id === link.at)) map = state.maps.find(m => m.points.some(p => p.id === link.at)) || map;
   if (link.f && !link.b) map = state.maps.find(m => m.building.id === map.building.id && m.floor.id === link.f) || map;
+  if (link.at && !map.points.some(p => p.id === link.at)) { if (fromTag) toast(t('nfcUnknown')); return false; }
   if (map !== state.map) selectFloor(map);
   if (link.at) setFrom(link.at, { confirm: fromTag, say: fromTag });
   if (link.to) {
@@ -736,97 +1015,96 @@ function applyLink(link, { fromTag = false } = {}) {
   }
   return true;
 }
-async function openTagPicker() {
-  const dlg = $('#dlgTag'), status = $('#nfcStatus');
-  const pts = [...state.map.points].sort((a, b) => (b.dalilNode - a.dalilNode));
-  $('#tagList').innerHTML = pts.map(p => `<li><button class="row-btn" type="button" data-tag="${esc(p.id)}"><span class="r-ico${p.dalilNode ? ' svc' : ''}">${p.dalilNode ? ico('tag') : catIco(p.category)}</span><span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(p.dalilNode ? `${t('dalilTag')} · ${p.id}` : catName(p.category))}</span></span></button></li>`).join('');
-  status.textContent = 'NDEFReader' in window ? t('nfcReady') : t('nfcNone');
-  if (typeof dlg.showModal === 'function') dlg.showModal(); else dlg.setAttribute('open', '');
-  if ('NDEFReader' in window) {
-    const ctl = new AbortController(); dlg.addEventListener('close', () => ctl.abort(), { once: true });
-    try {
-      const reader = new window.NDEFReader(); await reader.scan({ signal: ctl.signal });
-      reader.onreading = ev => {
-        const dec = new TextDecoder();
-        for (const rec of ev.message.records) if (['url', 'absolute-url', 'text'].includes(rec.recordType)) { const link = parseLink(dec.decode(rec.data)); if (link.at) { dlg.close(); applyLink(link, { fromTag: true }); buzz([40]); return; } }
-        status.textContent = t('nfcUnknown');
-      };
-    } catch { status.textContent = t('nfcFail'); }
-  }
-}
 
 /* =========================================================================
-   Dropped pins, My spot, sharing, kiosk
+   Sharing, kiosk
    ========================================================================= */
-let pinPoint = null;
-function onMapTap({ x, y }) {
-  const vm = state.viewMap, R = routerOf(vm);
-  if (!R) return;   // v1 maps (stored routes only) cannot route to an arbitrary spot
-  if (!R.walkable(x, y)) { toast(t('pinOutside')); return; }
-  pinPoint = { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, f: vm.floor.id };
-  $('#pinText').textContent = t('pinAt', floorName(vm.floor));
-  setView('pin'); renderMap();
-  announce(t('pinAt', floorName(vm.floor)));
-}
-const pinKey = () => pinPoint ? `${pinPoint.f}|@${pinPoint.x},${pinPoint.y}` : null;
 function shareLink(key = state.toKey) {
   const u = new URL(location.href); u.search = '';
   u.hash = `b=${state.map.building.id}&f=${state.map.floor.id}&at-${state.fromId}${key ? `&to-${encodeURIComponent(key)}` : ''}`;
   return u.toString();
 }
 function qrSvg(text) { if (!window.qrcode) return ''; const q = window.qrcode(0, 'M'); q.addData(text); q.make(); return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true, alt: { text: t('kioskQR') } }); }
+const openDlg = d => { if (typeof d.showModal === 'function') { if (!d.open) d.showModal(); } else d.setAttribute('open', ''); };
 function openShare() {
   const url = shareLink(), d = destRef();
   $('#shareQR').innerHTML = qrSvg(url); $('#shareUrl').value = url;
   $('#btnShareNative').hidden = !navigator.share;
   $('#dlgShare').dataset.title = d ? pname(d.p) : 'DALIL';
-  $('#dlgShare').showModal ? $('#dlgShare').showModal() : $('#dlgShare').setAttribute('open', '');
+  openDlg($('#dlgShare'));
 }
 let kioskTimer = 0;
 function kioskIdle() {
   clearTimeout(kioskTimer); if (!state.kiosk) return;
   kioskTimer = setTimeout(() => {
-    if (nav.active) endNav();
-    $('#arrived').hidden = true; $('#nav').inert = false;
+    if (nav.active) endNav({ silent: true });
+    $$('dialog[open]').forEach(d => d.close());
     const m = state.maps.find(m => m.building.id === state.kiosk.b && m.floor.id === state.kiosk.f);
     if (m && m !== state.map) selectFloor(m);
-    state.fromId = state.kiosk.at; state.toKey = null; state.chip = null; $('#search').value = '';
-    setView('browse'); renderAll(); announce(t('kioskReset'));
+    state.fromId = state.kiosk.at; state.toKey = null; state.chip = null;
+    goHome(); renderAll(); announce(t('kioskReset'));
   }, 90_000);
 }
 
 /* =========================================================================
-   Getting here: street map (MapLibre + OpenFreeMap) with the plan layered on top
+   Help: call the building, go to the help desk, re-locate, or show a card to staff
    ========================================================================= */
-let outdoorCtl = null;
-const fmtDist = d => d < 1000 ? fmtM(d) : t('km', (d / 1000).toFixed(d < 10000 ? 1 : 0));
+function nearestNamed(map, x, y) { let best = null, bd = 1e9; for (const p of map.points) { const d = Math.hypot(p.x - x, p.y - y); if (d < bd) { bd = d; best = p; } } return best; }
+function openHelp() {
+  const h = helpCfg(), call = $('#helpCall');
+  call.hidden = !h.phone;
+  if (h.phone) { call.href = 'tel:' + String(h.phone).replace(/[^+\d]/g, ''); $('#helpCallText').textContent = `${t('helpCall', settings.lang === 'ar' ? (h.labelAr || h.label || catName('reception')) : (h.label || STR.en.cats.reception))} · ${h.phone}`; }
+  $('#helpDesk').hidden = !presentCats().has('reception');
+  $('#staffCard').hidden = true; $('#helpShow').setAttribute('aria-expanded', 'false');
+  openDlg($('#dlgHelp'));
+  analytics.add('help', { page: pageNow, step: nav.active ? nav.i + 1 : null });
+}
+function staffCard() {
+  let at = pt(state.fromId), atFloor = state.map.floor;
+  if (nav.active && nav.here) { const leg = nav.legs[nav.steps[nav.i].leg]; at = nearestNamed(leg.map, nav.here.x, nav.here.y) || at; atFloor = leg.map.floor; }
+  const to = (nav.active ? resolve(nav.toKey) : destRef())?.p;
+  const block = L => {
+    const S = STR[L], nm = p => L === 'ar' ? (p.nameAr || p.nameEn) : p.nameEn;
+    return `<div class="lang-block" lang="${L}" dir="${L === 'ar' ? 'rtl' : 'ltr'}"><p><strong>${esc(S.staffNeed)}</strong></p>${at ? `<p><span class="k">${esc(S.staffAt)}</span>${esc(nm(at))} · ${esc(S.floorName(atFloor))}</p>` : ''}${to ? `<p><span class="k">${esc(S.staffTo)}</span><strong>${esc(nm(to))}</strong></p>` : ''}</div>`;
+  };
+  return block(settings.lang) + block(settings.lang === 'ar' ? 'en' : 'ar');
+}
+
+/* =========================================================================
+   Getting here: street map (providers.js, with failover) with the plan layered on top
+   ========================================================================= */
+let outdoorCtl = null, outdoorSeq = 0;
 async function openOutdoor() {
-  const map = state.map; if (!map.geo) return;
-  $('#outdoor').hidden = false; $('#app').inert = true;
+  const map = state.map; if (!map?.geo) { back(); return; }
+  const seq = ++outdoorSeq;
   $('#outBuilding').textContent = map.building.name;
   $('#outStatus').textContent = t('outLoading');
   $('#outMap').setAttribute('aria-label', t('outMapLabel', map.building.name));
-  // Directions to the main entrance work even if the map can't load.
+  $('#outProvider').innerHTML = providerOptions();
   const T = geoTransform(map.geo), entr = map.points.find(p => p.category === 'entrance') || map.points[0];
   const [lng, lat] = T(entr.x, entr.y), ll = `${lat.toFixed(6)},${lng.toFixed(6)}`;
   $('#lnkGmaps').href = `https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=walking`;
   $('#lnkAmaps').href = `https://maps.apple.com/?daddr=${ll}&dirflg=w`;
-  $('#btnOutdoorBack').focus();
   try {
     const { createOutdoorMap } = await import('./outdoor.js');
     const attribution = [t('attrPlan'), map.building_context ? t('attrOverture') : ''].filter(Boolean).join(' · ');
-    outdoorCtl?.destroy();
-    outdoorCtl = await createOutdoorMap($('#outMap'), { map, dark: document.documentElement.dataset.theme !== 'light', lang: settings.lang, attribution, onStatus: outStatus });
-    if ($('#outdoor').hidden) { outdoorCtl.destroy(); outdoorCtl = null; return; }
-    $('#outStatus').textContent = outdoorCtl.streets ? '' : t('outNoStreet');
-  } catch { $('#outStatus').textContent = t('outFail'); }
+    outdoorCtl?.destroy(); outdoorCtl = null;
+    const ctl = await createOutdoorMap($('#outMap'), { map, dark: document.documentElement.dataset.theme === 'dark' || settings.contrast, lang: settings.lang, attribution, onStatus: outStatus,
+      onProvider: (p, failed) => { $('#outStatus').textContent = providerLine(p, failed); }, providers: { choice: settings.mapProvider, cfg: cfg.maps } });
+    if (seq !== outdoorSeq || pageNow !== 'outdoor') { ctl.destroy(); return; }
+    outdoorCtl = ctl;
+    $('#outStatus').textContent = providerLine(ctl.provider, ctl.failed);
+  } catch { if (seq === outdoorSeq) $('#outStatus').textContent = t('outFail'); }
+}
+function providerLine(p, failed = []) {
+  if (!p || p.kind === 'plain') return settings.mapProvider === 'plain' ? t('outProvider', t('provider_plain')) : t('outNoStreet');
+  return failed.length ? t('outFallback', failed[0], p.name) : t('outProvider', p.name);
 }
 function outStatus(kind, info) {
   const el = $('#outStatus');
   if (kind === 'pos') el.textContent = info.dist <= 40 ? t('outInside') : t('outDist', fmtDist(info.dist));
   else el.textContent = t(kind === 'denied' ? 'locDenied' : 'locUnavailable');
 }
-function closeOutdoor() { outdoorCtl?.destroy(); outdoorCtl = null; $('#outdoor').hidden = true; $('#app').inert = false; $('#btnGettingHere').focus(); }
 // If the visitor already allowed location for this site, say how far away the building is (never prompts).
 async function proximityHint() {
   const map = state.map; if (!map?.geo || !navigator.geolocation || !navigator.permissions) return;
@@ -836,94 +1114,116 @@ async function proximityHint() {
       if (state.map !== map) return;
       const T = geoTransform(map.geo), e = map.points.find(q => q.category === 'entrance') || map.points[0];
       const d = haversine([pos.coords.longitude, pos.coords.latitude], T(e.x, e.y));
-      if (d > 150) { $('#ghSub').textContent = t('nearBuilding', fmtDist(d)); $('#ghSub').classList.add('near'); }
+      if (d > 150) $('#ghSub').textContent = t('nearBuilding', fmtDist(d));
     }, () => { }, { maximumAge: 60000, timeout: 8000 });
   } catch { }
 }
+function setProvider(v) { settings.mapProvider = v; saveSettings(); $('#setProvider').value = v; $('#outProvider').value = v; if (pageNow === 'outdoor') openOutdoor(); }
 
 /* =========================================================================
    Wiring
    ========================================================================= */
 function bind() {
-  bindSheet();
   $('#btnLang').onclick = () => setLang(settings.lang === 'ar' ? 'en' : 'ar');
-  $('#btnSettings').onclick = () => openSettings();
-  $('#btnPlace').onclick = () => openSettings('#setMapSec');
-  $('#btnSettingsBack').onclick = closeSettings;
-  $('#btnGettingHere').onclick = openOutdoor;
-  $('#btnOutdoorBack').onclick = closeOutdoor;
-  $('#btnMyLoc').onclick = () => outdoorCtl ? outdoorCtl.locate() : outStatus('unavailable');
+  $('#btnSettings').onclick = () => go('settings');
+  $('#btnSearchOpen').onclick = () => go('search');
+  $('#btnFrom').onclick = () => go('where');
+  $('#btnScanHome').onclick = () => { go('where'); startWhereScan(); };
+  $('#btnFloorMap').onclick = () => { state.viewMap = state.map; go('map'); };
+  $('#btnGettingHere').onclick = () => go('outdoor');
+  document.addEventListener('click', e => {
+    if (e.target.closest('[data-back]')) { back(); return; }
+    if (e.target.closest('[data-help]')) { openHelp(); return; }
+    const close = e.target.closest('[data-close]'); if (close) { close.closest('dialog')?.close(); return; }
+    const pick = e.target.closest('[data-pick]');
+    if (pick) { if (pick.dataset.q) rememberSearch(pick.dataset.q); setDest(pick.dataset.pick); return; }
+    const cat = e.target.closest('[data-cat]'); if (cat) { pickNearest(cat.dataset.cat); return; }
+    const rs = e.target.closest('[data-search]');
+    if (rs) { $('#search').value = rs.dataset.search; renderSearch(); $('#search').focus(); return; }
+    const sb = e.target.closest('[data-step]');
+    if (sb && nav.active) { $('#dlgSteps').close(); goStep(+sb.dataset.step, { focus: true }); return; }
+    const wh = e.target.closest('[data-where]');
+    if (wh) { const [f, id] = wh.dataset.where.split('|'), m = mapByFloor(f); if (m && m !== state.map) selectFloor(m); setFrom(id); back(); }
+  });
+  // Dialogs close on a tap on the backdrop.
+  $$('dialog').forEach(d => d.addEventListener('click', e => { if (e.target === d) d.close(); }));
+  // Search
   const search = $('#search');
-  search.addEventListener('focus', openSearch);
-  search.addEventListener('input', () => { openSearch(); renderSearch(); });
+  search.addEventListener('input', () => renderSearch());
   search.addEventListener('keydown', e => {
     if (e.key === 'Enter') { const b = $('#results button[data-pick]'); if (b) { e.preventDefault(); rememberSearch(search.value); setDest(b.dataset.pick); } }
     else if (e.key === 'ArrowDown') { const b = $('#results button, #recentSearches button'); if (b) { e.preventDefault(); b.focus(); } }
-    else if (e.key === 'Escape') closeSearch();
   });
-  $('#btnSearchBack').onclick = closeSearch;
+  $('#btnSearchClear').onclick = () => { search.value = ''; renderSearch(); search.focus(); };
   $('#btnClearSearches').onclick = () => { store.set('dalil.searches', []); renderSearch(); };
   $('#searchFilters').addEventListener('click', e => { const b = e.target.closest('[data-filter]'); if (b) { state.filter = b.dataset.filter; renderSearch(); } });
-  $('#viewSearch').addEventListener('keydown', e => {
-    const items = $$('#viewSearch .row-btn'), i = items.indexOf(document.activeElement); if (i < 0) return;
+  $('#pgSearch').addEventListener('keydown', e => {
+    const items = $$('#pgSearch .row-btn'), i = items.indexOf(document.activeElement); if (i < 0) return;
     if (e.key === 'ArrowDown' && i < items.length - 1) { e.preventDefault(); items[i + 1].focus(); }
     if (e.key === 'ArrowUp') { e.preventDefault(); (i > 0 ? items[i - 1] : search).focus(); }
   });
-  document.addEventListener('click', e => {
-    const pick = e.target.closest('[data-pick]');
-    if (pick) { if (pick.dataset.q) rememberSearch(pick.dataset.q); setDest(pick.dataset.pick); return; }
-    const rs = e.target.closest('[data-search]');
-    if (rs) { search.value = rs.dataset.search; renderSearch(); search.focus(); return; }
-    if (e.target.closest('#btnAllSteps')) { state.previewAll = true; renderPlace(); }
-  });
-  $$('.cat[data-cat]').forEach(c => { c.onclick = () => pickNearest(c.dataset.cat); });
+  // Route page
   $('#optStepFree').addEventListener('change', e => setStepFree(e.target.checked));
-  $('#btnScan').onclick = openTagPicker; $('#btnFrom').onclick = openTagPicker;
-  $('#tagList').addEventListener('click', e => { const b = e.target.closest('[data-tag]'); if (b) { e.preventDefault(); $('#dlgTag').close(); setFrom(b.dataset.tag); } });
   $('#btnFav').onclick = () => { if (state.toKey) { const on = toggleFav(state.toKey); announce(t(on ? 'saved' : 'unsave')); toast(t(on ? 'saved' : 'unsave')); } };
-  $('#btnStart').onclick = startNav;
-  $('#btnClosePlace').onclick = clearDest;
-  $('#btnClosePin').onclick = () => { pinPoint = null; setView('browse'); renderMap(); };
+  $('#btnStart').onclick = () => startNav();
+  $('#btnStartCam').onclick = () => startNav({ camera: true });
   $('#btnShare').onclick = openShare;
   $('#btnShareCopy').onclick = async () => { const v = $('#shareUrl').value; try { await navigator.clipboard.writeText(v); toast(t('copied')); } catch { $('#shareUrl').select(); } };
   $('#btnShareNative').onclick = async () => { try { await navigator.share({ title: 'DALIL', text: $('#dlgShare').dataset.title, url: $('#shareUrl').value }); } catch { } };
-  $('#btnPinGo').onclick = () => { const k = pinKey(); if (k) { pinPoint = null; setDest(k); } };
-  $('#btnPinSave').onclick = () => { if (!pinPoint) return; store.set('dalil.spot', { b: state.map.building.id, f: pinPoint.f, x: pinPoint.x, y: pinPoint.y }); pinPoint = null; setView('browse'); renderAll(); toast(t('spotSaved')); announce(t('spotSaved')); };
-  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, kioskIdle, { passive: true }));
-  $('#btnRecenter').onclick = () => { state.viewMap = state.map; renderFloorRail(); renderMap(); };
+  // Where am I
+  $('#btnScanStart').onclick = startWhereScan;
+  $('#whereFilter').addEventListener('input', renderWhere);
+  // Floor map
+  $('#btnPinGo').onclick = () => { const k = pinKey(); if (k) { pinPoint = null; $('#pinCard').hidden = true; setDest(k); } };
+  $('#btnPinSave').onclick = () => { if (!pinPoint) return; store.set('dalil.spot', { b: state.map.building.id, f: pinPoint.f, x: pinPoint.x, y: pinPoint.y }); pinPoint = null; $('#pinCard').hidden = true; renderFloorMap(); renderHome(); toast(t('spotSaved')); announce(t('spotSaved')); };
+  $('#btnClosePin').onclick = () => { pinPoint = null; $('#pinCard').hidden = true; renderFloorMap(); };
+  $('#btnRecenter').onclick = () => { state.viewMap = state.map; renderFloorMap(); };
   $('#btnZoomIn').onclick = () => mainMap.zoom(1.3); $('#btnZoomOut').onclick = () => mainMap.zoom(1 / 1.3);
-  $('#floorRail').addEventListener('click', e => { const b = e.target.closest('[data-floor]'); if (!b) return; const m = mapByFloor(b.dataset.floor); if (m && m !== state.viewMap) { state.viewMap = m; renderFloorRail(); renderMap(); announce(t('viewFloor', floorName(m.floor))); } });
+  $('#floorRail').addEventListener('click', e => { const b = e.target.closest('[data-floor]'); if (!b) return; const m = mapByFloor(b.dataset.floor); if (m && m !== state.viewMap) { state.viewMap = m; pinPoint = null; $('#pinCard').hidden = true; renderFloorMap(); announce(t('viewFloor', floorName(m.floor))); } });
   // Settings
   $$('input[name="lang"]').forEach(r => r.addEventListener('change', () => setLang(r.value)));
   $$('input[name="theme"]').forEach(r => r.addEventListener('change', () => { settings.theme = r.value; saveSettings(); applyDisplay(); }));
-  window.matchMedia?.('(prefers-color-scheme: light)').addEventListener?.('change', () => { if (settings.theme === 'system') applyDisplay(); });
+  $$('input[name="textSize"]').forEach(r => r.addEventListener('change', () => { settings.textSize = r.value; saveSettings(); rerenderAll(); }));
+  $$('input[name="pace"]').forEach(r => r.addEventListener('change', () => { settings.pace = r.value; saveSettings(); if (nav.follower) nav.follower.stride = STRIDE[r.value]; renderAll(); }));
+  window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (settings.theme === 'system') applyDisplay(); });
   const toggle = (id, key, after) => $(id).addEventListener('change', e => { settings[key] = e.target.checked; saveSettings(); after?.(); });
   toggle('#setVoice', 'voice', () => { if (!settings.voice) try { speechSynthesis.cancel(); } catch { } });
-  toggle('#setVibrate', 'vibrate');
+  toggle('#setVibrate', 'vibrate'); toggle('#setSensors', 'sensors');
   $('#setStepFree').addEventListener('change', e => setStepFree(e.target.checked));
-  toggle('#setLarge', 'large', rerenderAll); toggle('#setContrast', 'contrast', rerenderAll); toggle('#setMotion', 'motion', rerenderAll);
-  $('#setBuilding').addEventListener('change', e => { const m = state.maps[+e.target.value]; if (m) { state.toKey = null; setView('browse'); selectFloor(m); } });
+  toggle('#setContrast', 'contrast', rerenderAll); toggle('#setMotion', 'motion', rerenderAll);
+  $('#setBuilding').addEventListener('change', e => { const m = state.maps[+e.target.value]; if (m) { state.toKey = null; selectFloor(m); } });
+  $('#setProvider').addEventListener('change', e => setProvider(e.target.value));
+  $('#outProvider').addEventListener('change', e => setProvider(e.target.value));
   $('#fileMap').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
+  // Getting here
+  $('#btnMyLoc').onclick = () => outdoorCtl ? outdoorCtl.locate() : outStatus('unavailable');
   // Navigation
   $('#btnNext').onclick = () => goStep(nav.i + 1);
   $('#btnPrev').onclick = () => goStep(nav.i - 1);
-  $('#btnRepeat').onclick = () => { const s = nav.steps[nav.i]; announce(stepText(s)); speak(stepText(s)); };
+  $('#btnRepeat').onclick = () => { const s = nav.steps[nav.i]; announce(stepText(s)); speak(stepText(s) + (s.kind === 'move' && nav.mode === 'track' ? ' ' + t('left', fmtM(Math.max(0, s.d1 - nav.pos))) + '.' : '')); };
   $('#btnSim').onclick = toggleSim;
   $('#btnTag').onclick = confirmTag;
-  $('#btnEndNav').onclick = endNav;
+  $('#btnFloorDone').onclick = confirmFloor;
+  $('#btnEndNav').onclick = () => endNav();
+  $('#btnSteps').onclick = () => { renderStepList(); openDlg($('#dlgSteps')); };
+  $('#btnViewMap').onclick = () => setView('map');
+  $('#btnViewCam').onclick = () => setView('cam');
   $('#btnArrivedDone').onclick = finishArrival;
   $('#btnArrivedSave').onclick = () => { toggleFav(nav.toKey, true); $('#btnArrivedSave').textContent = t('saved'); };
+  // Help
+  $('#helpDesk').onclick = () => { $('#dlgHelp').close(); if (nav.active) endNav({ silent: true }); pickNearest('help'); };
+  $('#helpScan').onclick = () => { $('#dlgHelp').close(); if (nav.active) { setView('cam'); toast(t('whereScanning')); } else { go('where'); startWhereScan(); } };
+  $('#helpShow').onclick = () => { const c = $('#staffCard'), open = c.hidden; c.innerHTML = open ? staffCard() : ''; c.hidden = !open; $('#helpShow').setAttribute('aria-expanded', String(open)); };
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, kioskIdle, { passive: true }));
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') {
-      if (!$('#settings').hidden) return closeSettings();
-      if (!$('#outdoor').hidden) return closeOutdoor();
-      if (nav.active && $('#arrived').hidden) return endNav();
-      if (!nav.active && state.view === 'place' && !e.target.closest('input')) return clearDest();
-      if (!nav.active && state.view === 'pin') { pinPoint = null; setView('browse'); renderMap(); }
+    if (e.key === 'Escape' && !document.querySelector('dialog[open]')) {
+      if (!$('#arrived').hidden) { finishArrival(); return; }
+      if (pageNow !== 'home') { back(); return; }
     }
-    if (!nav.active || !$('#arrived').hidden || e.target.closest('input,select,textarea')) return;
+    if (pageNow !== 'nav' || !$('#arrived').hidden || e.target.closest('input,select,textarea')) return;
     if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const fwd = (e.key === 'ArrowRight') !== (settings.lang === 'ar'); goStep(nav.i + (fwd ? 1 : -1)); }
   });
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && nav.active && nav.view === 'cam' && !camGuide?.stream?.active) { camGuide?.stop(); setView('cam'); } });
   window.addEventListener('hashchange', () => applyLink(parseLink(location.href)));
   $('#btnRetry').onclick = () => { $('#bootError').hidden = true; $('#bootText').hidden = false; $('#bootBar').hidden = false; boot(); };
 }
@@ -934,22 +1234,27 @@ async function boot() {
   const last = store.get('dalil.last', null), link = parseLink(location.href);
   const start = (link.b && state.maps.find(m => m.building.id === link.b && (!link.f || m.floor.id === link.f)))
     || (last && state.maps.find(m => m.building.id === last.b && m.floor.id === last.f)) || state.maps[0];
+  try { history.replaceState({ dalil: 1 }, ''); } catch { }
   selectFloor(start);
+  display('home');
   applyLink(link, { fromTag: /\/t\//.test(location.pathname) });
   if (link.kiosk) { state.kiosk = { b: state.map.building.id, f: state.map.floor.id, at: state.fromId }; document.documentElement.classList.add('kiosk'); renderAll(); kioskIdle(); }
-  applySheet(false); fitMain(false); proximityHint();
+  analytics.add('open', { kiosk: !!link.kiosk, tag: !!link.at });
   const b = $('#boot'); b.classList.add('done'); setTimeout(() => { b.hidden = true; }, 380);
   document.documentElement.classList.add('ready');
   return true;
 }
 async function init() {
   applyDisplay(); fillIcons();
+  routeMap = new MapView($('#routeMap'), { label: pname });
   mainMap = new MapView($('#mainMap'), { interactive: true, label: pname, pickKey: keyOf, onTap: p => onMapTap(p), onCam: c => $('#mainMap').classList.toggle('show-labels', c.k * BASE >= 16) });
   navMap = new MapView($('#navMap'), { points: 'nodes', label: pname });
   bind();
+  await loadConfig();
   return boot();
 }
 
-window.DALIL_APP = { state, settings, spoken, nav, parseLink, buildSteps, routeFor, pointOf, views: () => ({ mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, ready: init() };
+window.DALIL_APP = { state, settings, spoken, nav, tracker, analytics, parseLink, buildSteps, routeFor, pointOf, go, page: () => pageNow, config: () => cfg,
+  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, camera: () => camGuide, ready: init() };
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
