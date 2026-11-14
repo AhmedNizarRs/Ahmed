@@ -401,7 +401,7 @@ function start(token) {
   const map = S.map = new mapboxgl.Map({
     container: 'map', style: 'mapbox://styles/mapbox/standard',
     center: HOME.center, zoom: HOME.zoom, pitch: HOME.pitch, bearing: HOME.bearing,
-    maxBounds: [[DATA.campus.bbox.w - 0.01, DATA.campus.bbox.s - 0.01], [DATA.campus.bbox.e + 0.01, DATA.campus.bbox.n + 0.01]],
+    minZoom: 12,
     config: { basemap: { showIndoor: true, lightPreset: 'day' } }
   });
   map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
@@ -409,8 +409,18 @@ function start(token) {
   if (mapboxgl.IndoorControl) { S.indoor = new mapboxgl.IndoorControl(); map.addControl(S.indoor, 'top-right'); }
   else setStatus('This Mapbox GL JS build has no IndoorControl.', true);
   map.on('error', (e) => {
-    const msg = (e && e.error && e.error.message) || '';
-    if (/401|403|token/i.test(msg)) { showGate('Mapbox rejected this token. Check it and its URL restrictions.'); safe(() => localStorage.removeItem('mapbox-token')); }
+    const err = (e && e.error) || {}, msg = err.message || String(err);
+    console.error('Mapbox error:', err);
+    if (err.status === 401 || /access token|401/i.test(msg)) { showGate('Mapbox rejected this token (' + msg + '). Check the token and its URL restrictions.'); safe(() => localStorage.removeItem('mapbox-token')); return; }
+    setStatus('Map problem: ' + msg + (err.status ? ' (HTTP ' + err.status + ')' : ''), true);
+  });
+  let reported = false;
+  map.on('idle', () => {
+    if (reported || !map.getLayer('buildings')) return; reported = true;
+    const n = map.queryRenderedFeatures({ layers: ['buildings'] }).length;
+    const c = map.getCenter();
+    console.log('Campus map: ' + n + ' buildings drawn; centre ' + c.lng.toFixed(5) + ',' + c.lat.toFixed(5) + ' zoom ' + map.getZoom().toFixed(2));
+    if (!n) setStatus('The map loaded but no campus buildings are on screen. Press Fly the campus, or open the browser console (F12) and send me the messages.', true);
   });
   map.on('style.load', onStyle);
   map.on('click', onMapClick);
@@ -429,31 +439,34 @@ function onStyle() {
   map.addSource('walker', { type: 'geojson', data: emptyFc() });
   map.addSource('ends', { type: 'geojson', data: emptyFc() });
 
-  map.addLayer({ id: 'boundary-fill', type: 'fill', slot: 'middle', source: 'campus-boundary',
+  const failed = [];
+  const addLayer = (l) => { try { map.addLayer(l); } catch (e) { failed.push(l.id); console.error('addLayer ' + l.id, e); } };
+  addLayer({ id: 'boundary-fill', type: 'fill', slot: 'middle', source: 'campus-boundary',
     paint: { 'fill-color': ACCENT, 'fill-opacity': 0.06, 'fill-emissive-strength': 1 } });
-  map.addLayer({ id: 'boundary-line', type: 'line', slot: 'middle', source: 'campus-boundary',
+  addLayer({ id: 'boundary-line', type: 'line', slot: 'middle', source: 'campus-boundary',
     paint: { 'line-color': ACCENT, 'line-width': 3, 'line-emissive-strength': 1 } });
-  map.addLayer({ id: 'buildings', type: 'fill-extrusion', slot: 'middle', source: 'campus-buildings',
+  addLayer({ id: 'buildings', type: 'fill-extrusion', slot: 'middle', source: 'campus-buildings',
     paint: {
       'fill-extrusion-color': ['case', ['get', 'named'], ACCENT, '#7e8da0'],
       'fill-extrusion-height': ['get', 'height'], 'fill-extrusion-base': 0,
       'fill-extrusion-opacity': 0.72, 'fill-extrusion-emissive-strength': 0.4 } });
-  map.addLayer({ id: 'route-halo', type: 'line', slot: 'top', source: 'route',
+  addLayer({ id: 'route-halo', type: 'line', slot: 'top', source: 'route',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: { 'line-color': GLOW, 'line-width': 14, 'line-opacity': 0.25, 'line-emissive-strength': 1 } });
-  map.addLayer({ id: 'route-line', type: 'line', slot: 'top', source: 'route',
+  addLayer({ id: 'route-line', type: 'line', slot: 'top', source: 'route',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: { 'line-color': GLOW, 'line-width': 5, 'line-emissive-strength': 1 } });
-  map.addLayer({ id: 'ends', type: 'circle', slot: 'top', source: 'ends',
+  addLayer({ id: 'ends', type: 'circle', slot: 'top', source: 'ends',
     paint: { 'circle-radius': 8, 'circle-color': ['get', 'color'], 'circle-stroke-color': '#0B0C0E', 'circle-stroke-width': 2, 'circle-emissive-strength': 1 } });
-  map.addLayer({ id: 'walker', type: 'circle', slot: 'top', source: 'walker',
+  addLayer({ id: 'walker', type: 'circle', slot: 'top', source: 'walker',
     paint: { 'circle-radius': 7, 'circle-color': GLOW, 'circle-blur': 0.3, 'circle-emissive-strength': 1 } });
-  map.addLayer({ id: 'labels', type: 'symbol', slot: 'top', source: 'campus-pois',
+  addLayer({ id: 'labels', type: 'symbol', slot: 'top', source: 'campus-pois',
     layout: {
       'text-field': ['get', 'name'], 'text-size': 12, 'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'],
       'text-anchor': 'top', 'text-offset': [0, 0.6], 'symbol-sort-key': ['-', 0, ['get', 'area_m2']], 'text-optional': true },
     paint: { 'text-color': '#F2F1EC', 'text-halo-color': '#0B0C0E', 'text-halo-width': 1.6, 'text-emissive-strength': 1 } });
 
+  if (failed.length) setStatus('These layers could not be added: ' + failed.join(', '), true);
   map.on('click', 'labels', (e) => { const p = S.pois.find((q) => q.id === e.features[0].properties.id); if (p) choose(p); });
   map.on('mouseenter', 'labels', () => (map.getCanvas().style.cursor = 'pointer'));
   map.on('mouseleave', 'labels', () => (map.getCanvas().style.cursor = ''));
