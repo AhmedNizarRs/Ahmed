@@ -95,18 +95,21 @@ test('tag steps show "I\'m at this tag" and simulate walk reaches the arrival sc
 
 test('Accessible mode to Clinic 2 shows "no step-free route"', async () => {
   const { ctx, page, errors } = await open();
-  await page.click('#chipAccessible');
-  assert.equal(await page.getAttribute('#chipAccessible', 'aria-pressed'), 'true');
   await page.fill('#search', 'clinic 2');
   await page.click('#results button[data-pick="ground|P010"]');
+  // The place card already says there is no step-free route, before the switch is on.
+  assert.match(await page.textContent('#placeFacts'), /No step-free route/);
+  await page.click('#optStepFree');
+  assert.ok(await page.isChecked('#optStepFree'));
   assert.match(await page.textContent('#routeMsg'), /no step-free route/i);
   assert.ok(await page.isDisabled('#btnStart'));
   assert.equal(SAMPLE.routes.chair['P001>P010'], undefined);
-  // Walking route still exists once Accessible is off.
-  await page.click('#chipAccessible');
+  // Walking route still exists once step-free is off.
+  await page.click('#optStepFree');
   assert.ok(await page.isEnabled('#btnStart'));
   // A step-free route that exists uses routes.chair.
-  await page.click('#chipAccessible');
+  await page.click('#optStepFree');
+  await page.click('#btnClosePlace');
   await page.fill('#search', 'pharmacy');
   await page.click('#results button[data-pick="ground|P008"]');
   assert.equal(await page.textContent('#statDist'), `${Math.round(SAMPLE.routes.chair['P001>P008'].distance_m)} m`);
@@ -128,7 +131,7 @@ test('opening #at-P013 sets the location to "Corridor East"; NFC URL path works 
 
 test('category chip picks the nearest point by route distance', async () => {
   const { ctx, page } = await open('#at-P001');
-  await page.click('.chip[data-cat="toilet"]');
+  await page.click('.cat[data-cat="toilet"]');
   const best = ['P005', 'P006'].sort((a, b) => SAMPLE.routes.walk[`P001>${a}`].distance_m - SAMPLE.routes.walk[`P001>${b}`].distance_m)[0];
   assert.equal(await page.evaluate(() => window.DALIL_APP.state.toKey), `ground|${best}`);
   await ctx.close();
@@ -145,7 +148,7 @@ test('Arabic UI is fully RTL and the Arabic steps read correctly', async () => {
   assert.deepEqual(leftovers, []);
   assert.equal(await page.textContent('#fromName'), 'المدخل الرئيسي');
   // Layout really flips: the search icon sits on the right.
-  const [icon, input] = await Promise.all(['.search > .ico', '#search'].map(s => page.locator(s).boundingBox()));
+  const [icon, input] = await Promise.all(['.search-field > .ico', '#search'].map(s => page.locator(s).boundingBox()));
   assert.ok(icon.x > input.x, 'search icon is on the right in RTL');
 
   await page.fill('#search', 'المصلى');
@@ -189,9 +192,10 @@ test('test building (Kennedy Library): routes between floors by stairs, or by li
   assert.equal(await page.textContent('#fromName'), 'Study Room 216K');
   await page.goto(base + '#f=level-1&b=kennedy-library-cal-poly-test&at-P001');
   await page.evaluate(() => window.DALIL_APP.ready);
-  await page.click('#chipAccessible');
   await page.fill('#search', '216K');
   await page.click(`#results button[data-pick="level-2|${room.id}"]`);
+  await page.click('#optStepFree');
+  assert.match(await page.textContent('#routeVia'), /By lift to Level 2/);
   await page.click('#btnStart');
   st = await steps(page);
   assert.ok(st.some(s => /^Take the lift up to Level 2/.test(s)) && !st.some(s => /stairs/i.test(s)), 'step-free uses the lift');
@@ -201,34 +205,37 @@ test('test building (Kennedy Library): routes between floors by stairs, or by li
 
 test('tap anywhere on the map for directions, and save it as My spot', async () => {
   const { ctx, page, errors } = await open('#b=kennedy-library-cal-poly-test&f=level-1&at-P001');
-  await page.click('.tab[data-screen="map"]');
-  await page.waitForTimeout(300);
-  // A walkable spot near the Gallery that is on the plan itself, not on a place label.
-  const scr = await page.evaluate(async () => {
+  await page.waitForTimeout(500);
+  // A walkable spot near the Gallery that is on the visible map itself (not under the panel or a place dot).
+  const findSpot = () => page.evaluate(async () => {
     const { Router } = await import('./router.js');
-    const m = window.DALIL_APP.state.map, g = m.points.find(p => p.nameEn === 'Gallery'), R = new Router(m), fm = window.DALIL_APP.views().floorMap;
-    for (const [dx, dy] of [[0, 5], [5, 0], [-5, 0], [0, -5], [4, 4], [-4, 4], [4, -4]]) {
-      const x = g.x + dx, y = g.y + dy, s = fm.planToScreen(x, y), el = document.elementFromPoint(s.x, s.y);
-      if (R.walkable(x, y) && el && !el.closest('.mk')) return s;
+    const m = window.DALIL_APP.state.map, R = new Router(m), fm = window.DALIL_APP.views().floorMap;
+    const r = document.querySelector('#mainMap').getBoundingClientRect(), top = document.querySelector('.topbar').getBoundingClientRect().bottom + 20;
+    const bottom = document.querySelector('#sheet').getBoundingClientRect().top - 20;
+    for (let y = top; y < bottom; y += 23) for (let x = r.left + 30; x < r.right - 90; x += 23) {
+      const el = document.elementFromPoint(x, y); if (!el || !el.closest('#mainMap') || el.closest('.mk')) continue;
+      const p = fm.screenToPlan(x, y); if (R.walkable(p.x, p.y) && R.distance('walk', m.points[0], p) != null) return { x, y };
     }
   });
+  let scr = await findSpot();
   assert.ok(scr, 'found an open spot');
   await page.mouse.click(scr.x, scr.y);
   await page.waitForSelector('#pinCard:not([hidden])');
   await page.click('#btnPinSave');
   assert.match(await page.textContent('#toast'), /Saved as your spot/);
-  await page.evaluate(() => window.scrollTo(0, 0));   // clicking Save scrolled the page
+  await page.waitForTimeout(500);   // the panel and map settle back to the home view
+  scr = await findSpot();
   await page.mouse.click(scr.x, scr.y);
+  await page.waitForSelector('#pinCard:not([hidden])');
   await page.click('#btnPinGo');
   assert.equal(await page.textContent('#destName'), 'Dropped pin');
   assert.ok(await page.isEnabled('#btnStart'));
   await page.click('#btnStart');
   assert.equal((await steps(page)).at(-1), 'You have arrived at Dropped pin.');
   await page.click('#btnEndNav');
-  // My spot is in Saved and in search.
-  await page.click('.tab[data-screen="saved"]');
+  // My spot is in Saved (on home) and in search.
+  await page.click('#btnClosePlace');
   assert.match(await page.textContent('#savedList'), /My spot/);
-  await page.click('.tab[data-screen="home"]');
   await page.fill('#search', 'my spot');
   await page.click('#results button[data-pick="level-1|@spot"]');
   assert.equal(await page.textContent('#destName'), 'My spot');
@@ -275,6 +282,45 @@ test('share a route as a link and QR code; the link reopens the same route; kios
   assert.ok(await k.isHidden('#btnFrom'));
   await k.fill('#search', 'prayer'); await k.click('#results button[data-pick="ground|P007"]');
   assert.ok(await k.isVisible('#kioskQR svg'));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('loading failure shows a retry screen, and retry recovers', async () => {
+  const ctx = await browser.newContext({ ...devices['Pixel 7'], serviceWorkers: 'block' });
+  const page = await ctx.newPage();
+  await page.route('**/maps.json', r => r.fulfill({ status: 503, body: 'down' }));
+  await page.goto(base);
+  await page.evaluate(() => window.DALIL_APP.ready);
+  assert.ok(await page.isVisible('#bootError'));
+  assert.match(await page.textContent('#bootError'), /Couldn’t load the building map/);
+  await page.unroute('**/maps.json');
+  await page.click('#btnRetry');
+  await page.waitForSelector('#boot', { state: 'hidden' });
+  assert.equal(await page.textContent('#fromName'), 'Main Entrance');
+  await ctx.close();
+});
+
+test('home remembers recent places and searches; theme and language switch from settings', async () => {
+  const { ctx, page, errors } = await open();
+  await page.fill('#search', 'pharm');
+  await page.click('#results button[data-pick="ground|P008"]');
+  await page.click('#btnStart');
+  await page.click('#btnEndNav');
+  await page.click('#btnClosePlace');
+  assert.ok(await page.isVisible('#secRecent'));
+  assert.match(await page.textContent('#recentList'), /Pharmacy/);
+  await page.click('#search');
+  assert.match(await page.textContent('#recentSearches'), /pharm/);
+  await page.click('#btnSearchBack');
+  await page.click('#btnSettings');
+  assert.equal(await page.getAttribute('html', 'data-theme'), 'dark');
+  await page.check('input[name="theme"][value="light"]');
+  assert.equal(await page.getAttribute('html', 'data-theme'), 'light');
+  await page.check('input[name="lang"][value="ar"]');
+  assert.equal(await page.getAttribute('html', 'dir'), 'rtl');
+  await page.click('#btnSettingsBack');
+  assert.ok(await page.isHidden('#settings'));
   assert.deepEqual(errors, []);
   await ctx.close();
 });

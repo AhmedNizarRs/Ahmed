@@ -42,15 +42,16 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - Limits: one floor per project file (multi-floor buildings = one export per floor, joined by `link` codes).
 
 ## Visitor app: current state (`app/`, PWA, no build step)
-- Files: `index.html`, `styles.css`, `app.js` (everything), `sw.js` (offline cache), `manifest.webmanifest`, `maps.json` (list of bundled maps, pointing at `../data/`), `icons/`, `fonts/` (Geist + the DALIL Arabic logo subset, copied from `dalil/site`).
+- Files: `index.html`, `styles.css` (design system + all screens), `app.js` (state, screens), `i18n.js` (EN/AR strings, icons), `mapview.js` (map renderer), `router.js` (on-device routing), `sw.js` (offline cache), `manifest.webmanifest`, `maps.json` (list of bundled maps, pointing at `../data/`), `icons/`, `fonts/` (Geist + the DALIL Arabic logo subset, copied from `dalil/site`).
 - Serve the **project folder** (not `app/` alone), because the bundled maps live in `../data/`: `npm run serve`, then open `http://localhost:8080/app/`. For deployment, publish `app/` and `data/` side by side.
-- Map view: the plan is an SVG in metres inside a CSS 3D camera (perspective + tilt + rotation). Markers lie flat on the floor plane (upright ones get sorted behind it in Chromium).
+- **Layout (redesign Nov 2026, see `docs/redesign.md`):** full-screen interactive map + one bottom sheet (views: browse, search, place, pin; snaps: peek/half/full; side panel ≥ 900 px). No tab bar; Settings is a page (`#settings`). Boot screen with retry (`#boot`). `state.viewMap` = floor being viewed; `state.map` = floor the visitor is on (the floor switch never moves the visitor). Recents `dalil.recent`, frequent `dalil.freq`, recent searches `dalil.searches`. Themes: dark (default) / light / system, plus high contrast. Navigation shows an honest mode badge (step-by-step vs simulated preview).
+- Map view: the plan is an SVG in metres inside a CSS 3D camera (perspective + tilt + rotation). Markers lie flat on the floor plane (upright ones get sorted behind it in Chromium). Route = yellow line with a dark casing (no glow); destination = the logo's ring-and-dot.
 - Step → path position: steps carry text only, so each "walk N m" leg is placed by its distance, scaled so the legs add up to the real path length (`buildSteps`). Turn icons come from the English step text.
 - Deep links: `#at-P013`, `#at-P001&to-P007`, `#b=<building>&f=<floor>&at-P001`, `#t/<b>/<f>/<p>`, and the NFC path `/t/<b>/<f>/<p>` (the service worker serves the app for it; a server needs the same rewrite).
-- Web NFC where available (Android Chrome), with a tag list fallback. "Accessible" chip = step-free mode (`routes.chair`).
+- Web NFC where available (Android Chrome), with a tag list fallback. The "Step-free route" switch on the place panel (and in Settings) = step-free mode (`routes.chair`).
 - Multi-floor: destinations are keys `<floorId>|<pointId>` (`state.toKey`). `planRoute` joins two floors through points sharing a `link` (lift = step-free, stairs walking only), `planSteps` merges the legs with a "Take the lift/stairs …" step, and navigation swaps the floor plan mid-route. Floor order = order in `maps.json` (bottom to top).
 - On-device routing: `router.js` (`Router`: decodes `map.nav`, applies `closures`, one cached Dijkstra field per start, path by descending the field, same string-pulling and EN/AR wording as the Mapper). `routeFor(map, A, B)` uses stored routes when present, else the router. Leg 2 of multi-floor plans searches from the destination (`fromEnd`) so all lifts/stairs share one field.
-- Tap the Map tab to drop a pin (`<floor>|@x,y`): "Directions here" or "Save as my spot" (`@spot`, localStorage `dalil.spot`; in Saved and in search "my spot"). Place names on the Map tab appear only when zoomed in.
+- Tap the map to drop a pin (`<floor>|@x,y`): "Directions here" or "Save as my spot" (`@spot`, localStorage `dalil.spot`; in Saved and in search "my spot"). Place names on the map appear only when zoomed in.
 - Share route: link (`#b=…&f=…&at-…&to-<key>`) + QR code (`vendor/qrcode.js`, MIT) + Web Share. Kiosk mode: `#kiosk&…` (fixed location, QR to continue on a phone, 90 s idle reset).
 - `docs/pointr-comparison.md`: feature map against Pointr and the next steps.
 - `window.DALIL_APP` exposes state and the spoken-text log for tests.
@@ -67,7 +68,7 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 `tests/test_visitor_app.mjs` covers the visitor app's acceptance checks (Node Playwright, starts its own local server). Run it with `npm install && npx playwright install chromium && npm test`. Keep it green after any app change.
 
 ## Design language
-- Visitor app: `design/visitor-app-mockup.png`. Dark glass UI, yellow/amber accent (#F5C518-ish), large rounded cards, category chips, a floor rail, a turn banner, a bottom sheet with ETA/distance, and a big "Start Navigation" button.
+- Visitor app: redesigned Nov 2026 ("the lit path", `docs/redesign.md`): graphite surfaces, the only warm colour is the route in brand yellow #FFC700; logo unchanged. Tokens live at the top of `app/styles.css`. The original mockup is `design/visitor-app-mockup.png`.
 - Mapper: clean black/white/blue (#0B0F14 / #FFFFFF / #1F6FEB). No brown.
 
 ## Rules

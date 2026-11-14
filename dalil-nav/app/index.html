@@ -1,11 +1,11 @@
 <!doctype html>
-<html lang="en" dir="ltr">
+<html lang="en" dir="ltr" data-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>DALIL · دليل</title>
-<meta name="description" content="Indoor directions for this building: search a place, get a route and follow spoken turn-by-turn steps.">
-<meta name="theme-color" content="#0B0C0E">
+<meta name="description" content="Indoor directions for this building: search a place, review the route and follow spoken turn-by-turn steps.">
+<meta name="theme-color" content="#0C0D10">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-192.png">
@@ -15,204 +15,157 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<!-- Spoken step announcements for screen readers -->
 <div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 <div id="liveAssertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
 
-<div id="app" class="app">
-  <div class="aurora" aria-hidden="true"></div>
-
-  <!-- ============ HOME ============ -->
-  <main id="screen-home" class="screen is-active" aria-labelledby="brandName">
-    <header class="top">
-      <div class="brand">
-        <svg class="brand-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="var(--accent)" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
-        <h1 id="brandName" class="brand-name"><span class="brand-en">DALIL</span><span class="brand-sep" aria-hidden="true"></span><span class="brand-ar" lang="ar">دليل</span></h1>
-      </div>
-      <button id="btnLang" class="icon-btn lang-btn" type="button" data-i18n-aria="switchLang"><span data-i18n="langShort">ع</span></button>
-    </header>
-
-    <div class="search-wrap">
-      <div class="search glass">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
-        <label for="search" class="sr-only" data-i18n="searchLabel">Search places</label>
-        <input id="search" type="search" autocomplete="off" enterkeyhint="search" data-i18n-ph="searchPh" placeholder="Search for a room, place, or service" aria-controls="results" aria-describedby="resultsStatus">
-        <button id="btnScan" class="icon-btn flat" type="button" data-i18n-aria="scan">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M7 12h10"/></svg>
-        </button>
-      </div>
-      <div id="resultsStatus" class="sr-only" aria-live="polite"></div>
-      <ul id="results" class="results glass" hidden></ul>
-    </div>
-
-    <div class="chips" role="group" data-i18n-aria="categories">
-      <button class="chip glass" type="button" data-cat="toilet">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="7" cy="4.5" r="1.8"/><circle cx="17" cy="4.5" r="1.8"/><path d="M5 9h4v6H8v6H6v-6H5zM17 8.5l-3 7h2v5.5h2v-5.5h2z"/></svg>
-        <span data-i18n="cat_toilet">Restroom</span></button>
-      <button class="chip glass" type="button" data-cat="lift">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="16" height="14" rx="1.5"/><path d="M12 7v14M8 2.5l-2 2.5h4zM16 5l-2-2.5h4z"/></svg>
-        <span data-i18n="cat_lift">Elevator</span></button>
-      <button class="chip glass" type="button" data-cat="stairs">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 20h5v-4h4v-4h4V8h5"/></svg>
-        <span data-i18n="cat_stairs">Stairs</span></button>
-      <button class="chip glass" type="button" data-cat="prayer">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 21V11a8 8 0 0 1 16 0v10zM12 3V1.5M9 21v-5a3 3 0 0 1 6 0v5"/></svg>
-        <span data-i18n="cat_prayer">Prayer</span></button>
-      <button id="chipAccessible" class="chip glass" type="button" aria-pressed="false">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="3.8" r="1.8"/><path d="M11 7v6h6l2.5 6M11 9.5H7.5M8.2 11.5a5.5 5.5 0 1 0 7.6 7"/></svg>
-        <span data-i18n="cat_accessible">Accessible</span></button>
-    </div>
-
-    <div class="from-row">
-      <svg class="ico ico-sm" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/></svg>
-      <span data-i18n="youAreAt">You are at</span>
-      <strong id="fromName" class="from-name">—</strong>
-      <button id="btnFrom" class="link-btn" type="button" data-i18n="change">Change</button>
-    </div>
-
-    <section class="map-card glass" aria-labelledby="mapHeading">
-      <h2 id="mapHeading" class="sr-only" data-i18n="mapHeading">Map preview</h2>
-      <div id="homeMap" class="map-view" role="img"></div>
-      <button id="btnCompass" class="compass glass" type="button" data-i18n-aria="compass">
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="needle" d="M12 3l3.2 9H8.8z"/><path class="needle-s" d="M12 21l-3.2-9h6.4z"/></svg>
-        <span>N</span>
-      </button>
-      <div id="homeBanner" class="turn-banner glass" hidden>
-        <span class="turn-ico" aria-hidden="true"></span>
-        <span class="turn-text"><strong class="turn-title"></strong><span class="turn-sub"></span></span>
-      </div>
-      <button id="btnFullscreen" class="map-btn glass corner-bl" type="button" data-i18n-aria="fullscreen">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
-      </button>
-      <button id="btnRecenter" class="map-btn glass corner-br" type="button" data-i18n-aria="recenter">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3.5"/><path d="M12 2v4M12 18v4M2 12h4M18 12h4"/></svg>
-      </button>
-    </section>
-
-    <aside class="rail-col" aria-label="Floors">
-      <div id="floorRail" class="floor-rail glass" role="group"></div>
-      <button id="btnLayers" class="map-btn glass round" type="button" aria-pressed="false" data-i18n-aria="layers">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5"/></svg>
-      </button>
-    </aside>
-
-    <section id="sheet" class="sheet glass" aria-labelledby="destName">
-      <div class="sheet-head">
-        <span class="dest-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 22s7-6.4 7-12a7 7 0 0 0-14 0c0 5.6 7 12 7 12z"/><circle cx="12" cy="10" r="2.6" class="hole"/></svg></span>
-        <div class="dest-text">
-          <h2 id="destName" class="dest-name" data-i18n="chooseDest">Choose a destination</h2>
-          <p id="destMeta" class="dest-meta"></p>
-        </div>
-        <button id="btnShare" class="icon-btn flat" type="button" data-i18n-aria="share" hidden>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg>
-        </button>
-        <button id="btnFav" class="icon-btn flat" type="button" aria-pressed="false" data-i18n-aria="save" hidden>
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5 4.3 13a4.8 4.8 0 0 1 6.8-6.8l.9.9.9-.9a4.8 4.8 0 0 1 6.8 6.8z"/></svg>
-        </button>
-      </div>
-      <div id="routeStats" class="stats" hidden>
-        <div class="stat">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
-          <div><span class="stat-label" data-i18n="eta">ETA</span><strong id="statEta" class="stat-val">—</strong></div>
-        </div>
-        <div class="stat">
-          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H14a3 3 0 0 0 0-6h-4a3 3 0 0 1 0-6h5.5"/></svg>
-          <div><span class="stat-label" data-i18n="distance">Distance</span><strong id="statDist" class="stat-val">—</strong></div>
-        </div>
-      </div>
-      <p id="routeMsg" class="route-msg" role="status"></p>
-      <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
-      <button id="btnStart" class="btn-primary" type="button" disabled>
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.5 3 3 7.5z"/></svg>
-        <span data-i18n="start">Start Navigation</span>
-      </button>
-    </section>
-  </main>
-
-  <!-- ============ MAP (whole floor) ============ -->
-  <section id="screen-map" class="screen" aria-labelledby="mapTitle" hidden>
-    <header class="page-head"><h1 id="mapTitle" data-i18n="tab_map">Map</h1><p id="mapSub" class="muted"></p></header>
-    <div class="map-card glass tall">
-      <div id="floorMap" class="map-view" role="img"></div>
-      <div class="zoom-btns">
-        <button id="btnZoomIn" class="map-btn glass" type="button" data-i18n-aria="zoomIn">+</button>
-        <button id="btnZoomOut" class="map-btn glass" type="button" data-i18n-aria="zoomOut">−</button>
-      </div>
-    </div>
-    <p id="pinHelp" class="muted small" data-i18n="pinHelp">Tap the map to choose any spot, for example where you parked.</p>
-    <div id="pinCard" class="pin-card glass" role="region" aria-live="polite" hidden>
-      <p id="pinText" class="pin-text"></p>
-      <div class="pin-actions">
-        <button id="btnPinGo" class="btn-primary" type="button"><span data-i18n="pinGo">Directions here</span></button>
-        <button id="btnPinSave" class="btn-ghost" type="button" data-i18n="pinSave">Save as my spot</button>
-      </div>
-    </div>
-    <h2 class="list-head" data-i18n="allPlaces">All places on this floor</h2>
-    <ul id="placeList" class="place-list"></ul>
-  </section>
-
-  <!-- ============ SAVED ============ -->
-  <section id="screen-saved" class="screen" aria-labelledby="savedTitle" hidden>
-    <header class="page-head"><h1 id="savedTitle" data-i18n="tab_saved">Saved</h1></header>
-    <ul id="savedList" class="place-list"></ul>
-    <p id="savedEmpty" class="muted empty" data-i18n="savedEmpty">No saved places yet. Tap the heart on a destination to keep it here.</p>
-  </section>
-
-  <!-- ============ SETTINGS ============ -->
-  <section id="screen-settings" class="screen" aria-labelledby="setTitle" hidden>
-    <header class="page-head"><h1 id="setTitle" data-i18n="tab_settings">Settings</h1></header>
-    <div class="settings">
-      <fieldset class="set-group glass">
-        <legend data-i18n="language">Language</legend>
-        <div class="seg">
-          <label><input type="radio" name="lang" value="en"><span>English</span></label>
-          <label><input type="radio" name="lang" value="ar"><span lang="ar">العربية</span></label>
-        </div>
-      </fieldset>
-      <div class="set-group glass">
-        <label class="toggle"><span data-i18n="set_voice">Spoken directions</span><input type="checkbox" id="setVoice" role="switch"></label>
-        <label class="toggle"><span data-i18n="set_vibrate">Vibrate on turns</span><input type="checkbox" id="setVibrate" role="switch"></label>
-        <label class="toggle"><span data-i18n="set_stepfree">Step-free routes</span><input type="checkbox" id="setStepFree" role="switch"></label>
-      </div>
-      <div class="set-group glass">
-        <label class="toggle"><span data-i18n="set_large">Large text</span><input type="checkbox" id="setLarge" role="switch"></label>
-        <label class="toggle"><span data-i18n="set_contrast">High contrast</span><input type="checkbox" id="setContrast" role="switch"></label>
-        <label class="toggle"><span data-i18n="set_motion">Reduce motion</span><input type="checkbox" id="setMotion" role="switch"></label>
-      </div>
-      <div class="set-group glass">
-        <label for="setBuilding" class="set-label" data-i18n="building">Building</label>
-        <select id="setBuilding"></select>
-        <label class="file-btn">
-          <input type="file" id="fileMap" accept=".json,application/json">
-          <span data-i18n="loadMap">Load a map file</span>
-        </label>
-        <p id="loadMsg" class="muted small" role="status"></p>
-      </div>
-      <p class="muted small about" data-i18n="about">DALIL is a supplementary wayfinding aid. Follow building signs and staff directions, and ask staff for help at any time.</p>
-    </div>
-  </section>
-
-  <nav class="tabbar glass" data-i18n-aria="mainNav">
-    <button class="tab is-active" type="button" data-screen="home" aria-current="page">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 11 12 3l9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>
-      <span data-i18n="tab_home">Home</span></button>
-    <button class="tab" type="button" data-screen="map">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2zM9 4v14M15 6v14"/></svg>
-      <span data-i18n="tab_map">Map</span></button>
-    <button class="tab" type="button" data-screen="saved">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5 4.3 13a4.8 4.8 0 0 1 6.8-6.8l.9.9.9-.9a4.8 4.8 0 0 1 6.8 6.8z"/></svg>
-      <span data-i18n="tab_saved">Saved</span></button>
-    <button class="tab" type="button" data-screen="settings">
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
-      <span data-i18n="tab_settings">Settings</span></button>
-  </nav>
+<!-- ============ BOOT: loading and failure ============ -->
+<div id="boot" class="boot" role="status">
+  <svg class="boot-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
+  <p id="bootText" class="boot-text" data-i18n="loading">Loading building map…</p>
+  <div id="bootBar" class="boot-bar" aria-hidden="true"><span></span></div>
+  <div id="bootError" class="boot-error" hidden>
+    <p class="boot-err-title" data-i18n="loadFail">Couldn’t load the building map.</p>
+    <p class="muted" data-i18n="loadFailHint">Check your connection and try again.</p>
+    <button id="btnRetry" class="btn btn-primary" type="button" data-i18n="retry">Try again</button>
+  </div>
 </div>
 
-<!-- ============ NAVIGATION MODE ============ -->
+<div id="app" class="app">
+  <!-- The map is the canvas of the app -->
+  <div id="mainMap" class="map-view main-map" role="region"></div>
+
+  <header class="topbar">
+    <div class="brand" aria-label="DALIL">
+      <svg class="brand-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
+      <span class="brand-word"><span class="brand-en">DALIL</span><span class="brand-ar" lang="ar">دليل</span></span>
+    </div>
+    <button id="btnLang" class="icon-btn glass lang-btn" type="button" data-i18n-aria="switchLang"><span data-i18n="langShort">ع</span></button>
+    <button id="btnSettings" class="icon-btn glass" type="button" data-i18n-aria="openSettings"><span class="ico" data-ico="gear"></span></button>
+  </header>
+
+  <div class="map-ctrls">
+    <div id="floorRail" class="floor-switch glass" role="group"></div>
+    <div class="zoom-group glass">
+      <button id="btnZoomIn" class="ctrl" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
+      <button id="btnZoomOut" class="ctrl" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+    </div>
+    <button id="btnRecenter" class="ctrl glass solo" type="button" data-i18n-aria="recenter"><span class="ico" data-ico="locate"></span></button>
+  </div>
+
+  <!-- ============ BOTTOM SHEET ============ -->
+  <section id="sheet" class="sheet" data-view="browse" aria-label="DALIL">
+    <div class="sheet-grip">
+      <button id="btnGrip" class="grip" type="button" data-i18n-aria="expandPanel"><span></span></button>
+      <div class="search-row">
+        <button id="btnSearchBack" class="icon-btn flat" type="button" data-i18n-aria="back"><span class="ico flip-rtl" data-ico="back"></span></button>
+        <div class="search-field">
+          <span class="ico" data-ico="search" aria-hidden="true"></span>
+          <label for="search" class="sr-only" data-i18n="searchLabel">Search places</label>
+          <input id="search" type="search" autocomplete="off" enterkeyhint="search" data-i18n-ph="searchPh" placeholder="Search for a room, place, or service" aria-controls="results" aria-describedby="resultsStatus">
+          <button id="btnScan" class="icon-btn flat sm" type="button" data-i18n-aria="scan"><span class="ico" data-ico="scan"></span></button>
+        </div>
+      </div>
+    </div>
+
+    <div class="sheet-body">
+      <!-- BROWSE -->
+      <div id="viewBrowse" class="view">
+        <button id="btnPlace" class="where" type="button"><span class="ico" data-ico="building" aria-hidden="true"></span><span id="placePill" class="where-text"></span><span class="ico where-chev" data-ico="chevDown" aria-hidden="true"></span></button>
+        <div class="from-row">
+          <span class="from-dot" aria-hidden="true"></span>
+          <span class="from-label" data-i18n="youAreAt">You are at</span>
+          <strong id="fromName" class="from-name">—</strong>
+          <button id="btnFrom" class="text-btn" type="button" data-i18n="change">Change</button>
+        </div>
+        <h2 class="sec-title" data-i18n="findNearest">Find the nearest</h2>
+        <div class="cats" role="group" data-i18n-aria="findNearest">
+          <button class="cat" type="button" data-cat="toilet"><span class="cat-ico" data-cat-ico="toilet"></span><span data-i18n="cat_toilet">Restroom</span></button>
+          <button class="cat" type="button" data-cat="lift"><span class="cat-ico" data-cat-ico="lift"></span><span data-i18n="cat_lift">Elevator</span></button>
+          <button class="cat" type="button" data-cat="stairs"><span class="cat-ico" data-cat-ico="stairs"></span><span data-i18n="cat_stairs">Stairs</span></button>
+          <button class="cat" type="button" data-cat="prayer"><span class="cat-ico" data-cat-ico="prayer"></span><span data-i18n="cat_prayer">Prayer</span></button>
+          <button class="cat" type="button" data-cat="cafe"><span class="cat-ico" data-cat-ico="cafe"></span><span data-i18n="cat_cafe">Café</span></button>
+          <button class="cat" type="button" data-cat="help"><span class="cat-ico" data-cat-ico="reception"></span><span data-i18n="cat_help">Help desk</span></button>
+        </div>
+        <section id="secSaved" class="sec" hidden><h2 class="sec-title" data-i18n="secSaved">Saved</h2><ul id="savedList" class="rail"></ul></section>
+        <section id="secRecent" class="sec" hidden><h2 class="sec-title" data-i18n="secRecent">Recent</h2><ul id="recentList" class="rail"></ul></section>
+        <section id="secKey" class="sec"><h2 id="keyTitle" class="sec-title" data-i18n="secKey">Key places here</h2><ul id="keyList" class="list"></ul></section>
+        <p class="hint"><span class="ico" data-ico="pin" aria-hidden="true"></span><span data-i18n="pinHelp">Tap the map to choose any spot, for example where you parked.</span></p>
+      </div>
+
+      <!-- SEARCH -->
+      <div id="viewSearch" class="view" hidden>
+        <div id="searchFilters" class="filters" role="group" data-i18n-aria="filtersLabel"></div>
+        <div id="resultsStatus" class="sr-only" aria-live="polite"></div>
+        <section id="secSearches" class="sec" hidden>
+          <div class="sec-head"><h2 class="sec-title" data-i18n="recentSearches">Recent searches</h2><button id="btnClearSearches" class="text-btn" type="button" data-i18n="clear">Clear</button></div>
+          <ul id="recentSearches" class="list compact"></ul>
+        </section>
+        <p id="searchHint" class="empty-hint" data-i18n="searchEmptyHint">Type a room number, a name or a service.</p>
+        <ul id="results" class="list"></ul>
+        <div id="noResults" class="empty" hidden>
+          <span class="empty-ico ico" data-ico="search" aria-hidden="true"></span>
+          <p id="noResultsTitle" class="empty-title"></p>
+          <p class="muted" data-i18n="noResultsHint">Try a room number such as 104.</p>
+        </div>
+      </div>
+
+      <!-- PLACE (destination + route) -->
+      <div id="viewPlace" class="view" hidden>
+        <div class="place-head">
+          <span id="placeIco" class="place-ico" aria-hidden="true"></span>
+          <div class="place-titles">
+            <h2 id="destName" class="place-name" tabindex="-1" data-i18n="chooseDest">Choose a destination</h2>
+            <p id="destMeta" class="place-meta"></p>
+          </div>
+          <button id="btnClosePlace" class="icon-btn flat" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button>
+        </div>
+        <div id="routeStats" class="route-card" hidden>
+          <div class="stat"><span class="stat-val" id="statEta">—</span><span class="stat-label" data-i18n="eta">ETA</span></div>
+          <div class="stat"><span class="stat-val" id="statDist">—</span><span class="stat-label" data-i18n="distance">Distance</span></div>
+          <div id="routeVia" class="via" hidden></div>
+        </div>
+        <p id="routeMsg" class="route-msg" role="status"></p>
+        <div class="place-actions" role="group" data-i18n-aria="placeActions">
+          <button id="btnStart" class="btn btn-primary btn-start" type="button" disabled><span class="ico" data-ico="route" aria-hidden="true"></span><span data-i18n="start">Start Navigation</span></button>
+          <button id="btnFav" class="icon-btn tonal" type="button" aria-pressed="false" data-i18n-aria="save"><span class="ico" data-ico="heart"></span></button>
+          <button id="btnShare" class="icon-btn tonal" type="button" data-i18n-aria="share"><span class="ico" data-ico="share"></span></button>
+        </div>
+        <label class="switch-row" for="optStepFree">
+          <span class="ico" data-ico="wheel" aria-hidden="true"></span>
+          <span class="sw-text"><span class="sw-title" data-i18n="stepFree">Step-free route</span><span class="sw-hint" data-i18n="stepFreeHint">Uses lifts, avoids stairs and narrow doors</span></span>
+          <input type="checkbox" id="optStepFree" role="switch">
+        </label>
+        <ul id="placeFacts" class="facts"></ul>
+        <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
+        <section id="secPreview" class="sec" hidden>
+          <h2 class="sec-title" data-i18n="steps">Steps</h2>
+          <ol id="previewSteps" class="preview-steps"></ol>
+        </section>
+      </div>
+
+      <!-- DROPPED PIN -->
+      <div id="viewPin" class="view" hidden>
+        <div class="place-head">
+          <span class="place-ico" aria-hidden="true"><span class="ico" data-ico="pin"></span></span>
+          <div class="place-titles"><h2 class="place-name" data-i18n="pinName">Dropped pin</h2><p id="pinText" class="place-meta"></p></div>
+          <button id="btnClosePin" class="icon-btn flat" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button>
+        </div>
+        <div id="pinCard" class="place-actions">
+          <button id="btnPinGo" class="btn btn-primary btn-start" type="button"><span class="ico" data-ico="route" aria-hidden="true"></span><span data-i18n="pinGo">Directions here</span></button>
+          <button id="btnPinSave" class="btn btn-tonal" type="button" data-i18n="pinSave">Save as my spot</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+</div>
+
+<!-- ============ NAVIGATION ============ -->
 <section id="nav" class="nav" aria-labelledby="navStepText" hidden>
   <div id="navMap" class="map-view nav-map" role="img"></div>
   <div class="nav-top">
-    <div class="instr glass">
+    <div class="instr">
       <span id="navIco" class="instr-ico" aria-hidden="true"></span>
       <div class="instr-text">
         <p id="navStepNum" class="instr-num"></p>
@@ -220,31 +173,27 @@
         <p id="navStepSub" class="instr-sub"></p>
       </div>
     </div>
-    <button id="btnTag" class="btn-tag" type="button" hidden>
-      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
-      <span data-i18n="imAtTag">I'm at this tag</span>
-    </button>
+    <div id="navFloor" class="floor-banner" hidden><span class="ico" data-ico="building" aria-hidden="true"></span><span id="navFloorText"></span></div>
+    <button id="btnTag" class="btn btn-tag" type="button" hidden><span class="ico" data-ico="check" aria-hidden="true"></span><span data-i18n="imAtTag">I'm at this tag</span></button>
   </div>
-  <div class="nav-bottom glass">
+  <div class="nav-panel">
+    <div class="nav-panel-head">
+      <div id="navMode" class="mode-badge"><span class="mode-dot" aria-hidden="true"></span><span id="navModeText"></span></div>
+      <button id="btnEndNav" class="icon-btn tonal end-btn" type="button" data-i18n-aria="endNav"><span class="ico" data-ico="close"></span></button>
+    </div>
+    <div id="navProgress" class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="progressLabel"><span></span></div>
     <div class="nav-dest">
       <div class="nav-dest-name"><p class="muted small" data-i18n="goingTo">Going to</p><strong id="navDest"></strong></div>
       <div class="nav-remain"><strong id="navRemain"></strong><span id="navRemainTime" class="muted small"></span></div>
-      <button id="btnEndNav" class="icon-btn end-btn" type="button" data-i18n-aria="endNav">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <div class="nav-ctrls">
-      <button id="btnPrev" class="ctrl-btn" type="button" data-i18n-aria="prevStep">
-        <svg class="ico flip-rtl" viewBox="0 0 24 24" aria-hidden="true"><path d="m15 5-7 7 7 7"/></svg></button>
-      <button id="btnSim" class="ctrl-btn wide" type="button" aria-pressed="false">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path class="play" d="M7 4v16l13-8z"/></svg>
-        <span data-i18n="simulate">Simulate walk</span></button>
-      <button id="btnRepeat" class="ctrl-btn" type="button" data-i18n-aria="repeat">
-        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9zM16.5 8.5a5 5 0 0 1 0 7"/></svg></button>
-      <button id="btnNext" class="ctrl-btn" type="button" data-i18n-aria="nextStep">
-        <svg class="ico flip-rtl" viewBox="0 0 24 24" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg></button>
+      <button id="btnPrev" class="ctrl-btn" type="button" data-i18n-aria="prevStep"><span class="ico flip-rtl" data-ico="back"></span></button>
+      <button id="btnNext" class="btn btn-primary nav-next" type="button"><span data-i18n="next">Next</span><span class="ico flip-rtl" data-ico="back" style="transform:scaleX(-1)"></span></button>
+      <button id="btnRepeat" class="ctrl-btn" type="button" data-i18n-aria="repeat"><span class="ico" data-ico="volume"></span></button>
+      <button id="btnSim" class="ctrl-btn" type="button" aria-pressed="false"><span class="ico" data-ico="play"></span><span class="ctrl-txt" data-i18n="preview">Preview</span></button>
     </div>
     <details class="all-steps">
-      <summary data-i18n="allSteps">All steps</summary>
+      <summary><span class="ico" data-ico="list" aria-hidden="true"></span><span data-i18n="allSteps">All steps</span></summary>
       <ol id="stepList" class="step-list"></ol>
     </details>
   </div>
@@ -252,27 +201,81 @@
 
 <!-- ============ ARRIVAL ============ -->
 <section id="arrived" class="arrived" role="dialog" aria-modal="true" aria-labelledby="arrivedTitle" hidden>
-  <div class="arrived-card glass">
-    <div class="arrived-ring" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 12 5 5L20 7"/></svg></div>
+  <div class="arrived-card">
+    <div class="arrived-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="17"/><path d="m12.5 20.5 5 5 10-11"/></svg></div>
     <h2 id="arrivedTitle" tabindex="-1" data-i18n="arrived">You have arrived</h2>
     <p id="arrivedName" class="arrived-name"></p>
     <p id="arrivedStats" class="muted"></p>
-    <button id="btnArrivedSave" class="btn-ghost" type="button" data-i18n="savePlace">Save this place</button>
-    <button id="btnArrivedDone" class="btn-primary" type="button"><span data-i18n="done">Done</span></button>
+    <button id="btnArrivedDone" class="btn btn-primary" type="button"><span data-i18n="done">Done</span></button>
+    <button id="btnArrivedSave" class="btn btn-tonal" type="button" data-i18n="savePlace">Save this place</button>
   </div>
 </section>
 
-<!-- ============ TAG / LOCATION PICKER ============ -->
+<!-- ============ SETTINGS ============ -->
+<section id="settings" class="page" aria-labelledby="setTitle" hidden>
+  <header class="page-head">
+    <button id="btnSettingsBack" class="icon-btn flat" type="button" data-i18n-aria="back"><span class="ico flip-rtl" data-ico="back"></span></button>
+    <h1 id="setTitle" data-i18n="settings">Settings</h1>
+  </header>
+  <div class="page-body">
+    <section class="set-sec">
+      <h2 class="sec-title" data-i18n="appearance">Appearance</h2>
+      <div class="set-card">
+        <div class="seg" role="radiogroup" data-i18n-aria="theme">
+          <label><input type="radio" name="theme" value="system"><span data-i18n="theme_system">System</span></label>
+          <label><input type="radio" name="theme" value="dark"><span data-i18n="theme_dark">Dark</span></label>
+          <label><input type="radio" name="theme" value="light"><span data-i18n="theme_light">Light</span></label>
+        </div>
+      </div>
+    </section>
+    <section class="set-sec">
+      <h2 class="sec-title" data-i18n="language">Language</h2>
+      <div class="set-card">
+        <div class="seg" role="radiogroup" data-i18n-aria="language">
+          <label><input type="radio" name="lang" value="en"><span>English</span></label>
+          <label><input type="radio" name="lang" value="ar"><span lang="ar">العربية</span></label>
+        </div>
+      </div>
+    </section>
+    <section class="set-sec">
+      <h2 class="sec-title" data-i18n="navigation">Navigation</h2>
+      <div class="set-card">
+        <label class="toggle"><span class="tg-text"><span data-i18n="set_stepfree">Step-free routes</span><small data-i18n="set_stepfreeHint"></small></span><input type="checkbox" id="setStepFree" role="switch"></label>
+        <label class="toggle"><span class="tg-text"><span data-i18n="set_voice">Spoken directions</span><small data-i18n="set_voiceHint"></small></span><input type="checkbox" id="setVoice" role="switch"></label>
+        <label class="toggle"><span class="tg-text"><span data-i18n="set_vibrate">Vibrate on turns</span><small data-i18n="set_vibrateHint"></small></span><input type="checkbox" id="setVibrate" role="switch"></label>
+      </div>
+    </section>
+    <section class="set-sec">
+      <h2 class="sec-title" data-i18n="accessibility">Accessibility</h2>
+      <div class="set-card">
+        <label class="toggle"><span class="tg-text"><span data-i18n="set_large">Large text</span><small data-i18n="set_largeHint"></small></span><input type="checkbox" id="setLarge" role="switch"></label>
+        <label class="toggle"><span class="tg-text"><span data-i18n="set_contrast">High contrast</span><small data-i18n="set_contrastHint"></small></span><input type="checkbox" id="setContrast" role="switch"></label>
+        <label class="toggle"><span class="tg-text"><span data-i18n="set_motion">Reduce motion</span><small data-i18n="set_motionHint"></small></span><input type="checkbox" id="setMotion" role="switch"></label>
+      </div>
+    </section>
+    <section class="set-sec" id="setMapSec">
+      <h2 class="sec-title" data-i18n="mapData">Building map</h2>
+      <div class="set-card">
+        <label for="setBuilding" class="set-label" data-i18n="building">Building</label>
+        <select id="setBuilding"></select>
+        <label class="file-btn"><input type="file" id="fileMap" accept=".json,application/json"><span data-i18n="loadMap">Load a map file</span></label>
+        <p id="loadMsg" class="muted small" role="status"></p>
+      </div>
+    </section>
+    <p class="muted small about" data-i18n="about">DALIL is a supplementary wayfinding aid.</p>
+  </div>
+</section>
+
+<!-- ============ DIALOGS ============ -->
 <dialog id="dlgTag" class="sheet-dialog" aria-labelledby="dlgTagTitle">
   <form method="dialog" class="dlg-inner">
     <h2 id="dlgTagTitle" data-i18n="whereAreYou">Where are you?</h2>
     <p id="nfcStatus" class="muted" role="status"></p>
-    <p class="muted small" data-i18n="pickTag">Choose the DALIL tag you are standing at. Each tag has a raised code and the same name in braille.</p>
-    <ul id="tagList" class="place-list"></ul>
-    <button class="btn-ghost" value="cancel" data-i18n="cancel">Cancel</button>
+    <p class="muted small" data-i18n="pickTag">Choose the DALIL tag you are standing at.</p>
+    <ul id="tagList" class="list"></ul>
+    <button class="btn btn-quiet" value="cancel" data-i18n="cancel">Cancel</button>
   </form>
 </dialog>
-
 <dialog id="dlgShare" class="sheet-dialog" aria-labelledby="dlgShareTitle">
   <form method="dialog" class="dlg-inner share-inner">
     <h2 id="dlgShareTitle" data-i18n="shareTitle">Share these directions</h2>
@@ -281,14 +284,12 @@
     <label for="shareUrl" class="sr-only">Link</label>
     <input id="shareUrl" class="share-url" type="text" readonly>
     <div class="share-actions">
-      <button id="btnShareNative" class="btn-primary" type="button"><span data-i18n="shareNative">Share…</span></button>
-      <button id="btnShareCopy" class="btn-ghost" type="button" data-i18n="copy">Copy link</button>
+      <button id="btnShareNative" class="btn btn-primary" type="button"><span data-i18n="shareNative">Share…</span></button>
+      <button id="btnShareCopy" class="btn btn-tonal" type="button" data-i18n="copy">Copy link</button>
     </div>
-    <button class="btn-ghost" value="close" data-i18n="close">Close</button>
+    <button class="btn btn-quiet" value="close" data-i18n="close">Close</button>
   </form>
 </dialog>
-
-<div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
 <script src="vendor/qrcode.js"></script>
 <script src="app.js" type="module"></script>
