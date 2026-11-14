@@ -1,4 +1,5 @@
-// DALIL visitor app. No build step, no dependencies.
+// DALIL visitor app. No build step, no dependencies (QR codes: vendor/qrcode.js, MIT).
+import { Router } from './router.js';
 // Reads dalil-map v1 files (docs/map-format.md): every route is precomputed, so there is no routing engine here.
 
 /* =========================================================================
@@ -38,11 +39,16 @@ const STR = {
     routeTo: (n, d, t) => `Route to ${n}: ${d}, ${t}.`, navStarted: n => `Navigation to ${n} started.`,
     floorG: 'G', floorName: f => f.name,
     liftTo: (up, f, n) => `Take the lift ${up ? 'up' : 'down'} to ${f}. Step out at ${n}.`, stairsTo: (up, f) => `Take the stairs ${up ? 'up' : 'down'} to ${f}.`,
-    viaLift: f => `By lift to ${f}`, viaStairs: f => `By stairs to ${f}`, mapLoaded: n => `Loaded ${n}.`, mapBad: 'This file is not a DALIL map (dalil-map JSON).',
+    viaLift: f => `By lift to ${f}`, viaStairs: f => `By stairs to ${f}`,
+    pinName: 'Dropped pin', mySpot: 'My spot', pinHelp: 'Tap the map to choose any spot, for example where you parked.', pinGo: 'Directions here', pinSave: 'Save as my spot',
+    spotSaved: 'Saved as your spot. Find it in Saved, or search “my spot”.', pinOutside: 'Choose a spot inside the building.', pinAt: f => `Spot on ${f}`,
+    share: 'Share route', shareTitle: 'Share these directions', shareHint: 'Scan with a phone camera, or send the link. It opens with the same start and destination.',
+    copy: 'Copy link', copied: 'Link copied.', shareNative: 'Share…', close: 'Close', kioskQR: 'Scan to take these directions on your phone',
+    closureNote: 'Avoids a temporary closure.', kioskReset: 'Starting over for the next visitor.', mapLoaded: n => `Loaded ${n}.`, mapBad: 'This file is not a DALIL map (dalil-map JSON).',
     mapSessionOnly: 'Loaded for this visit only: the file is too large to keep on this phone.',
     planImg: (b, f, n) => `Floor plan of ${b}, ${f}. ${n}`, mapAlt: 'The directions are also listed in text below the map.',
     offline: 'Ready to use offline.',
-    cats: { entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking' },
+    cats: { entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
     langShort: 'EN', switchLang: 'Switch to English (التبديل إلى الإنجليزية)',
@@ -79,11 +85,16 @@ const STR = {
     floorG: 'G', floorName: f => (/^(ground|g)$/i.test(f.id) || /^ground$/i.test(f.name)) ? 'الطابق الأرضي' : /(\d+)/.test(f.name || '') ? `الطابق ${f.name.match(/(\d+)/)[1]}` : f.name,
     liftTo: (up, f, n) => `استقل المصعد ${up ? 'صعوداً' : 'نزولاً'} إلى ${f}. اخرج عند ${n}.`, stairsTo: (up, f) => `${up ? 'اصعد' : 'انزل'} الدرج إلى ${f}.`,
     viaLift: f => `بالمصعد إلى ${f}`, viaStairs: f => `بالدرج إلى ${f}`,
+    pinName: 'نقطة على الخريطة', mySpot: 'مكاني', pinHelp: 'اضغط على الخريطة لاختيار أي مكان، مثل مكان سيارتك.', pinGo: 'الاتجاهات إلى هنا', pinSave: 'احفظه كمكاني',
+    spotSaved: 'تم الحفظ كمكانك. ستجده في المحفوظة، أو ابحث عن «مكاني».', pinOutside: 'اختر مكاناً داخل المبنى.', pinAt: f => `نقطة في ${f}`,
+    share: 'مشاركة المسار', shareTitle: 'شارك هذه الإرشادات', shareHint: 'امسح الرمز بكاميرا الهاتف أو أرسل الرابط. يفتح بنقطة البداية والوجهة نفسيهما.',
+    copy: 'نسخ الرابط', copied: 'تم نسخ الرابط.', shareNative: 'مشاركة…', close: 'إغلاق', kioskQR: 'امسح الرمز لتأخذ الإرشادات على هاتفك',
+    closureNote: 'يتجنب إغلاقاً مؤقتاً.', kioskReset: 'البدء من جديد للزائر التالي.',
     mapLoaded: n => `تم تحميل ${n}.`, mapBad: 'هذا الملف ليس خريطة دليل (dalil-map JSON).',
     mapSessionOnly: 'تم التحميل لهذه الزيارة فقط: الملف أكبر من أن يُحفظ على هذا الهاتف.',
     planImg: (b, f, n) => `مخطط ${b}، ${f}. ${n}`, mapAlt: 'الإرشادات مكتوبة أيضاً تحت الخريطة.',
     offline: 'جاهز للاستخدام بدون إنترنت.',
-    cats: { entrance: 'مدخل', exit: 'مخرج', reception: 'الاستقبال', lift: 'مصعد', stairs: 'درج', ramp: 'منحدر', toilet: 'دورة مياه', toilet_acc: 'دورة مياه مهيأة', prayer: 'مصلى', wudu: 'مكان الوضوء', baby: 'غرفة رعاية الأطفال', cafe: 'مقهى', room: 'غرفة', corridor: 'ممر', parking: 'موقف سيارات' },
+    cats: { entrance: 'مدخل', exit: 'مخرج', reception: 'الاستقبال', lift: 'مصعد', stairs: 'درج', ramp: 'منحدر', toilet: 'دورة مياه', toilet_acc: 'دورة مياه مهيأة', prayer: 'مصلى', wudu: 'مكان الوضوء', baby: 'غرفة رعاية الأطفال', cafe: 'مقهى', room: 'غرفة', corridor: 'ممر', parking: 'موقف سيارات', pin: 'نقطة' },
   },
 };
 
@@ -158,29 +169,55 @@ const pname = p => p ? (settings.lang === 'ar' ? (p.nameAr || p.nameEn) : (p.nam
 const pnameOther = p => settings.lang === 'ar' ? p.nameEn : p.nameAr;
 const catName = c => T().cats[c] || STR.en.cats[c] || c;
 const mode = () => settings.stepFree ? 'chair' : 'walk';
-const routeOf = (from, to, m = mode(), map = state.map) => map?.routes?.[m]?.[`${from}>${to}`] || null;
+// Routes: stored ones (v1 files) when they exist, otherwise worked out on the phone from map.nav (v2 files).
+const routers = new WeakMap();
+const routerOf = map => { if (!map?.nav) return null; let r = routers.get(map); if (!r) routers.set(map, r = new Router(map)); return r; };
+const hasStored = (map, m) => { map.__stored ??= {}; return map.__stored[m] ??= !!(map.routes?.[m] && Object.keys(map.routes[m]).length); };
+const memo = new Map();
+function routeFor(map, A, B, m = mode(), opts = {}) {
+  if (!map || !A || !B || A === B || (A.id === B.id && !A.virtual)) return null;
+  if (!A.virtual && !B.virtual && !(map.closures || []).length && hasStored(map, m)) return map.routes[m][`${A.id}>${B.id}`] || null;
+  const R = routerOf(map); if (!R) return null;
+  const k = `${map.building.id}|${map.floor.id}|${m}|${A.x},${A.y}>${B.x},${B.y}`;
+  if (!memo.has(k)) { memo.set(k, R.route(m, A, B, opts)); if (memo.size > 300) memo.delete(memo.keys().next().value); }
+  return memo.get(k);
+}
+// Quick distance for lists (grid distance on v2 maps).
+function distFor(map, A, B, m = mode()) {
+  if (!A || !B || A.id === B.id) return null;
+  if (!A.virtual && !B.virtual && !(map.closures || []).length && hasStored(map, m)) return map.routes[m][`${A.id}>${B.id}`]?.distance_m ?? null;
+  return routerOf(map)?.distance(m, A, B) ?? null;
+}
+const routeOf = (from, to, m = mode(), map = state.map) => routeFor(map, pointOf(map, from), pointOf(map, to), m);
+// Virtual places: "@spot" (the visitor's saved spot) and "@x,y" (a dropped pin).
+function pointOf(map, id) {
+  if (!map || !id) return null;
+  if (id === '@spot') { const sp = store.get('dalil.spot', null); return sp && sp.b === map.building.id && sp.f === map.floor.id ? { id, virtual: true, nameEn: STR.en.mySpot, nameAr: STR.ar.mySpot, category: 'pin', x: sp.x, y: sp.y, facingDeg: 90 } : null; }
+  if (id[0] === '@') { const [x, y] = id.slice(1).split(',').map(Number); return isFinite(x) && isFinite(y) ? { id, virtual: true, nameEn: STR.en.pinName, nameAr: STR.ar.pinName, category: 'pin', x, y, facingDeg: 90 } : null; }
+  return map.points.find(q => q.id === id) || null;
+}
 // Floors of the current building, in the order the maps were listed (bottom to top).
 const bFloors = () => state.map ? state.maps.filter(m => m.building.id === state.map.building.id) : [];
 const mapByFloor = fid => bFloors().find(m => m.floor.id === fid) || null;
 const keyOf = (m, p) => `${m.floor.id}|${p.id}`;
-function resolve(key) { if (!key) return null; const [f, id] = key.split('|'); const m = mapByFloor(f); const p = m?.points.find(q => q.id === id); return p ? { m, p, key } : null; }
+function resolve(key) { if (!key) return null; const [f, id] = key.split('|'); const m = mapByFloor(f); const p = pointOf(m, id); return p ? { m, p, key } : null; }
 const destRef = () => resolve(state.toKey);
 const stay = P => ({ distance_m: 0, seconds: 0, path: [[P.x, P.y], [P.x, P.y]], steps: [{ en: `Start at ${P.nameEn}.`, ar: `ابدأ من ${P.nameAr || P.nameEn}.` }, { en: `You have arrived at ${P.nameEn}.`, ar: `لقد وصلت إلى ${P.nameAr || P.nameEn}.` }] });
 // A route plan: one leg on the same floor, or two legs joined by a lift or stairs (points sharing a "link" code).
 function planRoute(fm, fromId, tm, toId, m = mode()) {
   if (!fm || !tm) return null;
-  if (fm === tm) { if (fromId === toId) return null; const r = routeOf(fromId, toId, m, fm); return r ? { legs: [{ map: fm, route: r }], distance_m: r.distance_m, seconds: r.seconds, via: null } : null; }
-  const A = fm.points.find(p => p.id === fromId), B = tm.points.find(p => p.id === toId); if (!A || !B) return null;
+  const A = pointOf(fm, fromId), B = pointOf(tm, toId); if (!A || !B) return null;
+  if (fm === tm) { if (fromId === toId) return null; const r = routeFor(fm, A, B, m); return r ? { legs: [{ map: fm, route: r }], distance_m: r.distance_m, seconds: r.seconds, via: null, closures: !!(fm.closures || []).length } : null; }
   const fl = bFloors(), up = fl.indexOf(tm) > fl.indexOf(fm), n = Math.max(1, Math.abs(fl.indexOf(tm) - fl.indexOf(fm)));
   let best = null;
   for (const pa of fm.points) {
     if (!pa.link) continue; const pb = tm.points.find(q => q.link === pa.link); if (!pb) continue;
     const lift = pa.category === 'lift' && pb.category === 'lift';
     if (m === 'chair' && !lift) continue;
-    const r1 = pa.id === fromId ? stay(A) : routeOf(fromId, pa.id, m, fm), r2 = pb.id === toId ? stay(B) : routeOf(pb.id, toId, m, tm);
+    const r1 = pa.id === fromId ? stay(A) : routeFor(fm, A, pa, m), r2 = pb.id === toId ? stay(B) : routeFor(tm, pb, B, m, { fromEnd: true });
     if (!r1 || !r2) continue;
     const seconds = r1.seconds + r2.seconds + (lift ? 40 + 8 * n : 18 * n);
-    if (!best || seconds < best.seconds) best = { legs: [{ map: fm, route: r1 }, { map: tm, route: r2 }], distance_m: r1.distance_m + r2.distance_m, seconds, via: { pa, pb, lift, up, toMap: tm } };
+    if (!best || seconds < best.seconds) best = { legs: [{ map: fm, route: r1 }, { map: tm, route: r2 }], distance_m: r1.distance_m + r2.distance_m, seconds, via: { pa, pb, lift, up, toMap: tm }, closures: !!((fm.closures || []).length + (tm.closures || []).length) };
   }
   return best;
 }
@@ -288,6 +325,7 @@ class MapView {
       `<svg width="${W * BASE}" height="${H * BASE}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
         <rect class="plan-floor" x="${pad - 1}" y="${pad - 1}" width="${W - 2 * pad + 2}" height="${H - 2 * pad + 2}" rx="1.5"/>
         <path class="plan-shadow" d="${walls}"/><path class="plan-doors" d="${doors}"/><path class="plan-walls" d="${walls}"/>
+        <path class="plan-closure" d="${d((map.closures || []).map(c => [c.a, c.b]))}"/>
         <g class="route-layer"><path class="route-done" d=""/><path class="route-glow" d=""/><path class="route-main" d=""/><path class="route-flow" d=""/></g>
       </svg>`;
     this.svgRoute = { done: this.world.querySelector('.route-done'), glow: this.world.querySelector('.route-glow'), main: this.world.querySelector('.route-main'), flow: this.world.querySelector('.route-flow') };
@@ -361,11 +399,24 @@ class MapView {
     this.orientYou();
     this.opts.onCam?.(c);
   }
+  // Plan metres → screen (flat, unrotated view), the inverse of screenToPlan.
+  planToScreen(x, y) {
+    const r = this.el.getBoundingClientRect(), c = this.cam, [vw, vh] = this.size(), [wx, wy] = this.px(x, y);
+    return { x: r.left + vw * c.ax + (wx - c.x) * c.k, y: r.top + vh * c.ay + (wy - c.y) * c.k };
+  }
+  // Screen → plan metres (valid for the flat, unrotated Map tab view).
+  screenToPlan(cx, cy) {
+    const r = this.el.getBoundingClientRect(), c = this.cam, [vw, vh] = this.size();
+    const wx = (cx - r.left - vw * c.ax) / c.k + c.x, wy = (cy - r.top - vh * c.ay) / c.k + c.y;
+    return { x: wx / BASE + this.b.minX, y: this.b.maxY - wy / BASE };
+  }
   bindGestures() {
-    const ptrs = new Map(); let last = null;
-    this.el.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]); this.el.setPointerCapture(e.pointerId); this.fitTarget = null; });
+    const ptrs = new Map(); let last = null, start = null, moved = false;
+    this.el.addEventListener('pointerdown', e => { if (e.target.closest('button')) return; ptrs.set(e.pointerId, [e.clientX, e.clientY]); this.el.setPointerCapture(e.pointerId); this.fitTarget = null; if (ptrs.size === 1) { start = [e.clientX, e.clientY]; moved = false; } else moved = true; });
     this.el.addEventListener('pointermove', e => {
       if (!ptrs.has(e.pointerId)) return;
+      if (start && Math.hypot(e.clientX - start[0], e.clientY - start[1]) > 6) moved = true;
+      if (!moved) return;
       const prev = ptrs.get(e.pointerId); ptrs.set(e.pointerId, [e.clientX, e.clientY]);
       if (ptrs.size === 1) { this.cam.x -= (e.clientX - prev[0]) / this.cam.k; this.cam.y -= (e.clientY - prev[1]) / this.cam.k; }
       else if (ptrs.size === 2) {
@@ -374,7 +425,11 @@ class MapView {
       }
       this.el.classList.remove('anim'); this.apply();
     });
-    const up = e => { ptrs.delete(e.pointerId); if (ptrs.size < 2) last = null; };
+    const up = e => {
+      const tap = ptrs.has(e.pointerId) && ptrs.size === 1 && !moved && e.type === 'pointerup';
+      ptrs.delete(e.pointerId); if (ptrs.size < 2) last = null;
+      if (tap && this.opts.onTap) this.opts.onTap(this.screenToPlan(e.clientX, e.clientY));
+    };
     this.el.addEventListener('pointerup', up); this.el.addEventListener('pointercancel', up);
     this.el.addEventListener('wheel', e => { e.preventDefault(); this.zoom(e.deltaY < 0 ? 1.15 : 1 / 1.15, false); }, { passive: false });
   }
@@ -409,7 +464,7 @@ function toast(text, ms = 3200) { const el = $('#toast'); el.textContent = text;
 /* =========================================================================
    Loading maps
    ========================================================================= */
-const isMap = m => m && m.format === 'dalil-map' && Array.isArray(m.points) && m.routes && m.plan && m.building && m.floor;
+const isMap = m => m && m.format === 'dalil-map' && Array.isArray(m.points) && (m.routes || m.nav) && m.plan && m.building && m.floor;
 function addMap(m) {
   const i = state.maps.findIndex(o => o.building.id === m.building.id && o.floor.id === m.floor.id);
   if (i >= 0) state.maps[i] = m; else state.maps.push(m);
@@ -516,6 +571,7 @@ function renderHome() {
       $('#statDist').textContent = fmtM(route.distance_m);
       const { steps } = planSteps(route), first = steps.find(s => s.kind === 'move' || s.kind === 'node' || s.kind === 'floor');
       if (route.via) msg.textContent = t(route.via.lift ? 'viaLift' : 'viaStairs', t('floorName', route.via.toMap.floor));
+      if (route.closures) msg.textContent = [msg.textContent, t('closureNote')].filter(Boolean).join(' ');
       if (first) {
         banner.hidden = false;
         banner.querySelector('.turn-ico').innerHTML = svgIco(TURN_ICONS[first.turn] || TURN_ICONS.straight);
@@ -525,6 +581,8 @@ function renderHome() {
     } else banner.hidden = true;
   }
   $('#btnStart').disabled = !route;
+  $('#btnShare').hidden = !route;
+  const kq = $('#kioskQR'); if (kq) { kq.hidden = !(state.kiosk && route); if (state.kiosk && route) kq.querySelector('.qr').innerHTML = qrSvg(shareLink()); }
   homeMap.setRoute(route?.legs[0].route.path || null);
   homeMap.setDest(dest ? (dest.m === map ? to : route?.via?.pa || null) : null);
   const img = to && route ? t('routeTo', pname(to), fmtM(route.distance_m), fmtMin(route.seconds)) + ' ' + t('mapAlt') : t('mapAlt');
@@ -550,9 +608,12 @@ function searchPoints(q) {
     const names = norm(`${p.nameEn} ${p.nameAr}`), cats = norm(`${catName(p.category)} ${STR.en.cats[p.category] || ''} ${STR.ar.cats[p.category] || ''} ${CAT_WORDS[p.category] || ''}`);
     if (!words.every(w => names.includes(w) || cats.includes(w))) continue;
     const starts = norm(pname(p)).startsWith(nq) ? 0 : names.includes(nq) ? 1 : 2;
-    const r = planRoute(state.map, state.fromId, m, p.id);
-    scored.push({ p, m, r, multi, score: starts * 1e6 + (r ? r.seconds : 9e5) });
+    const d = m === state.map ? distFor(m, pt(state.fromId), p) : (hasStored(m, mode()) ? planRoute(state.map, state.fromId, m, p.id)?.distance_m : null);
+    const r = d != null ? { distance_m: d } : null;
+    scored.push({ p, m, r, multi, score: starts * 1e6 + (m === state.map ? 0 : 5e5) + (r ? r.distance_m : 4e5) });
   }
+  // The visitor's saved spot.
+  if (/spot|car|park|مكان|سيار|موقف/.test(nq)) { const sp = store.get('dalil.spot', null), m = sp && mapByFloor(sp.f); const p = m && pointOf(m, '@spot'); if (p && sp.b === state.map.building.id) scored.unshift({ p, m, r: null, multi, score: -1 }); }
   return scored.sort((a, b) => a.score - b.score);
 }
 function renderSearch() {
@@ -575,8 +636,10 @@ function pickNearest(cat) {
   const label = t('cat_' + cat), cands = [];
   for (const m of bFloors()) for (const p of m.points) if (CHIP_CATS[cat].includes(p.category) && !(m === state.map && p.id === state.fromId)) cands.push({ m, p });
   if (!cands.length) { const m = t('noneOfCat', label); toast(m); announce(m); return; }
-  let best = null;
-  for (const { m, p } of cands) { const r = planRoute(state.map, state.fromId, m, p.id); if (r && (!best || r.seconds < best.r.seconds)) best = { m, p, r }; }
+  let best = null; const from = pt(state.fromId);
+  for (const { m, p } of cands.filter(c => c.m === state.map)) { const d = distFor(m, from, p); if (d != null && (!best || d < best.d)) best = { m, p, d }; }
+  if (best) best.r = planRoute(state.map, state.fromId, best.m, best.p.id);
+  if (!best?.r) { best = null; for (const { m, p } of cands.filter(c => c.m !== state.map)) { const r = planRoute(state.map, state.fromId, m, p.id); if (r && (!best || r.seconds < best.r.seconds)) best = { m, p, r }; } }
   if (!best) { const m = settings.stepFree ? t('noneReachable', label) : t('noRoute'); toast(m); announce(m); return; }
   setDest(keyOf(best.m, best.p), { chip: cat, say: false });
   const m = t('nearest', label, pname(best.p), fmtM(best.r.distance_m)); announce(m); toast(m);
@@ -600,8 +663,10 @@ function toggleFav(key, force) {
 }
 function renderSaved() {
   const items = state.saved.map(k => { const [b, f, id] = k.split('/'); const m = state.maps.find(m => m.building.id === b && m.floor.id === f); const p = m?.points.find(p => p.id === id); return p ? { k, m, p } : null; }).filter(Boolean);
-  $('#savedEmpty').hidden = items.length > 0;
-  $('#savedList').innerHTML = items.map(({ k, m, p }) => {
+  const sp = store.get('dalil.spot', null), spm = sp && state.maps.find(m => m.building.id === sp.b && m.floor.id === sp.f);
+  $('#savedEmpty').hidden = items.length > 0 || !!spm;
+  $('#savedList').innerHTML = (spm ? `<li><button class="place" type="button" data-saved="${esc(`${sp.b}/${sp.f}/@spot`)}"><span class="res-ico">${svgIco(CAT_ICONS.pin)}</span><span class="res-main"><span class="res-name">${esc(t('mySpot'))}</span><span class="res-sub">${esc(metaLine(spm))}</span></span></button>
+      <button class="icon-btn flat" type="button" data-unspot aria-label="${esc(t('unsave'))}: ${esc(t('mySpot'))}">${svgIco('<path d="M6 6l12 12M18 6 6 18"/>', 'ico')}</button></li>` : '') + items.map(({ k, m, p }) => {
     const n = settings.lang === 'ar' ? (p.nameAr || p.nameEn) : p.nameEn;
     return `<li><button class="place" type="button" data-saved="${esc(k)}"><span class="res-ico">${svgIco(CAT_ICONS[p.category] || CAT_ICONS.pin)}</span><span class="res-main"><span class="res-name">${esc(n)}</span><span class="res-sub">${esc(metaLine(m))}</span></span></button>
       <button class="icon-btn flat" type="button" data-unsave="${esc(k)}" aria-label="${esc(t('unsave'))}: ${esc(n)}">${svgIco('<path d="M6 6l12 12M18 6 6 18"/>', 'ico')}</button></li>`;
@@ -614,7 +679,7 @@ function renderPlaceList() {
   $('#mapSub').textContent = metaLine(map);
   $('#floorMap').setAttribute('aria-label', t('planImg', map.building.name, t('floorName', map.floor), ''));
   $('#placeList').innerHTML = map.points.map(p => {
-    const r = p.id === state.fromId ? null : routeOf(state.fromId, p.id);
+    const d = p.id === state.fromId ? null : distFor(map, pt(state.fromId), p), r = d != null ? { distance_m: d } : null;
     return `<li><button class="place" type="button" data-pick="${esc(keyOf(map, p))}"><span class="res-ico">${svgIco(CAT_ICONS[p.category] || CAT_ICONS.pin)}</span><span class="res-main"><span class="res-name">${esc(pname(p))}</span><span class="res-sub">${esc([catName(p.category), p.dalilNode ? t('dalilTag') : ''].filter(Boolean).join(' · '))}</span></span><span class="res-dist">${r ? esc(fmtM(r.distance_m)) : ''}</span></button></li>`;
   }).join('');
 }
@@ -649,6 +714,8 @@ function setLang(l) { settings.lang = l; saveSettings(); rerenderAll(); }
 function showScreen(name) {
   for (const s of ['home', 'map', 'saved', 'settings']) $('#screen-' + s).hidden = s !== name;
   $$('.tab').forEach(b => { const on = b.dataset.screen === name; b.classList.toggle('is-active', on); if (on) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current'); });
+  $('#pinCard').hidden = true; pinPoint = null;
+  if (name === 'map') { floorMap.setDest(null); $('#pinHelp').hidden = !routerOf(state.map); }
   if (name === 'map') requestAnimationFrame(() => floorMap.fit({ pts: state.map.plan.walls.flat(), padX: 20, padTop: 20, padBot: 20, maxK: 3 }, false));
   if (name === 'home') requestAnimationFrame(fitHome);
   window.scrollTo(0, 0);
@@ -810,6 +877,7 @@ function parseLink(href) {
       let m;
       if ((m = part.match(/^(at|to)[-=](.+)$/))) out[m[1]] = m[2];
       else if ((m = part.match(/^([bf])=(.+)$/))) out[m[1]] = m[2];
+      else if (part === 'kiosk') out.kiosk = true;
     }
   }
   return out;
@@ -862,6 +930,53 @@ async function openTagPicker() {
 /* =========================================================================
    Wiring
    ========================================================================= */
+/* =========================================================================
+   Dropped pins, My spot, sharing, kiosk
+   ========================================================================= */
+let pinPoint = null;
+function onMapTap({ x, y }) {
+  const R = routerOf(state.map);
+  if (!R) return;  // v1 maps (stored routes only) cannot route to arbitrary spots
+  if (!R.walkable(x, y)) { toast(t('pinOutside')); return; }
+  pinPoint = { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100 };
+  floorMap.setDest({ x: pinPoint.x, y: pinPoint.y });
+  $('#pinText').textContent = t('pinAt', t('floorName', state.map.floor));
+  $('#pinCard').hidden = false;
+  announce(t('pinAt', t('floorName', state.map.floor)));
+}
+function pinKey() { return pinPoint ? `${state.map.floor.id}|@${pinPoint.x},${pinPoint.y}` : null; }
+function shareLink(key = state.toKey) {
+  const u = new URL(location.href); u.search = '';
+  u.hash = `b=${state.map.building.id}&f=${state.map.floor.id}&at-${state.fromId}${key ? `&to-${encodeURIComponent(key)}` : ''}`;
+  return u.toString();
+}
+function qrSvg(text) {
+  if (!window.qrcode) return '';
+  const q = window.qrcode(0, 'M'); q.addData(text); q.make();
+  return q.createSvgTag({ cellSize: 4, margin: 2, scalable: true, alt: { text: t('kioskQR') } });
+}
+function openShare() {
+  const url = shareLink(), d = destRef();
+  $('#shareQR').innerHTML = qrSvg(url);
+  $('#shareUrl').value = url;
+  $('#btnShareNative').hidden = !navigator.share;
+  $('#dlgShare').dataset.title = d ? pname(d.p) : 'DALIL';
+  $('#dlgShare').showModal ? $('#dlgShare').showModal() : $('#dlgShare').setAttribute('open', '');
+}
+let kioskTimer = 0;
+function kioskIdle() {
+  clearTimeout(kioskTimer);
+  if (!state.kiosk) return;
+  kioskTimer = setTimeout(() => {
+    if (nav.active) endNav();
+    $('#arrived').hidden = true; $('#nav').inert = false;
+    const m = state.maps.find(m => m.building.id === state.kiosk.b && m.floor.id === state.kiosk.f);
+    if (m && m !== state.map) selectFloor(m);
+    state.fromId = state.kiosk.at; state.toKey = null; state.chip = null; $('#search').value = ''; closeResults();
+    showScreen('home'); renderHome(); announce(t('kioskReset'));
+  }, 90_000);
+}
+
 function bind() {
   $('#btnLang').onclick = () => setLang(settings.lang === 'ar' ? 'en' : 'ar');
   const search = $('#search');
@@ -886,6 +1001,7 @@ function bind() {
     }
     const sv = e.target.closest('[data-saved]');
     if (sv) { const [b, f, id] = sv.dataset.saved.split('/'); const m = state.maps.find(m => m.building.id === b && m.floor.id === f); if (m && m.building.id !== state.map.building.id) selectFloor(m); setDest(`${f}|${id}`); showScreen('home'); return; }
+    if (e.target.closest('[data-unspot]')) { try { localStorage.removeItem('dalil.spot'); } catch { } renderSaved(); return; }
     const us = e.target.closest('[data-unsave]');
     if (us) { state.saved = state.saved.filter(k => k !== us.dataset.unsave); store.set('dalil.saved', state.saved); renderSaved(); if (state.toKey) renderHome(); return; }
     if (!e.target.closest('.search-wrap')) closeResults();
@@ -897,6 +1013,12 @@ function bind() {
   $('#tagList').addEventListener('click', e => { const b = e.target.closest('[data-tag]'); if (b) { e.preventDefault(); $('#dlgTag').close(); setFrom(b.dataset.tag); } });
   $('#btnFav').onclick = () => { if (state.toKey) { const on = toggleFav(state.toKey); announce(t(on ? 'saved' : 'unsave')); } };
   $('#btnStart').onclick = startNav;
+  $('#btnShare').onclick = openShare;
+  $('#btnShareCopy').onclick = async () => { const v = $('#shareUrl').value; try { await navigator.clipboard.writeText(v); toast(t('copied')); } catch { $('#shareUrl').select(); } };
+  $('#btnShareNative').onclick = async () => { try { await navigator.share({ title: 'DALIL', text: $('#dlgShare').dataset.title, url: $('#shareUrl').value }); } catch { } };
+  $('#btnPinGo').onclick = () => { const k = pinKey(); if (!k) return; $('#pinCard').hidden = true; setDest(k); showScreen('home'); };
+  $('#btnPinSave').onclick = () => { if (!pinPoint) return; store.set('dalil.spot', { b: state.map.building.id, f: state.map.floor.id, x: pinPoint.x, y: pinPoint.y }); $('#pinCard').hidden = true; renderSaved(); toast(t('spotSaved')); announce(t('spotSaved')); };
+  ['pointerdown', 'keydown'].forEach(ev => document.addEventListener(ev, kioskIdle, { passive: true }));
   $('#btnRecenter').onclick = fitHome;
   $('#btnCompass').onclick = fitHome;
   const card = $('#screen-home .map-card');
@@ -942,8 +1064,8 @@ function bind() {
 async function init() {
   applyDisplay();
   homeMap = new MapView($('#homeMap'), {});
-  floorMap = new MapView($('#floorMap'), { interactive: true });
-  floorMap.el.classList.add('show-labels');
+  // Place names appear once zoomed in enough to read them without covering the plan.
+  floorMap = new MapView($('#floorMap'), { interactive: true, onTap: p => onMapTap(p), onCam: c => $('#floorMap').classList.toggle('show-labels', c.k * BASE >= 16) });
   navMap = new MapView($('#navMap'), { points: 'nodes', onCam: c => { $('#btnCompass svg').style.transform = `rotate(${c.rot}deg)`; } });
   homeMap.opts.onCam = c => { $('#btnCompass svg').style.transform = `rotate(${c.rot}deg)`; };
   bind();
@@ -955,10 +1077,11 @@ async function init() {
     || (last && state.maps.find(m => m.building.id === last.b && m.floor.id === last.f)) || state.maps[0];
   selectFloor(start);
   applyLink(link, { fromTag: /\/t\//.test(location.pathname) });
+  if (link.kiosk) { state.kiosk = { b: state.map.building.id, f: state.map.floor.id, at: state.fromId }; document.documentElement.classList.add('kiosk'); renderHome(); kioskIdle(); }
   document.documentElement.classList.add('ready');
 }
 
-window.DALIL_APP = { state, settings, spoken, nav, parseLink, buildSteps, ready: init() };
+window.DALIL_APP = { state, settings, spoken, nav, parseLink, buildSteps, routeFor, pointOf, views: () => ({ homeMap, floorMap, navMap }), ready: init() };
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));

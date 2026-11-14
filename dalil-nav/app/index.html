@@ -103,6 +103,9 @@
           <h2 id="destName" class="dest-name" data-i18n="chooseDest">Choose a destination</h2>
           <p id="destMeta" class="dest-meta"></p>
         </div>
+        <button id="btnShare" class="icon-btn flat" type="button" data-i18n-aria="share" hidden>
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.5M8.2 13.2l7.6 4.5"/></svg>
+        </button>
         <button id="btnFav" class="icon-btn flat" type="button" aria-pressed="false" data-i18n-aria="save" hidden>
           <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5 4.3 13a4.8 4.8 0 0 1 6.8-6.8l.9.9.9-.9a4.8 4.8 0 0 1 6.8 6.8z"/></svg>
         </button>
@@ -118,6 +121,7 @@
         </div>
       </div>
       <p id="routeMsg" class="route-msg" role="status"></p>
+      <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
       <button id="btnStart" class="btn-primary" type="button" disabled>
         <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 3 3 10.5l7.5 3 3 7.5z"/></svg>
         <span data-i18n="start">Start Navigation</span>
@@ -133,6 +137,14 @@
       <div class="zoom-btns">
         <button id="btnZoomIn" class="map-btn glass" type="button" data-i18n-aria="zoomIn">+</button>
         <button id="btnZoomOut" class="map-btn glass" type="button" data-i18n-aria="zoomOut">−</button>
+      </div>
+    </div>
+    <p id="pinHelp" class="muted small" data-i18n="pinHelp">Tap the map to choose any spot, for example where you parked.</p>
+    <div id="pinCard" class="pin-card glass" role="region" aria-live="polite" hidden>
+      <p id="pinText" class="pin-text"></p>
+      <div class="pin-actions">
+        <button id="btnPinGo" class="btn-primary" type="button"><span data-i18n="pinGo">Directions here</span></button>
+        <button id="btnPinSave" class="btn-ghost" type="button" data-i18n="pinSave">Save as my spot</button>
       </div>
     </div>
     <h2 class="list-head" data-i18n="allPlaces">All places on this floor</h2>
@@ -261,8 +273,24 @@
   </form>
 </dialog>
 
+<dialog id="dlgShare" class="sheet-dialog" aria-labelledby="dlgShareTitle">
+  <form method="dialog" class="dlg-inner share-inner">
+    <h2 id="dlgShareTitle" data-i18n="shareTitle">Share these directions</h2>
+    <p class="muted small" data-i18n="shareHint">Scan with a phone camera, or send the link.</p>
+    <div id="shareQR" class="share-qr"></div>
+    <label for="shareUrl" class="sr-only">Link</label>
+    <input id="shareUrl" class="share-url" type="text" readonly>
+    <div class="share-actions">
+      <button id="btnShareNative" class="btn-primary" type="button"><span data-i18n="shareNative">Share…</span></button>
+      <button id="btnShareCopy" class="btn-ghost" type="button" data-i18n="copy">Copy link</button>
+    </div>
+    <button class="btn-ghost" value="close" data-i18n="close">Close</button>
+  </form>
+</dialog>
+
 <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
 
+<script src="vendor/qrcode.js"></script>
 <script src="app.js" type="module"></script>
 </body>
 </html>

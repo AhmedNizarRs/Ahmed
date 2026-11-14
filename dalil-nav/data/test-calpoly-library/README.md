@@ -57,7 +57,8 @@ any place on Level 1 to any place on Level 2.
 
 ## Lesson for the product
 
-Map files grow with the square of the number of places, because every pair of places has a stored
-route: 26–32 places make 1.7–2.1 MB per floor. A real floor with 100+ places would reach about
-20 MB. Before the first client, the app should compute routes itself (or store routes only from
-tags), so files stay small.
+Map files used to grow with the square of the number of places (every pair had a stored route:
+1.7–2.1 MB per floor here). **Done:** the app now works out routes itself from the walkable grid,
+so each floor is about 150 KB however many places it has. The Mapper's **Find places in drawing**
+also finds all of the places above automatically (70 on Level 1 in about 2 s), including moving the
+Level 2 lift points out of their shafts.

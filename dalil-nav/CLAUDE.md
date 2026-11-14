@@ -35,6 +35,10 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - The Mapper is published as a claude.ai artifact. In that sandbox, downloads and TTS go through `window.claude.use('downloads'|'tts')`, with plain-browser fallbacks.
 - Plan rotation: "Rotate plan" / **Straighten** (dominant wall angle) for drawings in rotated survey coordinates. Saved in the project (`rot`).
 - Floor links: a point's "Floor link" code (e.g. `LIFT-W`), exported as `link`. Same code on each floor = vertical connection.
+- **Find places in drawing** (`autoPlaces`): reads room-number labels (layers like *RNUM/VNUM/ROOM*), lift/stair labels (E101, S102, "ELEV", "STAIR", مصعد, درج), words (toilet, prayer, café, entrance…) and symbol blocks on icon layers (men/women/bath/lactation). Merges lift/stair banks within 4 m, then moves points stuck in closed pockets (lift shafts) to the nearest reachable spot. Keeps block insert names (`rawInserts`) for this.
+- **Closure** tool: drag across a corridor; exported as `closures` (the app routes around them; Mapper test routes ignore them).
+- Export v2 (default): `nav` walkable grids (RLE, base64) for on-device routing, no stored routes. "Also store every route" restores the v1 behaviour (files grow with places²).
+- Projects now save the guessed units (`guessU`); older projects re-guess on open (fixed a bug where unit-less drawings reopened 30× too small).
 - Limits: one floor per project file (multi-floor buildings = one export per floor, joined by `link` codes).
 
 ## Visitor app: current state (`app/`, PWA, no build step)
@@ -45,6 +49,10 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - Deep links: `#at-P013`, `#at-P001&to-P007`, `#b=<building>&f=<floor>&at-P001`, `#t/<b>/<f>/<p>`, and the NFC path `/t/<b>/<f>/<p>` (the service worker serves the app for it; a server needs the same rewrite).
 - Web NFC where available (Android Chrome), with a tag list fallback. "Accessible" chip = step-free mode (`routes.chair`).
 - Multi-floor: destinations are keys `<floorId>|<pointId>` (`state.toKey`). `planRoute` joins two floors through points sharing a `link` (lift = step-free, stairs walking only), `planSteps` merges the legs with a "Take the lift/stairs …" step, and navigation swaps the floor plan mid-route. Floor order = order in `maps.json` (bottom to top).
+- On-device routing: `router.js` (`Router`: decodes `map.nav`, applies `closures`, one cached Dijkstra field per start, path by descending the field, same string-pulling and EN/AR wording as the Mapper). `routeFor(map, A, B)` uses stored routes when present, else the router. Leg 2 of multi-floor plans searches from the destination (`fromEnd`) so all lifts/stairs share one field.
+- Tap the Map tab to drop a pin (`<floor>|@x,y`): "Directions here" or "Save as my spot" (`@spot`, localStorage `dalil.spot`; in Saved and in search "my spot"). Place names on the Map tab appear only when zoomed in.
+- Share route: link (`#b=…&f=…&at-…&to-<key>`) + QR code (`vendor/qrcode.js`, MIT) + Web Share. Kiosk mode: `#kiosk&…` (fixed location, QR to continue on a phone, 90 s idle reset).
+- `docs/pointr-comparison.md`: feature map against Pointr and the next steps.
 - `window.DALIL_APP` exposes state and the spoken-text log for tests.
 
 ## Test data (`data/`)

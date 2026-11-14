@@ -1,4 +1,4 @@
-# dalil-map JSON (v1)
+# dalil-map JSON (v1, v2)
 
 Exported by the DALIL Mapper. The visitor app consumes it. All coordinates are in **metres**, on a plan-local origin, with **y pointing up**.
 
@@ -43,3 +43,12 @@ Several floors
 - A lift or staircase that connects floors gets the same `link` code on every floor it serves (for example `LIFT-W`). The app joins two floors through any shared link: a route on the first floor to the link point, "Take the lift/stairs up to Level 2", then a route on the second floor from the matching point.
 - Step-free mode only uses links whose points are `lift` on both floors.
 - Drawings in rotated survey coordinates can be squared with the Mapper's **Straighten** button before placing points; the rotation is saved in the project file.
+
+Version 2 (current Mapper export)
+- Adds `nav`: the walkable grids the Mapper built, already inflated by the clearance, so the app routes on the phone:
+  `{ "encoding": "rle-varint-base64", "cell": 0.1, "x0": …, "y0": …, "W": …, "H": …, "speed": {"walk": 1.1, "chair": 0.8}, "walk": "<b64>", "chair": "<b64>" }`.
+  Each grid is run lengths over the W×H cells (row by row, starting with a free run), as LEB128 varints, base64. A set cell is blocked.
+- `routes.walk` / `routes.chair` are empty unless the Mapper's "Also store every route" box was ticked. When stored routes exist (and there are no closures), the app uses them as is; otherwise it computes them from `nav`.
+- Adds `closures`: `[{ "id": "C01", "nameEn": "Temporary closure", "nameAr": "إغلاق مؤقت", "a": [x,y], "b": [x,y], "width_m": 0.6 }]`. The app blocks a band along each line, so a closure drawn from wall to wall seals a corridor and routes go around it.
+- Category `cafe` was added. The app also uses virtual places: `@spot` (the visitor's saved spot) and `@x,y` (a dropped pin), in keys like `level-1|@12.5,30.2`.
+- Size: Kennedy Library floors are about 150 KB each in v2 (they were 1.7–2.1 MB with every route stored).

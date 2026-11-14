@@ -163,9 +163,10 @@ test('Arabic UI is fully RTL and the Arabic steps read correctly', async () => {
   await ctx.close();
 });
 
-test('test building (Kennedy Library): routes between floors by stairs, or by lift when step-free', async () => {
+test('test building (Kennedy Library): routes between floors by stairs, or by lift when step-free (routed on the phone)', async () => {
   const L1 = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-1.json'), 'utf8'));
   const L2 = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-2.json'), 'utf8'));
+  assert.ok(L1.nav && !Object.keys(L1.routes.walk).length, 'compact v2 file: grid, no stored routes');
   const { ctx, page, errors } = await open('#b=kennedy-library-cal-poly-test&f=level-1&at-P001');
   assert.equal(await page.textContent('#fromName'), 'Main Entrance (South)');
   assert.deepEqual(await page.$$eval('.floor-btn', b => b.map(x => x.textContent)), ['2', '1']);
@@ -173,21 +174,19 @@ test('test building (Kennedy Library): routes between floors by stairs, or by li
   await page.fill('#search', '216K');
   await page.click(`#results button[data-pick="level-2|${room.id}"]`);
   assert.match(await page.textContent('#destMeta'), /Level 2/);
+  assert.ok(await page.isEnabled('#btnStart'));
   await page.click('#btnStart');
   let st = await steps(page);
   const t = st.findIndex(s => /^Take the (stairs|lift) up to Level 2/.test(s));
   assert.ok(t > 0, 'has a floor change step');
-  // Leg 1 ends at a connector whose link exists on Level 2; the steps around it come from the two map files.
-  const plan = await page.evaluate(() => { const v = window.DALIL_APP.nav.plan.via; return { pa: v.pa.id, pb: v.pb.id, lift: v.lift }; });
-  const a = L1.points.find(p => p.id === plan.pa), b = L2.points.find(p => p.id === plan.pb);
-  assert.equal(a.link, b.link);
-  assert.deepEqual(st.slice(0, t), L1.routes.walk[`P001>${a.id}`].steps.slice(0, -1).map(s => s.en));
-  assert.deepEqual(st.slice(t + 1), L2.routes.walk[`${b.id}>${room.id}`].steps.slice(1).map(s => s.en));
+  assert.equal(st[0], 'Start at Main Entrance (South) (DALIL node).');
+  assert.equal(st.at(-1), 'You have arrived at Study Room 216K.');
+  const plan = await page.evaluate(() => { const v = window.DALIL_APP.nav.plan.via; return { pa: v.pa.id, pb: v.pb.id }; });
+  assert.equal(L1.points.find(p => p.id === plan.pa).link, L2.points.find(p => p.id === plan.pb).link);
   for (let i = 0; i < st.length - 1; i++) await page.click('#btnNext');
   await page.waitForSelector('#arrived:not([hidden])');
   await page.click('#btnArrivedDone');
   assert.equal(await page.textContent('#fromName'), 'Study Room 216K');
-  // Step-free from the entrance: must use a lift, never stairs.
   await page.goto(base + '#f=level-1&b=kennedy-library-cal-poly-test&at-P001');
   await page.evaluate(() => window.DALIL_APP.ready);
   await page.click('#chipAccessible');
@@ -196,6 +195,86 @@ test('test building (Kennedy Library): routes between floors by stairs, or by li
   await page.click('#btnStart');
   st = await steps(page);
   assert.ok(st.some(s => /^Take the lift up to Level 2/.test(s)) && !st.some(s => /stairs/i.test(s)), 'step-free uses the lift');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('tap anywhere on the map for directions, and save it as My spot', async () => {
+  const { ctx, page, errors } = await open('#b=kennedy-library-cal-poly-test&f=level-1&at-P001');
+  await page.click('.tab[data-screen="map"]');
+  await page.waitForTimeout(300);
+  // A walkable spot near the Gallery that is on the plan itself, not on a place label.
+  const scr = await page.evaluate(async () => {
+    const { Router } = await import('./router.js');
+    const m = window.DALIL_APP.state.map, g = m.points.find(p => p.nameEn === 'Gallery'), R = new Router(m), fm = window.DALIL_APP.views().floorMap;
+    for (const [dx, dy] of [[0, 5], [5, 0], [-5, 0], [0, -5], [4, 4], [-4, 4], [4, -4]]) {
+      const x = g.x + dx, y = g.y + dy, s = fm.planToScreen(x, y), el = document.elementFromPoint(s.x, s.y);
+      if (R.walkable(x, y) && el && !el.closest('.mk')) return s;
+    }
+  });
+  assert.ok(scr, 'found an open spot');
+  await page.mouse.click(scr.x, scr.y);
+  await page.waitForSelector('#pinCard:not([hidden])');
+  await page.click('#btnPinSave');
+  assert.match(await page.textContent('#toast'), /Saved as your spot/);
+  await page.evaluate(() => window.scrollTo(0, 0));   // clicking Save scrolled the page
+  await page.mouse.click(scr.x, scr.y);
+  await page.click('#btnPinGo');
+  assert.equal(await page.textContent('#destName'), 'Dropped pin');
+  assert.ok(await page.isEnabled('#btnStart'));
+  await page.click('#btnStart');
+  assert.equal((await steps(page)).at(-1), 'You have arrived at Dropped pin.');
+  await page.click('#btnEndNav');
+  // My spot is in Saved and in search.
+  await page.click('.tab[data-screen="saved"]');
+  assert.match(await page.textContent('#savedList'), /My spot/);
+  await page.click('.tab[data-screen="home"]');
+  await page.fill('#search', 'my spot');
+  await page.click('#results button[data-pick="level-1|@spot"]');
+  assert.equal(await page.textContent('#destName'), 'My spot');
+  assert.ok(await page.isEnabled('#btnStart'));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('a temporary closure makes the route go around it', async () => {
+  const { ctx, page, errors } = await open();
+  const r = await page.evaluate(async () => {
+    const { Router } = await import('./router.js');
+    const m = window.DALIL_APP.state.maps.find(x => x.building.id === 'sample-hospital');
+    const A = m.points.find(p => p.id === 'P001'), B = m.points.find(p => p.id === 'P007');
+    const before = new Router(m).route('walk', A, B);
+    // Close the corridor across the middle of the first leg, 8 m wide.
+    const [a, b] = before.path, mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, L = Math.hypot(b[0] - a[0], b[1] - a[1]), nx = -(b[1] - a[1]) / L, ny = (b[0] - a[0]) / L;
+    const closed = { ...m, closures: [{ id: 'C01', a: [mx - nx * 4, my - ny * 4], b: [mx + nx * 4, my + ny * 4], width_m: 0.6 }] };
+    const after = new Router(closed).route('walk', A, B);
+    const crosses = (p, q, c, d) => { const o = (a, b, c) => Math.sign((b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])); return o(p, q, c) !== o(p, q, d) && o(c, d, p) !== o(c, d, q); };
+    const hit = after ? after.path.some((p, i) => i && crosses(after.path[i - 1], p, closed.closures[0].a, closed.closures[0].b)) : null;
+    return { before: before.distance_m, after: after?.distance_m ?? null, hit };
+  });
+  assert.ok(r.after === null || (r.after > r.before && r.hit === false), JSON.stringify(r));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('share a route as a link and QR code; the link reopens the same route; kiosk mode', async () => {
+  const { ctx, page, errors } = await open('#at-P013');
+  await page.fill('#search', 'pharmacy');
+  await page.click('#results button[data-pick="ground|P008"]');
+  await page.click('#btnShare');
+  await page.waitForSelector('#dlgShare[open]');
+  assert.ok(await page.$('#shareQR svg'), 'QR code drawn');
+  const url = await page.inputValue('#shareUrl');
+  const p2 = await ctx.newPage();
+  await p2.goto(url); await p2.evaluate(() => window.DALIL_APP.ready);
+  assert.equal(await p2.textContent('#fromName'), 'Corridor East');
+  assert.equal(await p2.textContent('#destName'), 'Pharmacy');
+  // Kiosk: fixed location, no "Change", QR to continue on a phone.
+  const k = await ctx.newPage();
+  await k.goto(base + '#kiosk&at-P003'); await k.evaluate(() => window.DALIL_APP.ready);
+  assert.ok(await k.isHidden('#btnFrom'));
+  await k.fill('#search', 'prayer'); await k.click('#results button[data-pick="ground|P007"]');
+  assert.ok(await k.isVisible('#kioskQR svg'));
   assert.deepEqual(errors, []);
   await ctx.close();
 });

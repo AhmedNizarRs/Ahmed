@@ -117,6 +117,8 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
 
   <section class="panel">
     <h3><span class="n">4</span>Points &amp; DALIL nodes</h3>
+    <div class="row"><button id="btnAuto" title="Read room numbers, lifts, stairs, toilets and other labelled places from the drawing">✨ Find places in drawing</button></div>
+    <div class="status" id="autoStatus" style="display:none"></div>
     <p class="hint">Pick <b>+ Point</b> and click the plan. <b>DALIL node</b> = a physical tactile/NFC tag where a user can confirm their location. Drag points to move them.</p>
     <div class="plist" id="pointList"></div>
     <div class="editor hidden" id="editor">
@@ -143,6 +145,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
   <section class="panel">
     <h3><span class="n">6</span>Export</h3>
     <div class="row"><label>NFC base URL</label><input type="text" id="inBase" value="https://dalil.app/t"></div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="chkRoutes"> Also store every route (old format: files grow with places²)</label></div>
     <div class="row"><button class="pri" id="btnExport">Export map JSON</button><button id="btnCsv">NFC tag list</button></div>
     <div class="row"><button id="btnSave">Save project</button><button id="btnOpen">Open project</button></div>
     <input type="file" id="fProj" accept=".json" class="hidden">
@@ -159,6 +162,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
     <div class="sep"></div>
     <button data-tool="wall" title="Draw wall (W)">▭ Wall</button>
     <button data-tool="open" title="Punch an opening through a wall (O)">⇥ Opening</button>
+    <button data-tool="close" title="Temporary closure: drag across a corridor. The visitor app routes around it.">⛔ Closure</button>
     <button data-tool="erase" title="Erase drawn wall / opening (E)">⌫ Erase</button>
     <button data-tool="cal" title="Calibrate scale (C)">📏 Calibrate</button>
     <div class="sep"></div>
@@ -191,7 +195,7 @@ const INSUNITS = {1:'in',2:'ft',4:'mm',5:'cm',6:'m'};
 
 const S = {
   mode:null, rawPolys:[], rawTexts:[], fileUnits:null, f:0.01, off:[0,0],
-  polys:[], texts:[], layers:{}, traced:[], openings:[], ignored:[], image:null, imgW:0, imgH:0, mpp:0.02,
+  polys:[], texts:[], layers:{}, traced:[], openings:[], closures:[], ignored:[], image:null, imgW:0, imgH:0, mpp:0.02,
   points:[], selId:null, nextId:1,
   grids:{walk:null,chair:null}, gridDirty:true,
   route:null, view:{cx:0,cy:0,scale:10}, tool:'pan', showGrid:false, gridMode:'walk',
@@ -253,7 +257,7 @@ const app = (M,p) => [M[0]*p[0]+M[2]*p[1]+M[4], M[1]*p[0]+M[3]*p[1]+M[5]];
 const I = [1,0,0,1,0,0];
 
 function flattenDXF(dx){
-  const polys=[], texts=[], used={};
+  const polys=[], texts=[], used={}, inserts=[];
   const emit=(layer,pts,closed,M)=>{ if (pts.length<2) return; if (!closed && pts.length>3 && Math.abs(pts[0][0]-pts[pts.length-1][0])<1e-9 && Math.abs(pts[0][1]-pts[pts.length-1][1])<1e-9){ pts=pts.slice(0,-1); closed=true; } polys.push({layer, closed, pts:pts.map(p=>app(M,p))}); used[layer]=(used[layer]||0)+1; };
   function walk(list, M, inhLayer, depth){
     for (const e of list){
@@ -296,6 +300,7 @@ function flattenDXF(dx){
         case 'INSERT': {
           const b=dx.blocks[g(r,2,'')]; if (!b || depth>8) break;
           const sx=n(r,41,1), sy=n(r,42,1), rot=n(r,50,0)*Math.PI/180, px=n(r,10), py=n(r,20);
+          { const q=app(Mo,[px,py]); inserts.push({layer, name:g(r,2,''), x:q[0], y:q[1]}); }
           const cols=Math.max(1,parseInt(g(r,70,'1'),10)), rows=Math.max(1,parseInt(g(r,71,'1'),10)), cs=n(r,44,0), rs=n(r,45,0);
           for (let ci=0;ci<cols;ci++) for (let ri=0;ri<rows;ri++){
             const c=Math.cos(rot), s=Math.sin(rot);
@@ -309,7 +314,7 @@ function flattenDXF(dx){
     }
   }
   walk(dx.ents, I, null, 0);
-  return {polys, texts, used};
+  return {polys, texts, used, inserts};
 }
 
 /* ---------------- LOADING ---------------- */
@@ -349,8 +354,8 @@ function loadDXFText(text, name){
   let dx; try { dx=parseDXF(text); } catch(err){ setStatus('planStatus','Could not read this DXF: '+err.message,'err'); return; }
   const fl=flattenDXF(dx);
   if (!fl.polys.length){ setStatus('planStatus','No drawable geometry found. If this is a binary DXF, re-save as ASCII DXF.','err'); return; }
-  S.geoSuggested=false; S.rot=0; S.rotApplied=0; $('inRot').value=0; S.mode='dxf'; S.rawPolys=fl.polys; S.rawTexts=fl.texts; S.fileUnits=INSUNITS[dx.units]||null; S.guess=S.fileUnits?null:guessUnits(); S.guessU=S.guess?S.guess.u:null;
-  S.image=null; S.traced=[]; S.openings=[]; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
+  S.geoSuggested=false; S.rot=0; S.rotApplied=0; $('inRot').value=0; S.mode='dxf'; S.rawPolys=fl.polys; S.rawTexts=fl.texts; S.rawInserts=fl.inserts; S.fileUnits=INSUNITS[dx.units]||null; S.guess=S.fileUnits?null:guessUnits(); S.guessU=S.guess?S.guess.u:null;
+  S.image=null; S.traced=[]; S.openings=[]; S.closures=[]; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
   S.layers={};
   const names=Object.keys(fl.used).sort();
   for (const nm of names){ const L=dx.layers[nm]||{color:7,off:false}; S.layers[nm]={color:L.color, count:fl.used[nm], role: L.off?'hidden':suggestRole(nm)}; }
@@ -379,11 +384,12 @@ function applyUnits(first){
   const rot=S.rot||0, R=rotFn(rot), Rinv=rotFn(-rotOld);
   S.polys=S.rawPolys.map(p=>({layer:p.layer, closed:p.closed, pts:p.pts.map(q=>R(q[0]*f-off[0], q[1]*f-off[1]))}));
   S.texts=S.rawTexts.map(t=>{ const [x,y]=R(t.x*f-off[0], t.y*f-off[1]); return {...t, x, y, h:t.h*f}; });
+  S.inserts=(S.rawInserts||[]).map(t=>{ const [x,y]=R(t.x*f-off[0], t.y*f-off[1]); return {...t, x, y}; });
   if (!first){
     const tr=(x,y)=>{ const [u,v]=Rinv(x,y); return R(((u+offOld[0])/fOld)*f-off[0], ((v+offOld[1])/fOld)*f-off[1]); };
     for (const p of S.points){ [p.x,p.y]=tr(p.x,p.y); }
     for (const t of S.traced) t.pts=t.pts.map(q=>tr(q[0],q[1]));
-    for (const o of S.openings){ o.a=tr(o.a[0],o.a[1]); o.b=tr(o.b[0],o.b[1]); }
+    for (const o of S.openings.concat(S.closures)){ o.a=tr(o.a[0],o.a[1]); o.b=tr(o.b[0],o.b[1]); }
   }
   S.f=f; S.off=off; S.rotApplied=rot; buildPaths(); markDirty();
 }
@@ -737,6 +743,7 @@ function draw(){
   ctx.strokeStyle='#ff6a00'; ctx.lineWidth=3/sc; ctx.lineCap='round';
   for (const t of S.traced){ ctx.beginPath(); t.pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.stroke(); }
   if (S.ignored && S.ignored.length){ ctx.strokeStyle='#c2185b'; ctx.lineWidth=2/sc; ctx.setLineDash([4/sc,3/sc]); ctx.beginPath(); for (const g of S.ignored){ ctx.moveTo(g[0],g[1]); ctx.lineTo(g[2],g[3]); } ctx.stroke(); ctx.setLineDash([]); }
+  ctx.save(); ctx.strokeStyle='#D93025'; ctx.lineCap='round'; ctx.setLineDash([0.4,0.3]); ctx.lineWidth=Math.max(4/sc,0.25); for (const o of S.closures){ ctx.beginPath(); ctx.moveTo(...o.a); ctx.lineTo(...o.b); ctx.stroke(); } ctx.restore();
   ctx.strokeStyle='#0F9D58'; ctx.lineCap='butt'; for (const o of S.openings){ ctx.lineWidth=Math.max(4/sc,o.w||0.9); ctx.globalAlpha=0.55; ctx.beginPath(); ctx.moveTo(...o.a); ctx.lineTo(...o.b); ctx.stroke(); ctx.globalAlpha=1; }
   if (S.openDrag){ ctx.lineWidth=Math.max(4/sc,0.9); ctx.globalAlpha=0.4; ctx.beginPath(); ctx.moveTo(...S.openDrag.a); ctx.lineTo(...S.openDrag.b); ctx.stroke(); ctx.globalAlpha=1; }
   ctx.lineCap='round';
@@ -770,8 +777,9 @@ cv.addEventListener('pointerdown',e=>{
   if (e.button===1||e.button===2||S.tool==='pan'||e.altKey){ const hp=S.tool==='pan'&&e.button===0?hitPoint(sx,sy):null; if (hp){ S.selId=hp.id; refreshPoints(); drag={type:'pt',p:hp}; draw(); return; } drag={type:'pan',sx,sy,cx:S.view.cx,cy:S.view.cy}; cv.style.cursor='grabbing'; return; }
   if (S.tool==='point'){ const hp=hitPoint(sx,sy); if (hp){ S.selId=hp.id; drag={type:'pt',p:hp}; } else { const p=addPoint(wx,wy); S.selId=p.id; S.route=null; } refreshPoints(); draw(); return; }
   if (S.tool==='wall'){ if (!S.drawing) S.drawing={pts:[]}; if (e.shiftKey&&S.drawing.pts.length){ [wx,wy]=ortho(S.drawing.pts[S.drawing.pts.length-1],[wx,wy]); } S.drawing.pts.push([wx,wy]); draw(); return; }
-  if (S.tool==='open'){ S.openDrag={a:[wx,wy],b:[wx,wy]}; drag={type:'open'}; return; }
-  if (S.tool==='erase'){ for (let i=S.openings.length-1;i>=0;i--){ const o=S.openings[i]; if (segDist(wx,wy,o.a,o.b)<Math.max(12/S.view.scale,(o.w||0.9)/2)){ S.openings.splice(i,1); markDirty(); draw(); return; } }
+  if (S.tool==='open'||S.tool==='close'){ S.openDrag={a:[wx,wy],b:[wx,wy],close:S.tool==='close'}; drag={type:'open'}; return; }
+  if (S.tool==='erase'){ for (let i=S.closures.length-1;i>=0;i--){ const o=S.closures[i]; if (segDist(wx,wy,o.a,o.b)<Math.max(12/S.view.scale,0.5)){ S.closures.splice(i,1); draw(); return; } }
+    for (let i=S.openings.length-1;i>=0;i--){ const o=S.openings[i]; if (segDist(wx,wy,o.a,o.b)<Math.max(12/S.view.scale,(o.w||0.9)/2)){ S.openings.splice(i,1); markDirty(); draw(); return; } }
     let best=-1,bd=12/S.view.scale; S.traced.forEach((t,ti)=>{ for(let i=0;i<t.pts.length-1;i++){ const d=segDist(wx,wy,t.pts[i],t.pts[i+1]); if(d<bd){bd=d;best=ti;} } }); if(best>=0){ S.traced.splice(best,1); markDirty(); draw(); } else toast('Erase removes drawn walls and openings. DXF walls are controlled by layers.'); return; }
   if (S.tool==='cal'){ if (!S.cal||S.cal.pts.length>=2) S.cal={pts:[]}; S.cal.pts.push([wx,wy]); if (S.cal.pts.length===2){ $('btnCal').disabled=false; $('inCal').focus(); toast('Now type the real length (m) and press Apply.'); } draw(); }
 });
@@ -783,7 +791,9 @@ cv.addEventListener('pointermove',e=>{
   if (S.drawing&&S.drawing.pts.length){ if(e.shiftKey) [wx,wy]=ortho(S.drawing.pts[S.drawing.pts.length-1],[wx,wy]); S.drawing.hover=[wx,wy]; draw(); }
   if (S.cal&&S.cal.pts.length===1){ S.cal.hover=[wx,wy]; draw(); }
 });
-cv.addEventListener('pointerup',()=>{ if (drag&&drag.type==='open'){ const o=S.openDrag; S.openDrag=null; if (Math.hypot(o.b[0]-o.a[0],o.b[1]-o.a[1])>0.05){ S.openings.push({a:o.a,b:o.b,w:0.9}); markDirty(); if (S.points.length>1) ensureGrids(); } else toast('Drag across the blocking line to punch an opening.'); draw(); drag=null; return; }
+cv.addEventListener('pointerup',()=>{ if (drag&&drag.type==='open'){ const o=S.openDrag; S.openDrag=null; if (o.close && Math.hypot(o.b[0]-o.a[0],o.b[1]-o.a[1])>0.3){ S.closures.push({id:'C'+String(S.closures.length+1).padStart(2,'0'), a:o.a, b:o.b, w:0.6, nameEn:'Temporary closure', nameAr:'إغلاق مؤقت'}); toast('Closure added. The visitor app will route around it; Mapper test routes ignore it.'); draw(); drag=null; return; }
+    if (o.close){ toast('Drag across the whole corridor to close it.'); draw(); drag=null; return; }
+    if (Math.hypot(o.b[0]-o.a[0],o.b[1]-o.a[1])>0.05){ S.openings.push({a:o.a,b:o.b,w:0.9}); markDirty(); if (S.points.length>1) ensureGrids(); } else toast('Drag across the blocking line to punch an opening.'); draw(); drag=null; return; }
   if (drag&&drag.type==='pt'&&drag.moved){ S.route=null; $('routeOut').innerHTML=''; refreshPoints(); } drag=null; cv.style.cursor=S.tool==='pan'?'grab':'crosshair'; });
 cv.addEventListener('dblclick',()=>{ if (S.tool==='wall'){ if(S.drawing) S.drawing.pts.pop(); finishWall(); } });
 cv.addEventListener('contextmenu',e=>{ e.preventDefault(); if (S.tool==='wall') finishWall(); });
@@ -814,7 +824,7 @@ $('btnSuggest').onclick=()=>{ for (const n in S.layers) S.layers[n].role=suggest
 $('btnAllCtx').onclick=()=>{ for (const n in S.layers) if (S.layers[n].role!=='hidden') S.layers[n].role='context'; renderLayers(); buildPaths(); markDirty(); draw(); };
 $('btnCal').onclick=()=>{ const L=parseFloat($('inCal').value); if(!S.cal||S.cal.pts.length<2||!(L>0)) return toast('Click two points on the plan, then enter a length > 0.');
   const [a,b]=S.cal.pts; const cur=Math.hypot(b[0]-a[0],b[1]-a[1]); const k=L/cur; S.mpp*=k;
-  for (const p of S.points){ p.x*=k; p.y*=k; } for (const t of S.traced) t.pts=t.pts.map(q=>[q[0]*k,q[1]*k]); for (const o of S.openings){ o.a=[o.a[0]*k,o.a[1]*k]; o.b=[o.b[0]*k,o.b[1]*k]; }
+  for (const p of S.points){ p.x*=k; p.y*=k; } for (const t of S.traced) t.pts=t.pts.map(q=>[q[0]*k,q[1]*k]); for (const o of S.openings.concat(S.closures)){ o.a=[o.a[0]*k,o.a[1]*k]; o.b=[o.b[0]*k,o.b[1]*k]; }
   S.view.cx*=k; S.view.cy*=k; S.view.scale/=k; S.cal={pts:[]}; $('btnCal').disabled=true;
   setStatus('calStatus',`Calibrated: 1 px = ${(S.mpp*100).toFixed(2)} cm · image is ${(S.imgW*S.mpp).toFixed(1)} × ${(S.imgH*S.mpp).toFixed(1)} m.`,'ok'); markDirty(); draw(); setTool('wall'); toast('Scale set. Now trace walls (Wall tool).'); };
 ['inClrW','inClrC','chkThin','chkIndoor'].forEach(id=>$(id).onchange=()=>{ markDirty(); draw(); });
@@ -867,7 +877,8 @@ async function exportMap(){
   if (S.points.length<2) return toast('Add at least two points first.');
   if (!ensureGrids()) return;
   const routes={walk:{},chair:{}}; let done=0; const total=S.points.length*2; const t0=performance.now();
-  for (const mode of ['walk','chair']){ const g=S.grids[mode];
+  const storeAll=$('chkRoutes').checked;
+  for (const mode of (storeAll?['walk','chair']:[])){ const g=S.grids[mode];
     for (const A of S.points){
       setStatus('expStatus',`Computing routes… ${Math.round(100*done/total)}%`); await new Promise(r=>setTimeout(r,0));
       const s=snapFree(g,A.x,A.y); done++; if (s<0) continue;
@@ -885,10 +896,90 @@ async function exportMap(){
     units:'m', source:S.mode==='dxf'?{type:'dxf', drawingUnits:$('selUnits').value==='auto'?(S.fileUnits||'cm'):$('selUnits').value}:{type:'image', metresPerPixel:S.mpp},
     clearance:{walk:S.grids.walk.r, wheelchair:S.grids.chair.r}, grid:{cell:S.grids.walk.cell},
     points:S.points.map(p=>({id:p.id, nameEn:p.nameEn, nameAr:p.nameAr, category:p.cat, dalilNode:p.node, facingDeg:p.face, x:r2(p.x), y:r2(p.y), ...(p.link?{link:p.link}:{}), ...(p.node?{nfcUrl:`${base}/${bId}/${fId}/${p.id}`}:{})})),
-    plan:{walls, doors, openings:S.openings.map(o=>({a:o.a.map(r2),b:o.b.map(r2),width_m:o.w||0.9}))}, routes};
+    plan:{walls, doors, openings:S.openings.map(o=>({a:o.a.map(r2),b:o.b.map(r2),width_m:o.w||0.9}))},
+    closures:S.closures.map(c=>({id:c.id, nameEn:c.nameEn, nameAr:c.nameAr, a:c.a.map(r2), b:c.b.map(r2), width_m:c.w||0.6})),
+    // Walkable grids (already inflated by the clearance) so the app can route between any two spots itself.
+    nav:{encoding:'rle-varint-base64', cell:S.grids.walk.cell, x0:r2(S.grids.walk.x0), y0:r2(S.grids.walk.y0), W:S.grids.walk.W, H:S.grids.walk.H, speed:{walk:1.1, chair:0.8}, walk:encodeGrid(S.grids.walk), chair:encodeGrid(S.grids.chair)},
+    routes};
+  out.version=2;
   const n=Object.keys(routes.walk).length, nc=Object.keys(routes.chair).length; const pairs=S.points.length*(S.points.length-1);
   download(`dalil-map_${bId}_${fId}.json`, JSON.stringify(out));
-  setStatus('expStatus',`Exported in ${((performance.now()-t0)/1000).toFixed(1)} s · ${S.points.length} points · ${n}/${pairs} walking routes · ${nc}/${pairs} wheelchair routes${nc<pairs?' (some places have no wheelchair access — check narrow doors)':''}.`, nc<pairs?'':'ok');
+  const cr=connectivity();
+  setStatus('expStatus', storeAll
+    ? `Exported in ${((performance.now()-t0)/1000).toFixed(1)} s · ${S.points.length} points · ${n}/${pairs} walking routes · ${nc}/${pairs} wheelchair routes${nc<pairs?' (some places have no wheelchair access — check narrow doors)':''}.`
+    : `Exported in ${((performance.now()-t0)/1000).toFixed(1)} s · ${S.points.length} points · routes are worked out in the app (compact file).${cr&&cr.bad?' '+cr.msg:''}`, (storeAll?nc<pairs:cr&&cr.bad)?'':'ok');
+}
+// Blocked/free run lengths over the grid (row-major, starting with a free run), as LEB128 varints in base64.
+function encodeGrid(g){
+  const occ=g.occ, N=occ.length, bytes=[]; let cur=0, run=0;
+  const put=v=>{ while(v>=128){ bytes.push((v&127)|128); v=Math.floor(v/128); } bytes.push(v); };
+  for (let k=0;k<N;k++){ const b=occ[k]?1:0; if (b===cur) run++; else { put(run); cur=b; run=1; } }
+  put(run);
+  const u=new Uint8Array(bytes); let str=''; for (let i=0;i<u.length;i+=0x8000) str+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));
+  return btoa(str);
+}
+/* ---------------- AUTO-PLACES: read places from the drawing's own labels and symbols ---------------- */
+const AUTO_RULES=[ // [category, test(text), nameEn, nameAr]
+  ['lift', s=>/^(elev(ator)?s?|lifts?)\b|^E\d{2,4}[A-Z]?$/i.test(s)||/مصعد|مصاعد/.test(s), 'Lift', 'مصعد'],
+  ['stairs', s=>/^stair(s|way|case)?\b|^S\d{3}[A-Z]?$/i.test(s)||/درج|سلم/.test(s), 'Stairs', 'درج'],
+  ['toilet_acc', s=>/(accessible|disabled|ada|all[- ]gender|unisex).{0,12}(toilet|restroom|wc|bath)/i.test(s)||/دورة مياه.*(هم|مهيأ)/.test(s), 'Accessible restroom', 'دورة مياه مهيأة'],
+  ['toilet', s=>/\b(toilets?|restrooms?|w\.?c\.?|lavator(y|ies)|men'?s|women'?s|ladies|gents)\b/i.test(s)||/حمام|دورة مياه|دورات مياه/.test(s), null, null],
+  ['prayer', s=>/\b(prayer|musall?a|mosque)\b/i.test(s)||/مصلى|مسجد/.test(s), 'Prayer room', 'المصلى'],
+  ['wudu', s=>/\b(wudu|ablution)\b/i.test(s)||/وضوء/.test(s), 'Wudu area', 'مكان الوضوء'],
+  ['cafe', s=>/^caf[eé]\b|\bcoffee\b|\bcafeteria\b/i.test(s)||/مقهى|كافتيريا/.test(s), 'Café', 'مقهى'],
+  ['entrance', s=>/\b(main )?entrance\b|\blobby\b/i.test(s)||/مدخل/.test(s), 'Entrance', 'مدخل'],
+  ['reception', s=>/\breception\b|\binformation desk\b/i.test(s)||/استقبال/.test(s), 'Reception', 'الاستقبال'],
+];
+const ICON_RULES=[ // block names on symbol layers
+  [/women|ladies|female|cpwomen/i, 'toilet', "Women's restroom", 'دورة مياه النساء'],
+  [/(^|[^o])men\b|gents|male|cpmen/i, 'toilet', "Men's restroom", 'دورة مياه الرجال'],
+  [/acc(essible)?.?(wc|toilet)|disab|cpbath|unisex|all.?gender/i, 'toilet_acc', 'All-gender restroom', 'دورة مياه لكل الأشخاص'],
+  [/lact|baby|nurs|cplac/i, 'baby', 'Lactation room', 'غرفة الرضاعة'],
+  [/elev|lift/i, 'lift', 'Lift', 'مصعد'], [/stair/i, 'stairs', 'Stairs', 'درج'], [/prayer|musall/i, 'prayer', 'Prayer room', 'المصلى'],
+];
+function autoPlaces(){
+  if (S.mode!=='dxf') return toast('Open a DXF first.');
+  const skipLayer=/ttlb|title|border|dim|grid|rev|area-text|sheet/i, roomLayer=/rnum|vnum|room.?(n|no|num|id|name)|iden-?num|space.?num/i, iconLayer=/iden|icon|symb|sign|wayf/i;
+  const found=[];
+  const add=(cat,x,y,nameEn,nameAr,src)=>found.push({cat,x,y,nameEn,nameAr,src});
+  for (const t of S.texts){ if (skipLayer.test(t.layer)) continue; const s=t.s.trim(); if (!s||s.length>40) continue;
+    const rule=AUTO_RULES.find(r=>r[1](s));
+    if (rule){ const tAr={toilet:"دورة مياه"}; add(rule[0], t.x, t.y, rule[2]||s.replace(/\b\w/g,c=>c.toUpperCase()), rule[3]||tAr[rule[0]]||s, 'text'); continue; }
+    if (roomLayer.test(t.layer) && /^[A-Z]?\d{2,4}[A-Z]?$/i.test(s) && !/^[CL]\d/i.test(s)) add('room', t.x, t.y, `Room ${s}`, `غرفة ${s}`, 'room');
+  }
+  for (const i of S.inserts||[]){ if (!iconLayer.test(i.layer)) continue; const r=ICON_RULES.find(r=>r[0].test(i.name)); if (r) add(r[1], i.x, i.y, r[2], r[3], 'icon'); }
+  // Merge: lifts/stairs closer than 4 m are one bank; same name closer than 3 m is a duplicate.
+  const out=[];
+  for (const f of found){
+    const near=out.find(o=>o.cat===f.cat && Math.hypot(o.x-f.x,o.y-f.y)<((f.cat==='lift'||f.cat==='stairs')?4:3) && (f.cat==='lift'||f.cat==='stairs'||o.nameEn===f.nameEn||f.src==='icon'||o.src==='icon'));
+    if (near){ near.n=(near.n||1)+1; near.x+=(f.x-near.x)/near.n; near.y+=(f.y-near.y)/near.n; continue; }
+    out.push({...f});
+  }
+  // Skip anything already placed by hand.
+  const fresh=out.filter(f=>!S.points.some(p=>Math.hypot(p.x-f.x,p.y-f.y)<1.5));
+  let k={lift:0,stairs:0}; for (const f of fresh){ if (f.cat==='lift'||f.cat==='stairs'){ k[f.cat]++; } }
+  const n={lift:0,stairs:0};
+  const added=fresh.map(f=>{ if ((f.cat==='lift'||f.cat==='stairs') && k[f.cat]>1){ n[f.cat]++; f.nameEn+=` ${n[f.cat]}`; f.nameAr+=` ${n[f.cat]}`; }
+    return addPoint(f.x,f.y,{nameEn:f.nameEn, nameAr:f.nameAr, cat:f.cat, node:f.cat==='lift'||f.cat==='entrance'}); });
+  // Points that land in a closed pocket (inside a lift shaft, a duct) are moved to the nearest spot people can reach.
+  let moved=0;
+  if (added.length && ensureGrids()){
+    const g=S.grids.walk, ref=S.points.find(p=>p.cat==='entrance')||S.points.find(p=>!added.includes(p))||added.find(p=>p.cat==='room')||added[0];
+    const s0=snapFree(g,ref.x,ref.y);
+    if (s0>=0){ const r=search(g,s0,-1);
+      for (const p of added){ const t=snapFree(g,p.x,p.y); if (t>=0 && isFinite(r.dist[t])) continue;
+        const [ci,cj]=toCell(g,p.x,p.y), R=Math.ceil(5/g.cell); let best=-1,bd=1e18;
+        for (let dj=-R;dj<=R;dj++) for (let di=-R;di<=R;di++){ const a=ci+di,b=cj+dj; if(a<0||b<0||a>=g.W||b>=g.H) continue; const kk=b*g.W+a; if(!g.occ[kk]&&isFinite(r.dist[kk])){ const d=di*di+dj*dj; if(d<bd){bd=d;best=kk;} } }
+        if (best>=0){ p.x=g.x0+(best%g.W+0.5)*g.cell; p.y=g.y0+((best/g.W|0)+0.5)*g.cell; moved++; } }
+    }
+    markDirty(); ensureGrids();
+  }
+  const by={}; for (const p of added) by[p.cat]=(by[p.cat]||0)+1;
+  const st=$('autoStatus'); st.style.display='';
+  st.className='status ok';
+  st.textContent=added.length ? `Found ${added.length} places: ${Object.entries(by).map(([c,v])=>`${v} ${(CAT[c]?.en||c).toLowerCase()}`).join(', ')}.${moved?` Moved ${moved} out of closed spaces (lift shafts) to the nearest reachable spot.`:''} Check names, positions and lift/stair floor links.` : 'No labelled places found in this drawing. Add points by hand with + Point.';
+  refreshPoints(); draw();
+  return {added:added.length, by, moved};
 }
 function exportCsv(){
   const nodes=S.points.filter(p=>p.node); if(!nodes.length) return toast('Mark at least one point as a DALIL node.');
@@ -901,7 +992,7 @@ function exportCsv(){
 function saveProject(){
   if (!S.mode) return toast('Nothing to save yet.');
   const proj={format:'dalil-project',version:1, building:$('inBuilding').value, floor:$('inFloor').value, units:$('selUnits').value, rot:S.rot||0, clrW:$('inClrW').value, clrC:$('inClrC').value,
-    mode:S.mode, fileUnits:S.fileUnits, rawPolys:S.rawPolys, rawTexts:S.rawTexts, layers:S.layers, traced:S.traced, openings:S.openings, thin:$('chkThin').checked, points:S.points, nextId:S.nextId, mpp:S.mpp,
+    mode:S.mode, fileUnits:S.fileUnits, guessU:S.guessU||null, rawPolys:S.rawPolys, rawTexts:S.rawTexts, rawInserts:S.rawInserts||[], layers:S.layers, traced:S.traced, openings:S.openings, closures:S.closures, thin:$('chkThin').checked, points:S.points, nextId:S.nextId, mpp:S.mpp,
     image:S.image?imgToData(S.image):null};
   download(`dalil-project_${slug($('inBuilding').value)}_${slug($('inFloor').value)}.json`, JSON.stringify(proj));
 }
@@ -910,13 +1001,15 @@ function openProject(text){
   let p; try{ p=JSON.parse(text); }catch(e){ return toast('Not a valid project file.'); }
   if (p.format!=='dalil-project') return toast('Not a DALIL project file.');
   $('inBuilding').value=p.building||''; $('inFloor').value=p.floor||''; $('selUnits').value=p.units||'auto'; $('inClrW').value=p.clrW||0.25; $('inClrC').value=p.clrC||0.4;
-  S.rot=p.rot||0; S.rotApplied=0; $('inRot').value=S.rot; S.mode=p.mode; S.fileUnits=p.fileUnits; S.rawPolys=p.rawPolys||[]; S.rawTexts=p.rawTexts||[]; S.layers=p.layers||{}; S.mpp=p.mpp||0.02; S.route=null; S.selId=null;
+  S.rot=p.rot||0; S.rotApplied=0; $('inRot').value=S.rot; S.mode=p.mode; S.fileUnits=p.fileUnits; S.rawPolys=p.rawPolys||[]; S.rawTexts=p.rawTexts||[]; S.rawInserts=p.rawInserts||[];
+  // Projects saved without units in the drawing: restore (or re-guess) the guessed units, or the plan comes back 30× too small.
+  S.guess=null; S.guessU=p.guessU||null; if (S.mode==='dxf' && !S.fileUnits && !S.guessU && S.rawPolys.length){ S.guess=guessUnits(); S.guessU=S.guess.u; } S.layers=p.layers||{}; S.mpp=p.mpp||0.02; S.route=null; S.selId=null;
   const finish=()=>{ if (S.mode==='dxf'){ applyUnits(true); } else { S.polys=[]; S.texts=[]; buildPaths(); }
-    S.traced=p.traced||[]; S.openings=p.openings||[]; if (p.thin!==undefined) $('chkThin').checked=p.thin; S.points=p.points||[]; S.nextId=p.nextId||S.points.length+1;
+    S.traced=p.traced||[]; S.openings=p.openings||[]; S.closures=p.closures||[]; if (p.thin!==undefined) $('chkThin').checked=p.thin; S.points=p.points||[]; S.nextId=p.nextId||S.points.length+1;
     uiMode(); renderLayers(); refreshPoints(); fit(); markDirty(); setStatus('planStatus','Project opened: '+(p.building||'')+' · '+(p.floor||''),'ok'); };
   if (p.mode==='image' && p.image){ const img=new Image(); img.onload=()=>{ S.image=img; S.imgW=img.naturalWidth; S.imgH=img.naturalHeight; finish(); }; img.src=p.image; } else { S.image=null; finish(); }
 }
-$('btnExport').onclick=exportMap; $('btnCsv').onclick=exportCsv; $('btnSave').onclick=saveProject;
+$('btnExport').onclick=exportMap; $('btnAuto').onclick=autoPlaces; $('btnCsv').onclick=exportCsv; $('btnSave').onclick=saveProject;
 $('btnOpen').onclick=()=>$('fProj').click(); $('fProj').onchange=async e=>{ const f=e.target.files[0]; if(f) openProject(await f.text()); e.target.value=''; };
 
 /* ---------------- SAMPLE HOSPITAL (generated DXF, cm) ---------------- */
@@ -981,7 +1074,7 @@ function loadSample(){
 
 /* ---------------- INIT ---------------- */
 bindEditor(); window.addEventListener('resize',resize); resize(); renderLayers(); refreshPoints();
-window.DALIL={S,loadSample,findRoute,exportMap,routeBetween,ensureGrids,parseDXF,flattenDXF,sampleDXF};
+window.DALIL={S,loadSample,findRoute,exportMap,routeBetween,ensureGrids,parseDXF,flattenDXF,sampleDXF,autoPlaces};
 </script>
 </body>
 </html>

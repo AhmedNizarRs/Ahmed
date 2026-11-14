@@ -54,6 +54,18 @@ async def main():
         st = await pg.inner_text("#planStatus")
         check("mm (from file)" in st, "office: INSUNITS mm read")
 
+        # 4. Auto-places on a real university drawing (Cal Poly Kennedy Library, Level 1; inches, survey coordinates)
+        lib = ROOT / "data" / "test-calpoly-library" / "building035-0_floor1.dxf"
+        if lib.exists():
+            await pg.set_input_files("#fDxf", str(lib)); await pg.wait_for_timeout(2500)
+            r = await pg.evaluate("""()=>{ document.getElementById('btnStraighten').click(); const res=DALIL.autoPlaces();
+                return {res, rot:DALIL.S.rot, grid:document.getElementById('gridStatus').innerText}; }""")
+            by = r["res"]["by"]
+            check(abs(r["rot"] + 11.3) < 0.3, f"library: straightened by {r['rot']}°")
+            check(by.get("room", 0) >= 50 and by.get("lift") == 2 and by.get("stairs") == 5 and by.get("cafe") == 1, f"library: auto-places {by}")
+            check(by.get("toilet", 0) + by.get("toilet_acc", 0) >= 4, "library: restrooms from drawing symbols")
+            check("All 70 points connected" in r["grid"], f"library: all auto places reachable ({r['grid'][-60:]})")
+
         check(not errs, f"no page errors {errs}")
         await b.close()
 

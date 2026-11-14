@@ -351,3 +351,30 @@ html.contrast .toast { background: #000; border: 2px solid var(--accent); }
   .floor-rail { width: 58px; }
 }
 html.reduce-motion *, html.reduce-motion *::before, html.reduce-motion *::after { transition-duration: 0s !important; animation-duration: 0s !important; }
+
+/* ---------- Closures, pins, sharing, kiosk ---------- */
+.plan-closure { fill: none; stroke: #FF6B5B; stroke-width: 6px; stroke-dasharray: 6 5; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+html.contrast .plan-closure { stroke: #fff; }
+#pinHelp { margin: -8px 0 12px; }
+.pin-card { border-radius: 20px; padding: 14px 16px; margin: 0 0 16px; }
+.pin-text { margin: 0 0 4px; font-weight: 600; }
+.pin-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: end; }
+.pin-actions .btn-primary { min-height: 52px; margin-top: 8px; font-size: 1rem; }
+.pin-actions .btn-ghost { margin-top: 8px; }
+.share-qr { width: min(260px, 70vw); margin: 12px auto; background: #fff; border-radius: 16px; padding: 8px; }
+.share-qr svg, .kiosk-qr svg { display: block; width: 100%; height: auto; }
+.share-url { width: 100%; min-height: 48px; border-radius: 12px; border: 1px solid var(--line-2); background: var(--bg-3); padding: 0 12px; font-size: .85rem; }
+.share-actions { display: flex; gap: 10px; align-items: end; }
+.share-actions > * { flex: 1; }
+.share-actions .btn-primary { min-height: 52px; font-size: 1rem; }
+.kiosk-qr { display: flex; align-items: center; gap: 16px; margin-top: 14px; padding: 12px; border-radius: 16px; border: 1px solid var(--line-2); }
+.kiosk-qr .qr { width: 140px; flex: none; background: #fff; border-radius: 12px; padding: 6px; }
+.kiosk-qr p { margin: 0; font-weight: 650; font-size: 1.1rem; }
+html.kiosk { font-size: 150%; }
+html.kiosk .app { max-width: min(1000px, 100%); }
+html.kiosk #screen-home { grid-template-columns: minmax(0, 1fr) 88px; }
+html.kiosk .map-card { height: clamp(420px, 42vh, 1000px); }
+html.kiosk .kiosk-qr .qr { width: 220px; }
+html.kiosk .tabbar { width: min(960px, calc(100% - 32px)); }
+html.kiosk #btnFrom, html.kiosk #btnScan, html.kiosk .tab[data-screen="settings"] { display: none; }
+html.kiosk .tabbar { grid-template-columns: repeat(3, 1fr); }
