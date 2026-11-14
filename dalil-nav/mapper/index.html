@@ -86,6 +86,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
     <div class="row"><label>Floor</label><input type="text" id="inFloor" value="Ground"></div>
     <div class="row" id="unitRow"><label>Drawing units</label>
       <select id="selUnits"><option value="auto">Auto (from file)</option><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="m">Metres</option><option value="in">Inches</option><option value="ft">Feet</option></select></div>
+    <div class="row" id="rotRow"><label>Rotate plan</label><input type="number" id="inRot" value="0" step="0.1" style="width:90px"> <span class="mini">°</span> <button id="btnStraighten" title="Turn the plan so its main walls are square to the screen (survey-coordinate drawings are often rotated)">Straighten</button></div>
     <div class="status" id="planStatus">No plan loaded.</div>
   </section>
 
@@ -123,6 +124,7 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
       <div class="row"><label>الاسم (AR)</label><input type="text" id="eNameAr" dir="rtl"></div>
       <div class="row"><label>Category</label><select id="eCat"></select></div>
       <div class="row"><label>DALIL node</label><input type="checkbox" id="eNode"> <span class="mini">tactile + NFC tag here</span></div>
+      <div class="row"><label>Floor link</label><input type="text" id="eLink" placeholder="e.g. LIFT-W" style="width:120px"> <span class="mini">same code on every floor = lift/stair to the other floors</span></div>
       <div class="row"><label>User faces</label><select id="eFace"><option value="90">Plan top ↑</option><option value="0">Plan right →</option><option value="270">Plan bottom ↓</option><option value="180">Plan left ←</option></select></div>
       <div class="row"><button id="eDel" style="color:var(--red);border-color:var(--red)">Delete point</button><span class="mini" id="eXY"></span></div>
     </div>
@@ -179,7 +181,7 @@ const CATS = [
   ['entrance','Entrance','مدخل'],['exit','Exit','مخرج'],['reception','Reception','استقبال'],
   ['lift','Lift','مصعد'],['stairs','Stairs','درج'],['ramp','Ramp','منحدر'],
   ['toilet','Toilets','دورات مياه'],['toilet_acc','Accessible toilet','دورة مياه لأصحاب الهمم'],
-  ['prayer','Prayer room','مصلى'],['wudu','Wudu area','مكان الوضوء'],['baby','Baby room','غرفة الأطفال'],
+  ['prayer','Prayer room','مصلى'],['wudu','Wudu area','مكان الوضوء'],['baby','Baby room','غرفة الأطفال'],['cafe','Café','مقهى'],
   ['room','Room / department','غرفة / قسم'],['corridor','Corridor point','نقطة ممر'],['parking','Parking','موقف']
 ];
 const CAT = Object.fromEntries(CATS.map(c=>[c[0],{en:c[1],ar:c[2]}]));
@@ -347,7 +349,7 @@ function loadDXFText(text, name){
   let dx; try { dx=parseDXF(text); } catch(err){ setStatus('planStatus','Could not read this DXF: '+err.message,'err'); return; }
   const fl=flattenDXF(dx);
   if (!fl.polys.length){ setStatus('planStatus','No drawable geometry found. If this is a binary DXF, re-save as ASCII DXF.','err'); return; }
-  S.geoSuggested=false; S.mode='dxf'; S.rawPolys=fl.polys; S.rawTexts=fl.texts; S.fileUnits=INSUNITS[dx.units]||null; S.guess=S.fileUnits?null:guessUnits(); S.guessU=S.guess?S.guess.u:null;
+  S.geoSuggested=false; S.rot=0; S.rotApplied=0; $('inRot').value=0; S.mode='dxf'; S.rawPolys=fl.polys; S.rawTexts=fl.texts; S.fileUnits=INSUNITS[dx.units]||null; S.guess=S.fileUnits?null:guessUnits(); S.guessU=S.guess?S.guess.u:null;
   S.image=null; S.traced=[]; S.openings=[]; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
   S.layers={};
   const names=Object.keys(fl.used).sort();
@@ -370,19 +372,29 @@ function sizeNote(){ const segs=wallSegments(true); const src=segs.length?segs.m
 function unitFactor(){ const o=$('selUnits').value; if (o!=='auto') return UNIT_F[o]; return UNIT_F[S.fileUnits||S.guessU||'cm']; }
 function applyUnits(first){
   if (S.mode!=='dxf') return;
-  const fOld=S.f, offOld=S.off.slice();
+  const fOld=S.f, offOld=S.off.slice(), rotOld=S.rotApplied||0;
   const f=unitFactor(); const b=robustBounds(S.rawPolys);
   const off=[b[0]*f, b[1]*f];
-  S.polys=S.rawPolys.map(p=>({layer:p.layer, closed:p.closed, pts:p.pts.map(q=>[q[0]*f-off[0], q[1]*f-off[1]])}));
-  S.texts=S.rawTexts.map(t=>({...t, x:t.x*f-off[0], y:t.y*f-off[1], h:t.h*f}));
+  // Optional plan rotation (degrees, about the local origin) for drawings in rotated survey coordinates.
+  const rot=S.rot||0, R=rotFn(rot), Rinv=rotFn(-rotOld);
+  S.polys=S.rawPolys.map(p=>({layer:p.layer, closed:p.closed, pts:p.pts.map(q=>R(q[0]*f-off[0], q[1]*f-off[1]))}));
+  S.texts=S.rawTexts.map(t=>{ const [x,y]=R(t.x*f-off[0], t.y*f-off[1]); return {...t, x, y, h:t.h*f}; });
   if (!first){
-    const tr=(x,y)=>[((x+offOld[0])/fOld)*f-off[0], ((y+offOld[1])/fOld)*f-off[1]];
+    const tr=(x,y)=>{ const [u,v]=Rinv(x,y); return R(((u+offOld[0])/fOld)*f-off[0], ((v+offOld[1])/fOld)*f-off[1]); };
     for (const p of S.points){ [p.x,p.y]=tr(p.x,p.y); }
     for (const t of S.traced) t.pts=t.pts.map(q=>tr(q[0],q[1]));
     for (const o of S.openings){ o.a=tr(o.a[0],o.a[1]); o.b=tr(o.b[0],o.b[1]); }
   }
-  S.f=f; S.off=off; buildPaths(); markDirty();
+  S.f=f; S.off=off; S.rotApplied=rot; buildPaths(); markDirty();
 }
+function rotFn(deg){ if (!deg) return (x,y)=>[x,y]; const a=deg*Math.PI/180, c=Math.cos(a), s=Math.sin(a); return (x,y)=>[c*x-s*y, s*x+c*y]; }
+// Dominant wall direction (length-weighted, folded into 0–90°) → rotation that squares the plan.
+function straightenAngle(){
+  const h=new Map(); for (const s of wallSegments(true)){ const L=Math.hypot(s[2]-s[0],s[3]-s[1]); if (L<1) continue; let a=Math.atan2(s[3]-s[1],s[2]-s[0])*180/Math.PI; a=((a%90)+90)%90; const k=Math.round(a*10)/10; h.set(k,(h.get(k)||0)+L); }
+  let best=0,bw=-1; for (const [k,w] of h) if (w>bw){ bw=w; best=k; }
+  const cur=S.rot||0; let d=-(best>45?best-90:best); return Math.round((cur+d)*10)/10;
+}
+function setRotation(deg){ S.rot=deg; $('inRot').value=deg; applyUnits(false); refreshPoints(); fit(); }
 
 async function loadImageFile(file){
   let url;
@@ -650,7 +662,7 @@ function instructions(path, A, B, mode){
 
 /* ---------------- POINTS ---------------- */
 function addPoint(x,y,o={}){
-  const p={id:'P'+String(S.nextId++).padStart(3,'0'), x, y, nameEn:o.nameEn||('Point '+(S.nextId-1)), nameAr:o.nameAr||'', cat:o.cat||'room', node:!!o.node, face:o.face??90};
+  const p={id:'P'+String(S.nextId++).padStart(3,'0'), x, y, nameEn:o.nameEn||('Point '+(S.nextId-1)), nameAr:o.nameAr||'', cat:o.cat||'room', node:!!o.node, face:o.face??90, ...(o.link?{link:o.link}:{})};
   S.points.push(p); return p;
 }
 function refreshPoints(){
@@ -664,7 +676,7 @@ function refreshPoints(){
   }
   const sel=S.points.find(p=>p.id===S.selId);
   $('editor').classList.toggle('hidden',!sel);
-  if (sel){ $('eNameEn').value=sel.nameEn; $('eNameAr').value=sel.nameAr; $('eCat').value=sel.cat; $('eNode').checked=sel.node; $('eFace').value=String(sel.face); $('eXY').textContent=`${sel.id} · x ${sel.x.toFixed(2)} m, y ${sel.y.toFixed(2)} m`; }
+  if (sel){ $('eNameEn').value=sel.nameEn; $('eNameAr').value=sel.nameAr; $('eCat').value=sel.cat; $('eNode').checked=sel.node; $('eLink').value=sel.link||''; $('eFace').value=String(sel.face); $('eXY').textContent=`${sel.id} · x ${sel.x.toFixed(2)} m, y ${sel.y.toFixed(2)} m`; }
   for (const id of ['rFrom','rTo']){ const s=$(id), v=s.value; s.innerHTML=S.points.map(p=>`<option value="${p.id}">${esc(p.nameEn)}${p.node?' ●':''}</option>`).join(''); if (S.points.some(p=>p.id===v)) s.value=v; }
   if (!$('rTo').dataset.touched && S.points.length>1 && $('rTo').value===$('rFrom').value) $('rTo').selectedIndex=1;
 }
@@ -675,6 +687,7 @@ function bindEditor(){
   upd('eNameAr',p=>p.nameAr=$('eNameAr').value);
   upd('eCat',p=>{ const old=CAT[p.cat]; p.cat=$('eCat').value; if (/^Point \d+$/.test(p.nameEn)||(old&&p.nameEn===old.en)){ p.nameEn=CAT[p.cat].en; p.nameAr=CAT[p.cat].ar; $('eNameEn').value=p.nameEn; $('eNameAr').value=p.nameAr; } });
   upd('eNode',p=>p.node=$('eNode').checked);
+  upd('eLink',p=>{ const v=$('eLink').value.trim().toUpperCase(); if (v) p.link=v; else delete p.link; });
   upd('eFace',p=>p.face=parseFloat($('eFace').value));
   $('eDel').onclick=()=>{ S.points=S.points.filter(p=>p.id!==S.selId); S.selId=null; S.route=null; refreshPoints(); draw(); };
 }
@@ -794,6 +807,8 @@ $('fDxf').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; setStatu
   setTimeout(()=>loadDXFText(text,f.name),10); e.target.value=''; };
 $('fImg').onchange=e=>{ const f=e.target.files[0]; if(f) loadImageFile(f); e.target.value=''; };
 $('btnSample').onclick=()=>loadSample();
+$('inRot').onchange=()=>{ if (S.mode==='dxf') setRotation(parseFloat($('inRot').value)||0); };
+$('btnStraighten').onclick=()=>{ if (S.mode!=='dxf') return toast('Open a DXF first.'); const a=straightenAngle(); setRotation(a); setStatus('planStatus',`Plan rotated ${a}° so the main walls are square.`+sizeNote(),'ok'); };
 $('selUnits').onchange=()=>{ applyUnits(false); refreshPoints(); fit(); setStatus('planStatus','Units set to '+$('selUnits').value+'.'+sizeNote(),'ok'); };
 $('btnSuggest').onclick=()=>{ for (const n in S.layers) S.layers[n].role=suggestRole(n); if (Object.keys(S.layers).every(n=>['context','hidden'].includes(suggestRole(n)))) geoSuggest({polys:S.rawPolys}); renderLayers(); buildPaths(); markDirty(); draw(); };
 $('btnAllCtx').onclick=()=>{ for (const n in S.layers) if (S.layers[n].role!=='hidden') S.layers[n].role='context'; renderLayers(); buildPaths(); markDirty(); draw(); };
@@ -869,7 +884,7 @@ async function exportMap(){
   const out={format:'dalil-map', version:1, generated:new Date().toISOString(), building:{id:bId, name:$('inBuilding').value||'Building'}, floor:{id:fId, name:$('inFloor').value||'Floor'},
     units:'m', source:S.mode==='dxf'?{type:'dxf', drawingUnits:$('selUnits').value==='auto'?(S.fileUnits||'cm'):$('selUnits').value}:{type:'image', metresPerPixel:S.mpp},
     clearance:{walk:S.grids.walk.r, wheelchair:S.grids.chair.r}, grid:{cell:S.grids.walk.cell},
-    points:S.points.map(p=>({id:p.id, nameEn:p.nameEn, nameAr:p.nameAr, category:p.cat, dalilNode:p.node, facingDeg:p.face, x:r2(p.x), y:r2(p.y), ...(p.node?{nfcUrl:`${base}/${bId}/${fId}/${p.id}`}:{})})),
+    points:S.points.map(p=>({id:p.id, nameEn:p.nameEn, nameAr:p.nameAr, category:p.cat, dalilNode:p.node, facingDeg:p.face, x:r2(p.x), y:r2(p.y), ...(p.link?{link:p.link}:{}), ...(p.node?{nfcUrl:`${base}/${bId}/${fId}/${p.id}`}:{})})),
     plan:{walls, doors, openings:S.openings.map(o=>({a:o.a.map(r2),b:o.b.map(r2),width_m:o.w||0.9}))}, routes};
   const n=Object.keys(routes.walk).length, nc=Object.keys(routes.chair).length; const pairs=S.points.length*(S.points.length-1);
   download(`dalil-map_${bId}_${fId}.json`, JSON.stringify(out));
@@ -885,7 +900,7 @@ function exportCsv(){
 }
 function saveProject(){
   if (!S.mode) return toast('Nothing to save yet.');
-  const proj={format:'dalil-project',version:1, building:$('inBuilding').value, floor:$('inFloor').value, units:$('selUnits').value, clrW:$('inClrW').value, clrC:$('inClrC').value,
+  const proj={format:'dalil-project',version:1, building:$('inBuilding').value, floor:$('inFloor').value, units:$('selUnits').value, rot:S.rot||0, clrW:$('inClrW').value, clrC:$('inClrC').value,
     mode:S.mode, fileUnits:S.fileUnits, rawPolys:S.rawPolys, rawTexts:S.rawTexts, layers:S.layers, traced:S.traced, openings:S.openings, thin:$('chkThin').checked, points:S.points, nextId:S.nextId, mpp:S.mpp,
     image:S.image?imgToData(S.image):null};
   download(`dalil-project_${slug($('inBuilding').value)}_${slug($('inFloor').value)}.json`, JSON.stringify(proj));
@@ -895,7 +910,7 @@ function openProject(text){
   let p; try{ p=JSON.parse(text); }catch(e){ return toast('Not a valid project file.'); }
   if (p.format!=='dalil-project') return toast('Not a DALIL project file.');
   $('inBuilding').value=p.building||''; $('inFloor').value=p.floor||''; $('selUnits').value=p.units||'auto'; $('inClrW').value=p.clrW||0.25; $('inClrC').value=p.clrC||0.4;
-  S.mode=p.mode; S.fileUnits=p.fileUnits; S.rawPolys=p.rawPolys||[]; S.rawTexts=p.rawTexts||[]; S.layers=p.layers||{}; S.mpp=p.mpp||0.02; S.route=null; S.selId=null;
+  S.rot=p.rot||0; S.rotApplied=0; $('inRot').value=S.rot; S.mode=p.mode; S.fileUnits=p.fileUnits; S.rawPolys=p.rawPolys||[]; S.rawTexts=p.rawTexts||[]; S.layers=p.layers||{}; S.mpp=p.mpp||0.02; S.route=null; S.selId=null;
   const finish=()=>{ if (S.mode==='dxf'){ applyUnits(true); } else { S.polys=[]; S.texts=[]; buildPaths(); }
     S.traced=p.traced||[]; S.openings=p.openings||[]; if (p.thin!==undefined) $('chkThin').checked=p.thin; S.points=p.points||[]; S.nextId=p.nextId||S.points.length+1;
     uiMode(); renderLayers(); refreshPoints(); fit(); markDirty(); setStatus('planStatus','Project opened: '+(p.building||'')+' · '+(p.floor||''),'ok'); };

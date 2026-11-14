@@ -1,6 +1,8 @@
 {
   "maps": [
     "../data/dalil-map_sample-hospital_ground.json",
-    "../data/dalil-map_hospital-building-1000_ground.json"
+    "../data/dalil-map_hospital-building-1000_ground.json",
+    "../data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-1.json",
+    "../data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-2.json"
   ]
 }

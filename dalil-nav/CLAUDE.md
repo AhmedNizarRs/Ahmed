@@ -33,7 +33,9 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
   - Arabic plural rules are handled (متر / مترين / أمتار / متراً, and the same for خطوة).
 - Export: `dalil-map_<building>_<floor>.json` (see `docs/map-format.md`), an NFC tag CSV, and a project save/load file.
 - The Mapper is published as a claude.ai artifact. In that sandbox, downloads and TTS go through `window.claude.use('downloads'|'tts')`, with plain-browser fallbacks.
-- Limits: one floor per project. No lift/stair links between floors yet.
+- Plan rotation: "Rotate plan" / **Straighten** (dominant wall angle) for drawings in rotated survey coordinates. Saved in the project (`rot`).
+- Floor links: a point's "Floor link" code (e.g. `LIFT-W`), exported as `link`. Same code on each floor = vertical connection.
+- Limits: one floor per project file (multi-floor buildings = one export per floor, joined by `link` codes).
 
 ## Visitor app: current state (`app/`, PWA, no build step)
 - Files: `index.html`, `styles.css`, `app.js` (everything), `sw.js` (offline cache), `manifest.webmanifest`, `maps.json` (list of bundled maps, pointing at `../data/`), `icons/`, `fonts/` (Geist + the DALIL Arabic logo subset, copied from `dalil/site`).
@@ -42,6 +44,7 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - Step → path position: steps carry text only, so each "walk N m" leg is placed by its distance, scaled so the legs add up to the real path length (`buildSteps`). Turn icons come from the English step text.
 - Deep links: `#at-P013`, `#at-P001&to-P007`, `#b=<building>&f=<floor>&at-P001`, `#t/<b>/<f>/<p>`, and the NFC path `/t/<b>/<f>/<p>` (the service worker serves the app for it; a server needs the same rewrite).
 - Web NFC where available (Android Chrome), with a tag list fallback. "Accessible" chip = step-free mode (`routes.chair`).
+- Multi-floor: destinations are keys `<floorId>|<pointId>` (`state.toKey`). `planRoute` joins two floors through points sharing a `link` (lift = step-free, stairs walking only), `planSteps` merges the legs with a "Take the lift/stairs …" step, and navigation swaps the floor plan mid-route. Floor order = order in `maps.json` (bottom to top).
 - `window.DALIL_APP` exposes state and the spoken-text log for tests.
 
 ## Test data (`data/`)
@@ -49,6 +52,7 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - `dalil-project_hospital-building-1000_ground.json` is the matching Mapper project with 8 points. `dalil-map_hospital-building-1000_ground.json` is its export (56/56 walking and 56/56 wheelchair routes).
 - `dalil-map_sample-hospital_ground.json`: the synthetic sample (14 points, including toilets, prayer room and lift). Clinic 2 has a 70 cm door, so the wheelchair route to it must fail.
 - `test-office-mm.dxf`: a test file with mm units, site coordinates, a bulge arc, nested and mirrored blocks, and MTEXT.
+- `test-calpoly-library/`: dry-run project on Cal Poly's Kennedy Library, Levels 1–2 (public drawings, internal testing only, never shown as a client). `build-maps.cjs` drives the Mapper headless to rebuild both floors; its README lists the findings.
 
 ## Tests
 `tests/test_mapper.py` drives the Mapper headless with Playwright (Chromium). Run it with `pip install playwright && playwright install chromium && python tests/test_mapper.py`. Keep it green after any Mapper change.

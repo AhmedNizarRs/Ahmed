@@ -36,11 +36,13 @@ const STR = {
     min: n => `${n} min`, m: n => `${n} m`, forDist: d => `for ${d}`, left: d => `${d} to go`, then: 'Then',
     stepOf: (i, n) => `Step ${i} of ${n}`, remainTime: s => `about ${s}`,
     routeTo: (n, d, t) => `Route to ${n}: ${d}, ${t}.`, navStarted: n => `Navigation to ${n} started.`,
-    floorG: 'G', floorName: f => f.name, mapLoaded: n => `Loaded ${n}.`, mapBad: 'This file is not a DALIL map (dalil-map JSON).',
+    floorG: 'G', floorName: f => f.name,
+    liftTo: (up, f, n) => `Take the lift ${up ? 'up' : 'down'} to ${f}. Step out at ${n}.`, stairsTo: (up, f) => `Take the stairs ${up ? 'up' : 'down'} to ${f}.`,
+    viaLift: f => `By lift to ${f}`, viaStairs: f => `By stairs to ${f}`, mapLoaded: n => `Loaded ${n}.`, mapBad: 'This file is not a DALIL map (dalil-map JSON).',
     mapSessionOnly: 'Loaded for this visit only: the file is too large to keep on this phone.',
     planImg: (b, f, n) => `Floor plan of ${b}, ${f}. ${n}`, mapAlt: 'The directions are also listed in text below the map.',
     offline: 'Ready to use offline.',
-    cats: { entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', room: 'Room', corridor: 'Corridor', parking: 'Parking' },
+    cats: { entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking' },
   },
   ar: {
     langShort: 'EN', switchLang: 'Switch to English (التبديل إلى الإنجليزية)',
@@ -74,12 +76,14 @@ const STR = {
     forDist: d => `لمسافة ${d}`, left: d => `متبقٍ ${d}`, then: 'ثم',
     stepOf: (i, n) => `الخطوة ${i} من ${n}`, remainTime: s => `حوالي ${s}`,
     routeTo: (n, d, t) => `المسار إلى ${n}: ${d}، ${t}.`, navStarted: n => `بدأ التوجيه إلى ${n}.`,
-    floorG: 'G', floorName: f => (/^(ground|g)$/i.test(f.id) || /^ground$/i.test(f.name)) ? 'الطابق الأرضي' : f.name,
+    floorG: 'G', floorName: f => (/^(ground|g)$/i.test(f.id) || /^ground$/i.test(f.name)) ? 'الطابق الأرضي' : /(\d+)/.test(f.name || '') ? `الطابق ${f.name.match(/(\d+)/)[1]}` : f.name,
+    liftTo: (up, f, n) => `استقل المصعد ${up ? 'صعوداً' : 'نزولاً'} إلى ${f}. اخرج عند ${n}.`, stairsTo: (up, f) => `${up ? 'اصعد' : 'انزل'} الدرج إلى ${f}.`,
+    viaLift: f => `بالمصعد إلى ${f}`, viaStairs: f => `بالدرج إلى ${f}`,
     mapLoaded: n => `تم تحميل ${n}.`, mapBad: 'هذا الملف ليس خريطة دليل (dalil-map JSON).',
     mapSessionOnly: 'تم التحميل لهذه الزيارة فقط: الملف أكبر من أن يُحفظ على هذا الهاتف.',
     planImg: (b, f, n) => `مخطط ${b}، ${f}. ${n}`, mapAlt: 'الإرشادات مكتوبة أيضاً تحت الخريطة.',
     offline: 'جاهز للاستخدام بدون إنترنت.',
-    cats: { entrance: 'مدخل', exit: 'مخرج', reception: 'الاستقبال', lift: 'مصعد', stairs: 'درج', ramp: 'منحدر', toilet: 'دورة مياه', toilet_acc: 'دورة مياه مهيأة', prayer: 'مصلى', wudu: 'مكان الوضوء', baby: 'غرفة رعاية الأطفال', room: 'غرفة', corridor: 'ممر', parking: 'موقف سيارات' },
+    cats: { entrance: 'مدخل', exit: 'مخرج', reception: 'الاستقبال', lift: 'مصعد', stairs: 'درج', ramp: 'منحدر', toilet: 'دورة مياه', toilet_acc: 'دورة مياه مهيأة', prayer: 'مصلى', wudu: 'مكان الوضوء', baby: 'غرفة رعاية الأطفال', cafe: 'مقهى', room: 'غرفة', corridor: 'ممر', parking: 'موقف سيارات' },
   },
 };
 
@@ -90,7 +94,7 @@ const CAT_WORDS = {
   toilet: 'toilet restroom wc bathroom washroom loo دورة مياه حمام', toilet_acc: 'accessible toilet restroom wc دورة مياه حمام مهيأة',
   lift: 'lift elevator مصعد مصاعد', stairs: 'stairs staircase درج سلم', ramp: 'ramp منحدر', prayer: 'prayer mosque masjid musalla مصلى مسجد صلاة',
   wudu: 'wudu ablution وضوء', reception: 'reception desk information استقبال', entrance: 'entrance entry مدخل', exit: 'exit مخرج',
-  baby: 'baby nursing رضاعة اطفال', parking: 'parking car موقف', corridor: 'corridor hall ممر', room: 'room غرفة',
+  baby: 'baby nursing lactation رضاعة اطفال', cafe: 'cafe café coffee food مقهى قهوة كافيه', parking: 'parking car موقف', corridor: 'corridor hall ممر', room: 'room غرفة',
 };
 const CAT_ICONS = {
   toilet: '<circle cx="8" cy="5" r="1.6"/><circle cx="16" cy="5" r="1.6"/><path d="M6 9h4v5H9v6H7v-6H6zM16 8.5l-3 6h2v5.5h2v-5.5h2z"/>',
@@ -100,6 +104,7 @@ const CAT_ICONS = {
   room: '<rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="15" cy="12" r=".8"/>', corridor: '<path d="M4 20 9 4M20 20 15 4M12 7v2M12 12v2M12 17v2"/>',
   node: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>', pin: '<path d="M12 21s6-5.5 6-10.5a6 6 0 0 0-12 0C6 15.5 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/>',
 };
+CAT_ICONS.cafe = '<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2.5c-.6 1 .6 2 0 3M12 2.5c-.6 1 .6 2 0 3"/>';
 CAT_ICONS.toilet_acc = CAT_ICONS.toilet; CAT_ICONS.ramp = CAT_ICONS.stairs; CAT_ICONS.wudu = CAT_ICONS.prayer; CAT_ICONS.exit = CAT_ICONS.entrance;
 
 const TURN_ICONS = {
@@ -112,6 +117,8 @@ const TURN_ICONS = {
   arrive: '<path d="M12 21s6-5.5 6-10.5a6 6 0 0 0-12 0C6 15.5 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/>',
   node: '<rect x="4" y="4" width="16" height="16" rx="4"/><path d="m8 12 3 3 5-6"/>',
   start: '<circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="8"/>',
+  lift: '<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M12 3v18M8.5 9.5 10 7.5l1.5 2M12.5 14.5l1.5 2 1.5-2"/>',
+  stairs: '<path d="M3 20h5v-4h4v-4h4V8h5"/>',
 };
 const svgIco = (inner, cls = '') => `<svg viewBox="0 0 24 24" class="${cls}" aria-hidden="true">${inner}</svg>`;
 
@@ -138,7 +145,7 @@ const t = (key, ...a) => { const v = T()[key] ?? STR.en[key] ?? key; return type
 const state = {
   maps: [],           // all loaded dalil-map objects
   map: null,          // current floor
-  fromId: null, toId: null, chip: null,
+  fromId: null, toKey: null, chip: null,   // toKey = "<floorId>|<pointId>" within the current building
   saved: store.get('dalil.saved', []),
 };
 const spoken = [];   // for tests and debugging
@@ -151,10 +158,53 @@ const pname = p => p ? (settings.lang === 'ar' ? (p.nameAr || p.nameEn) : (p.nam
 const pnameOther = p => settings.lang === 'ar' ? p.nameEn : p.nameAr;
 const catName = c => T().cats[c] || STR.en.cats[c] || c;
 const mode = () => settings.stepFree ? 'chair' : 'walk';
-const routeOf = (from, to, m = mode()) => state.map?.routes?.[m]?.[`${from}>${to}`] || null;
+const routeOf = (from, to, m = mode(), map = state.map) => map?.routes?.[m]?.[`${from}>${to}`] || null;
+// Floors of the current building, in the order the maps were listed (bottom to top).
+const bFloors = () => state.map ? state.maps.filter(m => m.building.id === state.map.building.id) : [];
+const mapByFloor = fid => bFloors().find(m => m.floor.id === fid) || null;
+const keyOf = (m, p) => `${m.floor.id}|${p.id}`;
+function resolve(key) { if (!key) return null; const [f, id] = key.split('|'); const m = mapByFloor(f); const p = m?.points.find(q => q.id === id); return p ? { m, p, key } : null; }
+const destRef = () => resolve(state.toKey);
+const stay = P => ({ distance_m: 0, seconds: 0, path: [[P.x, P.y], [P.x, P.y]], steps: [{ en: `Start at ${P.nameEn}.`, ar: `ابدأ من ${P.nameAr || P.nameEn}.` }, { en: `You have arrived at ${P.nameEn}.`, ar: `لقد وصلت إلى ${P.nameAr || P.nameEn}.` }] });
+// A route plan: one leg on the same floor, or two legs joined by a lift or stairs (points sharing a "link" code).
+function planRoute(fm, fromId, tm, toId, m = mode()) {
+  if (!fm || !tm) return null;
+  if (fm === tm) { if (fromId === toId) return null; const r = routeOf(fromId, toId, m, fm); return r ? { legs: [{ map: fm, route: r }], distance_m: r.distance_m, seconds: r.seconds, via: null } : null; }
+  const A = fm.points.find(p => p.id === fromId), B = tm.points.find(p => p.id === toId); if (!A || !B) return null;
+  const fl = bFloors(), up = fl.indexOf(tm) > fl.indexOf(fm), n = Math.max(1, Math.abs(fl.indexOf(tm) - fl.indexOf(fm)));
+  let best = null;
+  for (const pa of fm.points) {
+    if (!pa.link) continue; const pb = tm.points.find(q => q.link === pa.link); if (!pb) continue;
+    const lift = pa.category === 'lift' && pb.category === 'lift';
+    if (m === 'chair' && !lift) continue;
+    const r1 = pa.id === fromId ? stay(A) : routeOf(fromId, pa.id, m, fm), r2 = pb.id === toId ? stay(B) : routeOf(pb.id, toId, m, tm);
+    if (!r1 || !r2) continue;
+    const seconds = r1.seconds + r2.seconds + (lift ? 40 + 8 * n : 18 * n);
+    if (!best || seconds < best.seconds) best = { legs: [{ map: fm, route: r1 }, { map: tm, route: r2 }], distance_m: r1.distance_m + r2.distance_m, seconds, via: { pa, pb, lift, up, toMap: tm } };
+  }
+  return best;
+}
+const planTo = (key, m = mode()) => { const d = resolve(key); return d ? planRoute(state.map, state.fromId, d.m, d.p.id, m) : null; };
+function transferStep(via) {
+  const fEn = STR.en.floorName(via.toMap.floor), fAr = STR.ar.floorName(via.toMap.floor);
+  return via.lift
+    ? { en: STR.en.liftTo(via.up, fEn, via.pb.nameEn), ar: STR.ar.liftTo(via.up, fAr, via.pb.nameAr || via.pb.nameEn), kind: 'floor', turn: 'lift' }
+    : { en: STR.en.stairsTo(via.up, fEn), ar: STR.ar.stairsTo(via.up, fAr), kind: 'floor', turn: 'stairs' };
+}
+// All steps of a plan, each tagged with its leg and its distance range on that leg's path.
+function planSteps(plan) {
+  const legs = plan.legs.map(l => ({ ...l, ...buildSteps(l.route) })), out = [];
+  legs.forEach((leg, li) => {
+    let st = leg.steps.map(x => ({ ...x, leg: li }));
+    if (li < legs.length - 1) { st = st.slice(0, -1); out.push(...st, { ...transferStep(plan.via), leg: li, d0: leg.L, d1: leg.L, dist: 0 }); }
+    else out.push(...(li > 0 ? st.slice(1) : st));
+  });
+  out.forEach((x, i) => { x.i = i; });
+  return { legs, steps: out };
+}
 const fmtM = d => t('m', Math.max(1, Math.round(d)));
 const fmtMin = s => t('min', Math.max(1, Math.round(s / 60)));
-const floorShort = f => /^(ground|g)$/i.test(f.id) || /^ground$/i.test(f.name) ? t('floorG') : String(f.name || f.id).slice(0, 3);
+const floorShort = f => /^(ground|g)$/i.test(f.id) || /^ground$/i.test(f.name) ? t('floorG') : /(\d+)/.test(f.name || '') ? f.name.match(/(\d+)/)[1] : String(f.name || f.id).slice(0, 3);
 const buildings = () => {
   const b = new Map();
   for (const m of state.maps) { if (!b.has(m.building.id)) b.set(m.building.id, { ...m.building, floors: [] }); b.get(m.building.id).floors.push(m); }
@@ -268,7 +318,7 @@ class MapView {
     for (const p of this.map.points) {
       if (this.opts.points === 'nodes' && !p.dalilNode) continue;
       const label = `<span class="pt-dot${p.dalilNode ? ' node' : ''}"></span><span class="pt-label">${esc(pname(p))}</span>`;
-      const html = this.opts.interactive ? `<button type="button" data-pick="${esc(p.id)}" aria-label="${esc(pname(p))}">${label}</button>` : label;
+      const html = this.opts.interactive ? `<button type="button" data-pick="${esc(keyOf(this.map, p))}" aria-label="${esc(pname(p))}">${label}</button>` : label;
       const m = this.addMarker('mk-point', html, p.x, p.y); m.point = p.id;
     }
   }
@@ -393,7 +443,7 @@ function defaultFrom(map) {
 function selectFloor(map, { keepFrom = false } = {}) {
   state.map = map;
   if (!keepFrom || !pt(state.fromId)) state.fromId = defaultFrom(map);
-  if (!pt(state.toId)) state.toId = null;
+  if (!resolve(state.toKey)) state.toKey = null;
   state.chip = null;
   store.set('dalil.last', { b: map.building.id, f: map.floor.id });
   homeMap.setMap(map); floorMap.setMap(map); navMap.setMap(map);
@@ -402,19 +452,19 @@ function selectFloor(map, { keepFrom = false } = {}) {
 function setFrom(id, { say = true, confirm = false } = {}) {
   const p = pt(id); if (!p) return false;
   state.fromId = id;
-  if (state.toId === id) state.toId = null;
+  if (state.toKey === keyOf(state.map, p)) state.toKey = null;
   renderHome(); renderSearch();
   if (say) { const msg = confirm ? t('confirmed', pname(p)) : t('locSet', pname(p)); announce(msg); toast(msg); }
   return true;
 }
-function setDest(id, { chip = null, say = true } = {}) {
-  if (!pt(id)) return;
-  state.toId = id; state.chip = chip;
+function setDest(key, { chip = null, say = true } = {}) {
+  const d = resolve(key); if (!d) return;
+  state.toKey = key; state.chip = chip;
   closeResults();
   renderHome();
   if (say) {
-    const r = routeOf(state.fromId, id), p = pt(id);
-    announce(r ? t('routeTo', pname(p), fmtM(r.distance_m), fmtMin(r.seconds)) : pname(p));
+    const r = planTo(key);
+    announce(r ? t('routeTo', pname(d.p), fmtM(r.distance_m), fmtMin(r.seconds)) : pname(d.p));
   }
 }
 function renderFloorRail() {
@@ -435,14 +485,13 @@ function renderFloorRail() {
 function metaLine(map) { return `${map.building.name}  •  ${t('floorName', map.floor)}`; }
 
 function renderHome() {
-  const map = state.map, from = pt(state.fromId), to = pt(state.toId);
+  const map = state.map, from = pt(state.fromId), dest = destRef(), to = dest?.p || null;
   $('#fromName').textContent = from ? pname(from) : '—';
   $$('.chip[data-cat]').forEach(c => c.classList.toggle('is-active', c.dataset.cat === state.chip));
   $('#chipAccessible').setAttribute('aria-pressed', String(settings.stepFree));
 
   const heading = from?.facingDeg ?? 90;
   homeMap.setYou(from, heading);
-  homeMap.setDest(to);
   const msg = $('#routeMsg'); msg.className = 'route-msg'; msg.innerHTML = '';
   const fav = $('#btnFav'), banner = $('#homeBanner');
   let route = null;
@@ -453,18 +502,20 @@ function renderHome() {
     fav.hidden = true; $('#routeStats').hidden = true; banner.hidden = true;
   } else {
     $('#destName').textContent = pname(to);
-    $('#destMeta').textContent = `${catName(to.category)}  •  ${metaLine(map)}`;
+    $('#destMeta').textContent = `${catName(to.category)}  •  ${metaLine(dest.m)}`;
     fav.hidden = false;
-    const isSaved = isFav(to.id); fav.setAttribute('aria-pressed', String(isSaved)); fav.setAttribute('aria-label', t(isSaved ? 'unsave' : 'save'));
-    route = state.fromId === state.toId ? null : routeOf(state.fromId, state.toId);
-    if (state.fromId === state.toId) msg.textContent = t('alreadyHere');
+    const isSaved = isFav(state.toKey); fav.setAttribute('aria-pressed', String(isSaved)); fav.setAttribute('aria-label', t(isSaved ? 'unsave' : 'save'));
+    const here = dest.m === map && state.fromId === to.id;
+    route = here ? null : planTo(state.toKey);
+    if (here) msg.textContent = t('alreadyHere');
     else if (!route && settings.stepFree) { msg.className = 'route-msg warn'; msg.innerHTML = `<strong>${esc(t('noStepFreeTitle'))}</strong>${esc(t('noStepFreeBody'))}`; }
     else if (!route) { msg.className = 'route-msg warn'; msg.innerHTML = `<strong>${esc(t('noRoute'))}</strong>`; }
     $('#routeStats').hidden = !route;
     if (route) {
       $('#statEta').textContent = fmtMin(route.seconds);
       $('#statDist').textContent = fmtM(route.distance_m);
-      const { steps } = buildSteps(route), first = steps.find(s => s.kind === 'move' || s.kind === 'node');
+      const { steps } = planSteps(route), first = steps.find(s => s.kind === 'move' || s.kind === 'node' || s.kind === 'floor');
+      if (route.via) msg.textContent = t(route.via.lift ? 'viaLift' : 'viaStairs', t('floorName', route.via.toMap.floor));
       if (first) {
         banner.hidden = false;
         banner.querySelector('.turn-ico').innerHTML = svgIco(TURN_ICONS[first.turn] || TURN_ICONS.straight);
@@ -474,15 +525,17 @@ function renderHome() {
     } else banner.hidden = true;
   }
   $('#btnStart').disabled = !route;
-  homeMap.setRoute(route?.path || null);
+  homeMap.setRoute(route?.legs[0].route.path || null);
+  homeMap.setDest(dest ? (dest.m === map ? to : route?.via?.pa || null) : null);
   const img = to && route ? t('routeTo', pname(to), fmtM(route.distance_m), fmtMin(route.seconds)) + ' ' + t('mapAlt') : t('mapAlt');
   $('#homeMap').setAttribute('aria-label', t('planImg', map.building.name, t('floorName', map.floor), img));
   fitHome();
 }
 function fitHome() {
-  const from = pt(state.fromId), to = pt(state.toId), route = to && from && from !== to ? routeOf(from.id, to.id) : null;
+  const plan = state.toKey ? planTo(state.toKey) : null, path = plan?.legs[0].route.path;
+  const route = path && plan.legs[0].route.distance_m > 0 ? path : null;
   const banner = !$('#homeBanner').hidden, expanded = $('.map-card').classList.contains('expanded');
-  const pts = route ? [...route.path] : state.map.plan.walls.flat();
+  const pts = route ? [...route] : state.map.plan.walls.flat();
   homeMap.fit({ pts, tilt: route ? 32 : 18, padX: 56, padTop: banner ? 130 : 80, padBot: route ? 70 : 60, maxK: expanded ? 3 : 2.2 });
 }
 
@@ -492,13 +545,13 @@ const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-�
 function searchPoints(q) {
   const nq = norm(q); if (!nq) return [];
   const words = nq.split(/\s+/);
-  const scored = [];
-  for (const p of state.map.points) {
+  const scored = [], multi = bFloors().length > 1;
+  for (const m of bFloors()) for (const p of m.points) {
     const names = norm(`${p.nameEn} ${p.nameAr}`), cats = norm(`${catName(p.category)} ${STR.en.cats[p.category] || ''} ${STR.ar.cats[p.category] || ''} ${CAT_WORDS[p.category] || ''}`);
     if (!words.every(w => names.includes(w) || cats.includes(w))) continue;
     const starts = norm(pname(p)).startsWith(nq) ? 0 : names.includes(nq) ? 1 : 2;
-    const r = p.id === state.fromId ? null : routeOf(state.fromId, p.id);
-    scored.push({ p, r, score: starts * 1e6 + (r ? r.distance_m : 9e5) });
+    const r = planRoute(state.map, state.fromId, m, p.id);
+    scored.push({ p, m, r, multi, score: starts * 1e6 + (r ? r.seconds : 9e5) });
   }
   return scored.sort((a, b) => a.score - b.score);
 }
@@ -507,10 +560,10 @@ function renderSearch() {
   if (!q.trim()) { closeResults(); return; }
   const res = searchPoints(q);
   list.hidden = false;
-  list.innerHTML = res.length ? res.map(({ p, r }) =>
-    `<li><button type="button" data-pick="${esc(p.id)}">
+  list.innerHTML = res.length ? res.map(({ p, m, r, multi }) =>
+    `<li><button type="button" data-pick="${esc(keyOf(m, p))}">
       <span class="res-ico">${svgIco(CAT_ICONS[p.category] || CAT_ICONS.pin)}</span>
-      <span class="res-main"><span class="res-name">${esc(pname(p))}</span><span class="res-sub">${esc([pnameOther(p), catName(p.category)].filter(Boolean).join(' · '))}</span></span>
+      <span class="res-main"><span class="res-name">${esc(pname(p))}</span><span class="res-sub">${esc([pnameOther(p), catName(p.category), multi ? t('floorName', m.floor) : ''].filter(Boolean).join(' · '))}</span></span>
       <span class="res-dist">${r ? esc(fmtM(r.distance_m)) : ''}</span></button></li>`).join('')
     : `<li class="res-empty">${esc(t('noResults'))}</li>`;
   $('#resultsStatus').textContent = res.length ? t('results', res.length) : t('noResults');
@@ -519,12 +572,13 @@ function closeResults() { $('#results').hidden = true; $('#results').innerHTML =
 
 /* ---------- Category chips ---------- */
 function pickNearest(cat) {
-  const label = t('cat_' + cat), cands = state.map.points.filter(p => CHIP_CATS[cat].includes(p.category) && p.id !== state.fromId);
+  const label = t('cat_' + cat), cands = [];
+  for (const m of bFloors()) for (const p of m.points) if (CHIP_CATS[cat].includes(p.category) && !(m === state.map && p.id === state.fromId)) cands.push({ m, p });
   if (!cands.length) { const m = t('noneOfCat', label); toast(m); announce(m); return; }
   let best = null;
-  for (const p of cands) { const r = routeOf(state.fromId, p.id); if (r && (!best || r.distance_m < best.r.distance_m)) best = { p, r }; }
+  for (const { m, p } of cands) { const r = planRoute(state.map, state.fromId, m, p.id); if (r && (!best || r.seconds < best.r.seconds)) best = { m, p, r }; }
   if (!best) { const m = settings.stepFree ? t('noneReachable', label) : t('noRoute'); toast(m); announce(m); return; }
-  setDest(best.p.id, { chip: cat, say: false });
+  setDest(keyOf(best.m, best.p), { chip: cat, say: false });
   const m = t('nearest', label, pname(best.p), fmtM(best.r.distance_m)); announce(m); toast(m);
 }
 function setStepFree(on) {
@@ -535,13 +589,13 @@ function setStepFree(on) {
 }
 
 /* ---------- Saved ---------- */
-const favKey = id => `${state.map.building.id}/${state.map.floor.id}/${id}`;
-const isFav = id => state.saved.includes(favKey(id));
-function toggleFav(id, force) {
-  const k = favKey(id), has = state.saved.includes(k), want = force ?? !has;
+const favKey = key => `${state.map.building.id}/${key.replace('|', '/')}`;
+const isFav = key => !!key && state.saved.includes(favKey(key));
+function toggleFav(key, force) {
+  const k = favKey(key), has = state.saved.includes(k), want = force ?? !has;
   if (want && !has) state.saved.push(k); if (!want && has) state.saved = state.saved.filter(x => x !== k);
   store.set('dalil.saved', state.saved); renderSaved();
-  if (state.toId === id) renderHome();
+  if (state.toKey === key) renderHome();
   return want;
 }
 function renderSaved() {
@@ -561,7 +615,7 @@ function renderPlaceList() {
   $('#floorMap').setAttribute('aria-label', t('planImg', map.building.name, t('floorName', map.floor), ''));
   $('#placeList').innerHTML = map.points.map(p => {
     const r = p.id === state.fromId ? null : routeOf(state.fromId, p.id);
-    return `<li><button class="place" type="button" data-pick="${esc(p.id)}"><span class="res-ico">${svgIco(CAT_ICONS[p.category] || CAT_ICONS.pin)}</span><span class="res-main"><span class="res-name">${esc(pname(p))}</span><span class="res-sub">${esc([catName(p.category), p.dalilNode ? t('dalilTag') : ''].filter(Boolean).join(' · '))}</span></span><span class="res-dist">${r ? esc(fmtM(r.distance_m)) : ''}</span></button></li>`;
+    return `<li><button class="place" type="button" data-pick="${esc(keyOf(map, p))}"><span class="res-ico">${svgIco(CAT_ICONS[p.category] || CAT_ICONS.pin)}</span><span class="res-main"><span class="res-name">${esc(pname(p))}</span><span class="res-sub">${esc([catName(p.category), p.dalilNode ? t('dalilTag') : ''].filter(Boolean).join(' · '))}</span></span><span class="res-dist">${r ? esc(fmtM(r.distance_m)) : ''}</span></button></li>`;
   }).join('');
 }
 
@@ -603,17 +657,16 @@ function showScreen(name) {
 /* =========================================================================
    Navigation mode
    ========================================================================= */
-const nav = { active: false, route: null, steps: [], cum: [], L: 0, i: 0, pos: 0, sim: false, dwell: 0, raf: 0, last: 0, rot: 0, toId: null };
+const nav = { active: false, plan: null, legs: [], steps: [], leg: -1, i: 0, pos: 0, sim: false, dwell: 0, raf: 0, last: 0, rot: 0, toKey: null };
 
 function startNav() {
-  const route = routeOf(state.fromId, state.toId); if (!route) return;
-  const { steps, cum, L } = buildSteps(route);
-  Object.assign(nav, { active: true, route, steps, cum, L, i: 0, pos: 0, sim: false, dwell: 0, toId: state.toId, rot: null });
+  const plan = planTo(state.toKey); if (!plan) return;
+  const { legs, steps } = planSteps(plan), dest = destRef();
+  Object.assign(nav, { active: true, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null });
   $('#app').inert = true; $('#nav').hidden = false;
-  navMap.setDest(pt(state.toId));
-  $('#navDest').textContent = pname(pt(state.toId));
+  $('#navDest').textContent = pname(dest.p);
   renderStepList();
-  goStep(0, { focus: true, intro: t('navStarted', pname(pt(state.toId))) });  // nav is visible now, so the map has its size
+  goStep(0, { focus: true, intro: t('navStarted', pname(dest.p)) });  // nav is visible now, so the map has its size
 }
 function endNav() {
   stopSim();
@@ -639,6 +692,7 @@ function goStep(i, { focus = false, speakIt = true, intro = '' } = {}) {
     if (i !== prev || i === 0) {
       if (s.kind === 'move' && s.turn !== 'straight') buzz(s.turn === 'around' ? [80, 60, 80, 60, 80] : [70, 50, 70]);
       else if (s.kind === 'node') buzz([200]);
+      else if (s.kind === 'floor') buzz([120, 80, 120]);
       else if (s.kind === 'arrive') buzz([100, 60, 100, 60, 260]);
     }
   }
@@ -652,28 +706,34 @@ function renderNavStep(updateList) {
   $('#navStepText').textContent = stepText(s);
   $('#btnTag').hidden = s.kind !== 'node';
   $('#btnPrev').disabled = nav.i === 0; $('#btnNext').disabled = nav.i >= nav.steps.length - 1;
-  $('#navDest').textContent = pname(pt(nav.toId));
+  $('#navDest').textContent = pname(resolve(nav.toKey)?.p);
   if (updateList) renderStepList(); else { renderStepList(); }
   $('#navMap').setAttribute('aria-label', t('mapAlt'));
   updateNavPos(true);
 }
 function updateNavPos(animate) {
-  const s = nav.steps[nav.i], { path } = nav.route;
-  const p = pointAt(path, nav.cum, nav.pos);
+  const s = nav.steps[nav.i], leg = nav.legs[s.leg], path = leg.route.path;
+  if (nav.leg !== s.leg) {   // a new floor: swap the plan under the camera
+    nav.leg = s.leg; nav.rot = null; navMap.setMap(leg.map);
+    const d = resolve(nav.toKey); navMap.setDest(d && d.m === leg.map ? d.p : nav.plan.via?.pa || null);
+    animate = false;
+  }
+  const p = pointAt(path, leg.cum, nav.pos);
   // Sub-line: distance left on this leg, then a preview of the next step.
   const next = nav.steps[nav.i + 1];
   let sub = '';
   if (s.kind === 'move') sub = t('left', fmtM(s.d1 - nav.pos));
   if (next && s.kind !== 'arrive') sub += (sub ? '  ·  ' : '') + `${t('then')}: ${stepShort(next)}`;
   $('#navStepSub').textContent = sub;
-  const remain = Math.max(0, nav.L - nav.pos);
+  const total = nav.legs.reduce((a, l) => a + l.L, 0) || 1;
+  const remain = Math.max(0, leg.L - nav.pos) + nav.legs.slice(s.leg + 1).reduce((a, l) => a + l.L, 0);
   $('#navRemain').textContent = fmtM(remain);
-  $('#navRemainTime').textContent = t('remainTime', fmtMin(nav.route.seconds * remain / (nav.L || 1)));
+  $('#navRemainTime').textContent = t('remainTime', fmtMin(nav.plan.seconds * remain / total));
   // Done / remaining route.
   const done = path.slice(0, p.i).concat([[p.x, p.y]]), rest = [[p.x, p.y]].concat(path.slice(p.i));
   navMap.setRoute(rest, done);
   // Heading up. For start and node steps, look along the next leg.
-  const h = headingAt(path, nav.cum, nav.pos + (s.kind === 'move' ? 0 : 0.01));
+  const h = headingAt(path, leg.cum, nav.pos + (s.kind === 'move' ? 0 : 0.01));
   const [px, py] = navMap.px(p.x, p.y);
   let rot = -90 + h;  // screen rotation that puts the heading at the top
   if (nav.rot != null) { while (rot - nav.rot > 180) rot -= 360; while (rot - nav.rot < -180) rot += 360; }
@@ -716,17 +776,19 @@ function stopSim() {
 }
 function showArrival() {
   if (!nav.active) return;
-  const to = pt(nav.toId);
+  const to = resolve(nav.toKey)?.p;
   $('#arrivedName').textContent = pname(to);
-  $('#arrivedStats').textContent = `${fmtM(nav.route.distance_m)} · ${fmtMin(nav.route.seconds)}`;
-  $('#btnArrivedSave').textContent = isFav(nav.toId) ? t('saved') : t('savePlace');
+  $('#arrivedStats').textContent = `${fmtM(nav.plan.distance_m)} · ${fmtMin(nav.plan.seconds)}`;
+  $('#btnArrivedSave').textContent = isFav(nav.toKey) ? t('saved') : t('savePlace');
   $('#arrived').hidden = false; $('#nav').inert = true;
   $('#arrivedTitle').focus();
 }
 function finishArrival() {
   $('#nav').inert = false;
-  if (pt(nav.toId)) { state.fromId = nav.toId; state.toId = null; state.chip = null; }
+  const d = resolve(nav.toKey);
+  if (d) { if (d.m !== state.map) selectFloor(d.m); state.fromId = d.p.id; state.toKey = null; state.chip = null; }
   endNav();
+  navMap.setMap(state.map); nav.leg = -1;
 }
 
 /* =========================================================================
@@ -762,9 +824,13 @@ function applyLink(link, { fromTag = false } = {}) {
   } else if (link.at && !map.points.some(p => p.id === link.at)) {
     map = state.maps.find(m => m.points.some(p => p.id === link.at)) || map;
   }
+  if (link.f && !link.b) map = state.maps.find(m => m.building.id === map.building.id && m.floor.id === link.f) || map;
   if (map !== state.map) selectFloor(map);
   if (link.at) setFrom(link.at, { confirm: fromTag });
-  if (link.to) setDest(link.to);
+  if (link.to) {   // "P007" (this floor first, then the others) or "<floor>|P007"
+    const key = link.to.includes('|') ? link.to : [state.map, ...bFloors()].map(m => m.points.some(p => p.id === link.to) ? keyOf(m, { id: link.to }) : null).find(Boolean);
+    if (key) setDest(key);
+  }
   return true;
 }
 async function openTagPicker() {
@@ -819,9 +885,9 @@ function bind() {
       return;
     }
     const sv = e.target.closest('[data-saved]');
-    if (sv) { const [b, f, id] = sv.dataset.saved.split('/'); const m = state.maps.find(m => m.building.id === b && m.floor.id === f); if (m && m !== state.map) selectFloor(m); setDest(id); showScreen('home'); return; }
+    if (sv) { const [b, f, id] = sv.dataset.saved.split('/'); const m = state.maps.find(m => m.building.id === b && m.floor.id === f); if (m && m.building.id !== state.map.building.id) selectFloor(m); setDest(`${f}|${id}`); showScreen('home'); return; }
     const us = e.target.closest('[data-unsave]');
-    if (us) { state.saved = state.saved.filter(k => k !== us.dataset.unsave); store.set('dalil.saved', state.saved); renderSaved(); if (state.toId) renderHome(); return; }
+    if (us) { state.saved = state.saved.filter(k => k !== us.dataset.unsave); store.set('dalil.saved', state.saved); renderSaved(); if (state.toKey) renderHome(); return; }
     if (!e.target.closest('.search-wrap')) closeResults();
   });
   $$('.chip[data-cat]').forEach(c => { c.onclick = () => pickNearest(c.dataset.cat); });
@@ -829,7 +895,7 @@ function bind() {
   $('#btnScan').onclick = openTagPicker;
   $('#btnFrom').onclick = openTagPicker;
   $('#tagList').addEventListener('click', e => { const b = e.target.closest('[data-tag]'); if (b) { e.preventDefault(); $('#dlgTag').close(); setFrom(b.dataset.tag); } });
-  $('#btnFav').onclick = () => { if (state.toId) { const on = toggleFav(state.toId); announce(t(on ? 'saved' : 'unsave')); } };
+  $('#btnFav').onclick = () => { if (state.toKey) { const on = toggleFav(state.toKey); announce(t(on ? 'saved' : 'unsave')); } };
   $('#btnStart').onclick = startNav;
   $('#btnRecenter').onclick = fitHome;
   $('#btnCompass').onclick = fitHome;
@@ -864,7 +930,7 @@ function bind() {
   $('#btnTag').onclick = confirmTag;
   $('#btnEndNav').onclick = endNav;
   $('#btnArrivedDone').onclick = finishArrival;
-  $('#btnArrivedSave').onclick = () => { toggleFav(nav.toId, true); $('#btnArrivedSave').textContent = t('saved'); };
+  $('#btnArrivedSave').onclick = () => { toggleFav(nav.toKey, true); $('#btnArrivedSave').textContent = t('saved'); };
   document.addEventListener('keydown', e => {
     if (!nav.active || !$('#arrived').hidden || e.target.closest('input,select,textarea')) return;
     if (e.key === 'Escape') endNav();

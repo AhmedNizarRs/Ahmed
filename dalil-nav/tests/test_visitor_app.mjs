@@ -50,7 +50,7 @@ test('sample hospital loads; search "prayer" and navigate: steps match routes.wa
   const { ctx, page, errors } = await open();
   assert.equal(await page.textContent('#fromName'), 'Main Entrance');
   await page.fill('#search', 'prayer');
-  await page.click('#results button[data-pick="P007"]');
+  await page.click('#results button[data-pick="ground|P007"]');
   assert.equal(await page.textContent('#destName'), 'Prayer Room');
   const r = SAMPLE.routes.walk['P001>P007'];
   assert.equal(await page.textContent('#statDist'), `${Math.round(r.distance_m)} m`);
@@ -98,7 +98,7 @@ test('Accessible mode to Clinic 2 shows "no step-free route"', async () => {
   await page.click('#chipAccessible');
   assert.equal(await page.getAttribute('#chipAccessible', 'aria-pressed'), 'true');
   await page.fill('#search', 'clinic 2');
-  await page.click('#results button[data-pick="P010"]');
+  await page.click('#results button[data-pick="ground|P010"]');
   assert.match(await page.textContent('#routeMsg'), /no step-free route/i);
   assert.ok(await page.isDisabled('#btnStart'));
   assert.equal(SAMPLE.routes.chair['P001>P010'], undefined);
@@ -108,7 +108,7 @@ test('Accessible mode to Clinic 2 shows "no step-free route"', async () => {
   // A step-free route that exists uses routes.chair.
   await page.click('#chipAccessible');
   await page.fill('#search', 'pharmacy');
-  await page.click('#results button[data-pick="P008"]');
+  await page.click('#results button[data-pick="ground|P008"]');
   assert.equal(await page.textContent('#statDist'), `${Math.round(SAMPLE.routes.chair['P001>P008'].distance_m)} m`);
   assert.deepEqual(errors, []);
   await ctx.close();
@@ -130,7 +130,7 @@ test('category chip picks the nearest point by route distance', async () => {
   const { ctx, page } = await open('#at-P001');
   await page.click('.chip[data-cat="toilet"]');
   const best = ['P005', 'P006'].sort((a, b) => SAMPLE.routes.walk[`P001>${a}`].distance_m - SAMPLE.routes.walk[`P001>${b}`].distance_m)[0];
-  assert.equal(await page.evaluate(() => window.DALIL_APP.state.toId), best);
+  assert.equal(await page.evaluate(() => window.DALIL_APP.state.toKey), `ground|${best}`);
   await ctx.close();
 });
 
@@ -149,7 +149,7 @@ test('Arabic UI is fully RTL and the Arabic steps read correctly', async () => {
   assert.ok(icon.x > input.x, 'search icon is on the right in RTL');
 
   await page.fill('#search', 'المصلى');
-  await page.click('#results button[data-pick="P007"]');
+  await page.click('#results button[data-pick="ground|P007"]');
   assert.equal(await page.textContent('#destName'), 'المصلى');
   await page.click('#btnStart');
   const r = SAMPLE.routes.walk['P001>P007'];
@@ -159,6 +159,43 @@ test('Arabic UI is fully RTL and the Arabic steps read correctly', async () => {
   await page.click('#btnNext');
   assert.equal(await page.textContent('#navStepText'), r.steps[1].ar);
   assert.ok((await page.evaluate(() => window.DALIL_APP.spoken)).includes(r.steps[1].ar));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('test building (Kennedy Library): routes between floors by stairs, or by lift when step-free', async () => {
+  const L1 = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-1.json'), 'utf8'));
+  const L2 = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-2.json'), 'utf8'));
+  const { ctx, page, errors } = await open('#b=kennedy-library-cal-poly-test&f=level-1&at-P001');
+  assert.equal(await page.textContent('#fromName'), 'Main Entrance (South)');
+  assert.deepEqual(await page.$$eval('.floor-btn', b => b.map(x => x.textContent)), ['2', '1']);
+  const room = L2.points.find(p => p.nameEn === 'Study Room 216K');
+  await page.fill('#search', '216K');
+  await page.click(`#results button[data-pick="level-2|${room.id}"]`);
+  assert.match(await page.textContent('#destMeta'), /Level 2/);
+  await page.click('#btnStart');
+  let st = await steps(page);
+  const t = st.findIndex(s => /^Take the (stairs|lift) up to Level 2/.test(s));
+  assert.ok(t > 0, 'has a floor change step');
+  // Leg 1 ends at a connector whose link exists on Level 2; the steps around it come from the two map files.
+  const plan = await page.evaluate(() => { const v = window.DALIL_APP.nav.plan.via; return { pa: v.pa.id, pb: v.pb.id, lift: v.lift }; });
+  const a = L1.points.find(p => p.id === plan.pa), b = L2.points.find(p => p.id === plan.pb);
+  assert.equal(a.link, b.link);
+  assert.deepEqual(st.slice(0, t), L1.routes.walk[`P001>${a.id}`].steps.slice(0, -1).map(s => s.en));
+  assert.deepEqual(st.slice(t + 1), L2.routes.walk[`${b.id}>${room.id}`].steps.slice(1).map(s => s.en));
+  for (let i = 0; i < st.length - 1; i++) await page.click('#btnNext');
+  await page.waitForSelector('#arrived:not([hidden])');
+  await page.click('#btnArrivedDone');
+  assert.equal(await page.textContent('#fromName'), 'Study Room 216K');
+  // Step-free from the entrance: must use a lift, never stairs.
+  await page.goto(base + '#f=level-1&b=kennedy-library-cal-poly-test&at-P001');
+  await page.evaluate(() => window.DALIL_APP.ready);
+  await page.click('#chipAccessible');
+  await page.fill('#search', '216K');
+  await page.click(`#results button[data-pick="level-2|${room.id}"]`);
+  await page.click('#btnStart');
+  st = await steps(page);
+  assert.ok(st.some(s => /^Take the lift up to Level 2/.test(s)) && !st.some(s => /stairs/i.test(s)), 'step-free uses the lift');
   assert.deepEqual(errors, []);
   await ctx.close();
 });

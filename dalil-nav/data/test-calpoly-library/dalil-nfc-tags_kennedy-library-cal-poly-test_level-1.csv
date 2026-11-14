@@ -1,0 +1,4 @@
+﻿node_id,name_en,name_ar,category,x_m,y_m,facing,nfc_url
+P001,"Main Entrance (South)","المدخل الرئيسي (الجنوبي)",entrance,69.52,0.38,90,https://dalil.app/t/kennedy-library-cal-poly-test/level-1/P001
+P020,"West Lifts","المصاعد الغربية",lift,31.92,24.52,0,https://dalil.app/t/kennedy-library-cal-poly-test/level-1/P020
+P021,"East Lift","المصعد الشرقي",lift,82.58,12.66,180,https://dalil.app/t/kennedy-library-cal-poly-test/level-1/P021
