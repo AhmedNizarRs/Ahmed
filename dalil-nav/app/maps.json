@@ -1,0 +1,6 @@
+{
+  "maps": [
+    "../data/dalil-map_sample-hospital_ground.json",
+    "../data/dalil-map_hospital-building-1000_ground.json"
+  ]
+}

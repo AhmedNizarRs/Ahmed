@@ -1,6 +1,6 @@
 # Ahmed's workspace
 
-This repository holds several projects: **DALIL** (`dalil/` website, `dalil-hq/` company team), plus `videoforge/`, `rimal/`, `drli3d/` and others. The notes below apply when the work is about DALIL.
+This repository holds several projects: **DALIL** (`dalil/` website, `dalil-hq/` company team, `dalil-nav/` Mapper + visitor app with its own `CLAUDE.md`), plus `videoforge/`, `rimal/`, `drli3d/` and others. The notes below apply when the work is about DALIL.
 
 ## DALIL: Claude is the team
 

@@ -1,0 +1,13 @@
+{
+  "name": "dalil-nav",
+  "private": true,
+  "description": "DALIL Mapper and visitor app. No build step; Playwright is only for tests.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/test_visitor_app.mjs",
+    "serve": "python3 -m http.server 8080"
+  },
+  "devDependencies": {
+    "playwright": "^1.50.0"
+  }
+}

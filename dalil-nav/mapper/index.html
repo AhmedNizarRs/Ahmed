@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DALIL Mapper</title>
+<style>
+:root{--ink:#0B0F14;--ink2:#3A4250;--mute:#7A8494;--line:#E3E7ED;--bg:#F4F6FA;--blue:#1F6FEB;--blue2:#E8F0FE;--red:#D93025;--green:#0F9D58}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Arabic",Tahoma,sans-serif;color:var(--ink);background:var(--bg);font-size:13px}
+#app{display:grid;grid-template-columns:370px 1fr;height:100vh}
+aside{background:#fff;border-right:1px solid var(--line);overflow-y:auto}
+.brand{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px;position:sticky;top:0;background:#fff;z-index:2}
+.logo{width:32px;height:32px;border-radius:8px;background:var(--ink);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px}
+.brand b{font-size:15px;letter-spacing:.3px}.brand small{display:block;color:var(--mute);font-size:11px}
+.panel{border-bottom:1px solid var(--line);padding:14px 18px}
+.panel h3{margin:0 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.8px;display:flex;align-items:center;gap:8px}
+.panel h3 .n{width:20px;height:20px;border-radius:50%;background:var(--blue);color:#fff;display:grid;place-items:center;font-size:11px}
+.row{display:flex;gap:8px;align-items:center;margin:6px 0;flex-wrap:wrap}
+.row>label{min-width:84px;color:var(--ink2)}
+input[type=text],input[type=number],select{border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;background:#fff;min-width:0;flex:1}
+input[type=number]{max-width:90px}
+button{font:inherit;border:1px solid var(--ink);background:#fff;color:var(--ink);border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:600}
+button:hover{background:var(--blue2)}
+button.pri{background:var(--ink);color:#fff}button.pri:hover{background:#222b36}
+button.blue{background:var(--blue);border-color:var(--blue);color:#fff}
+button:disabled{opacity:.4;cursor:default}
+.hint{color:var(--mute);font-size:12px;line-height:1.45;margin:6px 0}
+.status{font-size:12px;color:var(--ink2);background:var(--bg);border-radius:6px;padding:7px 9px;margin-top:8px;line-height:1.5}
+.status.err{color:var(--red);background:#FDECEA}
+.status.ok{color:#0b6b3c;background:#E6F4EA}
+table.layers{width:100%;border-collapse:collapse;font-size:12px}
+table.layers td{padding:3px 2px;border-bottom:1px solid var(--line)}
+table.layers td:first-child{max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+table.layers select{padding:3px 4px;font-size:12px}
+.sw{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle;border:1px solid #0002}
+.layerbox{max-height:260px;overflow:auto;border:1px solid var(--line);border-radius:6px;padding:2px 6px}
+.plist{max-height:220px;overflow:auto;border:1px solid var(--line);border-radius:6px}
+.pi{display:flex;align-items:center;gap:8px;padding:6px 8px;border-bottom:1px solid var(--line);cursor:pointer}
+.pi:last-child{border-bottom:0}
+.pi.sel{background:var(--blue2)}
+.pi .dot{width:12px;height:12px;border-radius:50%;border:2px solid var(--ink);flex:none}
+.pi .dot.node{background:var(--blue);border-color:var(--blue)}
+.pi .ar{margin-left:auto;color:var(--mute);direction:rtl}
+.editor{border:1px solid var(--blue);border-radius:8px;padding:8px 10px;margin-top:8px;background:#FAFCFF}
+ol.steps{margin:8px 0 0;padding-left:20px;line-height:1.5}
+ol.steps li{margin:4px 0}
+ol.steps.rtl{direction:rtl;padding-left:0;padding-right:20px;font-size:14px}
+.kpi{display:flex;gap:8px;margin-top:8px}
+.kpi div{flex:1;background:var(--bg);border-radius:6px;padding:6px 8px}
+.kpi b{display:block;font-size:16px}.kpi span{color:var(--mute);font-size:11px}
+main{position:relative;overflow:hidden;background:#fff}
+canvas{display:block;width:100%;height:100%;touch-action:none}
+.tools{position:absolute;top:12px;left:12px;display:flex;gap:4px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:4px;box-shadow:0 2px 10px #0b0f1414}
+.tools button{border:0;border-radius:7px;padding:7px 10px;font-weight:600}
+.tools button.on{background:var(--ink);color:#fff}
+.tools .sep{width:1px;background:var(--line);margin:4px 2px}
+.hud{position:absolute;left:12px;bottom:12px;background:#fffd;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:12px;color:var(--ink2);display:flex;gap:14px;align-items:center}
+.scalebar{height:6px;border:2px solid var(--ink);border-top:0}
+.toast{position:absolute;right:12px;top:12px;background:var(--ink);color:#fff;border-radius:8px;padding:8px 12px;font-size:12px;max-width:340px;display:none}
+.legend{position:absolute;right:12px;bottom:12px;background:#fffd;border:1px solid var(--line);border-radius:8px;padding:6px 10px;font-size:11px;color:var(--ink2);line-height:1.7}
+.legend i{display:inline-block;width:14px;height:3px;margin-right:6px;vertical-align:middle}
+.empty{position:absolute;inset:0;display:grid;place-items:center;pointer-events:none}
+.empty div{text-align:center;color:var(--mute);max-width:380px;line-height:1.6}
+.empty b{color:var(--ink);font-size:18px;display:block;margin-bottom:6px}
+.mini{font-size:11px;color:var(--mute)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div id="app">
+<aside>
+  <div class="brand"><div class="logo">د</div><div><b>DALIL Mapper</b><small>Floor plan → indoor navigation map · دليل</small></div></div>
+
+  <section class="panel">
+    <h3><span class="n">1</span>Floor plan</h3>
+    <div class="row">
+      <button class="pri" id="btnDxf">Open DXF</button>
+      <button id="btnImg">Image / PDF</button>
+      <button id="btnSample">Sample hospital</button>
+    </div>
+    <input type="file" id="fDxf" accept=".dxf" class="hidden">
+    <input type="file" id="fImg" accept="image/*,.pdf" class="hidden">
+    <p class="hint">AutoCAD: <b>Save As → DXF</b> (any version). Scanned plans or PDFs: open as image, calibrate, then trace walls.</p>
+    <div class="row"><label>Building</label><input type="text" id="inBuilding" placeholder="e.g. University Block A"></div>
+    <div class="row"><label>Floor</label><input type="text" id="inFloor" value="Ground"></div>
+    <div class="row" id="unitRow"><label>Drawing units</label>
+      <select id="selUnits"><option value="auto">Auto (from file)</option><option value="mm">Millimetres</option><option value="cm">Centimetres</option><option value="m">Metres</option><option value="in">Inches</option><option value="ft">Feet</option></select></div>
+    <div class="status" id="planStatus">No plan loaded.</div>
+  </section>
+
+  <section class="panel" id="panelLayers">
+    <h3><span class="n">2</span>Layers → walls &amp; doors</h3>
+    <div id="dxfLayers">
+      <p class="hint">Walls/columns/glazing = <b>Wall</b> (blocks movement). Door swings = <b>Door</b> (passable). A layer holding both = <b>Walls + doors</b> (long straight lines block, arcs and door leaves don't). Furniture you can't walk through (counters, fixed seating) = <b>Wall</b> too.</p>
+      <div class="row"><button id="btnAllCtx">All → context</button><button id="btnSuggest">Auto-suggest</button></div>
+      <div class="layerbox"><table class="layers" id="layerTable"></table></div>
+    </div>
+    <div id="imgTools" class="hidden">
+      <p class="hint">1. Pick <b>Calibrate</b>, click two ends of a known dimension, enter its real length.<br>2. Pick <b>Wall</b> and trace walls (click points, double-click/Esc to finish, Shift = straight). Leave gaps at doors.</p>
+      <div class="row" id="calRow"><label>Known length</label><input type="number" id="inCal" step="0.01" placeholder="m"><button id="btnCal" disabled>Apply</button></div>
+      <div class="status" id="calStatus">Scale not calibrated (assumed 50 px = 1 m).</div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3><span class="n">3</span>Walkable map</h3>
+    <div class="row"><label>Walking clearance</label><input type="number" id="inClrW" value="0.25" step="0.05" min="0.05"> <span class="mini">m from walls</span></div>
+    <div class="row"><label>Wheelchair clearance</label><input type="number" id="inClrC" value="0.40" step="0.05" min="0.05"> <span class="mini">blocks gaps &lt; 2×</span></div>
+    <div class="row"><button class="pri" id="btnBuild">Build walkable map</button><label style="min-width:0"><input type="checkbox" id="chkGrid"> show</label>
+      <select id="selGridMode" style="max-width:120px"><option value="walk">walking</option><option value="chair">wheelchair</option></select></div>
+    <div class="row"><label style="min-width:0"><input type="checkbox" id="chkThin" checked> Ignore lone lines across openings</label><label style="min-width:0"><input type="checkbox" id="chkIndoor" checked> Keep routes indoors</label></div>
+    <p class="hint">Old/record drawings often draw door frames or thresholds as single lines on the wall layer, sealing rooms and corridors. This removes single lines (1.2–3.6 m) that span between walls with no parallel wall face. Still blocked? Use <b>⇥ Opening</b> and drag across the blocking line.</p>
+    <div class="status" id="gridStatus">Not built.</div>
+  </section>
+
+  <section class="panel">
+    <h3><span class="n">4</span>Points &amp; DALIL nodes</h3>
+    <p class="hint">Pick <b>+ Point</b> and click the plan. <b>DALIL node</b> = a physical tactile/NFC tag where a user can confirm their location. Drag points to move them.</p>
+    <div class="plist" id="pointList"></div>
+    <div class="editor hidden" id="editor">
+      <div class="row"><label>Name (EN)</label><input type="text" id="eNameEn"></div>
+      <div class="row"><label>الاسم (AR)</label><input type="text" id="eNameAr" dir="rtl"></div>
+      <div class="row"><label>Category</label><select id="eCat"></select></div>
+      <div class="row"><label>DALIL node</label><input type="checkbox" id="eNode"> <span class="mini">tactile + NFC tag here</span></div>
+      <div class="row"><label>User faces</label><select id="eFace"><option value="90">Plan top ↑</option><option value="0">Plan right →</option><option value="270">Plan bottom ↓</option><option value="180">Plan left ←</option></select></div>
+      <div class="row"><button id="eDel" style="color:var(--red);border-color:var(--red)">Delete point</button><span class="mini" id="eXY"></span></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h3><span class="n">5</span>Test a route</h3>
+    <div class="row"><label>From</label><select id="rFrom"></select></div>
+    <div class="row"><label>To</label><select id="rTo"></select></div>
+    <div class="row"><label>Mode</label><select id="rMode"><option value="walk">Walking</option><option value="chair">Wheelchair (step-free, wide)</option></select></div>
+    <div class="row"><label>Language</label><select id="rLang"><option value="en">English</option><option value="ar">العربية</option></select></div>
+    <div class="row"><button class="blue" id="btnRoute">Find route</button><button id="btnSpeak" disabled>🔊 Speak</button></div>
+    <div id="routeOut"></div>
+  </section>
+
+  <section class="panel">
+    <h3><span class="n">6</span>Export</h3>
+    <div class="row"><label>NFC base URL</label><input type="text" id="inBase" value="https://dalil.app/t"></div>
+    <div class="row"><button class="pri" id="btnExport">Export map JSON</button><button id="btnCsv">NFC tag list</button></div>
+    <div class="row"><button id="btnSave">Save project</button><button id="btnOpen">Open project</button></div>
+    <input type="file" id="fProj" accept=".json" class="hidden">
+    <p class="hint">Map JSON holds every point, the plan outline and precomputed routes between all points (walking + wheelchair, EN + AR steps) — ready for the DALIL app.</p>
+    <div class="status" id="expStatus">—</div>
+  </section>
+</aside>
+
+<main id="main">
+  <canvas id="cv"></canvas>
+  <div class="tools">
+    <button data-tool="pan" class="on" title="Pan (H)">✋ Pan</button>
+    <button data-tool="point" title="Add / move points (P)">＋ Point</button>
+    <div class="sep"></div>
+    <button data-tool="wall" title="Draw wall (W)">▭ Wall</button>
+    <button data-tool="open" title="Punch an opening through a wall (O)">⇥ Opening</button>
+    <button data-tool="erase" title="Erase drawn wall / opening (E)">⌫ Erase</button>
+    <button data-tool="cal" title="Calibrate scale (C)">📏 Calibrate</button>
+    <div class="sep"></div>
+    <button id="btnFit" title="Fit (F)">⤢ Fit</button>
+  </div>
+  <div class="hud"><div><div class="scalebar" id="sbar" style="width:80px"></div><span id="sbarTxt">—</span></div><span id="xy">x — y —</span></div>
+  <div class="legend"><div><i style="background:#0B0F14"></i>Wall</div><div><i style="background:#1F6FEB;height:2px"></i>Door</div><div><i style="background:#ff6a00;height:3px"></i>Drawn wall</div><div><i style="background:#0F9D58;height:4px"></i>Opening</div><div><i style="background:#c2185b;height:2px"></i>Ignored line</div><div><i style="background:#1F6FEB;height:5px;border-radius:3px"></i>Route</div></div>
+  <div class="toast" id="toast"></div>
+  <div class="empty" id="empty"><div><b>Open a floor plan to start</b>DXF from AutoCAD, or an image/PDF to trace.<br>No plan to hand? Click <b>Sample hospital</b>.</div></div>
+</main>
+</div>
+
+<script>
+"use strict";
+/* ============================================================
+   DALIL Mapper — floor plan to indoor navigation map
+   ============================================================ */
+
+const CATS = [
+  ['entrance','Entrance','مدخل'],['exit','Exit','مخرج'],['reception','Reception','استقبال'],
+  ['lift','Lift','مصعد'],['stairs','Stairs','درج'],['ramp','Ramp','منحدر'],
+  ['toilet','Toilets','دورات مياه'],['toilet_acc','Accessible toilet','دورة مياه لأصحاب الهمم'],
+  ['prayer','Prayer room','مصلى'],['wudu','Wudu area','مكان الوضوء'],['baby','Baby room','غرفة الأطفال'],
+  ['room','Room / department','غرفة / قسم'],['corridor','Corridor point','نقطة ممر'],['parking','Parking','موقف']
+];
+const CAT = Object.fromEntries(CATS.map(c=>[c[0],{en:c[1],ar:c[2]}]));
+const ACI = ['#000000','#FF0000','#FFFF00','#00FF00','#00FFFF','#0000FF','#FF00FF','#000000','#808080','#C0C0C0'];
+const UNIT_F = {mm:0.001,cm:0.01,m:1,in:0.0254,ft:0.3048};
+const INSUNITS = {1:'in',2:'ft',4:'mm',5:'cm',6:'m'};
+
+const S = {
+  mode:null, rawPolys:[], rawTexts:[], fileUnits:null, f:0.01, off:[0,0],
+  polys:[], texts:[], layers:{}, traced:[], openings:[], ignored:[], image:null, imgW:0, imgH:0, mpp:0.02,
+  points:[], selId:null, nextId:1,
+  grids:{walk:null,chair:null}, gridDirty:true,
+  route:null, view:{cx:0,cy:0,scale:10}, tool:'pan', showGrid:false, gridMode:'walk',
+  drawing:null, cal:null, paths:null
+};
+
+const $ = id => document.getElementById(id);
+const toast = (msg, ms=2600) => { const t=$('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(toast._t); toast._t=setTimeout(()=>t.style.display='none', ms); };
+const setStatus = (id, msg, cls='') => { const e=$(id); e.textContent=msg; e.className='status '+cls; };
+
+/* ---------------- DXF PARSER ---------------- */
+function parseDXF(text){
+  const L = text.split(/\r\n|\r|\n/);
+  const recs = []; let cur = null;
+  for (let i=0; i+1<L.length; i+=2){
+    const code = parseInt(L[i].trim(),10); const val = L[i+1];
+    if (isNaN(code)) { i--; continue; }
+    if (code===0){ cur = {type:val.trim(), d:[]}; recs.push(cur); }
+    else if (cur) cur.d.push([code, code===1||code===3 ? val : val.trim()]);
+  }
+  const get = (r,c,def) => { for (const p of r.d) if (p[0]===c) return p[1]; return def; };
+  const num = (r,c,def=0) => { const v=get(r,c,null); return v===null?def:parseFloat(v); };
+  let sec=null, block=null, poly=null, units=null;
+  const layers={}, blocks={}, ents=[];
+  for (const r of recs){
+    const t=r.type;
+    if (t==='SECTION'){ sec=get(r,2,''); if (sec==='HEADER'){ for (let k=0;k<r.d.length;k++){ if (r.d[k][0]===9 && r.d[k][1]==='$INSUNITS'){ const n=r.d[k+1]; if(n) units=parseInt(n[1],10);} } } continue; }
+    if (t==='ENDSEC'){ sec=null; continue; }
+    if (sec==='TABLES'){ if (t==='LAYER'){ const name=get(r,2,'0'); const col=parseInt(get(r,62,'7'),10); const fl=parseInt(get(r,70,'0'),10); layers[name]={color:Math.abs(col)||7, off:col<0||(fl&1)===1}; } continue; }
+    const target = sec==='BLOCKS' ? (block?block.ents:null) : (sec==='ENTITIES'?ents:null);
+    if (t==='BLOCK'){ block={name:get(r,2,''), bx:num(r,10), by:num(r,20), ents:[]}; continue; }
+    if (t==='ENDBLK'){ if (block) blocks[block.name]=block; block=null; continue; }
+    if (!target) continue;
+    if (t==='POLYLINE'){ poly={type:'POLYLINE', layer:get(r,8,'0'), closed:(parseInt(get(r,70,'0'),10)&1)===1, ez:num(r,230,1), v:[]}; continue; }
+    if (t==='VERTEX'){ if (poly){ const fl=parseInt(get(r,70,'0'),10); if (!(fl&16)) poly.v.push([num(r,10),num(r,20),num(r,42)]);} continue; }
+    if (t==='SEQEND'){ if (poly){ target.push(poly); poly=null;} continue; }
+    target.push({type:t, layer:get(r,8,'0'), r});
+  }
+  return {units, layers, blocks, ents, get, num};
+}
+
+function arcPts(cx,cy,rad,a0,a1,out){ // degrees, CCW
+  let s=a0*Math.PI/180, e=a1*Math.PI/180; while (e<=s) e+=Math.PI*2;
+  const n=Math.max(6,Math.ceil((e-s)/(Math.PI/18)));
+  for (let i=0;i<=n;i++){ const a=s+(e-s)*i/n; out.push([cx+rad*Math.cos(a), cy+rad*Math.sin(a)]); }
+  return out;
+}
+function bulgePts(p1,p2,b,out){
+  const th=4*Math.atan(b), dx=p2[0]-p1[0], dy=p2[1]-p1[1], ch=Math.hypot(dx,dy);
+  if (ch<1e-9 || Math.abs(th)<1e-6) return;
+  const r=ch/(2*Math.sin(th/2)), a=Math.atan2(dy,dx)+Math.PI/2-th/2;
+  const cx=p1[0]+r*Math.cos(a), cy=p1[1]+r*Math.sin(a);
+  const sa=Math.atan2(p1[1]-cy,p1[0]-cx), rr=Math.abs(r);
+  const n=Math.max(4,Math.ceil(Math.abs(th)/(Math.PI/18)));
+  for (let i=1;i<n;i++){ const t=sa+th*i/n; out.push([cx+rr*Math.cos(t), cy+rr*Math.sin(t)]); }
+}
+const mul = (A,B) => [A[0]*B[0]+A[2]*B[1], A[1]*B[0]+A[3]*B[1], A[0]*B[2]+A[2]*B[3], A[1]*B[2]+A[3]*B[3], A[0]*B[4]+A[2]*B[5]+A[4], A[1]*B[4]+A[3]*B[5]+A[5]];
+const app = (M,p) => [M[0]*p[0]+M[2]*p[1]+M[4], M[1]*p[0]+M[3]*p[1]+M[5]];
+const I = [1,0,0,1,0,0];
+
+function flattenDXF(dx){
+  const polys=[], texts=[], used={};
+  const emit=(layer,pts,closed,M)=>{ if (pts.length<2) return; if (!closed && pts.length>3 && Math.abs(pts[0][0]-pts[pts.length-1][0])<1e-9 && Math.abs(pts[0][1]-pts[pts.length-1][1])<1e-9){ pts=pts.slice(0,-1); closed=true; } polys.push({layer, closed, pts:pts.map(p=>app(M,p))}); used[layer]=(used[layer]||0)+1; };
+  function walk(list, M, inhLayer, depth){
+    for (const e of list){
+      let layer = e.layer; if (layer==='0' && inhLayer) layer=inhLayer;
+      const r=e.r, g=dx.get, n=dx.num;
+      if (e.type==='POLYLINE'){
+        const Mo = e.ez<0 ? mul(M,[-1,0,0,1,0,0]) : M;
+        const out=[]; const v=e.v;
+        for (let i=0;i<v.length;i++){ out.push([v[i][0],v[i][1]]); const nx=v[(i+1)%v.length]; if (v[i][2] && (i<v.length-1||e.closed)) bulgePts(v[i],nx,v[i][2],out); }
+        emit(layer,out,e.closed,Mo); continue;
+      }
+      if (!r) continue;
+      const ez = n(r,230,1); const Mo = ez<0 ? mul(M,[-1,0,0,1,0,0]) : M;
+      switch(e.type){
+        case 'LINE': emit(layer,[[n(r,10),n(r,20)],[n(r,11),n(r,21)]],false,M); break;
+        case 'LWPOLYLINE': {
+          const v=[]; for (const [c,val] of r.d){ if(c===10) v.push([parseFloat(val),0,0]); else if(c===20&&v.length) v[v.length-1][1]=parseFloat(val); else if(c===42&&v.length) v[v.length-1][2]=parseFloat(val); }
+          const closed=(parseInt(g(r,70,'0'),10)&1)===1; const out=[];
+          for (let i=0;i<v.length;i++){ out.push([v[i][0],v[i][1]]); if (v[i][2] && (i<v.length-1||closed)) bulgePts(v[i],v[(i+1)%v.length],v[i][2],out); }
+          emit(layer,out,closed,Mo); break; }
+        case 'ARC': emit(layer,arcPts(n(r,10),n(r,20),n(r,40),n(r,50),n(r,51),[]),false,Mo); break;
+        case 'CIRCLE': { const pts=arcPts(n(r,10),n(r,20),n(r,40),0,360,[]); pts.pop(); emit(layer,pts,true,Mo); break; }
+        case 'ELLIPSE': {
+          const cx=n(r,10),cy=n(r,20),mx=n(r,11),my=n(r,21),ra=n(r,40,1); let t0=n(r,41,0), t1=n(r,42,Math.PI*2); while(t1<=t0) t1+=Math.PI*2;
+          const k=Math.max(12,Math.ceil((t1-t0)/(Math.PI/24))), pts=[];
+          for (let i=0;i<=k;i++){ const t=t0+(t1-t0)*i/k; pts.push([cx+mx*Math.cos(t)-ra*my*Math.sin(t), cy+my*Math.cos(t)+ra*mx*Math.sin(t)]); }
+          emit(layer,pts,false,Mo); break; }
+        case 'SPLINE': {
+          const fit=[], ctl=[]; let last=null;
+          for (const [c,val] of r.d){ if(c===11){last=[parseFloat(val),0];fit.push(last);} else if(c===21&&last&&fit.includes(last)) last[1]=parseFloat(val); else if(c===10){last=[parseFloat(val),0];ctl.push(last);} else if(c===20&&last&&ctl.includes(last)) last[1]=parseFloat(val); }
+          emit(layer, fit.length>1?fit:ctl, false, M); break; }
+        case 'SOLID': case 'TRACE': {
+          const p=[[n(r,10),n(r,20)],[n(r,11),n(r,21)],[n(r,13),n(r,23)],[n(r,12),n(r,22)]]; emit(layer,p,true,Mo); break; }
+        case 'TEXT': case 'MTEXT': case 'ATTRIB': {
+          let s=e.type==='MTEXT' ? r.d.filter(p=>p[0]===3).map(p=>p[1]).join('')+g(r,1,'') : g(r,1,'');
+          s = s.replace(/\\P/g,' ').replace(/\\[A-Za-z][^;\\{}]*;/g,'').replace(/\\[A-Za-z]/g,'').replace(/[{}]/g,'').trim();
+          if (!s) break;
+          const p=app(Mo,[n(r,10),n(r,20)]); const sc=Math.hypot(M[0],M[1]);
+          texts.push({layer, x:p[0], y:p[1], h:n(r,40,1)*sc, s}); used[layer]=(used[layer]||0)+1; break; }
+        case 'INSERT': {
+          const b=dx.blocks[g(r,2,'')]; if (!b || depth>8) break;
+          const sx=n(r,41,1), sy=n(r,42,1), rot=n(r,50,0)*Math.PI/180, px=n(r,10), py=n(r,20);
+          const cols=Math.max(1,parseInt(g(r,70,'1'),10)), rows=Math.max(1,parseInt(g(r,71,'1'),10)), cs=n(r,44,0), rs=n(r,45,0);
+          for (let ci=0;ci<cols;ci++) for (let ri=0;ri<rows;ri++){
+            const c=Math.cos(rot), s=Math.sin(rot);
+            const ox=ci*cs, oy=ri*rs;
+            let Mi=[c*sx, s*sx, -s*sy, c*sy, px + c*ox - s*oy, py + s*ox + c*oy];
+            Mi = mul(Mi,[1,0,0,1,-b.bx,-b.by]);
+            walk(b.ents, mul(Mo,Mi), layer, depth+1);
+          }
+          break; }
+      }
+    }
+  }
+  walk(dx.ents, I, null, 0);
+  return {polys, texts, used};
+}
+
+/* ---------------- LOADING ---------------- */
+function suggestRole(name){
+  if (/door|\bdr\b|dr-|-dr|opening|swing|باب|ابواب/i.test(name)) return 'door';
+  if (/wall|wand|mur|جدار|column|colm|\bcol\b|-col|struct|core|glaz|window|curtain|partition|cladding|block|brick|shaft|lift|elev|stair|a-wal/i.test(name)) return 'wall';
+  if (/dim|hatch|grid|axis|defpoints|viewport|vport/i.test(name)) return 'hidden';
+  return 'context';
+}
+// For files with meaningless layer names (e.g. "1", "28"): classify layers by their geometry.
+function geoSuggest(fl){
+  const st={};
+  for (const p of fl.polys){ const s=st[p.layer]||(st[p.layer]={n:0,arcs:0,closed:0,len:0,ext:[1e18,1e18,-1e18,-1e18]});
+    s.n++; const pts=p.pts; for (let i=0;i<pts.length-1;i++) s.len+=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);
+    for (const q of pts){ s.ext[0]=Math.min(s.ext[0],q[0]); s.ext[1]=Math.min(s.ext[1],q[1]); s.ext[2]=Math.max(s.ext[2],q[0]); s.ext[3]=Math.max(s.ext[3],q[1]); }
+    if (p.closed) s.closed++; else if (pts.length>=6) s.arcs++; }
+  const all=robustBounds(fl.polys); const W=Math.max(all[2]-all[0],all[3]-all[1]);
+  const L=Object.entries(st);
+  for (const [nm,s] of L){ const span=Math.max(s.ext[2]-s.ext[0],s.ext[3]-s.ext[1]); if (span>W*1.6 || s.n<5) S.layers[nm].role='hidden'; }
+  const live=L.filter(([nm])=>S.layers[nm].role!=='hidden');
+  const doorL=live.filter(([,s])=>s.arcs>=10).sort((a,b)=>b[1].arcs-a[1].arcs)[0]; if (doorL) S.layers[doorL[0]].role='door';
+  for (const [nm,s] of live) if (s.n>20 && s.closed/s.n>0.5 && s.arcs===0) S.layers[nm].role='wall';          // columns / shafts
+  const straight=live.filter(([nm,s])=>s.arcs===0 && S.layers[nm].role==='context' && s.n>=100);
+  const maxLen=Math.max(0,...straight.map(([,s])=>s.len));
+  for (const [nm,s] of straight){ const span=Math.max(s.ext[2]-s.ext[0],s.ext[3]-s.ext[1]); if (s.len>=0.15*maxLen && span>0.6*W) S.layers[nm].role='wall'; }
+  S.geoSuggested=true;
+}
+function robustBounds(polys){
+  const xs=[], ys=[]; let step=1; let total=0; for (const p of polys) total+=p.pts.length; step=Math.max(1,Math.floor(total/40000));
+  let k=0; for (const p of polys) for (const q of p.pts){ if((k++)%step===0){ xs.push(q[0]); ys.push(q[1]); } }
+  if (!xs.length) return [0,0,10,10];
+  xs.sort((a,b)=>a-b); ys.sort((a,b)=>a-b);
+  const lo=Math.floor(xs.length*0.005), hi=Math.ceil(xs.length*0.995)-1;
+  return [xs[lo],ys[lo],xs[hi],ys[hi]];
+}
+function loadDXFText(text, name){
+  let dx; try { dx=parseDXF(text); } catch(err){ setStatus('planStatus','Could not read this DXF: '+err.message,'err'); return; }
+  const fl=flattenDXF(dx);
+  if (!fl.polys.length){ setStatus('planStatus','No drawable geometry found. If this is a binary DXF, re-save as ASCII DXF.','err'); return; }
+  S.geoSuggested=false; S.mode='dxf'; S.rawPolys=fl.polys; S.rawTexts=fl.texts; S.fileUnits=INSUNITS[dx.units]||null; S.guess=S.fileUnits?null:guessUnits(); S.guessU=S.guess?S.guess.u:null;
+  S.image=null; S.traced=[]; S.openings=[]; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
+  S.layers={};
+  const names=Object.keys(fl.used).sort();
+  for (const nm of names){ const L=dx.layers[nm]||{color:7,off:false}; S.layers[nm]={color:L.color, count:fl.used[nm], role: L.off?'hidden':suggestRole(nm)}; }
+  if (names.every(n=>suggestRole(n)==='context'||suggestRole(n)==='hidden')) geoSuggest(fl);
+  if (!$('inBuilding').value) $('inBuilding').value=(name||'').replace(/\.dxf$/i,'');
+  applyUnits(true);
+  setStatus('planStatus', `${name||'DXF'}: ${fl.polys.length.toLocaleString()} shapes, ${names.length} layers.${S.geoSuggested?' Layer names are not descriptive, so roles were guessed from geometry — check step 2.':''} Units: ${S.fileUnits?S.fileUnits+' (from file)':`not set in file → guessed ${S.guessU} (${S.guess.why}). Change below if wrong`}.${sizeNote()}`, 'ok');
+  uiMode(); renderLayers(); refreshPoints(); fit(); markDirty();
+}
+function guessUnits(){
+  const txt=S.rawTexts.map(t=>t.s).join(' | ');
+  if (/SCALE IN FEET|\bFEET\b|\d+'\s*-\s*\d+"|\bFT\b/i.test(txt)) return {u:'ft', why:'drawing text mentions feet'};
+  if (/SCALE IN MET|\bMETRES?\b|\bMETERS?\b/i.test(txt)) return {u:'m', why:'drawing text mentions metres'};
+  const segs=S.rawPolys; const b=robustBounds(segs); const w=Math.max(b[2]-b[0],b[3]-b[1]);
+  for (const u of ['cm','mm','m']) { const m=w*UNIT_F[u]; if (m>=15 && m<=1500) return {u, why:`gives a plausible ${Math.round(m)} m drawing`}; }
+  return {u:'cm', why:'default'};
+}
+function sizeNote(){ const segs=wallSegments(true); const src=segs.length?segs.map(s=>({pts:[[s[0],s[1]],[s[2],s[3]]]})):S.polys; const b=robustBounds(src); const w=b[2]-b[0], h=b[3]-b[1]; return ` Plan size ≈ ${w.toFixed(0)} × ${h.toFixed(0)} m.`; }
+function unitFactor(){ const o=$('selUnits').value; if (o!=='auto') return UNIT_F[o]; return UNIT_F[S.fileUnits||S.guessU||'cm']; }
+function applyUnits(first){
+  if (S.mode!=='dxf') return;
+  const fOld=S.f, offOld=S.off.slice();
+  const f=unitFactor(); const b=robustBounds(S.rawPolys);
+  const off=[b[0]*f, b[1]*f];
+  S.polys=S.rawPolys.map(p=>({layer:p.layer, closed:p.closed, pts:p.pts.map(q=>[q[0]*f-off[0], q[1]*f-off[1]])}));
+  S.texts=S.rawTexts.map(t=>({...t, x:t.x*f-off[0], y:t.y*f-off[1], h:t.h*f}));
+  if (!first){
+    const tr=(x,y)=>[((x+offOld[0])/fOld)*f-off[0], ((y+offOld[1])/fOld)*f-off[1]];
+    for (const p of S.points){ [p.x,p.y]=tr(p.x,p.y); }
+    for (const t of S.traced) t.pts=t.pts.map(q=>tr(q[0],q[1]));
+    for (const o of S.openings){ o.a=tr(o.a[0],o.a[1]); o.b=tr(o.b[0],o.b[1]); }
+  }
+  S.f=f; S.off=off; buildPaths(); markDirty();
+}
+
+async function loadImageFile(file){
+  let url;
+  if (/\.pdf$/i.test(file.name) || file.type==='application/pdf'){
+    try { url = await pdfToImage(file); } catch(err){ setStatus('planStatus','PDF could not be rendered here ('+err.message+'). Export the PDF page as PNG/JPG and open that instead.','err'); return; }
+  } else url = URL.createObjectURL(file);
+  const img=new Image();
+  img.onload=()=>{
+    S.mode='image'; S.image=img; S.imgW=img.naturalWidth; S.imgH=img.naturalHeight; S.mpp=0.02;
+    S.rawPolys=[]; S.polys=[]; S.texts=[]; S.layers={}; S.traced=[]; S.openings=[]; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
+    if (!$('inBuilding').value) $('inBuilding').value=file.name.replace(/\.[^.]+$/,'');
+    setStatus('planStatus',`${file.name}: ${img.naturalWidth}×${img.naturalHeight}px image. Calibrate the scale, then trace walls.`,'ok');
+    setStatus('calStatus','Scale not calibrated (assumed 50 px = 1 m).');
+    uiMode(); buildPaths(); refreshPoints(); fit(); markDirty(); setTool('cal');
+  };
+  img.onerror=()=>setStatus('planStatus','Could not open that image.','err');
+  img.src=url;
+}
+function pdfToImage(file){
+  return new Promise((res,rej)=>{
+    const go=async()=>{ try{
+      const lib=window.pdfjsLib; lib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+      const pdf=await lib.getDocument({data:await file.arrayBuffer()}).promise; const page=await pdf.getPage(1);
+      const vp=page.getViewport({scale:3}); const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+      await page.render({canvasContext:c.getContext('2d'), viewport:vp}).promise; res(c.toDataURL('image/png'));
+    }catch(e){rej(e);} };
+    if (window.pdfjsLib) return go();
+    const s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+    s.onload=go; s.onerror=()=>rej(new Error('PDF library unavailable')); document.head.appendChild(s);
+  });
+}
+
+function uiMode(){
+  $('empty').classList.toggle('hidden', !!S.mode);
+  $('dxfLayers').classList.toggle('hidden', S.mode==='image');
+  $('imgTools').classList.toggle('hidden', S.mode!=='image');
+  $('unitRow').classList.toggle('hidden', S.mode==='image');
+}
+
+/* ---------------- LAYERS UI ---------------- */
+function renderLayers(){
+  const tb=$('layerTable'); tb.innerHTML='';
+  const names=Object.keys(S.layers);
+  if (!names.length){ tb.innerHTML='<tr><td class="mini">No layers yet.</td></tr>'; return; }
+  for (const nm of names){
+    const L=S.layers[nm]; const tr=document.createElement('tr');
+    tr.innerHTML=`<td title="${esc(nm)}"><span class="sw" style="background:${ACI[L.color]||'#888'}"></span>${esc(nm)} <span class="mini">${L.count}</span></td>
+    <td><select data-l="${esc(nm)}"><option value="wall">Wall</option><option value="door">Door</option><option value="mixed">Walls + doors</option><option value="context">Context</option><option value="hidden">Hidden</option></select></td>`;
+    tr.querySelector('select').value=L.role; tb.appendChild(tr);
+  }
+  tb.querySelectorAll('select').forEach(s=>s.onchange=()=>{ S.layers[s.dataset.l].role=s.value; buildPaths(); markDirty(); draw(); });
+}
+const esc = s => String(s).replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ---------------- GEOMETRY / GRID ---------------- */
+function wallSegments(skipThin){
+  const segs=[];
+  let pid=0; const add=(pts,closed)=>{ pid++; for (let i=0;i<pts.length-1;i++) segs.push([pts[i][0],pts[i][1],pts[i+1][0],pts[i+1][1],pid]); if (closed&&pts.length>2){ const a=pts[pts.length-1],b=pts[0]; segs.push([a[0],a[1],b[0],b[1],pid]);} };
+  for (const p of S.polys){ const L=S.layers[p.layer]; if (!L) continue;
+    if (L.role==='wall') add(p.pts,p.closed);
+  }
+  const MIX=1.25;
+  for (const p of S.polys){ const L=S.layers[p.layer]; if (!L||L.role!=='mixed') continue; const pts=p.pts.concat(p.closed&&p.pts.length>2?[p.pts[0]]:[]);
+    for (let i=0;i<pts.length-1;i++){ const a=pts[i],b=pts[i+1]; if (Math.hypot(b[0]-a[0],b[1]-a[1])>=MIX) segs.push([a[0],a[1],b[0],b[1],-1]); } }
+  if (!skipThin){ S.ignored=[]; if ($('chkThin') && $('chkThin').checked) filterThin(segs); }
+  for (const t of S.traced) add(t.pts,false);
+  return segs;
+}
+function outsideMask(segs, seal=0.95){
+  const b=planBounds(); if (!b) return null; const cell=0.15; const g=buildGridRaw(segs,b.map((v,i)=>v+(i<2?-3:3)),cell,seal);
+  const out=new Uint8Array(g.W*g.H), q=[]; const push=k=>{ if(!g.occ[k]&&!out[k]){ out[k]=1; q.push(k);} };
+  for (let i=0;i<g.W;i++){ push(i); push((g.H-1)*g.W+i); } for (let j=0;j<g.H;j++){ push(j*g.W); push(j*g.W+g.W-1); }
+  while(q.length){ const k=q.pop(), i=k%g.W, j=k/g.W|0; if(i>0)push(k-1); if(i<g.W-1)push(k+1); if(j>0)push(k-g.W); if(j<g.H-1)push(k+g.W); }
+  return (x,y)=>{ const i=Math.floor((x-g.x0)/cell), j=Math.floor((y-g.y0)/cell); return i<0||j<0||i>=g.W||j>=g.H||out[j*g.W+i]===1; };
+}
+function filterThin(segs){
+  const isOut=outsideMask(segs);
+  const H=new Map(), C=2; const key=(i,j)=>i+','+j;
+  segs.forEach((s,k)=>{ const i0=Math.floor(Math.min(s[0],s[2])/C), i1=Math.floor(Math.max(s[0],s[2])/C), j0=Math.floor(Math.min(s[1],s[3])/C), j1=Math.floor(Math.max(s[1],s[3])/C);
+    for (let i=i0;i<=i1;i++) for (let j=j0;j<=j1;j++){ const kk=key(i,j); if(!H.has(kk)) H.set(kk,[]); H.get(kk).push(k); } });
+  const near=(x,y,r)=>{ const out=new Set(); for (let i=Math.floor((x-r)/C);i<=Math.floor((x+r)/C);i++) for (let j=Math.floor((y-r)/C);j<=Math.floor((y+r)/C);j++){ const a=H.get(key(i,j)); if(a) a.forEach(v=>out.add(v)); } return out; };
+  const drop=new Set();
+  segs.forEach((s,k)=>{
+    const dx=s[2]-s[0], dy=s[3]-s[1], L=Math.hypot(dx,dy); if (L<1.2||L>3.6) return;
+    const ux=dx/L, uy=dy/L, mx=(s[0]+s[2])/2, my=(s[1]+s[3])/2;
+    let parallel=false, touchA=false, touchB=false;
+    for (const o of near(mx,my,L/2+0.7)){ if (o===k) continue; const t=segs[o]; const ox=t[2]-t[0], oy=t[3]-t[1], OL=Math.hypot(ox,oy); if (OL<1e-6) continue;
+      const cos=Math.abs((ox*ux+oy*uy)/OL);
+      if (cos>0.995){
+        const d=Math.abs((t[0]-s[0])*uy-(t[1]-s[1])*ux); const p0=(t[0]-s[0])*ux+(t[1]-s[1])*uy, p1=(t[2]-s[0])*ux+(t[3]-s[1])*uy;
+        const ov=Math.min(L,Math.max(p0,p1))-Math.max(0,Math.min(p0,p1));
+        if (d>0.005 && d<0.6 && ov>0.5*L) { parallel=true; break; } }
+      if (t[4]===s[4] && s[4]>0) continue;
+      if (segDist(s[0],s[1],[t[0],t[1]],[t[2],t[3]])<0.15) touchA=true;
+      if (segDist(s[2],s[3],[t[0],t[1]],[t[2],t[3]])<0.15) touchB=true; }
+    if (!parallel && touchA && touchB){
+      if (isOut){ const nx=-uy, ny=ux; let env=false; for (const t of [0.25,0.5,0.75]){ const px=s[0]+dx*t, py=s[1]+dy*t; if (isOut(px+nx*1.1,py+ny*1.1)||isOut(px-nx*1.1,py-ny*1.1)) { env=true; break; } } if (env) return; }
+      drop.add(k); }
+  });
+  if (!drop.size) return;
+  const keep=[]; segs.forEach((s,k)=>{ if (drop.has(k)) S.ignored.push(s); else keep.push(s); });
+  segs.length=0; keep.forEach(s=>segs.push(s));
+}
+function planBounds(){
+  let b=[Infinity,Infinity,-Infinity,-Infinity];
+  const ext=(x,y)=>{ if(x<b[0])b[0]=x; if(y<b[1])b[1]=y; if(x>b[2])b[2]=x; if(y>b[3])b[3]=y; };
+  for (const s of wallSegments(true)){ ext(s[0],s[1]); ext(s[2],s[3]); }
+  for (const p of S.points) ext(p.x,p.y);
+  if (S.mode==='image'){ ext(0,0); ext(S.imgW*S.mpp,S.imgH*S.mpp); }
+  if (!isFinite(b[0])) return null;
+  // clip absurd outliers using robust bounds of walls
+  return [b[0]-2,b[1]-2,b[2]+2,b[3]+2];
+}
+function buildGrid(segs, bounds, cell, r){ const g=buildGridRaw(segs,bounds,cell,r); applyOpenings(g); return g; }
+function buildGridRaw(segs, bounds, cell, r){
+  const W=Math.max(2,Math.ceil((bounds[2]-bounds[0])/cell)), H=Math.max(2,Math.ceil((bounds[3]-bounds[1])/cell));
+  const occ=new Uint8Array(W*H); const x0=bounds[0], y0=bounds[1];
+  for (const [ax,ay,bx,by] of segs){
+    const minx=Math.min(ax,bx)-r, maxx=Math.max(ax,bx)+r, miny=Math.min(ay,by)-r, maxy=Math.max(ay,by)+r;
+    const i0=Math.max(0,Math.floor((minx-x0)/cell)), i1=Math.min(W-1,Math.floor((maxx-x0)/cell));
+    const j0=Math.max(0,Math.floor((miny-y0)/cell)), j1=Math.min(H-1,Math.floor((maxy-y0)/cell));
+    const dx=bx-ax, dy=by-ay, L2=dx*dx+dy*dy, r2=r*r;
+    for (let j=j0;j<=j1;j++){ const py=y0+(j+0.5)*cell; for (let i=i0;i<=i1;i++){
+      const k=j*W+i; if (occ[k]) continue;
+      const px=x0+(i+0.5)*cell; let t=L2>0?((px-ax)*dx+(py-ay)*dy)/L2:0; t=t<0?0:t>1?1:t;
+      const ex=ax+t*dx-px, ey=ay+t*dy-py; if (ex*ex+ey*ey<=r2) occ[k]=1;
+    }}
+  }
+  return {W,H,x0,y0,cell,occ,r};
+}
+function applyOpenings(g){ const {W,H,x0,y0,cell,occ,r}=g;
+  for (const o of S.openings){ const ow=(o.w||0.9)/2+r; const [ax,ay]=o.a, [bx,by]=o.b;
+    const i0=Math.max(0,Math.floor((Math.min(ax,bx)-ow-x0)/cell)), i1=Math.min(W-1,Math.floor((Math.max(ax,bx)+ow-x0)/cell));
+    const j0=Math.max(0,Math.floor((Math.min(ay,by)-ow-y0)/cell)), j1=Math.min(H-1,Math.floor((Math.max(ay,by)+ow-y0)/cell));
+    for (let j=j0;j<=j1;j++) for (let i=i0;i<=i1;i++){ const px=x0+(i+0.5)*cell, py=y0+(j+0.5)*cell; if (segDist(px,py,o.a,o.b)<=(o.w||0.9)/2) occ[j*W+i]=0; } }
+  return {W,H,x0,y0,cell,occ,r};
+}
+function markDirty(){ S.gridDirty=true; S.grids={walk:null,chair:null}; S.unreached=null; S.route=null; if($('routeOut')) $('routeOut').innerHTML=''; $('btnSpeak').disabled=true; setStatus('gridStatus', S.mode?'Plan changed — rebuild the walkable map.':'Not built.'); }
+function ensureGrids(){
+  if (!S.gridDirty && S.grids.walk) return true;
+  const segs=wallSegments(); if (!segs.length){ setStatus('gridStatus','No walls yet. Set wall layers (step 2) or trace walls.','err'); return false; }
+  const b=planBounds(); const area=(b[2]-b[0])*(b[3]-b[1]);
+  let cell=Math.max(0.1, Math.sqrt(area/1.5e6)); cell=Math.ceil(cell*20)/20;
+  const rw=Math.max(0.05,parseFloat($('inClrW').value)||0.25), rc=Math.max(0.05,parseFloat($('inClrC').value)||0.4);
+  const t0=performance.now();
+  S.grids.walk=buildGrid(segs,b,cell,rw); S.grids.chair=buildGrid(segs,b,cell,rc);
+  if ($('chkIndoor').checked){ const isOut=outsideMask(segs,2.5); if (isOut) for (const g of [S.grids.walk,S.grids.chair]){ for (let j=0;j<g.H;j++){ const y=g.y0+(j+0.5)*g.cell; for (let i=0;i<g.W;i++){ const k=j*g.W+i; if (!g.occ[k] && isOut(g.x0+(i+0.5)*g.cell,y)) g.occ[k]=2; } } } }
+  S.gridDirty=false; S.gridImg=null;
+  const g=S.grids.walk; const free=g.occ.reduce((a,v)=>a+(v?0:1),0);
+  let msg=`Built in ${Math.round(performance.now()-t0)} ms · ${g.W}×${g.H} cells at ${Math.round(cell*100)} cm · ${segs.length.toLocaleString()} wall segments${S.ignored.length?` · ${S.ignored.length} lone lines ignored`:''} · ${(free*cell*cell).toFixed(0)} m² open.`;
+  const cr=connectivity(); if (cr) msg+=' '+cr.msg;
+  setStatus('gridStatus',msg, cr&&cr.bad?'err':'ok');
+  return true;
+}
+
+function connectivity(){
+  if (S.points.length<2) return null; const g=S.grids.walk; const A=S.points[0]; const s=snapFree(g,A.x,A.y); if (s<0) return {bad:true,msg:`“${A.nameEn}” sits inside a wall.`};
+  const r=search(g,s,-1); const bad=S.points.filter(p=>{ const t=snapFree(g,p.x,p.y); return t<0||!isFinite(r.dist[t]); });
+  S.unreached=new Set(bad.map(p=>p.id));
+  return bad.length ? {bad:true,msg:`⚠ Not reachable from “${A.nameEn}”: ${bad.map(p=>p.nameEn).join(', ')} (red on the plan). Add an Opening where a line blocks the way.`} : {bad:false,msg:`✓ All ${S.points.length} points connected.`};
+}
+/* ---------------- ROUTING ---------------- */
+class Heap{ constructor(){this.k=[];this.v=[];} push(key,val){const k=this.k,v=this.v;let i=k.length;k.push(key);v.push(val);while(i>0){const p=(i-1)>>1;if(k[p]<=key)break;k[i]=k[p];v[i]=v[p];i=p;}k[i]=key;v[i]=val;}
+  pop(){const k=this.k,v=this.v;const top=v[0];const lk=k.pop(),lv=v.pop();if(k.length){let i=0;const n=k.length;while(true){let l=2*i+1,r=l+1,m=i;let mk=lk;if(l<n&&k[l]<mk){m=l;mk=k[l];}if(r<n&&k[r]<mk){m=r;}if(m===i)break;k[i]=k[m];v[i]=v[m];i=m;}k[i]=lk;v[i]=lv;}return top;}
+  get size(){return this.k.length;} }
+function toCell(g,x,y){ return [Math.floor((x-g.x0)/g.cell), Math.floor((y-g.y0)/g.cell)]; }
+function snapFree(g,x,y){
+  let [i,j]=toCell(g,x,y); i=Math.min(g.W-1,Math.max(0,i)); j=Math.min(g.H-1,Math.max(0,j));
+  if (!g.occ[j*g.W+i]) return j*g.W+i;
+  const maxR=Math.ceil(2.5/g.cell);
+  for (let rr=1;rr<=maxR;rr++){ let best=-1,bd=1e9;
+    for (let dj=-rr;dj<=rr;dj++) for (let di=-rr;di<=rr;di++){ if (Math.max(Math.abs(di),Math.abs(dj))!==rr) continue;
+      const a=i+di,b=j+dj; if(a<0||b<0||a>=g.W||b>=g.H) continue; const k=b*g.W+a; if(!g.occ[k]){ const d=di*di+dj*dj; if(d<bd){bd=d;best=k;} } }
+    if (best>=0) return best; }
+  return -1;
+}
+const NB=[[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
+function search(g, src, dst){ // dst=-1 → full Dijkstra
+  const W=g.W,H=g.H,occ=g.occ,N=W*H; const dist=new Float32Array(N).fill(Infinity); const par=new Int32Array(N).fill(-1); const done=new Uint8Array(N);
+  const tx=dst>=0?dst%W:0, ty=dst>=0?(dst/W|0):0;
+  const h=dst>=0?(k)=>{const dx=Math.abs(k%W-tx),dy=Math.abs((k/W|0)-ty);return (dx+dy)+(Math.SQRT2-2)*Math.min(dx,dy);}:()=>0;
+  const hp=new Heap(); dist[src]=0; hp.push(h(src),src);
+  while(hp.size){ const k=hp.pop(); if(done[k]) continue; done[k]=1; if(k===dst) break;
+    const i=k%W,j=k/W|0, dk=dist[k];
+    for (const [di,dj,c] of NB){ const a=i+di,b=j+dj; if(a<0||b<0||a>=W||b>=H) continue; const n=b*W+a; if(occ[n]||done[n]) continue;
+      if (di&&dj && (occ[j*W+a]||occ[b*W+i])) continue;
+      const nd=dk+c; if (nd<dist[n]){ dist[n]=nd; par[n]=k; hp.push(nd+h(n),n);} } }
+  return {dist,par};
+}
+function los(g,ax,ay,bx,by){
+  const d=Math.hypot(bx-ax,by-ay), n=Math.ceil(d/(g.cell*0.4));
+  for (let s=1;s<n;s++){ const x=ax+(bx-ax)*s/n, y=ay+(by-ay)*s/n; const i=Math.floor((x-g.x0)/g.cell), j=Math.floor((y-g.y0)/g.cell); if (i<0||j<0||i>=g.W||j>=g.H||g.occ[j*g.W+i]) return false; }
+  return true;
+}
+function extractPath(g,par,src,dst,pFrom,pTo){
+  if (dst<0 || (dst!==src && par[dst]<0)) return null;
+  const cells=[]; for (let k=dst; k>=0; k=par[k]){ cells.push(k); if(k===src) break; }
+  cells.reverse();
+  const pts=cells.map(k=>[g.x0+(k%g.W+0.5)*g.cell, g.y0+((k/g.W|0)+0.5)*g.cell]);
+  pts[0]=[pFrom.x,pFrom.y]; if (pts.length>1) pts[pts.length-1]=[pTo.x,pTo.y]; else pts.push([pTo.x,pTo.y]);
+  // string-pulling smoothing
+  const out=[pts[0]]; let a=0;
+  while (a<pts.length-1){ let b=a+1; while (b+1<pts.length && los(g,pts[a][0],pts[a][1],pts[b+1][0],pts[b+1][1])) b++; out.push(pts[b]); a=b; }
+  return out;
+}
+function routeBetween(mode, A, B){
+  const g=S.grids[mode]; const s=snapFree(g,A.x,A.y), t=snapFree(g,B.x,B.y);
+  if (s<0||t<0) return {err:`${s<0?A.nameEn:B.nameEn} is inside a wall or too tight a space for this mode.`};
+  const r=search(g,s,t); const path=extractPath(g,r.par,s,t,A,B);
+  if (!path) return {err: mode==='chair' ? `No wheelchair route: a door or passage on the way is narrower than ${(2*g.r).toFixed(2)} m.` : 'No route — the two points are not connected (check door gaps / wall layers).'};
+  return {path, ...instructions(path,A,B,mode)};
+}
+
+/* ---------------- INSTRUCTIONS (EN + AR) ---------------- */
+const ang = (a,b)=>Math.atan2(b[1]-a[1], b[0]-a[0])*180/Math.PI;
+const norm = d=>{ while(d>180)d-=360; while(d<=-180)d+=360; return d; };
+function instructions(path, A, B, mode){
+  // merge into legs
+  const legs=[]; // {heading, len, end}
+  for (let i=0;i<path.length-1;i++){ const len=Math.hypot(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1]); if (len<1e-6) continue; const h=ang(path[i],path[i+1]);
+    const last=legs[legs.length-1];
+    if (last && (Math.abs(norm(h-last.h))<20 || len<0.6)){ last.len+=len; last.end=path[i+1]; if (len>=0.6) last.h=last.h; }
+    else legs.push({h, len, start:path[i], end:path[i+1]}); }
+  // absorb tiny legs
+  for (let i=legs.length-1;i>0;i--) if (legs[i].len<0.8){ legs[i-1].len+=legs[i].len; legs[i-1].end=legs[i].end; legs.splice(i,1); }
+  const total=legs.reduce((a,l)=>a+l.len,0);
+  const m=d=>Math.max(1,Math.round(d)), st=d=>Math.max(1,Math.round(d/0.7));
+  const arM=n=>n===1?'متراً واحداً':n===2?'مترين':(n<=10?`${n} أمتار`:`${n} متراً`);
+  const arS=n=>n===1?'خطوة واحدة':n===2?'خطوتين':(n<=10?`${n} خطوات`:`${n} خطوة`);
+  const walkTxt=(d)=>{ const a=m(d), b=st(d); return mode==='chair' ? {en:`continue ${a} m`, ar:`تابع ${arM(a)}`} : {en:`walk ${a} m (about ${b} steps)`, ar:`امشِ ${arM(a)} (حوالي ${arS(b)})`}; };
+  const steps=[]; const nameB=B.nameEn;
+  steps.push({en:`Start at ${A.nameEn}${A.node?' (DALIL node)':''}.`, ar:`ابدأ من ${A.nameAr||A.nameEn}${A.node?' (نقطة دليل)':''}.`});
+  // DALIL nodes along the route (arc-length position)
+  const cum=[0]; for (let i=0;i<path.length-1;i++) cum.push(cum[i]+Math.hypot(path[i+1][0]-path[i][0],path[i+1][1]-path[i][1]));
+  const onRoute=[];
+  for (const p of S.points){ if (!p.node || p.id===A.id || p.id===B.id) continue; let best=1e9, bs=0;
+    for (let i=0;i<path.length-1;i++){ const a=path[i], b=path[i+1], dx=b[0]-a[0], dy=b[1]-a[1], L2=dx*dx+dy*dy; let t=L2?((p.x-a[0])*dx+(p.y-a[1])*dy)/L2:0; t=Math.max(0,Math.min(1,t)); const d=Math.hypot(a[0]+t*dx-p.x,a[1]+t*dy-p.y); if (d<best){best=d; bs=cum[i]+t*Math.sqrt(L2);} }
+    if (best<1.6) onRoute.push({p,s:bs}); }
+  onRoute.sort((a,b)=>a.s-b.s);
+  let L0=0;
+  legs.forEach((l,i)=>{
+    let turnEn, turnAr;
+    if (i===0){
+      const rel=norm(l.h-(A.face??90)); let ck=Math.round(-rel/30); ck=((ck%12)+12)%12; if(ck===0) ck=12;
+      if (ck===12){ turnEn='Go straight ahead'; turnAr='اتجه إلى الأمام'; }
+      else { turnEn=`Turn to your ${ck} o'clock`; turnAr=`استدر نحو اتجاه الساعة ${ck}`; }
+    } else {
+      const d=norm(l.h-legs[i-1].h), side=d>0?'left':'right', sideAr=d>0?'اليسار':'اليمين';
+      if (Math.abs(d)>145){ turnEn='Turn around'; turnAr='استدر إلى الخلف'; }
+      else if (Math.abs(d)>55){ turnEn=`Turn ${side}`; turnAr=`انعطف إلى ${sideAr}`; }
+      else { turnEn=`Bear ${side}`; turnAr=`اتجه قليلاً إلى ${sideAr}`; }
+    }
+    const L1=L0+l.len; const here=onRoute.filter(o=>o.s>L0+0.3 && o.s<=L1+0.3 && !(i===legs.length-1 && o.s>L1-0.8));
+    let pos=L0, first=true;
+    const chunk=(d)=>{ const w=walkTxt(d); if (first){ steps.push({en:`${turnEn}, then ${w.en}.`, ar:`${turnAr}، ثم ${w.ar}.`}); first=false; } else { const a=m(d), b=st(d); steps.push(mode==='chair' ? {en:`Continue ${a} m.`, ar:`تابع ${arM(a)}.`} : {en:`Continue ${a} m (about ${b} steps).`, ar:`تابع المشي ${arM(a)} (حوالي ${arS(b)}).`}); } };
+    for (const o of here){ const d=Math.min(o.s,L1)-pos; if (d>=0.8 || first) chunk(Math.max(d,0.5)); pos=Math.min(o.s,L1);
+      steps.push({en:`You are at DALIL node “${o.p.nameEn}”. Tap it to confirm.`, ar:`أنت الآن عند نقطة دليل «${o.p.nameAr||o.p.nameEn}». المسها للتأكيد.`, node:o.p.id}); }
+    const rest=L1-pos; if (first || rest>=0.8) chunk(first?l.len:rest);
+    L0=L1;
+  });
+  steps.push({en:`You have arrived at ${nameB}.`, ar:`لقد وصلت إلى ${B.nameAr||B.nameEn}.`});
+  const speed = mode==='chair'?0.8:1.1;
+  return {distance:total, seconds:total/speed, steps};
+}
+
+/* ---------------- POINTS ---------------- */
+function addPoint(x,y,o={}){
+  const p={id:'P'+String(S.nextId++).padStart(3,'0'), x, y, nameEn:o.nameEn||('Point '+(S.nextId-1)), nameAr:o.nameAr||'', cat:o.cat||'room', node:!!o.node, face:o.face??90};
+  S.points.push(p); return p;
+}
+function refreshPoints(){
+  const L=$('pointList'); L.innerHTML='';
+  if (!S.points.length) L.innerHTML='<div class="pi mini">No points yet.</div>';
+  for (const p of S.points){
+    const d=document.createElement('div'); d.className='pi'+(p.id===S.selId?' sel':'');
+    d.innerHTML=`<span class="dot ${p.node?'node':''}"></span><span>${esc(p.nameEn)} <span class="mini">· ${CAT[p.cat]?.en||''}</span></span><span class="ar">${esc(p.nameAr)}</span>`;
+    d.onclick=()=>{ S.selId=p.id; refreshPoints(); draw(); };
+    L.appendChild(d);
+  }
+  const sel=S.points.find(p=>p.id===S.selId);
+  $('editor').classList.toggle('hidden',!sel);
+  if (sel){ $('eNameEn').value=sel.nameEn; $('eNameAr').value=sel.nameAr; $('eCat').value=sel.cat; $('eNode').checked=sel.node; $('eFace').value=String(sel.face); $('eXY').textContent=`${sel.id} · x ${sel.x.toFixed(2)} m, y ${sel.y.toFixed(2)} m`; }
+  for (const id of ['rFrom','rTo']){ const s=$(id), v=s.value; s.innerHTML=S.points.map(p=>`<option value="${p.id}">${esc(p.nameEn)}${p.node?' ●':''}</option>`).join(''); if (S.points.some(p=>p.id===v)) s.value=v; }
+  if (!$('rTo').dataset.touched && S.points.length>1 && $('rTo').value===$('rFrom').value) $('rTo').selectedIndex=1;
+}
+function bindEditor(){
+  $('eCat').innerHTML=CATS.map(c=>`<option value="${c[0]}">${c[1]} · ${c[2]}</option>`).join('');
+  const upd=(k,fn)=>$(k).addEventListener('input',()=>{ const p=S.points.find(p=>p.id===S.selId); if(!p) return; fn(p); refreshPointsSoft(); draw(); });
+  upd('eNameEn',p=>p.nameEn=$('eNameEn').value||p.id);
+  upd('eNameAr',p=>p.nameAr=$('eNameAr').value);
+  upd('eCat',p=>{ const old=CAT[p.cat]; p.cat=$('eCat').value; if (/^Point \d+$/.test(p.nameEn)||(old&&p.nameEn===old.en)){ p.nameEn=CAT[p.cat].en; p.nameAr=CAT[p.cat].ar; $('eNameEn').value=p.nameEn; $('eNameAr').value=p.nameAr; } });
+  upd('eNode',p=>p.node=$('eNode').checked);
+  upd('eFace',p=>p.face=parseFloat($('eFace').value));
+  $('eDel').onclick=()=>{ S.points=S.points.filter(p=>p.id!==S.selId); S.selId=null; S.route=null; refreshPoints(); draw(); };
+}
+function refreshPointsSoft(){ const sel=document.activeElement; const id=sel&&sel.id; refreshPoints(); if(id&&$(id)) { $(id).focus(); } }
+
+/* ---------------- RENDER ---------------- */
+const cv=$('cv'), ctx=cv.getContext('2d');
+function resize(){ const r=cv.getBoundingClientRect(), dpr=window.devicePixelRatio||1; cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr); draw(); }
+function buildPaths(){
+  const P={wall:new Path2D(),door:new Path2D(),context:new Path2D()};
+  for (const p of S.polys){ const L=S.layers[p.layer]; if(!L||L.role==='hidden') continue;
+    if (L.role==='mixed'){ const pts=p.pts.concat(p.closed&&p.pts.length>2?[p.pts[0]]:[]); for (let i=0;i<pts.length-1;i++){ const a=pts[i],b=pts[i+1]; const pp=Math.hypot(b[0]-a[0],b[1]-a[1])>=1.25?P.wall:P.door; pp.moveTo(a[0],a[1]); pp.lineTo(b[0],b[1]); } continue; }
+    const path=P[L.role]; path.moveTo(p.pts[0][0],p.pts[0][1]); for (let i=1;i<p.pts.length;i++) path.lineTo(p.pts[i][0],p.pts[i][1]); if(p.closed) path.closePath(); }
+  S.paths=P;
+}
+const W2S=(x,y)=>{ const r=cv.getBoundingClientRect(); return [(x-S.view.cx)*S.view.scale+r.width/2, (S.view.cy-y)*S.view.scale+r.height/2]; };
+const S2W=(sx,sy)=>{ const r=cv.getBoundingClientRect(); return [(sx-r.width/2)/S.view.scale+S.view.cx, S.view.cy-(sy-r.height/2)/S.view.scale]; };
+function fit(){
+  let b=null;
+  const segs=wallSegments(true);
+  if (S.mode==='dxf'){ const all=S.polys.filter(p=>S.layers[p.layer]?.role!=='hidden'); b=robustBounds(segs.length?segs.map(s=>({pts:[[s[0],s[1]],[s[2],s[3]]]})):all); }
+  else if (S.mode==='image') b=[0,0,S.imgW*S.mpp,S.imgH*S.mpp];
+  if (!b) return;
+  const r=cv.getBoundingClientRect(); const w=Math.max(1,b[2]-b[0]), h=Math.max(1,b[3]-b[1]);
+  S.view.cx=(b[0]+b[2])/2; S.view.cy=(b[1]+b[3])/2; S.view.scale=Math.min((r.width-80)/w,(r.height-120)/h); draw();
+}
+function gridImage(g){
+  const c=document.createElement('canvas'); c.width=g.W; c.height=g.H; const x=c.getContext('2d'); const im=x.createImageData(g.W,g.H);
+  for (let j=0;j<g.H;j++) for (let i=0;i<g.W;i++){ const k=j*g.W+i, r=(g.H-1-j)*g.W+i; if(!g.occ[k]){ im.data[r*4]=31; im.data[r*4+1]=111; im.data[r*4+2]=235; im.data[r*4+3]=48; } else { im.data[r*4+3]=0; } }
+  x.putImageData(im,0,0); return c;
+}
+function draw(){
+  const dpr=window.devicePixelRatio||1, r=cv.getBoundingClientRect(), sc=S.view.scale;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,cv.width,cv.height);
+  if (!S.mode) return;
+  const base=[sc*dpr,0,0,-sc*dpr,(r.width/2-S.view.cx*sc)*dpr,(r.height/2+S.view.cy*sc)*dpr];
+  ctx.setTransform(...base);
+  if (S.image){ ctx.save(); ctx.translate(0,S.imgH*S.mpp); ctx.scale(S.mpp,-S.mpp); ctx.globalAlpha=0.85; ctx.drawImage(S.image,0,0); ctx.restore(); }
+  if (S.showGrid && S.grids[S.gridMode]){ const g=S.grids[S.gridMode]; if(!S.gridImg||S.gridImg.mode!==S.gridMode){ S.gridImg={mode:S.gridMode,c:gridImage(g)}; }
+    ctx.save(); ctx.imageSmoothingEnabled=false; ctx.translate(g.x0,g.y0+g.H*g.cell); ctx.scale(g.cell,-g.cell); ctx.drawImage(S.gridImg.c,0,0); ctx.restore(); }
+  if (S.paths){
+    ctx.lineJoin='round'; ctx.lineCap='round';
+    ctx.strokeStyle='#B7BFCC'; ctx.lineWidth=1/sc; ctx.stroke(S.paths.context);
+    ctx.strokeStyle='#1F6FEB'; ctx.lineWidth=1.2/sc; ctx.stroke(S.paths.door);
+    ctx.strokeStyle='#0B0F14'; ctx.lineWidth=1.6/sc; ctx.stroke(S.paths.wall);
+  }
+  ctx.strokeStyle='#ff6a00'; ctx.lineWidth=3/sc; ctx.lineCap='round';
+  for (const t of S.traced){ ctx.beginPath(); t.pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.stroke(); }
+  if (S.ignored && S.ignored.length){ ctx.strokeStyle='#c2185b'; ctx.lineWidth=2/sc; ctx.setLineDash([4/sc,3/sc]); ctx.beginPath(); for (const g of S.ignored){ ctx.moveTo(g[0],g[1]); ctx.lineTo(g[2],g[3]); } ctx.stroke(); ctx.setLineDash([]); }
+  ctx.strokeStyle='#0F9D58'; ctx.lineCap='butt'; for (const o of S.openings){ ctx.lineWidth=Math.max(4/sc,o.w||0.9); ctx.globalAlpha=0.55; ctx.beginPath(); ctx.moveTo(...o.a); ctx.lineTo(...o.b); ctx.stroke(); ctx.globalAlpha=1; }
+  if (S.openDrag){ ctx.lineWidth=Math.max(4/sc,0.9); ctx.globalAlpha=0.4; ctx.beginPath(); ctx.moveTo(...S.openDrag.a); ctx.lineTo(...S.openDrag.b); ctx.stroke(); ctx.globalAlpha=1; }
+  ctx.lineCap='round';
+  if (S.drawing && S.drawing.pts.length){ ctx.setLineDash([6/sc,4/sc]); ctx.beginPath(); S.drawing.pts.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); if(S.drawing.hover) ctx.lineTo(...S.drawing.hover); ctx.stroke(); ctx.setLineDash([]); }
+  if (S.route && S.route.path){ ctx.strokeStyle='#ffffff'; ctx.lineWidth=9/sc; ctx.beginPath(); S.route.path.forEach((q,i)=>i?ctx.lineTo(q[0],q[1]):ctx.moveTo(q[0],q[1])); ctx.stroke();
+    ctx.strokeStyle='#1F6FEB'; ctx.lineWidth=5/sc; ctx.stroke(); }
+  if (S.cal && S.cal.pts.length){ ctx.strokeStyle='#D93025'; ctx.lineWidth=2/sc; ctx.beginPath(); const a=S.cal.pts[0], b=S.cal.pts[1]||S.cal.hover; if(b){ctx.moveTo(...a);ctx.lineTo(...b);ctx.stroke();} }
+  // screen-space overlays
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.textBaseline='middle';
+  for (const t of S.texts){ const L=S.layers[t.layer]; if(!L||L.role==='hidden') continue; const hp=t.h*sc; if (hp<5) continue; const [x,y]=W2S(t.x,t.y); if(x<-200||y<-50||x>r.width+50||y>r.height+50) continue; ctx.fillStyle='#5A6475'; ctx.font=`${Math.min(hp,40)}px system-ui`; ctx.textBaseline='alphabetic'; ctx.fillText(t.s,x,y); }
+  ctx.textBaseline='middle';
+  for (const p of S.points){ const [x,y]=W2S(p.x,p.y); const sel=p.id===S.selId; const onRoute=S.route&&(p.id===S.route.from||p.id===S.route.to);
+    ctx.beginPath(); ctx.arc(x,y,p.node?8:6,0,Math.PI*2); const bad=S.unreached&&S.unreached.has(p.id); ctx.fillStyle=bad?'#D93025':(p.node?'#1F6FEB':'#fff'); ctx.fill(); ctx.lineWidth=sel||onRoute?3:2; ctx.strokeStyle='#0B0F14'; ctx.stroke();
+    if (p.node){ ctx.beginPath(); ctx.arc(x,y,2.5,0,Math.PI*2); ctx.fillStyle='#fff'; ctx.fill();
+      const a=-(p.face??90)*Math.PI/180; ctx.beginPath(); ctx.moveTo(x+Math.cos(a)*10,y+Math.sin(a)*10); ctx.lineTo(x+Math.cos(a)*16,y+Math.sin(a)*16); ctx.strokeStyle='#1F6FEB'; ctx.lineWidth=2; ctx.stroke(); }
+    ctx.font=`${sel?'700 ':'600 '}12px system-ui`; const label=p.nameEn; const w=ctx.measureText(label).width;
+    ctx.fillStyle='#ffffffe0'; ctx.fillRect(x+11,y-9,w+8,18); ctx.fillStyle='#0B0F14'; ctx.fillText(label,x+15,y); }
+  // scale bar
+  const target=80/sc; const nice=[0.5,1,2,5,10,20,50,100,200,500]; const v=nice.find(n=>n>=target)||target; $('sbar').style.width=(v*sc)+'px'; $('sbarTxt').textContent=v+' m';
+}
+
+/* ---------------- INTERACTION ---------------- */
+function setTool(t){ S.tool=t; document.querySelectorAll('.tools [data-tool]').forEach(b=>b.classList.toggle('on',b.dataset.tool===t)); if (t!=='wall') finishWall(); if (t!=='cal') S.cal=null; else S.cal={pts:[]}; cv.style.cursor=t==='pan'?'grab':'crosshair'; draw(); }
+function finishWall(){ if (S.drawing && S.drawing.pts.length>1){ S.traced.push({pts:S.drawing.pts}); markDirty(); } S.drawing=null; draw(); }
+function hitPoint(sx,sy){ for (let i=S.points.length-1;i>=0;i--){ const [x,y]=W2S(S.points[i].x,S.points[i].y); if (Math.hypot(x-sx,y-sy)<11) return S.points[i]; } return null; }
+let drag=null;
+cv.addEventListener('pointerdown',e=>{
+  if (!S.mode) return; cv.setPointerCapture(e.pointerId);
+  const sx=e.offsetX, sy=e.offsetY; let [wx,wy]=S2W(sx,sy);
+  if (e.button===1||e.button===2||S.tool==='pan'||e.altKey){ const hp=S.tool==='pan'&&e.button===0?hitPoint(sx,sy):null; if (hp){ S.selId=hp.id; refreshPoints(); drag={type:'pt',p:hp}; draw(); return; } drag={type:'pan',sx,sy,cx:S.view.cx,cy:S.view.cy}; cv.style.cursor='grabbing'; return; }
+  if (S.tool==='point'){ const hp=hitPoint(sx,sy); if (hp){ S.selId=hp.id; drag={type:'pt',p:hp}; } else { const p=addPoint(wx,wy); S.selId=p.id; S.route=null; } refreshPoints(); draw(); return; }
+  if (S.tool==='wall'){ if (!S.drawing) S.drawing={pts:[]}; if (e.shiftKey&&S.drawing.pts.length){ [wx,wy]=ortho(S.drawing.pts[S.drawing.pts.length-1],[wx,wy]); } S.drawing.pts.push([wx,wy]); draw(); return; }
+  if (S.tool==='open'){ S.openDrag={a:[wx,wy],b:[wx,wy]}; drag={type:'open'}; return; }
+  if (S.tool==='erase'){ for (let i=S.openings.length-1;i>=0;i--){ const o=S.openings[i]; if (segDist(wx,wy,o.a,o.b)<Math.max(12/S.view.scale,(o.w||0.9)/2)){ S.openings.splice(i,1); markDirty(); draw(); return; } }
+    let best=-1,bd=12/S.view.scale; S.traced.forEach((t,ti)=>{ for(let i=0;i<t.pts.length-1;i++){ const d=segDist(wx,wy,t.pts[i],t.pts[i+1]); if(d<bd){bd=d;best=ti;} } }); if(best>=0){ S.traced.splice(best,1); markDirty(); draw(); } else toast('Erase removes drawn walls and openings. DXF walls are controlled by layers.'); return; }
+  if (S.tool==='cal'){ if (!S.cal||S.cal.pts.length>=2) S.cal={pts:[]}; S.cal.pts.push([wx,wy]); if (S.cal.pts.length===2){ $('btnCal').disabled=false; $('inCal').focus(); toast('Now type the real length (m) and press Apply.'); } draw(); }
+});
+cv.addEventListener('pointermove',e=>{
+  if (!S.mode) return; let [wx,wy]=S2W(e.offsetX,e.offsetY); $('xy').textContent=`x ${wx.toFixed(2)} m · y ${wy.toFixed(2)} m`;
+  if (drag&&drag.type==='pan'){ S.view.cx=drag.cx-(e.offsetX-drag.sx)/S.view.scale; S.view.cy=drag.cy+(e.offsetY-drag.sy)/S.view.scale; draw(); return; }
+  if (drag&&drag.type==='pt'){ drag.p.x=wx; drag.p.y=wy; drag.moved=true; draw(); return; }
+  if (drag&&drag.type==='open'){ S.openDrag.b=[wx,wy]; draw(); return; }
+  if (S.drawing&&S.drawing.pts.length){ if(e.shiftKey) [wx,wy]=ortho(S.drawing.pts[S.drawing.pts.length-1],[wx,wy]); S.drawing.hover=[wx,wy]; draw(); }
+  if (S.cal&&S.cal.pts.length===1){ S.cal.hover=[wx,wy]; draw(); }
+});
+cv.addEventListener('pointerup',()=>{ if (drag&&drag.type==='open'){ const o=S.openDrag; S.openDrag=null; if (Math.hypot(o.b[0]-o.a[0],o.b[1]-o.a[1])>0.05){ S.openings.push({a:o.a,b:o.b,w:0.9}); markDirty(); if (S.points.length>1) ensureGrids(); } else toast('Drag across the blocking line to punch an opening.'); draw(); drag=null; return; }
+  if (drag&&drag.type==='pt'&&drag.moved){ S.route=null; $('routeOut').innerHTML=''; refreshPoints(); } drag=null; cv.style.cursor=S.tool==='pan'?'grab':'crosshair'; });
+cv.addEventListener('dblclick',()=>{ if (S.tool==='wall'){ if(S.drawing) S.drawing.pts.pop(); finishWall(); } });
+cv.addEventListener('contextmenu',e=>{ e.preventDefault(); if (S.tool==='wall') finishWall(); });
+cv.addEventListener('wheel',e=>{ e.preventDefault(); if(!S.mode) return; const [wx,wy]=S2W(e.offsetX,e.offsetY); const k=Math.exp(-e.deltaY*0.0015); S.view.scale=Math.min(5000,Math.max(0.05,S.view.scale*k)); const [nx,ny]=S2W(e.offsetX,e.offsetY); S.view.cx+=wx-nx; S.view.cy+=wy-ny; draw(); },{passive:false});
+function ortho(a,b){ return Math.abs(b[0]-a[0])>Math.abs(b[1]-a[1]) ? [b[0],a[1]] : [a[0],b[1]]; }
+function segDist(px,py,a,b){ const dx=b[0]-a[0],dy=b[1]-a[1],L2=dx*dx+dy*dy; let t=L2?((px-a[0])*dx+(py-a[1])*dy)/L2:0; t=Math.max(0,Math.min(1,t)); return Math.hypot(a[0]+t*dx-px,a[1]+t*dy-py); }
+window.addEventListener('keydown',e=>{
+  if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName)) return;
+  const k=e.key.toLowerCase();
+  if (k==='escape'){ finishWall(); S.cal=S.tool==='cal'?{pts:[]}:null; draw(); }
+  else if (k==='h') setTool('pan'); else if (k==='p') setTool('point'); else if (k==='w') setTool('wall'); else if (k==='e') setTool('erase'); else if (k==='o') setTool('open'); else if (k==='c') setTool('cal'); else if (k==='f') fit();
+  else if ((k==='delete'||k==='backspace') && S.selId){ $('eDel').click(); }
+});
+
+/* ---------------- ACTIONS ---------------- */
+$('btnDxf').onclick=()=>$('fDxf').click();
+$('btnImg').onclick=()=>$('fImg').click();
+$('fDxf').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; setStatus('planStatus','Reading '+f.name+'…'); const buf=await f.arrayBuffer(); const head=new Uint8Array(buf.slice(0,22)); const sig=String.fromCharCode(...head);
+  if (sig.startsWith('AutoCAD Binary DXF')){ setStatus('planStatus','This is a binary DXF. In AutoCAD use Save As → DXF and keep the default ASCII format.','err'); return; }
+  let text=new TextDecoder('utf-8').decode(buf); if (text.includes('\uFFFD')) text=new TextDecoder('windows-1256').decode(buf);
+  setTimeout(()=>loadDXFText(text,f.name),10); e.target.value=''; };
+$('fImg').onchange=e=>{ const f=e.target.files[0]; if(f) loadImageFile(f); e.target.value=''; };
+$('btnSample').onclick=()=>loadSample();
+$('selUnits').onchange=()=>{ applyUnits(false); refreshPoints(); fit(); setStatus('planStatus','Units set to '+$('selUnits').value+'.'+sizeNote(),'ok'); };
+$('btnSuggest').onclick=()=>{ for (const n in S.layers) S.layers[n].role=suggestRole(n); if (Object.keys(S.layers).every(n=>['context','hidden'].includes(suggestRole(n)))) geoSuggest({polys:S.rawPolys}); renderLayers(); buildPaths(); markDirty(); draw(); };
+$('btnAllCtx').onclick=()=>{ for (const n in S.layers) if (S.layers[n].role!=='hidden') S.layers[n].role='context'; renderLayers(); buildPaths(); markDirty(); draw(); };
+$('btnCal').onclick=()=>{ const L=parseFloat($('inCal').value); if(!S.cal||S.cal.pts.length<2||!(L>0)) return toast('Click two points on the plan, then enter a length > 0.');
+  const [a,b]=S.cal.pts; const cur=Math.hypot(b[0]-a[0],b[1]-a[1]); const k=L/cur; S.mpp*=k;
+  for (const p of S.points){ p.x*=k; p.y*=k; } for (const t of S.traced) t.pts=t.pts.map(q=>[q[0]*k,q[1]*k]); for (const o of S.openings){ o.a=[o.a[0]*k,o.a[1]*k]; o.b=[o.b[0]*k,o.b[1]*k]; }
+  S.view.cx*=k; S.view.cy*=k; S.view.scale/=k; S.cal={pts:[]}; $('btnCal').disabled=true;
+  setStatus('calStatus',`Calibrated: 1 px = ${(S.mpp*100).toFixed(2)} cm · image is ${(S.imgW*S.mpp).toFixed(1)} × ${(S.imgH*S.mpp).toFixed(1)} m.`,'ok'); markDirty(); draw(); setTool('wall'); toast('Scale set. Now trace walls (Wall tool).'); };
+['inClrW','inClrC','chkThin','chkIndoor'].forEach(id=>$(id).onchange=()=>{ markDirty(); draw(); });
+$('btnBuild').onclick=()=>{ if(!S.mode) return toast('Open a plan first.'); if (ensureGrids()){ S.gridImg=null; draw(); } };
+$('chkGrid').onchange=()=>{ S.showGrid=$('chkGrid').checked; if (S.showGrid) ensureGrids(); S.gridImg=null; draw(); };
+$('selGridMode').onchange=()=>{ S.gridMode=$('selGridMode').value; S.gridImg=null; draw(); };
+$('rTo').onchange=()=>{ $('rTo').dataset.touched='1'; };
+$('btnRoute').onclick=findRoute;
+$('rLang').onchange=()=>{ if (S.route) showRoute(); };
+$('btnSpeak').onclick=speak;
+document.querySelectorAll('.tools [data-tool]').forEach(b=>b.onclick=()=>setTool(b.dataset.tool));
+$('btnFit').onclick=fit;
+
+function findRoute(){
+  if (!S.mode) return toast('Open a plan first.');
+  const A=S.points.find(p=>p.id===$('rFrom').value), B=S.points.find(p=>p.id===$('rTo').value);
+  if (!A||!B||A===B) return toast('Pick two different points.');
+  if (!ensureGrids()) return;
+  const mode=$('rMode').value; const r=routeBetween(mode,A,B);
+  S.route={...r, from:A.id, to:B.id, mode}; showRoute(); draw();
+}
+function showRoute(){
+  const r=S.route, out=$('routeOut'); const lang=$('rLang').value;
+  if (r.err){ out.innerHTML=`<div class="status err">${esc(r.err)}</div>`; $('btnSpeak').disabled=true; return; }
+  const mins=Math.max(1,Math.round(r.seconds/60));
+  out.innerHTML=`<div class="kpi"><div><b>${r.distance.toFixed(0)} m</b><span>distance</span></div><div><b>~${mins} min</b><span>${r.mode==='chair'?'wheelchair':'walking'}</span></div><div><b>${r.steps.filter(s=>s.node).length}</b><span>nodes passed</span></div></div>
+  <ol class="steps ${lang==='ar'?'rtl':''}">${r.steps.map(s=>`<li>${esc(lang==='ar'?s.ar:s.en)}</li>`).join('')}</ol>`;
+  $('btnSpeak').disabled=false;
+}
+function speak(){
+  if (!S.route||!S.route.steps) return; if (!_tts && !('speechSynthesis' in window)) return toast('Speech not supported in this browser.');
+  const lang=$('rLang').value; const txt=S.route.steps.map(s=>lang==='ar'?s.ar:s.en).join(' ');
+  if (_tts && txt.length<=2000){ _tts.speak(txt,{language:lang, rate:0.95}).catch(()=>{}); return; }
+  speechSynthesis.cancel();
+  const u=new SpeechSynthesisUtterance(S.route.steps.map(s=>lang==='ar'?s.ar:s.en).join(' ')); u.lang=lang==='ar'?'ar-AE':'en-GB';
+  const v=speechSynthesis.getVoices().find(v=>v.lang&&v.lang.toLowerCase().startsWith(lang)); if(v) u.voice=v; else if (lang==='ar') toast('No Arabic voice installed on this device — it may read in another voice.');
+  u.rate=0.95; speechSynthesis.speak(u);
+}
+
+/* ---------------- EXPORT ---------------- */
+let _dl=null, _tts=null;
+if (window.claude && window.claude.use){ window.claude.use('downloads').then(d=>_dl=d).catch(()=>{}); window.claude.use('tts').then(t=>_tts=t).catch(()=>{}); }
+async function download(name, text, type='application/json'){
+  if (_dl){ try { await _dl.save({filename:name, data:text}); return; } catch(e){ if (e && /declin|cancel|reject/i.test(e.code||e.message||'')) { toast('Download cancelled.'); return; } } }
+  const b=new Blob([text],{type}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=name; document.body.appendChild(a); a.click(); setTimeout(()=>{URL.revokeObjectURL(a.href); a.remove();},500); }
+const slug=s=>(s||'building').toLowerCase().replace(/[^a-z0-9؀-ۿ]+/g,'-').replace(/^-|-$/g,'')||'building';
+const r2=v=>Math.round(v*100)/100;
+async function exportMap(){
+  if (!S.mode) return toast('Open a plan first.');
+  if (S.points.length<2) return toast('Add at least two points first.');
+  if (!ensureGrids()) return;
+  const routes={walk:{},chair:{}}; let done=0; const total=S.points.length*2; const t0=performance.now();
+  for (const mode of ['walk','chair']){ const g=S.grids[mode];
+    for (const A of S.points){
+      setStatus('expStatus',`Computing routes… ${Math.round(100*done/total)}%`); await new Promise(r=>setTimeout(r,0));
+      const s=snapFree(g,A.x,A.y); done++; if (s<0) continue;
+      const sr=search(g,s,-1);
+      for (const B of S.points){ if (B===A) continue; const t=snapFree(g,B.x,B.y); if (t<0) continue; const path=extractPath(g,sr.par,s,t,A,B); if(!path) continue;
+        const ins=instructions(path,A,B,mode); routes[mode][A.id+'>'+B.id]={distance_m:r2(ins.distance), seconds:Math.round(ins.seconds), path:path.map(q=>[r2(q[0]),r2(q[1])]), steps:ins.steps.map(s=>({en:s.en, ar:s.ar, ...(s.node?{node:s.node}:{})}))}; }
+    }
+  }
+  const walls=[]; for (const p of S.polys) if (S.layers[p.layer]?.role==='wall'||S.layers[p.layer]?.role==='mixed') walls.push(p.pts.map(q=>[r2(q[0]),r2(q[1])]).concat(p.closed?[[r2(p.pts[0][0]),r2(p.pts[0][1])]]:[]));
+  for (const t of S.traced) walls.push(t.pts.map(q=>[r2(q[0]),r2(q[1])]));
+  const doors=[]; for (const p of S.polys) if (S.layers[p.layer]?.role==='door') doors.push(p.pts.map(q=>[r2(q[0]),r2(q[1])]));
+  const bId=slug($('inBuilding').value), fId=slug($('inFloor').value);
+  const base=$('inBase').value.replace(/\/$/,'');
+  const out={format:'dalil-map', version:1, generated:new Date().toISOString(), building:{id:bId, name:$('inBuilding').value||'Building'}, floor:{id:fId, name:$('inFloor').value||'Floor'},
+    units:'m', source:S.mode==='dxf'?{type:'dxf', drawingUnits:$('selUnits').value==='auto'?(S.fileUnits||'cm'):$('selUnits').value}:{type:'image', metresPerPixel:S.mpp},
+    clearance:{walk:S.grids.walk.r, wheelchair:S.grids.chair.r}, grid:{cell:S.grids.walk.cell},
+    points:S.points.map(p=>({id:p.id, nameEn:p.nameEn, nameAr:p.nameAr, category:p.cat, dalilNode:p.node, facingDeg:p.face, x:r2(p.x), y:r2(p.y), ...(p.node?{nfcUrl:`${base}/${bId}/${fId}/${p.id}`}:{})})),
+    plan:{walls, doors, openings:S.openings.map(o=>({a:o.a.map(r2),b:o.b.map(r2),width_m:o.w||0.9}))}, routes};
+  const n=Object.keys(routes.walk).length, nc=Object.keys(routes.chair).length; const pairs=S.points.length*(S.points.length-1);
+  download(`dalil-map_${bId}_${fId}.json`, JSON.stringify(out));
+  setStatus('expStatus',`Exported in ${((performance.now()-t0)/1000).toFixed(1)} s · ${S.points.length} points · ${n}/${pairs} walking routes · ${nc}/${pairs} wheelchair routes${nc<pairs?' (some places have no wheelchair access — check narrow doors)':''}.`, nc<pairs?'':'ok');
+}
+function exportCsv(){
+  const nodes=S.points.filter(p=>p.node); if(!nodes.length) return toast('Mark at least one point as a DALIL node.');
+  const bId=slug($('inBuilding').value), fId=slug($('inFloor').value), base=$('inBase').value.replace(/\/$/,'');
+  const q=s=>`"${String(s).replace(/"/g,'""')}"`;
+  const rows=[['node_id','name_en','name_ar','category','x_m','y_m','facing','nfc_url'].join(',')].concat(nodes.map(p=>[p.id,q(p.nameEn),q(p.nameAr),p.cat,r2(p.x),r2(p.y),p.face,`${base}/${bId}/${fId}/${p.id}`].join(',')));
+  download(`dalil-nfc-tags_${bId}_${fId}.csv`, '﻿'+rows.join('\r\n'), 'text/csv;charset=utf-8');
+  setStatus('expStatus',`${nodes.length} NFC tags listed. Write each URL to an NTAG215 sticker inside its DALIL clip.`,'ok');
+}
+function saveProject(){
+  if (!S.mode) return toast('Nothing to save yet.');
+  const proj={format:'dalil-project',version:1, building:$('inBuilding').value, floor:$('inFloor').value, units:$('selUnits').value, clrW:$('inClrW').value, clrC:$('inClrC').value,
+    mode:S.mode, fileUnits:S.fileUnits, rawPolys:S.rawPolys, rawTexts:S.rawTexts, layers:S.layers, traced:S.traced, openings:S.openings, thin:$('chkThin').checked, points:S.points, nextId:S.nextId, mpp:S.mpp,
+    image:S.image?imgToData(S.image):null};
+  download(`dalil-project_${slug($('inBuilding').value)}_${slug($('inFloor').value)}.json`, JSON.stringify(proj));
+}
+function imgToData(img){ try{ const c=document.createElement('canvas'); c.width=img.naturalWidth; c.height=img.naturalHeight; c.getContext('2d').drawImage(img,0,0); return c.toDataURL('image/jpeg',0.9);}catch(e){return null;} }
+function openProject(text){
+  let p; try{ p=JSON.parse(text); }catch(e){ return toast('Not a valid project file.'); }
+  if (p.format!=='dalil-project') return toast('Not a DALIL project file.');
+  $('inBuilding').value=p.building||''; $('inFloor').value=p.floor||''; $('selUnits').value=p.units||'auto'; $('inClrW').value=p.clrW||0.25; $('inClrC').value=p.clrC||0.4;
+  S.mode=p.mode; S.fileUnits=p.fileUnits; S.rawPolys=p.rawPolys||[]; S.rawTexts=p.rawTexts||[]; S.layers=p.layers||{}; S.mpp=p.mpp||0.02; S.route=null; S.selId=null;
+  const finish=()=>{ if (S.mode==='dxf'){ applyUnits(true); } else { S.polys=[]; S.texts=[]; buildPaths(); }
+    S.traced=p.traced||[]; S.openings=p.openings||[]; if (p.thin!==undefined) $('chkThin').checked=p.thin; S.points=p.points||[]; S.nextId=p.nextId||S.points.length+1;
+    uiMode(); renderLayers(); refreshPoints(); fit(); markDirty(); setStatus('planStatus','Project opened: '+(p.building||'')+' · '+(p.floor||''),'ok'); };
+  if (p.mode==='image' && p.image){ const img=new Image(); img.onload=()=>{ S.image=img; S.imgW=img.naturalWidth; S.imgH=img.naturalHeight; finish(); }; img.src=p.image; } else { S.image=null; finish(); }
+}
+$('btnExport').onclick=exportMap; $('btnCsv').onclick=exportCsv; $('btnSave').onclick=saveProject;
+$('btnOpen').onclick=()=>$('fProj').click(); $('fProj').onchange=async e=>{ const f=e.target.files[0]; if(f) openProject(await f.text()); e.target.value=''; };
+
+/* ---------------- SAMPLE HOSPITAL (generated DXF, cm) ---------------- */
+function sampleDXF(){
+  const o=[]; const p=(c,v)=>o.push(String(c),String(v));
+  p(0,'SECTION');p(2,'HEADER');p(9,'$INSUNITS');p(70,5);p(0,'ENDSEC');
+  p(0,'SECTION');p(2,'TABLES');p(0,'TABLE');p(2,'LAYER');
+  for (const [n,c] of [['A-WALL',7],['A-DOOR',5],['A-FURN',8],['A-ANNO-TEXT',3],['A-WALL-LIFT',1]]){ p(0,'LAYER');p(2,n);p(70,0);p(62,c); }
+  p(0,'ENDTAB');p(0,'ENDSEC');
+  p(0,'SECTION');p(2,'BLOCKS');
+  for (const w of [100,160,70]){ p(0,'BLOCK');p(8,'0');p(2,'DOOR'+w);p(10,0);p(20,0);p(70,0);
+    p(0,'LINE');p(8,'0');p(10,0);p(20,0);p(11,0);p(21,w);
+    p(0,'ARC');p(8,'0');p(10,0);p(20,0);p(40,w);p(50,0);p(51,90);
+    p(0,'ENDBLK');p(8,'0'); }
+  p(0,'ENDSEC');
+  p(0,'SECTION');p(2,'ENTITIES');
+  const rect=(x1,y1,x2,y2,layer='A-WALL')=>{ p(0,'LWPOLYLINE');p(8,layer);p(90,4);p(70,1); for (const [x,y] of [[x1,y1],[x2,y1],[x2,y2],[x1,y2]]){p(10,x);p(20,y);} };
+  const T=10;
+  const hwall=(y,x1,x2,gaps=[])=>{ let s=x1; for (const [a,b] of gaps){ if(a>s) rect(s,y-T,a,y+T); s=b; } if(x2>s) rect(s,y-T,x2,y+T); };
+  const vwall=(x,y1,y2,gaps=[])=>{ let s=y1; for (const [a,b] of gaps){ if(a>s) rect(x-T,s,x+T,a); s=b; } if(y2>s) rect(x-T,s,x+T,y2); };
+  const door=(blk,x,y,rot,sy=1)=>{ p(0,'INSERT');p(8,'A-DOOR');p(2,blk);p(10,x);p(20,y);p(41,1);p(42,sy);p(50,rot); };
+  const text=(x,y,s,h=38)=>{ p(0,'TEXT');p(8,'A-ANNO-TEXT');p(10,x);p(20,y);p(40,h);p(1,s); };
+  // envelope 60 x 36 m
+  hwall(0,-T,6000+T,[[2850,3150]]); hwall(3600,-T,6000+T); vwall(0,0,3600); vwall(6000,0,3600,[[1700,1900]]);
+  // corridor walls (corridor y 1680–1920)
+  hwall(1920,0,6000,[[950,1110],[2150,2850],[3450,3550],[4450,4550],[5450,5550]]);
+  hwall(1680,0,2000,[[450,550],[1450,1520]]); hwall(1680,4000,6000,[[4450,4550],[5400,5560]]);
+  // partitions
+  for (const x of [1000,2000,4000,5000]) vwall(x,0,1680); for (const x of [2000,3000,4000,5000]) vwall(x,1920,3600);
+  vwall(3500,2500,3600); // toilets split
+  // lifts
+  rect(2100,3050,2450,3500,'A-WALL-LIFT'); rect(2550,3050,2900,3500,'A-WALL-LIFT');
+  // reception desk + seating
+  rect(2700,950,3300,1100,'A-FURN'); for (let i=0;i<4;i++) rect(2150+i*120,400,2250+i*120,500,'A-FURN');
+  // doors (blocks)
+  door('DOOR160',950,1920,0); door('DOOR100',3450,1920,0); door('DOOR100',4450,1920,0); door('DOOR100',5450,1920,0);
+  door('DOOR100',450,1680,0,-1); door('DOOR70',1450,1680,0,-1); door('DOOR100',4450,1680,0,-1); door('DOOR160',5400,1680,0,-1);
+  door('DOOR100',6000,1700,90);
+  // labels
+  text(700,2800,'RADIOLOGY'); text(2150,2700,'LIFT LOBBY'); text(3100,3100,'WC MEN'); text(3600,3100,'WC LADIES'); text(4200,2800,'PRAYER ROOM'); text(5200,2800,'PHARMACY');
+  text(250,900,'CLINIC 1'); text(1250,900,'CLINIC 2'); text(2700,1300,'MAIN LOBBY'); text(4200,900,'LABORATORY'); text(5150,900,'EMERGENCY'); text(300,1780,'MAIN CORRIDOR',30);
+  p(0,'ENDSEC');p(0,'EOF');
+  return o.join('\n');
+}
+function loadSample(){
+  $('inBuilding').value='Sample Hospital'; $('inFloor').value='Ground'; $('selUnits').value='auto';
+  loadDXFText(sampleDXF(),'sample-hospital.dxf');
+  const tr=(x,y)=>[x*S.f-S.off[0], y*S.f-S.off[1]];
+  const pre=[
+    [3000,150,'Main Entrance','المدخل الرئيسي','entrance',true,90],[3000,1300,'Reception','الاستقبال','reception',false,90],
+    [2500,2250,'Lift Lobby','ردهة المصاعد','lift',true,90],[1000,2700,'Radiology','قسم الأشعة','room',false,90],
+    [3250,2900,'Toilets (Men)','دورة مياه الرجال','toilet',false,90],[3750,2900,'Toilets (Ladies)','دورة مياه النساء','toilet',false,90],
+    [4500,2700,'Prayer Room','المصلى','prayer',false,90],[5500,2700,'Pharmacy','الصيدلية','room',false,90],
+    [500,800,'Clinic 1','العيادة ١','room',false,90],[1500,800,'Clinic 2','العيادة ٢','room',false,90],
+    [4500,800,'Laboratory','المختبر','room',false,90],[5500,800,'Emergency','الطوارئ','room',false,90],
+    [4900,1800,'Corridor East','الممر الشرقي','corridor',true,180],[5850,1800,'East Exit','المخرج الشرقي','exit',true,180]
+  ];
+  for (const [x,y,en,ar,cat,node,face] of pre){ const [wx,wy]=tr(x,y); addPoint(wx,wy,{nameEn:en,nameAr:ar,cat,node,face}); }
+  refreshPoints(); $('rFrom').value='P001'; $('rTo').value='P004'; ensureGrids(); draw();
+  toast('Sample loaded. Try a route — Clinic 2 has a 70 cm door, so wheelchair routing will flag it.', 4500);
+}
+
+/* ---------------- INIT ---------------- */
+bindEditor(); window.addEventListener('resize',resize); resize(); renderLayers(); refreshPoints();
+window.DALIL={S,loadSample,findRoute,exportMap,routeBetween,ensureGrids,parseDXF,flattenDXF,sampleDXF};
+</script>
+</body>
+</html>
