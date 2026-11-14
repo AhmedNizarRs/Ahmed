@@ -13,6 +13,12 @@ What this script does (standard library only, Python 3.8+):
        - a camera fly-through, light presets, top view, and a click-to-copy coordinate picker
   3. Optionally serves the page on your computer and opens it in your browser.
 
+INDOOR LAYOUTS: the page has a floor selector. It shows indoor rooms and corridors from
+  (a) OpenStreetMap features tagged indoor=* with a level, if anyone has mapped them here, and
+  (b) your own GeoJSON files via --indoor-file (run --make-indoor-template for the format).
+Mapbox's own Indoor Maps data covers airports and similar venues, and its custom-indoor service
+is by arrangement with Mapbox, so for this campus the rooms have to come from (a) or (b).
+
 IMPORTANT about indoor floors: Mapbox's built-in indoor floor plans cover supported venues
 such as airports. The University of Sharjah is not one of them, so the floor selector stays
 empty here until Mapbox adds coverage or you supply your own indoor data (see README notes
@@ -30,6 +36,9 @@ Options:
     --token TOKEN       Mapbox public token (default: $MAPBOX_TOKEN). If you leave it out, the
                         page asks for it in the browser and keeps it in that browser only.
     --osm-file FILE     Use a saved Overpass JSON answer instead of downloading.
+    --indoor-file FILE  GeoJSON with your own indoor rooms (repeatable). Needs a "level" property.
+    --make-indoor-template   Write uos_indoor_template.geojson showing the format, then exit.
+    --no-indoor         Do not look for OpenStreetMap indoor data.
     --refresh           Ignore the cache and download again.
     --offline           Never touch the network from Python (cache or --osm-file only).
     --out FILE          Output page (default: campus_map.html next to this script).
@@ -276,6 +285,115 @@ def process(elements):
 
 
 # ---------------------------------------------------------------------------
+# Indoor layouts: OpenStreetMap indoor=* features and/or your own GeoJSON
+# ---------------------------------------------------------------------------
+INDOOR_CACHE = HERE / ".cache" / "uos_osm_indoor.json"
+
+
+def norm_level(v):
+    """'0;1' -> '0', 1.0 -> '1', ' -1 ' -> '-1'. Levels are compared as text on the page."""
+    first = str(v).split(";")[0].strip()
+    try:
+        f = float(first)
+        return str(int(f)) if f == int(f) else str(f)
+    except ValueError:
+        return first
+
+
+def indoor_query():
+    b = CAMPUS["bbox"]
+    bb = "{},{},{},{}".format(b["s"], b["w"], b["n"], b["e"])
+    return '[out:json][timeout:60];(way["indoor"]({bb}););out geom tags;'.format(bb=bb)
+
+
+def load_indoor_elements(args):
+    if args.no_indoor or args.osm_file:
+        return []
+    try:
+        if INDOOR_CACHE.exists() and not args.refresh:
+            if time.time() - INDOOR_CACHE.stat().st_mtime < CACHE_TTL_S or args.offline:
+                with open(INDOOR_CACHE, encoding="utf-8") as f:
+                    return json.load(f)
+        if args.offline:
+            return []
+        body = ("data=" + urllib.parse.quote(indoor_query())).encode()
+        for url in ENDPOINTS:
+            try:
+                req = urllib.request.Request(url, data=body, headers={
+                    "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "campus-map-prototype/1.0"})
+                with urllib.request.urlopen(req, timeout=90) as r:
+                    els = json.loads(r.read().decode("utf-8")).get("elements", [])
+                INDOOR_CACHE.parent.mkdir(parents=True, exist_ok=True)
+                with open(INDOOR_CACHE, "w", encoding="utf-8") as f:
+                    json.dump(els, f)
+                return els
+            except (urllib.error.URLError, TimeoutError, ValueError, OSError) as e:
+                print("  indoor query {} failed: {}".format(url, e), file=sys.stderr)
+    except Exception as e:  # indoor data is optional: never stop the map for it
+        print("  indoor data skipped: {}".format(e), file=sys.stderr)
+    return []
+
+
+def process_indoor(elements, extra_files=()):
+    campus_local = [to_local(lng, lat) for lng, lat in CAMPUS["boundary"]]
+    feats = []
+    for el in elements:
+        tags = el.get("tags", {})
+        geom = el.get("geometry", [])
+        if el.get("type") != "way" or len(geom) < 2:
+            continue
+        level = tags.get("level") or tags.get("repeat_on")
+        if level is None:
+            continue
+        coords = [[g["lon"], g["lat"]] for g in geom]
+        closed = len(coords) >= 4 and coords[0] == coords[-1]
+        cx, cy = centroid([to_local(*c) for c in coords])
+        if not point_in_polygon(cx, cy, campus_local):
+            continue
+        name, ar = names(tags)
+        feats.append({"type": "Feature",
+                      "geometry": {"type": "Polygon", "coordinates": [coords]} if closed
+                      else {"type": "LineString", "coordinates": coords},
+                      "properties": {"level": norm_level(level), "kind": tags.get("indoor", "room"),
+                                     "name": name or tags.get("ref", ""), "name_ar": ar, "source": "OpenStreetMap"}})
+    for path in extra_files:
+        with open(path, encoding="utf-8") as f:
+            gj = json.load(f)
+        for ft in (gj.get("features", []) if gj.get("type") == "FeatureCollection" else [gj]):
+            pr = dict(ft.get("properties") or {})
+            if ft.get("geometry") is None or pr.get("level") in (None, ""):
+                print("  skipped a feature without geometry or level in " + str(path), file=sys.stderr)
+                continue
+            pr["level"] = norm_level(pr["level"])
+            pr.setdefault("kind", "room")
+            pr["name"] = pr.get("name", "")
+            pr["source"] = "file"
+            feats.append({"type": "Feature", "geometry": ft["geometry"], "properties": pr})
+    return {"type": "FeatureCollection", "features": feats}
+
+
+def write_indoor_template():
+    lng, lat = CAMPUS["center"]
+    d = 0.00012
+    def sq(o, a):
+        return [[lng + o, lat + a], [lng + o + d, lat + a], [lng + o + d, lat + a + d], [lng + o, lat + a + d], [lng + o, lat + a]]
+    gj = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "properties": {"level": "0", "kind": "room", "name": "EXAMPLE room - delete me", "example": True},
+         "geometry": {"type": "Polygon", "coordinates": [sq(0, 0)]}},
+        {"type": "Feature", "properties": {"level": "0", "kind": "corridor", "name": "", "example": True},
+         "geometry": {"type": "Polygon", "coordinates": [sq(d, 0)]}},
+        {"type": "Feature", "properties": {"level": "1", "kind": "room", "name": "EXAMPLE room, floor 1 - delete me", "example": True},
+         "geometry": {"type": "Polygon", "coordinates": [sq(0, 0)]}},
+    ]}
+    out = HERE / "uos_indoor_template.geojson"
+    out.write_text(json.dumps(gj, indent=2), encoding="utf-8")
+    print("Wrote " + str(out))
+    print("Replace the examples with your real rooms. Trace them on https://geojson.io (draw polygons,")
+    print("then add properties: level = \"0\", \"1\", \"-1\" ...; kind = room | corridor | stairs | toilets ...;")
+    print("name = the room label). Then run: python campus_map_mapbox.py --indoor-file your_file.geojson")
+
+
+# ---------------------------------------------------------------------------
 # The web page
 # ---------------------------------------------------------------------------
 PAGE = r"""<!doctype html>
@@ -359,7 +477,10 @@ PAGE = r"""<!doctype html>
     <div><span class="lbl" id="placesLbl">Named places</span><ul id="places" aria-labelledby="placesLbl"></ul></div>
     <div><span class="lbl">Pick coordinates</span>
       <div class="row"><span class="readout" id="coords">Click the map</span><button class="btn" id="copy">Copy</button></div></div>
-    <p class="note"><b>Floors:</b> Mapbox's built-in indoor floor plans cover supported venues such as airports. The floor selector (top right) fills in only where Mapbox has indoor data. For this campus it stays empty until you add your own indoor data.</p>
+    <div><span class="lbl" id="floorsLbl">Indoor layouts</span>
+      <div class="row" id="floors" role="group" aria-labelledby="floorsLbl"></div>
+      <p class="hint" id="indoorInfo" style="margin-top:6px"></p></div>
+    <p class="note"><b>Mapbox floors:</b> Mapbox's built-in indoor floor plans cover supported venues such as airports. The floor selector (top right) fills in only where Mapbox has indoor data. For this campus it stays empty until you add your own indoor data.</p>
     <p id="status" role="status"></p>
     <p class="hint" id="credit"></p>
   </div>
@@ -459,6 +580,7 @@ function onStyle() {
   map.addSource('campus-boundary', { type: 'geojson', data: DATA.campus.boundaryGeojson });
   map.addSource('campus-buildings', { type: 'geojson', data: DATA.buildings });
   map.addSource('campus-pois', { type: 'geojson', data: DATA.pois });
+  map.addSource('campus-indoor', { type: 'geojson', data: DATA.indoor });
   map.addSource('route', { type: 'geojson', data: emptyFc() });
   map.addSource('walker', { type: 'geojson', data: emptyFc() });
   map.addSource('ends', { type: 'geojson', data: emptyFc() });
@@ -474,6 +596,14 @@ function onStyle() {
       'fill-extrusion-color': ['case', ['get', 'named'], ACCENT, '#7e8da0'],
       'fill-extrusion-height': ['get', 'height'], 'fill-extrusion-base': 0,
       'fill-extrusion-opacity': 0.72, 'fill-extrusion-emissive-strength': 0.4 } });
+  const kindColor = ['match', ['get', 'kind'], 'corridor', '#5b6b7c', 'stairs', '#8BF5B0', 'toilets', '#7aa7ff', 'area', '#3a4656', ACCENT];
+  addLayer({ id: 'indoor-fill', type: 'fill', slot: 'top', source: 'campus-indoor', layout: { visibility: 'none' },
+    paint: { 'fill-color': kindColor, 'fill-opacity': 0.55, 'fill-emissive-strength': 1 } });
+  addLayer({ id: 'indoor-outline', type: 'line', slot: 'top', source: 'campus-indoor', layout: { visibility: 'none' },
+    paint: { 'line-color': '#F2F1EC', 'line-width': 1.2, 'line-emissive-strength': 1 } });
+  addLayer({ id: 'indoor-labels', type: 'symbol', slot: 'top', source: 'campus-indoor', minzoom: 17.5,
+    layout: { visibility: 'none', 'text-field': ['get', 'name'], 'text-size': 11, 'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'], 'text-optional': true },
+    paint: { 'text-color': '#F2F1EC', 'text-halo-color': '#0B0C0E', 'text-halo-width': 1.4, 'text-emissive-strength': 1 } });
   addLayer({ id: 'route-halo', type: 'line', slot: 'top', source: 'route',
     layout: { 'line-cap': 'round', 'line-join': 'round' },
     paint: { 'line-color': GLOW, 'line-width': 14, 'line-opacity': 0.25, 'line-emissive-strength': 1 } });
@@ -519,6 +649,7 @@ function initPanel() {
     if (p.ar && p.ar !== p.name) { const a = document.createElement('span'); a.className = 'ar'; a.lang = 'ar'; a.dir = 'rtl'; a.textContent = p.ar; b.appendChild(a); }
     b.addEventListener('click', () => choose(p)); li.appendChild(b); ul.appendChild(li);
   });
+  initIndoor();
   $('credit').textContent = DATA.campus.source + ' · © Mapbox';
   $('swap').onclick = () => { [S.from, S.to] = [S.to, S.from]; syncSelects(); updateRoute(); };
   $('clear').onclick = () => { S.from = S.to = null; syncSelects(); updateRoute(); setStatus(''); };
@@ -543,6 +674,37 @@ function initPanel() {
   };
   $('hide').onclick = () => { $('panel').hidden = true; $('toggle').hidden = false; };
   $('toggle').onclick = () => { $('panel').hidden = false; $('toggle').hidden = true; };
+}
+
+const INDOOR_LAYERS = ['indoor-fill', 'indoor-outline', 'indoor-labels'];
+function initIndoor() {
+  const feats = DATA.indoor.features, box = $('floors');
+  if (!feats.length) {
+    $('indoorInfo').textContent = 'No indoor layouts yet. OpenStreetMap has none tagged for this campus, and Mapbox\u2019s own indoor data does not cover it. Add your rooms with --indoor-file (run the script with --make-indoor-template for the format).';
+    return;
+  }
+  const levels = Array.from(new Set(feats.map((f) => String(f.properties.level)))).sort((a, b) => parseFloat(a) - parseFloat(b));
+  const sources = Array.from(new Set(feats.map((f) => f.properties.source))).join(' + ');
+  $('indoorInfo').textContent = feats.length + ' indoor shapes on ' + levels.length + ' level' + (levels.length > 1 ? 's' : '') + ' (' + sources + '). Pick a level, then zoom in.';
+  const mk = (label, lvl) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = label;
+    b.setAttribute('aria-pressed', String(lvl === null)); b.dataset.level = lvl === null ? '' : lvl; b.onclick = () => setLevel(lvl); box.appendChild(b); };
+  mk('Outdoor', null); levels.forEach((l) => mk('Level ' + l, l));
+  const go = document.createElement('button'); go.type = 'button'; go.className = 'btn'; go.textContent = 'Go to indoor data'; go.onclick = fitIndoor; box.appendChild(go);
+}
+function indoorBounds() {
+  const bb = new mapboxgl.LngLatBounds(); let any = false;
+  const walk = (c) => { if (typeof c[0] === 'number') { bb.extend(c); any = true; } else c.forEach(walk); };
+  DATA.indoor.features.forEach((f) => walk(f.geometry.coordinates)); return any ? bb : null;
+}
+function fitIndoor() { const bb = indoorBounds(); if (bb) S.map.fitBounds(bb, { padding: 80, maxZoom: 19.5, pitch: 45, duration: reduceMotion ? 0 : 1200 }); }
+function setLevel(lvl) {
+  const map = S.map, on = lvl !== null, f = ['==', ['to-string', ['get', 'level']], on ? lvl : ''];
+  map.setFilter('indoor-fill', ['all', f, ['==', ['geometry-type'], 'Polygon']]);
+  map.setFilter('indoor-outline', f); map.setFilter('indoor-labels', f);
+  INDOOR_LAYERS.forEach((l) => map.setLayoutProperty(l, 'visibility', on ? 'visible' : 'none'));
+  map.setPaintProperty('buildings', 'fill-extrusion-opacity', on ? 0.12 : 0.72); // see through the blocks to the floor
+  document.querySelectorAll('#floors button[data-level]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.level === (on ? lvl : ''))));
+  if (on && map.getZoom() < 17.5) fitIndoor();
 }
 
 function syncSelects() {
@@ -656,7 +818,7 @@ if (token) start(token); else $('gate').hidden = false;
 """
 
 
-def build_page(token, gl_version, buildings, pois, source):
+def build_page(token, gl_version, buildings, pois, source, indoor=None):
     boundary_ring = [list(p) for p in CAMPUS["boundary"]] + [list(CAMPUS["boundary"][0])]
     data = {
         "campus": {
@@ -671,6 +833,7 @@ def build_page(token, gl_version, buildings, pois, source):
         },
         "buildings": buildings,
         "pois": pois,
+        "indoor": indoor or {"type": "FeatureCollection", "features": []},
         "source": source,
     }
     # '</' is escaped so the data can never close the <script> tag early.
@@ -724,6 +887,14 @@ def selftest():
     assert [f["properties"]["name"] for f in p["features"]] == ["Test Cafe", "Test Hall"]
     page = build_page("pk.test", "v3.35.0", b, p, "selftest")
     assert "</script><script" not in page and "pk.test" in page and "__GLVER__" not in page
+    ind = process_indoor([
+        {"type": "way", "id": 9, "tags": {"indoor": "room", "level": "1;2", "name": "Lab"},
+         "geometry": [{"lat": a, "lon": o} for o, a in ring]},
+        {"type": "way", "id": 10, "tags": {"indoor": "room"}, "geometry": [{"lat": a, "lon": o} for o, a in ring]},  # no level
+    ])
+    assert len(ind["features"]) == 1 and ind["features"][0]["properties"]["level"] == "1"
+    assert norm_level(" -1 ") == "-1" and norm_level(2.0) == "2" and norm_level("0;1") == "0"
+    assert "indoor-fill" in build_page("pk.t", "v3.35.0", b, p, "t", ind)
     print("selftest ok")
 
 
@@ -738,11 +909,17 @@ def main():
     ap.add_argument("--no-serve", action="store_true", help="only write the HTML file")
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--gl-version", default="v3.35.0")
+    ap.add_argument("--indoor-file", action="append", default=[])
+    ap.add_argument("--no-indoor", action="store_true")
+    ap.add_argument("--make-indoor-template", action="store_true")
     ap.add_argument("--selftest", action="store_true")
     args = ap.parse_args()
 
     if args.selftest:
         selftest()
+        return 0
+    if args.make_indoor_template:
+        write_indoor_template()
         return 0
 
     try:
@@ -751,10 +928,11 @@ def main():
         print("Error:", e, file=sys.stderr)
         return 1
     buildings, pois = process(elements)
+    indoor = process_indoor(load_indoor_elements(args), args.indoor_file)
     out = Path(args.out).resolve()
-    out.write_text(build_page(args.token.strip(), args.gl_version, buildings, pois, source), encoding="utf-8")
-    print("Wrote {}  ({} footprints, {} named places, data: {})".format(
-        out, len(buildings["features"]), len(pois["features"]), source))
+    out.write_text(build_page(args.token.strip(), args.gl_version, buildings, pois, source, indoor), encoding="utf-8")
+    print("Wrote {}  ({} footprints, {} named places, {} indoor shapes, data: {})".format(
+        out, len(buildings["features"]), len(pois["features"]), len(indoor["features"]), source))
     if not args.token:
         print("No token given: the page will ask for your Mapbox public token in the browser.")
     if not args.no_serve:
