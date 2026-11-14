@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Campus Map 3D</title>
+<meta name="robots" content="noindex">
+<style>
+  :root {
+    --bg: #0B0C0E; --bg-2: #121418; --bg-3: #1A1D22;
+    --fg: #F2F1EC; --fg-2: #A9B0BA; --fg-3: #8A929D;
+    --control: #747C87; --accent: #FFC700; --glow: #8BF5B0; --error: #FF8A7A;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.45 var(--sans); }
+  #map { position: fixed; inset: 0; }
+  button, select, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .panel {
+    position: fixed; z-index: 5; top: 16px; left: 16px; width: 340px; max-height: calc(100% - 32px);
+    display: flex; flex-direction: column; background: rgba(18,20,24,.94); border: 1px solid #2a2e35;
+    border-radius: 12px; overflow: hidden;
+  }
+  .panel[hidden] { display: none; }
+  .panel header { padding: 14px 16px 10px; border-bottom: 1px solid #23272d; }
+  .eyebrow { font: 500 11px var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--fg-3); margin: 0 0 4px; }
+  h1 { font-size: 18px; margin: 0; font-weight: 650; }
+  h1 span { color: var(--fg-2); font-weight: 400; margin-inline-start: 6px; }
+  .body { padding: 12px 16px 16px; overflow: auto; display: grid; gap: 14px; }
+  label, .lbl { display: block; font: 500 11px var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--fg-3); margin-bottom: 4px; }
+  select, input[type=password], input[type=text] {
+    width: 100%; background: var(--bg-3); border: 1px solid var(--control); border-radius: 8px; padding: 9px 10px;
+  }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .btn { background: var(--bg-3); border: 1px solid var(--control); border-radius: 8px; padding: 8px 12px; cursor: pointer; }
+  .btn:hover { border-color: var(--fg-2); }
+  .btn.primary { background: var(--accent); color: #0B0C0E; border-color: var(--accent); font-weight: 600; }
+  .btn[aria-pressed=true] { border-color: var(--accent); color: var(--accent); }
+  .stat { font: 500 13px var(--mono); color: var(--fg-2); }
+  .stat b { color: var(--glow); font-weight: 600; }
+  .checks { display: flex; gap: 14px; flex-wrap: wrap; }
+  .checks label { display: flex; gap: 6px; align-items: center; margin: 0; text-transform: none; letter-spacing: 0; font: 14px var(--sans); color: var(--fg); }
+  #places { list-style: none; margin: 0; padding: 0; max-height: 170px; overflow: auto; border: 1px solid #23272d; border-radius: 8px; }
+  #places li button { width: 100%; text-align: start; background: none; border: 0; border-bottom: 1px solid #1d2026; padding: 7px 10px; cursor: pointer; display: flex; justify-content: space-between; gap: 10px; }
+  #places li button:hover { background: var(--bg-3); }
+  #places .ar { color: var(--fg-3); }
+  .hint { color: var(--fg-3); font-size: 13px; margin: 0; }
+  #status { min-height: 1.4em; color: var(--fg-2); font-size: 13px; margin: 0; }
+  #status.err { color: var(--error); }
+  #toggle { position: fixed; z-index: 6; top: 16px; left: 16px; }
+  .panel:not([hidden]) ~ #toggle { display: none; }
+
+  /* key gate */
+  #gate { position: fixed; inset: 0; z-index: 10; display: grid; place-items: center; padding: 16px; background: var(--bg); }
+  #gate[hidden] { display: none; }
+  .card { width: min(480px, 100%); background: var(--bg-2); border: 1px solid #2a2e35; border-radius: 14px; padding: 22px; display: grid; gap: 14px; }
+  .card h2 { margin: 0; font-size: 20px; }
+  .card p { margin: 0; color: var(--fg-2); }
+  .card code { font-family: var(--mono); font-size: 13px; color: var(--fg); }
+  #gateErr { color: var(--error); }
+
+  /* labels on the map */
+  .poi { font: 600 12px var(--sans); background: rgba(11,12,14,.88); color: var(--fg); border: 1px solid var(--control);
+         border-radius: 999px; padding: 3px 9px; white-space: nowrap; cursor: pointer; }
+  .poi.sel { border-color: var(--accent); color: var(--accent); }
+  .readout { font: 500 13px var(--mono); }
+
+  @media (max-width: 640px) {
+    .panel { top: auto; bottom: 0; left: 0; right: 0; width: auto; max-height: 52%; border-radius: 14px 14px 0 0; }
+    #toggle { top: auto; bottom: 16px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+</head>
+<body>
+
+<div id="map" role="application" aria-label="3D map of the University of Sharjah campus"></div>
+
+<aside class="panel" id="panel" aria-label="Campus controls" hidden>
+  <header>
+    <p class="eyebrow">Study area · prototype</p>
+    <h1>University of Sharjah <span lang="ar" dir="rtl">جامعة الشارقة</span></h1>
+  </header>
+  <div class="body">
+    <div class="stat" id="stats" aria-live="polite">Loading campus buildings…</div>
+
+    <div>
+      <label for="from">From</label>
+      <select id="from"></select>
+    </div>
+    <div>
+      <label for="to">To</label>
+      <select id="to"></select>
+    </div>
+    <div class="row">
+      <button class="btn" id="draw" aria-pressed="false">Draw path</button>
+      <button class="btn" id="undo">Undo point</button>
+      <button class="btn" id="clear">Clear route</button>
+    </div>
+    <p class="hint" id="routeInfo">Pick two places. The route is a straight line until you draw the real path: turn on Draw path, then click along the walkway.</p>
+
+    <div class="row">
+      <button class="btn primary" id="tour" aria-pressed="false">Fly the campus</button>
+      <button class="btn" id="sat" aria-pressed="false">Satellite</button>
+      <button class="btn" id="top" aria-pressed="false">Top view</button>
+    </div>
+
+    <div class="checks" role="group" aria-label="Layers">
+      <label><input type="checkbox" id="lyBoundary" checked> Boundary</label>
+      <label><input type="checkbox" id="lyBuildings" checked> Buildings</label>
+      <label><input type="checkbox" id="lyLabels" checked> Labels</label>
+    </div>
+
+    <div>
+      <span class="lbl" id="placesLbl">Named places</span>
+      <ul id="places" aria-labelledby="placesLbl"></ul>
+    </div>
+
+    <div>
+      <span class="lbl">Pick coordinates</span>
+      <div class="row" style="align-items:center">
+        <span class="readout" id="coords">Click the map</span>
+        <button class="btn" id="copy">Copy</button>
+      </div>
+    </div>
+
+    <p id="status" role="status"></p>
+    <p class="hint" id="credit"></p>
+  </div>
+</aside>
+<button class="btn" id="toggle" hidden>Show controls</button>
+
+<section id="gate" aria-labelledby="gateTitle">
+  <form class="card" id="gateForm">
+    <p class="eyebrow">DALIL · campus map prototype</p>
+    <h2 id="gateTitle">Add a Google Maps key to start</h2>
+    <p>This page draws the University of Sharjah campus in 3D with the Maps JavaScript API <code>WebGLOverlayView</code>. It needs a key whose project has <b>Maps JavaScript API</b> turned on.</p>
+    <div>
+      <label for="key">Maps JavaScript API key</label>
+      <input id="key" type="password" autocomplete="off" spellcheck="false" placeholder="AIza…">
+    </div>
+    <p>The key stays in this browser only. Restrict it to your site address in Google Cloud, and never commit it.</p>
+    <p id="gateErr" role="alert"></p>
+    <div class="row"><button class="btn primary" type="submit">Open the map</button></div>
+  </form>
+</section>
+
+<script src="vendor/three.min.js"></script>
+<script src="geo.js"></script>
+<script src="campus-data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
