@@ -1,7 +1,7 @@
 # DALIL funnel diagnosis (website)
 
 Date: 2026-11-14. Source: NextGen Founders workshop task "Diagnose your own funnel" (5 min, team task).
-Built from the repo only. Live PostHog numbers were **not** pulled (query declined), so every number is `[TO CONFIRM]`.
+Built from the repo plus a live PostHog check on 2026-11-14.
 
 ## The funnel, as the site is built today
 
@@ -14,9 +14,18 @@ Built from the repo only. Live PostHog numbers were **not** pulled (query declin
 | 5. Start the form | Types in the first field | **No event** |
 | 6. Submit | Sends the waitlist form | Yes, `waitlist_submitted`, `waitlist_validation_failed`, `waitlist_submit_failed` |
 
+## Live data check (PostHog)
+
+- The site's PostHog key (`phc_rXW2...`) belongs to the project "Default project", created 2026-11-05.
+- That project has **never received an event**: `ingested_event` is false and no `$pageview` or `waitlist_*` event was seen in the last 30 days.
+- So the funnel is **invisible right now**. Either nobody has visited the live site, or tracking is not reaching PostHog. I could not open dalil-team.com from this environment to tell which.
+- The site's security headers already allow PostHog, so the headers are not the cause. The script also only runs on `dalil-team.com` and `*.netlify.app`, and respects Do Not Track.
+
+Founders: open dalil-team.com in a normal browser (no ad blocker), then check PostHog Live events. If nothing shows after a minute, tracking is broken and fixing it comes first.
+
 ## 1. Where did our last 10 users come from?
 
-`[TO CONFIRM]` in PostHog: breakdown of `src` on `waitlist_submitted` and `$pageview`, last 10 visitors.
+Not answerable from data: PostHog has no events. `[TO CONFIRM]` from the founders' memory, and from the Netlify form submissions (the `src` field).
 What the repo shows:
 - Content calendar: 6 post ideas, all status "Idea", none published. Only one has a tracked link (`?src=linkedin`).
 - Sales pipeline: 1 row (University of Sharjah, stage "Target", no contact yet).
@@ -26,7 +35,7 @@ Founders: write the real 10 here: ________________________
 
 ## 2. Which step is weakest?
 
-Best reading from the build, to check against PostHog:
+Best reading from the build (PostHog has no data to check it):
 - **Top of funnel (step 1 to 2) is the weakest.** Nothing has been published yet, so there is little traffic to convert.
 - **Step 4 to 6 is the second risk.** The form asks for name, email, phone, organisation and an interest, all required. That is a lot for someone who is only "following progress". Investor details are already optional, which is good.
 - **We cannot see steps 4 and 5.** There is no event for "form seen" or "form started", so we cannot tell if people leave before or inside the form.
@@ -38,6 +47,7 @@ Provisional answer: **not enough of the right people arriving, then a heavy form
 
 ## What the offer and build should start from
 
+0. Confirm tracking works (see the live data check). Without it nothing below can be measured.
 1. Publish the first posts, each with its own `?src=` link (linkedin, instagram, whatsapp, qr, campus).
 2. Add two events: form seen and form started. That makes step 4 and 5 visible.
 3. Test a short form: name, email, one interest. Move phone and organisation to an optional step. Founders decide, then we show the change before pushing.
