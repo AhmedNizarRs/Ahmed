@@ -5,4 +5,4 @@ date,channel,pillar,idea,language,status,owner,link,notes
 ,LinkedIn,Accessibility for everyone,"When the lights fail, it still speaks: the glow in a blackout",EN+AR,Idea,Ahmed,,Lights-off video
 ,LinkedIn,How it's made,"One tactile grammar: Information, Safety, End of stairs",EN+AR,Idea,Ahmed,,Carousel
 ,LinkedIn,Founders in Sharjah,"Join the waitlist: investors, mentors and first buildings",EN+AR,Idea,Mohammed,https://dalil-team.com/?src=linkedin,
-,Website,Funnel fix,"Add ?src= link to every post; add form-seen and form-started events; test shorter waitlist form",EN,Idea,Ahmed,,See funnel-diagnosis.md
+,Website,Funnel fix,"Add ?src= link to every post; fix PostHog tracking (no events yet); test shorter waitlist form",EN,Idea,Ahmed,,See funnel-diagnosis.md

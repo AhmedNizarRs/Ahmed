@@ -13,6 +13,14 @@
   var hasIO = "IntersectionObserver" in window;
   var smoothScrolling = false;
 
+  /* ---------- State: every interactive part exposes its current state as data-state ----------
+     This is a read-only mirror of what the part is doing, for tests, debugging and agents.
+     Styling and behaviour still use the existing classes and aria attributes.
+     The full list of states and moves is in dalil/STATE-MACHINES.md. */
+  function setState(el, state) {
+    if (el && el.getAttribute("data-state") !== state) el.setAttribute("data-state", state);
+  }
+
   /* ---------- Analytics: anonymous events sent to PostHog (see analytics.js). Never sends form contents. ---------- */
   var tracked = {};
   function track(name, props, opts) {
@@ -145,6 +153,8 @@
     if (base) { v.src = base + videoExt; }
   }
   function syncControls(v) {
+    // playing | user-paused (visitor pressed pause) | paused (scrolled away, not started, or blocked)
+    setState(v, !v.paused && !v.ended ? "playing" : v.dataset.userPaused === "true" ? "user-paused" : "paused");
     $$('.vid-toggle[data-video="#' + v.id + '"]').forEach(function (b) { b.setAttribute("aria-pressed", v.paused ? "true" : "false"); });
     $$('.vid-sound[data-video="#' + v.id + '"]').forEach(function (b) { b.setAttribute("aria-pressed", v.muted ? "false" : "true"); });
   }
@@ -210,6 +220,7 @@
     var brailleBox = $(".readout-braille", rail);
     var x = 4, touched = null, dragging = false, autoplay = null, interacted = false;
     rail.classList.add("is-idle");
+    setState(rail, "ready"); // ready -> demo (auto glide) -> exploring <-> dragging
 
     function setX(next, fromUser) {
       x = Math.max(0, Math.min(100, next));
@@ -244,19 +255,21 @@
     function stopAuto() {
       if (!interacted) trackOnce("rail_demo_used");
       interacted = true;
+      setState(rail, "exploring");
       rail.classList.remove("is-idle");
       if (autoplay) { window.cancelAnimationFrame(autoplay); autoplay = null; }
     }
     stage.addEventListener("pointerdown", function (e) {
       stopAuto();
       dragging = true;
+      setState(rail, "dragging");
       stage.setPointerCapture(e.pointerId);
       setX(fromPointer(e), true);
       hand.focus({ preventScroll: true });
     });
     stage.addEventListener("pointermove", function (e) { if (dragging) setX(fromPointer(e), true); });
-    stage.addEventListener("pointerup", function () { dragging = false; });
-    stage.addEventListener("pointercancel", function () { dragging = false; });
+    stage.addEventListener("pointerup", function () { dragging = false; setState(rail, "exploring"); });
+    stage.addEventListener("pointercancel", function () { dragging = false; setState(rail, "exploring"); });
     hand.addEventListener("keydown", function (e) {
       var step = { ArrowRight: 2, ArrowUp: 2, ArrowLeft: -2, ArrowDown: -2, PageUp: 10, PageDown: -10 }[e.key];
       if (e.key === "Home") { stopAuto(); setX(0, true); e.preventDefault(); return; }
@@ -269,6 +282,7 @@
       var seen = new IntersectionObserver(function (entries) {
         if (!entries[0].isIntersecting || interacted) return;
         seen.disconnect();
+        setState(rail, "demo");
         var t0 = null, from = 4, to = 96, dur = 5200;
         var tick = function (t) {
           if (interacted) return;
@@ -277,7 +291,7 @@
           var eased = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
           setX(from + (to - from) * eased, false);
           if (p < 1) autoplay = window.requestAnimationFrame(tick);
-          else rail.classList.remove("is-idle");
+          else { rail.classList.remove("is-idle"); setState(rail, "ready"); }
         };
         autoplay = window.requestAnimationFrame(tick);
       }, { threshold: 0.6 });
@@ -289,6 +303,7 @@
   /* ---------- Tactile grammar: filter modules by rib count ---------- */
   var ribKeys = $$(".rib-key");
   var modules = $(".modules");
+  setState(modules, "all");
   ribKeys.forEach(function (key) {
     key.addEventListener("click", function () {
       var on = key.getAttribute("aria-pressed") !== "true";
@@ -297,6 +312,7 @@
       var kind = key.getAttribute("data-kind");
       if (on) track("rib_filter_selected", { kind: kind });
       modules.classList.toggle("is-filtered", on);
+      setState(modules, on ? kind : "all"); // all | one rib kind
       $$(".module", modules).forEach(function (m) {
         m.classList.toggle("is-match", on && m.getAttribute("data-kind") === kind);
       });
@@ -309,11 +325,13 @@
   if (sight && lightsBtn) {
     var glow = $(".glow-video", sight);
     var label = $(".switch-label", lightsBtn);
+    setState(sight, "lit"); // lit <-> dark
     lightsBtn.addEventListener("click", function () {
       var off = lightsBtn.getAttribute("aria-pressed") !== "true";
       lightsBtn.setAttribute("aria-pressed", off ? "true" : "false");
       sight.setAttribute("data-lights", off ? "off" : "on");
       track("lights_toggled", { lights: off ? "off" : "on" });
+      setState(sight, off ? "dark" : "lit");
       label.textContent = off ? "Turn the lights on" : "Turn the lights off";
       if (off) {
         if (reduceMotion) {
@@ -508,7 +526,12 @@
 
   function initForm(form) {
     form.noValidate = true; // We validate in JS; without JS the browser's own validation runs.
-    form.addEventListener("focusin", function () { trackOnce("waitlist_form_started"); });
+    // idle -> editing -> invalid | sending -> sent | error. "invalid" and "error" go back to "sending" on the next try.
+    setState(form, "idle");
+    form.addEventListener("focusin", function () {
+      trackOnce("waitlist_form_started");
+      if (form.getAttribute("data-state") === "idle") setState(form, "editing");
+    });
     var summary = $("#error-summary");
     var summaryList = $("#error-summary-list");
     var status = $("#form-status");
@@ -605,11 +628,13 @@
         // Field names only, never what was typed.
         track("waitlist_validation_failed", { fields: failed.map(function (r) { return r.id.replace(/^f-/, ""); }) });
         renderSummary(failed);
+        setState(form, "invalid");
         return;
       }
       summary.hidden = true;
       collectInterests();
       setBusy(true);
+      setState(form, "sending");
       status.textContent = "Sending your details…";
 
       var body = new URLSearchParams(new FormData(form)).toString();
@@ -625,6 +650,7 @@
         clearTimeout(timer);
         if (!res.ok) throw new Error("HTTP " + res.status);
         status.textContent = "Sent. Taking you to the next page.";
+        setState(form, "sent");
         // Interest choices and arrival source only; no name, email, phone or organisation.
         track("waitlist_submitted", { interests: interestsHidden.value, src: $("#f-src") ? $("#f-src").value : "direct" },
           { send_instantly: true, transport: "sendBeacon" });
@@ -633,6 +659,7 @@
         clearTimeout(timer);
         track("waitlist_submit_failed");
         setBusy(false);
+        setState(form, "error");
         status.classList.add("is-error");
         status.textContent = "We couldn’t send your details. Check your connection and try again, or email dalilwayfinding@gmail.com.";
       });
