@@ -1,5 +1,7 @@
 # Moving arrow and camera guide line: how they work
 
+![Moving arrow and camera guide line](moving-arrow-and-camera.png)
+
 Code: `app/tracker.js` (sensors, steps, route matching), `app/camera.js` (camera, guide line, QR), wiring in
 `app/app.js` (navigation section). No GPS indoors, no beacons: this is **dead reckoning** (compass + step count)
 snapped to the route and corrected at DALIL signs. It is an estimate, and the app says so.
