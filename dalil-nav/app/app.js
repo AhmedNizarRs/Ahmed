@@ -245,7 +245,7 @@ async function loadFile(file) {
    ========================================================================= */
 const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav' };
 const stack = ['home'];
-let pageNow = 'home';
+let pageNow = 'home', histOK = true, skipPop = 0;
 function display(name) {
   if (!PAGES[name]) name = 'home';
   if (name === 'route' && !destRef()) name = 'home';
@@ -259,16 +259,23 @@ function display(name) {
 }
 function go(name) {
   if (name === pageNow) { enterPage(name, name); return; }
-  stack.push(name); try { history.pushState({ dalil: stack.length }, ''); } catch { }
+  stack.push(name);
+  if (histOK) try { history.pushState({ dalil: stack.length }, ''); } catch { histOK = false; }
   display(name);
 }
-function back() { if (stack.length > 1) history.back(); else display('home'); }
+// The screen changes at once; the browser history follows (so a frame without history can never leave the app).
+function back() {
+  if (stack.length <= 1) { display('home'); return; }
+  stack.pop(); display(stack[stack.length - 1]);
+  if (histOK) { skipPop++; try { history.back(); } catch { skipPop--; } }
+}
 function goHome() {
   const n = stack.length - 1; stack.length = 1;
-  if (n > 0) { try { history.go(-n); } catch { } }
   display('home');
+  if (n > 0 && histOK) { skipPop++; try { history.go(-n); } catch { skipPop--; } }
 }
 window.addEventListener('popstate', e => {
+  if (skipPop > 0) { skipPop--; return; }
   const n = e.state?.dalil || 1;
   stack.length = Math.max(1, Math.min(stack.length, n));
   display(stack[stack.length - 1] || 'home');

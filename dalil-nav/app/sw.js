@@ -1,6 +1,6 @@
 // DALIL visitor app service worker: works offline once loaded.
 // Bump VERSION whenever app files change.
-const VERSION = 'dalil-app-v6';
+const VERSION = 'dalil-app-v7';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'i18n.js', 'mapview.js', 'router.js', 'outdoor.js', 'providers.js', 'tracker.js', 'camera.js',
   'vendor/qrcode.js', 'vendor/jsqr/jsQR.js', 'maps.json', 'config.json', 'manifest.webmanifest',
