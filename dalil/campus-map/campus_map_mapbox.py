@@ -22,8 +22,8 @@ heights come from OpenStreetMap tags, otherwise a generic 9 m block that the pag
 
 Usage:
     export MAPBOX_TOKEN=pk.xxxxx            # public token from https://account.mapbox.com
-    python campus_map_mapbox.py --serve     # build, serve on http://localhost:8000, open browser
-    python campus_map_mapbox.py             # only write campus_map.html
+    python campus_map_mapbox.py             # build, serve on http://localhost:8000, open browser
+    python campus_map_mapbox.py --no-serve  # only write campus_map.html
     python campus_map_mapbox.py --selftest  # run the built-in checks and exit
 
 Options:
@@ -33,7 +33,7 @@ Options:
     --refresh           Ignore the cache and download again.
     --offline           Never touch the network from Python (cache or --osm-file only).
     --out FILE          Output page (default: campus_map.html next to this script).
-    --serve             Serve the output folder and open the page.
+    --no-serve          Only write the page; do not start the local server.
     --port N            Port for --serve (default 8000).
     --gl-version VER    Mapbox GL JS version (default v3.35.0, the version Mapbox's own indoor
                         example uses).
@@ -319,6 +319,8 @@ PAGE = r"""<!doctype html>
   .hint { color:var(--fg3); font-size:13px; margin:0; } #status { min-height:1.4em; color:var(--fg2); font-size:13px; margin:0; } #status.err { color:var(--err); }
   .note { border:1px solid #2a2e35; border-radius:8px; padding:8px 10px; color:var(--fg2); font-size:13px; background:var(--bg2); }
   #toggle { position:fixed; z-index:6; top:16px; left:16px; }
+  #alert { position:fixed; z-index:9; left:50%; bottom:16px; transform:translateX(-50%); width:min(640px,calc(100% - 32px)); background:#2a1512; border:1px solid var(--err); border-radius:10px; padding:12px 14px; display:flex; gap:12px; align-items:flex-start; }
+  #alert[hidden] { display:none; } #alert p { margin:0; flex:1; white-space:pre-line; }
   #gate { position:fixed; inset:0; z-index:10; display:grid; place-items:center; padding:16px; background:var(--bg); }
   #gate[hidden] { display:none; }
   .card { width:min(480px,100%); background:var(--bg2); border:1px solid #2a2e35; border-radius:14px; padding:22px; display:grid; gap:14px; }
@@ -363,6 +365,7 @@ PAGE = r"""<!doctype html>
   </div>
 </aside>
 <button class="btn" id="toggle" hidden>Show controls</button>
+<div id="alert" role="alert" hidden><p id="alertText"></p><button class="btn" id="alertClose" style="padding:2px 10px">Close</button></div>
 
 <section id="gate" hidden aria-labelledby="gateTitle">
   <form class="card" id="gateForm">
@@ -385,6 +388,26 @@ const HOME = { center: DATA.campus.center, zoom: 16.2, pitch: 60, bearing: 25 };
 const GLOW = '#8BF5B0', ACCENT = '#FFC700';
 const S = { map: null, pois: [], from: null, to: null, route: null, lastClick: null, touring: false, raf: 0, indoor: null };
 
+function alertBanner(msg) { $('alertText').textContent = msg; $('alert').hidden = false; console.error(msg); }
+$('alertClose').addEventListener('click', () => { $('alert').hidden = true; });
+
+async function probe(token) {
+  // Asks Mapbox directly, so a blank map comes with a reason.
+  const tests = [['style', 'https://api.mapbox.com/styles/v1/mapbox/standard?access_token='],
+                 ['map tiles', 'https://api.mapbox.com/v4/mapbox.mapbox-streets-v8.json?secure&access_token=']];
+  const problems = [];
+  for (const [name, url] of tests) {
+    try {
+      const r = await fetch(url + encodeURIComponent(token));
+      if (!r.ok) problems.push(name + ': Mapbox answered HTTP ' + r.status + (r.status === 401 || r.status === 403 ? ' (token invalid, missing scopes, or URL-restricted: add http://localhost:8000 to its allowed URLs)' : ''));
+    } catch (e) {
+      problems.push(name + ': request blocked (' + e.message + '). Check VPN, firewall, school/work network or an ad-blocker.');
+    }
+  }
+  if (location.protocol === 'file:') problems.push('This page was opened as a file. Run the Python script with its built-in server and open http://localhost:8000/campus_map.html instead.');
+  if (problems.length) alertBanner('The map cannot load its data:\n' + problems.join('\n'));
+}
+
 function setStatus(msg, err) { const el = $('status'); el.textContent = msg || ''; el.className = err ? 'err' : ''; }
 
 function getToken() {
@@ -404,6 +427,7 @@ function start(token) {
     minZoom: 12,
     config: { basemap: { showIndoor: true, lightPreset: 'day' } }
   });
+  probe(token);
   map.addControl(new mapboxgl.NavigationControl({ visualizePitch: true }), 'top-right');
   // Floor selector from Mapbox Indoor Maps (experimental; only fills in over supported venues).
   if (mapboxgl.IndoorControl) { S.indoor = new mapboxgl.IndoorControl(); map.addControl(S.indoor, 'top-right'); }
@@ -412,7 +436,7 @@ function start(token) {
     const err = (e && e.error) || {}, msg = err.message || String(err);
     console.error('Mapbox error:', err);
     if (err.status === 401 || /access token|401/i.test(msg)) { showGate('Mapbox rejected this token (' + msg + '). Check the token and its URL restrictions.'); safe(() => localStorage.removeItem('mapbox-token')); return; }
-    setStatus('Map problem: ' + msg + (err.status ? ' (HTTP ' + err.status + ')' : ''), true);
+    alertBanner('Map problem: ' + msg + (err.status ? ' (HTTP ' + err.status + ')' : ''));
   });
   let reported = false;
   map.on('idle', () => {
@@ -420,7 +444,7 @@ function start(token) {
     const n = map.queryRenderedFeatures({ layers: ['buildings'] }).length;
     const c = map.getCenter();
     console.log('Campus map: ' + n + ' buildings drawn; centre ' + c.lng.toFixed(5) + ',' + c.lat.toFixed(5) + ' zoom ' + map.getZoom().toFixed(2));
-    if (!n) setStatus('The map loaded but no campus buildings are on screen. Press Fly the campus, or open the browser console (F12) and send me the messages.', true);
+    if (!n) alertBanner('The map loaded but no campus buildings are on screen. Press F12, open Console, and send the red lines to Claude.');
   });
   map.on('style.load', onStyle);
   map.on('click', onMapClick);
@@ -466,7 +490,7 @@ function onStyle() {
       'text-anchor': 'top', 'text-offset': [0, 0.6], 'symbol-sort-key': ['-', 0, ['get', 'area_m2']], 'text-optional': true },
     paint: { 'text-color': '#F2F1EC', 'text-halo-color': '#0B0C0E', 'text-halo-width': 1.6, 'text-emissive-strength': 1 } });
 
-  if (failed.length) setStatus('These layers could not be added: ' + failed.join(', '), true);
+  if (failed.length) alertBanner('These layers could not be added: ' + failed.join(', '));
   map.on('click', 'labels', (e) => { const p = S.pois.find((q) => q.id === e.features[0].properties.id); if (p) choose(p); });
   map.on('mouseenter', 'labels', () => (map.getCanvas().style.cursor = 'pointer'));
   map.on('mouseleave', 'labels', () => (map.getCanvas().style.cursor = ''));
@@ -710,7 +734,8 @@ def main():
     ap.add_argument("--refresh", action="store_true")
     ap.add_argument("--offline", action="store_true")
     ap.add_argument("--out", default=str(HERE / "campus_map.html"))
-    ap.add_argument("--serve", action="store_true")
+    ap.add_argument("--serve", action="store_true", help="(default) serve and open the page")
+    ap.add_argument("--no-serve", action="store_true", help="only write the HTML file")
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--gl-version", default="v3.35.0")
     ap.add_argument("--selftest", action="store_true")
@@ -732,7 +757,7 @@ def main():
         out, len(buildings["features"]), len(pois["features"]), source))
     if not args.token:
         print("No token given: the page will ask for your Mapbox public token in the browser.")
-    if args.serve:
+    if not args.no_serve:
         serve(out.parent, out.name, args.port)
     return 0
 
