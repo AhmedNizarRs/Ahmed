@@ -52,3 +52,9 @@ Version 2 (current Mapper export)
 - Adds `closures`: `[{ "id": "C01", "nameEn": "Temporary closure", "nameAr": "إغلاق مؤقت", "a": [x,y], "b": [x,y], "width_m": 0.6 }]`. The app blocks a band along each line, so a closure drawn from wall to wall seals a corridor and routes go around it.
 - Category `cafe` was added. The app also uses virtual places: `@spot` (the visitor's saved spot) and `@x,y` (a dropped pin), in keys like `level-1|@12.5,30.2`.
 - Size: Kennedy Library floors are about 150 KB each in v2 (they were 1.7–2.1 MB with every route stored).
+
+World position (optional, v2)
+- `geo`: `{ "origin": [lng, lat], "bearing": -12.8, "scale": 1.00003, "source": "…" }`. `origin` is the real position of plan point (0, 0); `bearing` is the direction of the plan's +y axis in degrees clockwise from true north; `scale` is real metres per plan metre (≈ 1). Plan (x, y) → east = scale·(x·cos b + y·sin b), north = scale·(−x·sin b + y·cos b), then metres → degrees at the origin latitude (`app/outdoor.js` `geoTransform`).
+- Set it in the Mapper (**World position**: two points + their lat/lng) or compute it exactly from survey-coordinate CAD (`data/test-calpoly-library/georef.py`).
+- `building_context` (optional): `{ "footprint": [[lng, lat], …], "height_m", "floors", "source" }`, e.g. from Overture Maps (ODbL; keep the attribution).
+- See `docs/data-providers.md`.

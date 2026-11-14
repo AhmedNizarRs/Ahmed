@@ -325,6 +325,31 @@ test('home remembers recent places and searches; theme and language switch from 
   await ctx.close();
 });
 
+test('Getting here: the floor plan is placed on the street map, with directions to the real entrance', async () => {
+  const ctx = await browser.newContext({ ...devices['Pixel 7'], serviceWorkers: 'block', geolocation: { latitude: 35.3001, longitude: -120.6620 }, permissions: ['geolocation'] });
+  const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
+  // Buildings without a world position don't offer it.
+  await page.goto(base); await page.evaluate(() => window.DALIL_APP.ready);
+  assert.ok(await page.isHidden('#btnGettingHere'));
+  await page.goto(base + '#b=kennedy-library-cal-poly-test&f=level-1&at-P001'); await page.evaluate(() => window.DALIL_APP.ready);
+  assert.ok(await page.isVisible('#btnGettingHere'));
+  await page.waitForFunction(() => /from this building/.test(document.querySelector('#ghSub').textContent));   // permission already granted → distance hint
+  await page.click('#btnGettingHere');
+  await page.waitForFunction(() => window.DALIL_APP.outdoor());
+  const o = await page.evaluate(() => { const c = window.DALIL_APP.outdoor(); return { target: c.target, layers: c.map.getStyle().layers.map(l => l.id), walls: c.geojson.walls.features.length }; });
+  for (const id of ['outline-fill', 'walls', 'entr-ring', 'me-dot']) assert.ok(o.layers.includes(id), id);
+  assert.ok(o.walls > 1000);
+  // Main entrance of Kennedy Library from the survey-coordinate CAD: 35.30158, -120.66358 (±1e-4 ≈ 10 m).
+  assert.ok(Math.abs(o.target[1] - 35.30158) < 1e-4 && Math.abs(o.target[0] + 120.66358) < 1e-4, JSON.stringify(o.target));
+  assert.match(await page.getAttribute('#lnkGmaps', 'href'), /destination=35\.3015\d+,-120\.6635\d+&travelmode=walking/);
+  await page.click('#btnMyLoc');
+  await page.waitForFunction(() => /from the main entrance/.test(document.querySelector('#outStatus').textContent));
+  await page.click('#btnOutdoorBack');
+  assert.ok(await page.isHidden('#outdoor'));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('works offline after the first visit (service worker)', async () => {
   const { ctx, page } = await open();
   await page.evaluate(() => navigator.serviceWorker.ready);

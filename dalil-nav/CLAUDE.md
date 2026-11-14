@@ -38,6 +38,7 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - **Find places in drawing** (`autoPlaces`): reads room-number labels (layers like *RNUM/VNUM/ROOM*), lift/stair labels (E101, S102, "ELEV", "STAIR", مصعد, درج), words (toilet, prayer, café, entrance…) and symbol blocks on icon layers (men/women/bath/lactation). Merges lift/stair banks within 4 m, then moves points stuck in closed pockets (lift shafts) to the nearest reachable spot. Keeps block insert names (`rawInserts`) for this.
 - **Closure** tool: drag across a corridor; exported as `closures` (the app routes around them; Mapper test routes ignore them).
 - Export v2 (default): `nav` walkable grids (RLE, base64) for on-device routing, no stored routes. "Also store every route" restores the v1 behaviour (files grow with places²).
+- **World position** (export panel): two points + their lat/lng → `geo` (origin, bearing, scale) via `geoFromTwo`; saved in the project. Warns if scale is >5% off 1.
 - Projects now save the guessed units (`guessU`); older projects re-guess on open (fixed a bug where unit-less drawings reopened 30× too small).
 - Limits: one floor per project file (multi-floor buildings = one export per floor, joined by `link` codes).
 
@@ -53,6 +54,8 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - On-device routing: `router.js` (`Router`: decodes `map.nav`, applies `closures`, one cached Dijkstra field per start, path by descending the field, same string-pulling and EN/AR wording as the Mapper). `routeFor(map, A, B)` uses stored routes when present, else the router. Leg 2 of multi-floor plans searches from the destination (`fromEnd`) so all lifts/stairs share one field.
 - Tap the map to drop a pin (`<floor>|@x,y`): "Directions here" or "Save as my spot" (`@spot`, localStorage `dalil.spot`; in Saved and in search "my spot"). Place names on the map appear only when zoomed in.
 - Share route: link (`#b=…&f=…&at-…&to-<key>`) + QR code (`vendor/qrcode.js`, MIT) + Web Share. Kiosk mode: `#kiosk&…` (fixed location, QR to continue on a phone, 90 s idle reset).
+- **Getting here** (`outdoor.js`, only for maps with `geo`): MapLibre (vendored, lazy) + OpenFreeMap street tiles, with walls, building outline (`building_context` or hull) and entrances layered by `geoTransform`; GPS on tap; Google/Apple Maps links to the main entrance; offline fallback = plain background. Home shows the distance to the building only if location permission was already granted.
+- Providers, licences and accuracy: `docs/data-providers.md`.
 - `docs/pointr-comparison.md`: feature map against Pointr and the next steps.
 - `window.DALIL_APP` exposes state and the spoken-text log for tests.
 
@@ -61,7 +64,7 @@ Ahmed Nazar is an interior architecture student and working designer (UAE). He w
 - `dalil-project_hospital-building-1000_ground.json` is the matching Mapper project with 8 points. `dalil-map_hospital-building-1000_ground.json` is its export (56/56 walking and 56/56 wheelchair routes).
 - `dalil-map_sample-hospital_ground.json`: the synthetic sample (14 points, including toilets, prayer room and lift). Clinic 2 has a 70 cm door, so the wheelchair route to it must fail.
 - `test-office-mm.dxf`: a test file with mm units, site coordinates, a bulge arc, nested and mirrored blocks, and MTEXT.
-- `test-calpoly-library/`: dry-run project on Cal Poly's Kennedy Library, Levels 1–2 (public drawings, internal testing only, never shown as a client). `build-maps.cjs` drives the Mapper headless to rebuild both floors; its README lists the findings.
+- `test-calpoly-library/`: dry-run project on Cal Poly's Kennedy Library, Levels 1–2 (public drawings, internal testing only, never shown as a client). `build-maps.cjs` drives the Mapper headless to rebuild both floors (then run `georef.py overture_kennedy.json` to add `geo` and the Overture outline; needs `pip install pyproj shapely`); its README lists the findings.
 
 ## Tests
 `tests/test_mapper.py` drives the Mapper headless with Playwright (Chromium). Run it with `pip install playwright && playwright install chromium && python tests/test_mapper.py`. Keep it green after any Mapper change.

@@ -3,6 +3,7 @@
 import { Router } from './router.js';
 import { STR, CHIP_CATS, CAT_WORDS, CAT_ICONS, TURN_ICONS, UI, svgIco } from './i18n.js';
 import { MapView, BASE } from './mapview.js';
+import { geoTransform, haversine } from './outdoor.js';
 
 /* =========================================================================
    Settings and storage (every read/write guarded: private mode may throw)
@@ -221,6 +222,7 @@ function selectFloor(map, { keepFrom = false } = {}) {
   if (!resolve(state.toKey)) state.toKey = null;
   state.chip = null;
   store.set('dalil.last', { b: map.building.id, f: map.floor.id });
+  $('#ghSub').textContent = t('gettingHereSub'); $('#ghSub').classList.remove('near'); proximityHint();
   navMap.setMap(map);
   if (!state.toKey && state.view === 'place') setView('browse');
   renderAll();
@@ -372,6 +374,7 @@ const presentCats = () => { const s = new Set(); for (const m of bFloors()) for 
 function renderBrowse() {
   const from = pt(state.fromId), multi = bFloors().length > 1, here = presentCats();
   $('#fromName').textContent = from ? pname(from) : '—';
+  $('#btnGettingHere').hidden = !state.map.geo;
   $$('.cat[data-cat]').forEach(c => { c.hidden = !CHIP_CATS[c.dataset.cat].some(k => here.has(k)); c.classList.toggle('is-active', c.dataset.cat === state.chip); });
   const bid = state.map.building.id, distSub = (m, p) => { const d = m === state.map ? distFor(m, from, p) : null; return [multi ? floorName(m.floor) : '', d != null ? fmtM(d) : ''].filter(Boolean).join(' · ') || catName(p.category); };
   // Saved (this building) and My spot
@@ -793,6 +796,52 @@ function kioskIdle() {
 }
 
 /* =========================================================================
+   Getting here: street map (MapLibre + OpenFreeMap) with the plan layered on top
+   ========================================================================= */
+let outdoorCtl = null;
+const fmtDist = d => d < 1000 ? fmtM(d) : t('km', (d / 1000).toFixed(d < 10000 ? 1 : 0));
+async function openOutdoor() {
+  const map = state.map; if (!map.geo) return;
+  $('#outdoor').hidden = false; $('#app').inert = true;
+  $('#outBuilding').textContent = map.building.name;
+  $('#outStatus').textContent = t('outLoading');
+  $('#outMap').setAttribute('aria-label', t('outMapLabel', map.building.name));
+  // Directions to the main entrance work even if the map can't load.
+  const T = geoTransform(map.geo), entr = map.points.find(p => p.category === 'entrance') || map.points[0];
+  const [lng, lat] = T(entr.x, entr.y), ll = `${lat.toFixed(6)},${lng.toFixed(6)}`;
+  $('#lnkGmaps').href = `https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=walking`;
+  $('#lnkAmaps').href = `https://maps.apple.com/?daddr=${ll}&dirflg=w`;
+  $('#btnOutdoorBack').focus();
+  try {
+    const { createOutdoorMap } = await import('./outdoor.js');
+    const attribution = [t('attrPlan'), map.building_context ? t('attrOverture') : ''].filter(Boolean).join(' · ');
+    outdoorCtl?.destroy();
+    outdoorCtl = await createOutdoorMap($('#outMap'), { map, dark: document.documentElement.dataset.theme !== 'light', lang: settings.lang, attribution, onStatus: outStatus });
+    if ($('#outdoor').hidden) { outdoorCtl.destroy(); outdoorCtl = null; return; }
+    $('#outStatus').textContent = outdoorCtl.streets ? '' : t('outNoStreet');
+  } catch { $('#outStatus').textContent = t('outFail'); }
+}
+function outStatus(kind, info) {
+  const el = $('#outStatus');
+  if (kind === 'pos') el.textContent = info.dist <= 40 ? t('outInside') : t('outDist', fmtDist(info.dist));
+  else el.textContent = t(kind === 'denied' ? 'locDenied' : 'locUnavailable');
+}
+function closeOutdoor() { outdoorCtl?.destroy(); outdoorCtl = null; $('#outdoor').hidden = true; $('#app').inert = false; $('#btnGettingHere').focus(); }
+// If the visitor already allowed location for this site, say how far away the building is (never prompts).
+async function proximityHint() {
+  const map = state.map; if (!map?.geo || !navigator.geolocation || !navigator.permissions) return;
+  try {
+    const p = await navigator.permissions.query({ name: 'geolocation' }); if (p.state !== 'granted') return;
+    navigator.geolocation.getCurrentPosition(pos => {
+      if (state.map !== map) return;
+      const T = geoTransform(map.geo), e = map.points.find(q => q.category === 'entrance') || map.points[0];
+      const d = haversine([pos.coords.longitude, pos.coords.latitude], T(e.x, e.y));
+      if (d > 150) { $('#ghSub').textContent = t('nearBuilding', fmtDist(d)); $('#ghSub').classList.add('near'); }
+    }, () => { }, { maximumAge: 60000, timeout: 8000 });
+  } catch { }
+}
+
+/* =========================================================================
    Wiring
    ========================================================================= */
 function bind() {
@@ -801,6 +850,9 @@ function bind() {
   $('#btnSettings').onclick = () => openSettings();
   $('#btnPlace').onclick = () => openSettings('#setMapSec');
   $('#btnSettingsBack').onclick = closeSettings;
+  $('#btnGettingHere').onclick = openOutdoor;
+  $('#btnOutdoorBack').onclick = closeOutdoor;
+  $('#btnMyLoc').onclick = () => outdoorCtl ? outdoorCtl.locate() : outStatus('unavailable');
   const search = $('#search');
   search.addEventListener('focus', openSearch);
   search.addEventListener('input', () => { openSearch(); renderSearch(); });
@@ -864,6 +916,7 @@ function bind() {
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') {
       if (!$('#settings').hidden) return closeSettings();
+      if (!$('#outdoor').hidden) return closeOutdoor();
       if (nav.active && $('#arrived').hidden) return endNav();
       if (!nav.active && state.view === 'place' && !e.target.closest('input')) return clearDest();
       if (!nav.active && state.view === 'pin') { pinPoint = null; setView('browse'); renderMap(); }
@@ -884,7 +937,7 @@ async function boot() {
   selectFloor(start);
   applyLink(link, { fromTag: /\/t\//.test(location.pathname) });
   if (link.kiosk) { state.kiosk = { b: state.map.building.id, f: state.map.floor.id, at: state.fromId }; document.documentElement.classList.add('kiosk'); renderAll(); kioskIdle(); }
-  applySheet(false); fitMain(false);
+  applySheet(false); fitMain(false); proximityHint();
   const b = $('#boot'); b.classList.add('done'); setTimeout(() => { b.hidden = true; }, 380);
   document.documentElement.classList.add('ready');
   return true;
@@ -897,6 +950,6 @@ async function init() {
   return boot();
 }
 
-window.DALIL_APP = { state, settings, spoken, nav, parseLink, buildSteps, routeFor, pointOf, views: () => ({ mainMap, navMap, floorMap: mainMap }), ready: init() };
+window.DALIL_APP = { state, settings, spoken, nav, parseLink, buildSteps, routeFor, pointOf, views: () => ({ mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, ready: init() };
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));

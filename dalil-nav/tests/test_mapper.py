@@ -66,6 +66,10 @@ async def main():
             check(by.get("toilet", 0) + by.get("toilet_acc", 0) >= 4, "library: restrooms from drawing symbols")
             check("All 70 points connected" in r["grid"], f"library: all auto places reachable ({r['grid'][-60:]})")
 
+        # 5. World position from two control points: plan +x 100 m due east -> plan up = north, scale 1
+        g = await pg.evaluate("""()=>DALIL.geoFromTwo({x:0,y:0},{lat:25.3,lng:55.4},{x:100,y:0},{lat:25.3,lng:55.4+100/(111412.84*Math.cos(25.3*Math.PI/180))})""")
+        check(abs(g["bearing"]) < 0.01 and abs(g["scale"] - 1) < 1e-4 and abs(g["origin"][1] - 25.3) < 1e-7, f"geo: two control points {g}")
+
         check(not errs, f"no page errors {errs}")
         await b.close()
 

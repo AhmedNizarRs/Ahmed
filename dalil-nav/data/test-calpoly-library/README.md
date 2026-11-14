@@ -22,6 +22,7 @@ A dry run of the DALIL service on a real university building, before doing it fo
 | `dalil-nfc-tags_…csv` | URLs to write on the NFC tags (5 tags: entrance and lifts) |
 | `preview_level-1.png` / `preview_level-2.png` | The plans with all points, as the Mapper shows them |
 | `build-maps.cjs` | Rebuilds everything above from the DXFs: `node data/test-calpoly-library/build-maps.cjs` |
+| `georef.py`, `overture_kennedy.json` | Adds the real-world position (`geo`) and Overture's building outline to both maps. Run after `build-maps.cjs`: `python data/test-calpoly-library/georef.py data/test-calpoly-library/overture_kennedy.json` |
 
 **Level 1:** 26 places, 650/650 walking routes, 650/650 step-free routes.
 **Level 2:** 32 places, 992/992 walking routes, 870/992 step-free (see finding 1).
@@ -62,3 +63,9 @@ Map files used to grow with the square of the number of places (every pair had a
 so each floor is about 150 KB however many places it has. The Mapper's **Find places in drawing**
 also finds all of the places above automatically (70 on Level 1 in about 2 s), including moving the
 Level 2 lift points out of their shafts.
+
+## Placed on the real map
+
+- Level 1 comes from the CAD's own California State Plane coordinates, so its position is exact: main entrance at 35.30158° N, 120.66358° W.
+- Level 2 is fitted to Level 1 on its 7 lifts and stairs (median error 1.0 m).
+- Overture Maps' outline of "Robert E. Kennedy Library" (5 floors, 14.4 m, from OpenStreetMap and Microsoft) sits a median 2.3 m from our outline. The difference comes partly from site walls in the drawing.

@@ -71,6 +71,11 @@
       <!-- BROWSE -->
       <div id="viewBrowse" class="view">
         <button id="btnPlace" class="where" type="button"><span class="ico" data-ico="building" aria-hidden="true"></span><span id="placePill" class="where-text"></span><span class="ico where-chev" data-ico="chevDown" aria-hidden="true"></span></button>
+        <button id="btnGettingHere" class="getting-here" type="button" hidden>
+          <span class="gh-ico"><span class="ico" data-ico="building"></span></span>
+          <span class="gh-text"><span class="gh-title" data-i18n="gettingHere">Getting here</span><span id="ghSub" class="gh-sub" data-i18n="gettingHereSub">Street map and directions to the entrance</span></span>
+          <span class="ico chev-fwd" data-ico="chevDown" aria-hidden="true"></span>
+        </button>
         <div class="from-row">
           <span class="from-dot" aria-hidden="true"></span>
           <span class="from-label" data-i18n="youAreAt">You are at</span>
@@ -263,6 +268,24 @@
       </div>
     </section>
     <p class="muted small about" data-i18n="about">DALIL is a supplementary wayfinding aid.</p>
+  </div>
+</section>
+
+<!-- ============ GETTING HERE (street map) ============ -->
+<section id="outdoor" class="page outdoor-page" aria-labelledby="outTitle" hidden>
+  <header class="page-head">
+    <button id="btnOutdoorBack" class="icon-btn flat" type="button" data-i18n-aria="back"><span class="ico flip-rtl" data-ico="back"></span></button>
+    <h1 id="outTitle" data-i18n="gettingHere">Getting here</h1>
+  </header>
+  <div id="outMap" class="out-map" role="region"></div>
+  <div class="out-card">
+    <p id="outBuilding" class="out-bld"></p>
+    <p id="outStatus" class="out-status" role="status"></p>
+    <div class="out-actions">
+      <a id="lnkGmaps" class="btn btn-primary" target="_blank" rel="noopener"><span class="ico" data-ico="route" aria-hidden="true"></span><span data-i18n="dirGoogle">Directions in Google Maps</span></a>
+      <a id="lnkAmaps" class="btn btn-tonal" target="_blank" rel="noopener" data-i18n="dirApple">Apple Maps</a>
+      <button id="btnMyLoc" class="btn btn-tonal" type="button"><span class="ico" data-ico="locate" aria-hidden="true"></span><span data-i18n="showMyLocation">Show my location</span></button>
+    </div>
   </div>
 </section>
 

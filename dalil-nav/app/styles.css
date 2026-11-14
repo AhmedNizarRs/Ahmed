@@ -216,6 +216,25 @@ html.reduce-motion .you-pulse { display: none; }
 @keyframes viewIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 html.reduce-motion .view { animation: none; }
 
+.getting-here { display: flex; align-items: center; gap: var(--s3); width: 100%; margin: 2px 0 6px; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--stroke); background: var(--surface-2); text-align: start; transition: transform .12s var(--ease); }
+.getting-here:active { transform: scale(.98); }
+.gh-ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; background: var(--info-tint); color: var(--info); flex: none; }
+.gh-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.gh-title { font-weight: 650; } .gh-sub { font-size: var(--fs-cap); color: var(--text-3); }
+.gh-sub.near { color: var(--accent-text); font-weight: 600; }
+.chev-fwd { transform: rotate(-90deg); color: var(--text-3); } html[dir="rtl"] .chev-fwd { transform: rotate(90deg); }
+.outdoor-page { display: flex; flex-direction: column; overflow: hidden; }
+.out-map { flex: 1; min-height: 0; position: relative; background: var(--canvas); }
+.out-card { flex: none; padding: var(--s4) var(--s4) calc(var(--s4) + var(--safe-b)); border-top: 1px solid var(--stroke); background: var(--surface); }
+.out-bld { margin: 0; font-weight: 700; font-size: var(--fs-title); }
+.out-status { margin: 4px 0 var(--s3); color: var(--text-2); font-size: var(--fs-sm); min-height: 1.2em; }
+.out-actions { display: grid; grid-template-columns: 1fr 1fr; gap: var(--s2); }
+.out-actions #lnkGmaps { grid-column: 1 / -1; text-decoration: none; }
+.out-actions a.btn { text-decoration: none; }
+.maplibregl-ctrl-attrib { font-family: var(--font); }
+.maplibregl-ctrl-attrib.maplibregl-compact, .maplibregl-ctrl-attrib { background: var(--glass) !important; color: var(--text-2); }
+.maplibregl-ctrl-attrib a { color: inherit; }
+.out-actions .btn { font-size: .95rem; padding: 0 12px; }
 .from-row { display: flex; align-items: center; gap: var(--s2); flex-wrap: wrap; min-height: 44px; color: var(--text-2); font-size: var(--fs-sm); }
 .from-dot { width: 10px; height: 10px; border-radius: 50%; background: #fff; box-shadow: 0 0 0 3px var(--info); margin-inline: 2px 4px; }
 :root[data-theme="light"] .from-dot { background: var(--info); box-shadow: 0 0 0 3px var(--info-tint); }

@@ -145,6 +145,13 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
   <section class="panel">
     <h3><span class="n">6</span>Export</h3>
     <div class="row"><label>NFC base URL</label><input type="text" id="inBase" value="https://dalil.app/t"></div>
+    <details class="geo-box"><summary><b>World position</b> <span class="mini">(optional: puts the plan on the street map)</span></summary>
+      <p class="hint">Pick two points far apart (for example two building corners or two entrances) and type their real latitude and longitude. In Google Maps: long-press the spot, then copy the numbers.</p>
+      <div class="row"><label>Point A</label><select id="geoA"></select><input type="text" id="geoAll" placeholder="25.2867, 55.4583" style="width:150px"></div>
+      <div class="row"><label>Point B</label><select id="geoB"></select><input type="text" id="geoBll" placeholder="25.2869, 55.4589" style="width:150px"></div>
+      <div class="row"><button id="btnGeo">Place on map</button><button id="btnGeoClear">Clear</button></div>
+      <div class="status" id="geoStatus">Not placed. The app hides “Getting here” for this floor.</div>
+    </details>
     <div class="row"><label style="min-width:0"><input type="checkbox" id="chkRoutes"> Also store every route (old format: files grow with places²)</label></div>
     <div class="row"><button class="pri" id="btnExport">Export map JSON</button><button id="btnCsv">NFC tag list</button></div>
     <div class="row"><button id="btnSave">Save project</button><button id="btnOpen">Open project</button></div>
@@ -355,7 +362,7 @@ function loadDXFText(text, name){
   const fl=flattenDXF(dx);
   if (!fl.polys.length){ setStatus('planStatus','No drawable geometry found. If this is a binary DXF, re-save as ASCII DXF.','err'); return; }
   S.geoSuggested=false; S.rot=0; S.rotApplied=0; $('inRot').value=0; S.mode='dxf'; S.rawPolys=fl.polys; S.rawTexts=fl.texts; S.rawInserts=fl.inserts; S.fileUnits=INSUNITS[dx.units]||null; S.guess=S.fileUnits?null:guessUnits(); S.guessU=S.guess?S.guess.u:null;
-  S.image=null; S.traced=[]; S.openings=[]; S.closures=[]; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
+  S.image=null; S.traced=[]; S.openings=[]; S.closures=[]; S.geo=null; S.geoCtl=null; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
   S.layers={};
   const names=Object.keys(fl.used).sort();
   for (const nm of names){ const L=dx.layers[nm]||{color:7,off:false}; S.layers[nm]={color:L.color, count:fl.used[nm], role: L.off?'hidden':suggestRole(nm)}; }
@@ -683,6 +690,7 @@ function refreshPoints(){
   const sel=S.points.find(p=>p.id===S.selId);
   $('editor').classList.toggle('hidden',!sel);
   if (sel){ $('eNameEn').value=sel.nameEn; $('eNameAr').value=sel.nameAr; $('eCat').value=sel.cat; $('eNode').checked=sel.node; $('eLink').value=sel.link||''; $('eFace').value=String(sel.face); $('eXY').textContent=`${sel.id} · x ${sel.x.toFixed(2)} m, y ${sel.y.toFixed(2)} m`; }
+  if ($('geoA')) refreshGeo();
   for (const id of ['rFrom','rTo']){ const s=$(id), v=s.value; s.innerHTML=S.points.map(p=>`<option value="${p.id}">${esc(p.nameEn)}${p.node?' ●':''}</option>`).join(''); if (S.points.some(p=>p.id===v)) s.value=v; }
   if (!$('rTo').dataset.touched && S.points.length>1 && $('rTo').value===$('rFrom').value) $('rTo').selectedIndex=1;
 }
@@ -897,6 +905,7 @@ async function exportMap(){
     clearance:{walk:S.grids.walk.r, wheelchair:S.grids.chair.r}, grid:{cell:S.grids.walk.cell},
     points:S.points.map(p=>({id:p.id, nameEn:p.nameEn, nameAr:p.nameAr, category:p.cat, dalilNode:p.node, facingDeg:p.face, x:r2(p.x), y:r2(p.y), ...(p.link?{link:p.link}:{}), ...(p.node?{nfcUrl:`${base}/${bId}/${fId}/${p.id}`}:{})})),
     plan:{walls, doors, openings:S.openings.map(o=>({a:o.a.map(r2),b:o.b.map(r2),width_m:o.w||0.9}))},
+    ...(S.geo?{geo:S.geo}:{}),
     closures:S.closures.map(c=>({id:c.id, nameEn:c.nameEn, nameAr:c.nameAr, a:c.a.map(r2), b:c.b.map(r2), width_m:c.w||0.6})),
     // Walkable grids (already inflated by the clearance) so the app can route between any two spots itself.
     nav:{encoding:'rle-varint-base64', cell:S.grids.walk.cell, x0:r2(S.grids.walk.x0), y0:r2(S.grids.walk.y0), W:S.grids.walk.W, H:S.grids.walk.H, speed:{walk:1.1, chair:0.8}, walk:encodeGrid(S.grids.walk), chair:encodeGrid(S.grids.chair)},
@@ -981,6 +990,28 @@ function autoPlaces(){
   refreshPoints(); draw();
   return {added:added.length, by, moved};
 }
+/* ---------------- WORLD POSITION: two control points -> origin, bearing, scale ---------------- */
+const mPerDeg=lat=>[111412.84*Math.cos(lat*Math.PI/180), 111132.92-559.82*Math.cos(2*lat*Math.PI/180)];
+const parseLL=s=>{ const m=String(s||'').match(/(-?\d+(?:\.\d+)?)[\s,;]+(-?\d+(?:\.\d+)?)/); if(!m) return null; const lat=+m[1], lng=+m[2]; return Math.abs(lat)<=90&&Math.abs(lng)<=180?{lat,lng}:null; };
+// geo = { origin:[lng,lat] of plan (0,0), bearing: plan +y in degrees clockwise from true north, scale: world m per plan m }
+function geoFromTwo(A,a,B,b){
+  const [mlng,mlat]=mPerDeg(a.lat), E=(b.lng-a.lng)*mlng, N=(b.lat-a.lat)*mlat, vx=B.x-A.x, vy=B.y-A.y, L=Math.hypot(vx,vy);
+  if (L<5) return {err:'Choose two points at least 5 m apart (further is more accurate).'};
+  const scale=Math.hypot(E,N)/L, th=Math.atan2(N,E)-Math.atan2(vy,vx), c=Math.cos(th), s=Math.sin(th);
+  const E0=-scale*(c*A.x-s*A.y), N0=-scale*(s*A.x+c*A.y);
+  let bearing=-th*180/Math.PI; while(bearing>180) bearing-=360; while(bearing<=-180) bearing+=360;
+  return {origin:[+(a.lng+E0/mlng).toFixed(8), +(a.lat+N0/mlat).toFixed(8)], bearing:+bearing.toFixed(3), scale:+scale.toFixed(5), source:'Two control points in DALIL Mapper'};
+}
+function geoStatusText(){ const g=S.geo; if(!g) return 'Not placed. The app hides “Getting here” for this floor.';
+  const off=Math.abs(g.scale-1); return `Placed: plan up = ${g.bearing.toFixed(1)}° from north, scale ${g.scale.toFixed(3)}.${off>0.05?` ⚠ Scale is ${Math.round(off*100)}% off 1.000: check the units or the coordinates you typed.`:' Scale looks right.'}`; }
+function refreshGeo(){ for (const id of ['geoA','geoB']){ const sel=$(id), v=sel.value; sel.innerHTML=S.points.map(p=>`<option value="${p.id}">${esc(p.nameEn)}</option>`).join(''); if(S.points.some(p=>p.id===v)) sel.value=v; }
+  if (!$('geoB').dataset.touched && S.points.length>1 && $('geoA').value===$('geoB').value) $('geoB').selectedIndex=S.points.length-1;
+  $('geoStatus').textContent=geoStatusText(); $('geoStatus').className='status'+(S.geo?(Math.abs(S.geo.scale-1)>0.05?' err':' ok'):''); }
+$('btnGeo').onclick=()=>{ const A=S.points.find(p=>p.id===$('geoA').value), B=S.points.find(p=>p.id===$('geoB').value), a=parseLL($('geoAll').value), b=parseLL($('geoBll').value);
+  if(!A||!B||A===B) return toast('Choose two different points.'); if(!a||!b) return toast('Type latitude, longitude for both points, e.g. 25.2867, 55.4583');
+  const g=geoFromTwo(A,a,B,b); if(g.err) return toast(g.err); S.geo=g; S.geoCtl={A:A.id,B:B.id,a,b}; refreshGeo(); };
+$('btnGeoClear').onclick=()=>{ S.geo=null; S.geoCtl=null; refreshGeo(); };
+$('geoB').addEventListener('change',()=>{ $('geoB').dataset.touched='1'; });
 function exportCsv(){
   const nodes=S.points.filter(p=>p.node); if(!nodes.length) return toast('Mark at least one point as a DALIL node.');
   const bId=slug($('inBuilding').value), fId=slug($('inFloor').value), base=$('inBase').value.replace(/\/$/,'');
@@ -992,7 +1023,7 @@ function exportCsv(){
 function saveProject(){
   if (!S.mode) return toast('Nothing to save yet.');
   const proj={format:'dalil-project',version:1, building:$('inBuilding').value, floor:$('inFloor').value, units:$('selUnits').value, rot:S.rot||0, clrW:$('inClrW').value, clrC:$('inClrC').value,
-    mode:S.mode, fileUnits:S.fileUnits, guessU:S.guessU||null, rawPolys:S.rawPolys, rawTexts:S.rawTexts, rawInserts:S.rawInserts||[], layers:S.layers, traced:S.traced, openings:S.openings, closures:S.closures, thin:$('chkThin').checked, points:S.points, nextId:S.nextId, mpp:S.mpp,
+    mode:S.mode, fileUnits:S.fileUnits, guessU:S.guessU||null, rawPolys:S.rawPolys, rawTexts:S.rawTexts, rawInserts:S.rawInserts||[], layers:S.layers, traced:S.traced, openings:S.openings, closures:S.closures, geo:S.geo||null, geoCtl:S.geoCtl||null, thin:$('chkThin').checked, points:S.points, nextId:S.nextId, mpp:S.mpp,
     image:S.image?imgToData(S.image):null};
   download(`dalil-project_${slug($('inBuilding').value)}_${slug($('inFloor').value)}.json`, JSON.stringify(proj));
 }
@@ -1005,7 +1036,7 @@ function openProject(text){
   // Projects saved without units in the drawing: restore (or re-guess) the guessed units, or the plan comes back 30× too small.
   S.guess=null; S.guessU=p.guessU||null; if (S.mode==='dxf' && !S.fileUnits && !S.guessU && S.rawPolys.length){ S.guess=guessUnits(); S.guessU=S.guess.u; } S.layers=p.layers||{}; S.mpp=p.mpp||0.02; S.route=null; S.selId=null;
   const finish=()=>{ if (S.mode==='dxf'){ applyUnits(true); } else { S.polys=[]; S.texts=[]; buildPaths(); }
-    S.traced=p.traced||[]; S.openings=p.openings||[]; S.closures=p.closures||[]; if (p.thin!==undefined) $('chkThin').checked=p.thin; S.points=p.points||[]; S.nextId=p.nextId||S.points.length+1;
+    S.traced=p.traced||[]; S.openings=p.openings||[]; S.closures=p.closures||[]; S.geo=p.geo||null; S.geoCtl=p.geoCtl||null; if (S.geoCtl){ $('geoAll').value=`${S.geoCtl.a.lat}, ${S.geoCtl.a.lng}`; $('geoBll').value=`${S.geoCtl.b.lat}, ${S.geoCtl.b.lng}`; } if (p.thin!==undefined) $('chkThin').checked=p.thin; S.points=p.points||[]; S.nextId=p.nextId||S.points.length+1;
     uiMode(); renderLayers(); refreshPoints(); fit(); markDirty(); setStatus('planStatus','Project opened: '+(p.building||'')+' · '+(p.floor||''),'ok'); };
   if (p.mode==='image' && p.image){ const img=new Image(); img.onload=()=>{ S.image=img; S.imgW=img.naturalWidth; S.imgH=img.naturalHeight; finish(); }; img.src=p.image; } else { S.image=null; finish(); }
 }
@@ -1074,7 +1105,7 @@ function loadSample(){
 
 /* ---------------- INIT ---------------- */
 bindEditor(); window.addEventListener('resize',resize); resize(); renderLayers(); refreshPoints();
-window.DALIL={S,loadSample,findRoute,exportMap,routeBetween,ensureGrids,parseDXF,flattenDXF,sampleDXF,autoPlaces};
+window.DALIL={geoFromTwo,S,loadSample,findRoute,exportMap,routeBetween,ensureGrids,parseDXF,flattenDXF,sampleDXF,autoPlaces};
 </script>
 </body>
 </html>
