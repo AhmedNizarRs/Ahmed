@@ -1,0 +1,354 @@
+{
+ "building": "House of Wisdom (test)",
+ "floors": [
+  {
+   "dxf": "how_ground.dxf",
+   "floor": "Ground Floor",
+   "points": [
+    [
+     "West Entrance (main)",
+     "المدخل الغربي (الرئيسي)",
+     "entrance",
+     1.917,
+     29.75,
+     {
+      "node": true,
+      "face": 0
+     }
+    ],
+    [
+     "East Entrance",
+     "المدخل الشرقي",
+     "entrance",
+     57.583,
+     29.75,
+     {
+      "node": true,
+      "face": 180
+     }
+    ],
+    [
+     "Revolving Door Entrance",
+     "مدخل الباب الدوار",
+     "entrance",
+     30.0,
+     56.667,
+     {
+      "face": 270
+     }
+    ],
+    [
+     "Reception",
+     "الاستقبال",
+     "reception",
+     10.25,
+     28.667,
+     {
+      "node": true,
+      "face": 0
+     }
+    ],
+    [
+     "Courtyard Garden",
+     "حديقة الفناء",
+     "room",
+     29.417,
+     29.333,
+     {}
+    ],
+    [
+     "Exhibition Hall",
+     "قاعة المعارض",
+     "room",
+     29.417,
+     46.833,
+     {}
+    ],
+    [
+     "Café",
+     "المقهى",
+     "cafe",
+     11.083,
+     42.25,
+     {}
+    ],
+    [
+     "Children's Area",
+     "منطقة الأطفال",
+     "room",
+     7.333,
+     22.667,
+     {}
+    ],
+    [
+     "Reading Area and Book Stacks",
+     "منطقة القراءة ورفوف الكتب",
+     "room",
+     47.75,
+     29.333,
+     {}
+    ],
+    [
+     "Auditorium",
+     "المسرح",
+     "room",
+     29.833,
+     13.5,
+     {}
+    ],
+    [
+     "Meeting Room",
+     "غرفة الاجتماعات",
+     "room",
+     34.417,
+     3.083,
+     {}
+    ],
+    [
+     "Study Area",
+     "منطقة الدراسة",
+     "room",
+     49.0,
+     5.583,
+     {}
+    ],
+    [
+     "Toilets (North-East Core)",
+     "دورات المياه (القلب الشمالي الشرقي)",
+     "toilet",
+     52.75,
+     46.833,
+     {}
+    ],
+    [
+     "Toilets (South-East Core)",
+     "دورات المياه (القلب الجنوبي الشرقي)",
+     "toilet",
+     52.75,
+     9.333,
+     {}
+    ],
+    [
+     "North-West Lift",
+     "المصعد الشمالي الغربي",
+     "lift",
+     18.417,
+     48.917,
+     {
+      "link": "LIFT-NW"
+     }
+    ],
+    [
+     "North-East Lift",
+     "المصعد الشمالي الشرقي",
+     "lift",
+     41.25,
+     48.917,
+     {
+      "link": "LIFT-NE"
+     }
+    ],
+    [
+     "North-West Staircase",
+     "الدرج الشمالي الغربي",
+     "stairs",
+     18.417,
+     51.833,
+     {
+      "link": "STAIR-NW"
+     }
+    ],
+    [
+     "North-East Staircase",
+     "الدرج الشمالي الشرقي",
+     "stairs",
+     41.25,
+     51.833,
+     {
+      "link": "STAIR-NE"
+     }
+    ],
+    [
+     "Central Stair",
+     "الدرج المركزي",
+     "stairs",
+     15.667,
+     21.833,
+     {
+      "link": "STAIR-C"
+     }
+    ],
+    [
+     "South-West Stair",
+     "الدرج الجنوبي الغربي",
+     "stairs",
+     11.083,
+     9.333,
+     {
+      "link": "STAIR-SW"
+     }
+    ],
+    [
+     "South-East Stair",
+     "الدرج الجنوبي الشرقي",
+     "stairs",
+     47.75,
+     9.333,
+     {
+      "link": "STAIR-SE"
+     }
+    ]
+   ],
+   "geo": {
+    "origin": [
+     55.50600522,
+     25.31803826
+    ],
+    "bearing": -35.0,
+    "scale": 1.0,
+    "source": "Plus Code 8G94+9C8 (Foster + Partners) and the drawing's north arrow; about ±5 m and ±3°, not surveyed"
+   }
+  },
+  {
+   "dxf": "how_mezzanine.dxf",
+   "floor": "Mezzanine",
+   "points": [
+    [
+     "North-West Lift",
+     "المصعد الشمالي الغربي",
+     "lift",
+     10.833,
+     40.833,
+     {
+      "link": "LIFT-NW"
+     }
+    ],
+    [
+     "North-East Lift",
+     "المصعد الشمالي الشرقي",
+     "lift",
+     46.25,
+     40.417,
+     {
+      "link": "LIFT-NE"
+     }
+    ],
+    [
+     "North-West Staircase",
+     "الدرج الشمالي الغربي",
+     "stairs",
+     14.167,
+     40.833,
+     {
+      "link": "STAIR-NW"
+     }
+    ],
+    [
+     "North-East Staircase",
+     "الدرج الشمالي الشرقي",
+     "stairs",
+     49.583,
+     40.417,
+     {
+      "link": "STAIR-NE"
+     }
+    ],
+    [
+     "Central Stair",
+     "الدرج المركزي",
+     "stairs",
+     12.083,
+     22.917,
+     {
+      "link": "STAIR-C"
+     }
+    ],
+    [
+     "South-West Stair",
+     "الدرج الجنوبي الغربي",
+     "stairs",
+     10.0,
+     9.583,
+     {
+      "link": "STAIR-SW"
+     }
+    ],
+    [
+     "South-East Stair",
+     "الدرج الجنوبي الشرقي",
+     "stairs",
+     47.5,
+     9.583,
+     {
+      "link": "STAIR-SE"
+     }
+    ],
+    [
+     "West Reading Lounge",
+     "صالة القراءة الغربية",
+     "room",
+     12.917,
+     35.833,
+     {}
+    ],
+    [
+     "East Reading Lounge",
+     "صالة القراءة الشرقية",
+     "room",
+     45.0,
+     31.667,
+     {}
+    ],
+    [
+     "Meeting Pod",
+     "كبسولة الاجتماعات",
+     "room",
+     29.583,
+     23.333,
+     {}
+    ],
+    [
+     "Exhibition Area (Mezzanine)",
+     "منطقة المعارض (الميزانين)",
+     "room",
+     29.583,
+     10.0,
+     {}
+    ],
+    [
+     "Lounge",
+     "الصالة",
+     "room",
+     47.917,
+     4.167,
+     {}
+    ],
+    [
+     "Toilets (South-West Core)",
+     "دورات المياه (القلب الجنوبي الغربي)",
+     "toilet",
+     5.583,
+     12.917,
+     {}
+    ],
+    [
+     "Toilets (South-East Core)",
+     "دورات المياه (القلب الجنوبي الشرقي)",
+     "toilet",
+     52.917,
+     12.917,
+     {}
+    ]
+   ],
+   "geo": {
+    "origin": [
+     55.50600668,
+     25.31803965
+    ],
+    "bearing": -35.0,
+    "scale": 1.0,
+    "source": "Plus Code 8G94+9C8 (Foster + Partners) and the drawing's north arrow; about ±5 m and ±3°, not surveyed"
+   }
+  }
+ ]
+}

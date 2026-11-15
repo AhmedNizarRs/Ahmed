@@ -177,6 +177,8 @@ h1, h2, h3, p { margin: 0; }
 .gps-acc { fill: var(--you-glow); stroke: var(--you); stroke-width: 1.5; vector-effect: non-scaling-stroke; opacity: .7; }
 html.contrast .gps-acc { fill: none; stroke: #fff; }
 .holo-floor { position: absolute; z-index: 3; top: .875rem; inset-inline-start: 1rem; display: inline-flex; align-items: center; gap: .5rem; pointer-events: none; color: var(--ink-2); }
+.holo:has(.holo-locate:not([hidden])) .holo-floor { max-width: calc(100% - 13.5rem); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; }
+.holo:has(.holo-locate:not([hidden])) .holo-floor::before { display: inline-block; margin-inline-end: .5rem; vertical-align: middle; }
 .holo-floor::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--you); box-shadow: 0 0 10px var(--you-glow); }
 .route-holo { height: 16rem; }
 .sec { display: flex; flex-direction: column; gap: .625rem; }

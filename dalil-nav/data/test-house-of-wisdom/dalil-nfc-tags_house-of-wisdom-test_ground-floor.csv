@@ -1,0 +1,4 @@
+﻿node_id,name_en,name_ar,category,x_m,y_m,facing,nfc_url
+P001,"West Entrance (main)","المدخل الغربي (الرئيسي)",entrance,1.92,29.75,0,https://dalil.app/t/house-of-wisdom-test/ground-floor/P001
+P002,"East Entrance","المدخل الشرقي",entrance,57.58,29.75,180,https://dalil.app/t/house-of-wisdom-test/ground-floor/P002
+P004,"Reception","الاستقبال",reception,10.25,28.67,0,https://dalil.app/t/house-of-wisdom-test/ground-floor/P004
