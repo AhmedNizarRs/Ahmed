@@ -669,6 +669,26 @@ test('GPS outside the building: never "you are here" inside it; the route starts
   await ctx.close();
 });
 
+test('a lost visitor on campus: Arabic search finds the right places; opening the nearby building from the card knows you are outside', async () => {
+  const stub = async page => { for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 })); };
+  const { ctx, page, errors } = await open('', { permissions: ['geolocation'], geolocation: { latitude: 25.2882, longitude: 55.4767, accuracy: 12 } });
+  await stub(page);
+  await page.waitForSelector('#nearCard:not([hidden])');
+  assert.match(await page.textContent('#nearTitle'), /UoS Central Labs B3/);
+  await page.click('#btnNearOpen');
+  await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'uos-central-labs-b3-test');
+  await page.waitForFunction(() => document.querySelector('#fromEyebrow').textContent.includes('Not in this building'));
+  await page.click('#btnSearchOpen');
+  const names = async q => { await page.fill('#search', q); await page.waitForTimeout(150); return page.$$eval('#results button[data-pick]', b => b.map(x => x.innerText)); };
+  const labs = await names('مختبر');
+  assert.ok(labs.length >= 10 && labs.every(n => /Lab/.test(n)), `Arabic "lab" finds only labs: ${labs.length}`);
+  const wc = await names('حمام');
+  assert.deepEqual(wc.map(n => n.split('\n')[0]).sort(), ['Toilets (east)', 'Toilets (west)']);
+  assert.equal((await names('مُختَبر الكيمياء')).length, 4, 'harakat ignored; two words narrow it');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('no floor plan: walk the building to map it (survey); places, back-at-a-place, a lift to a new floor; then directions work', async () => {
   const { ctx, page, errors } = await open('', { permissions: [...SENSORS, 'geolocation'], geolocation: { latitude: 25.2900, longitude: 55.4100, accuracy: 6 } });
   await page.click('#btnSheet').catch(() => {});

@@ -319,6 +319,7 @@ function selectFloor(map, { keepFrom = false } = {}) {
   store.set('dalil.last', { b: map.building.id, f: map.floor.id });
   $('#ghSub').textContent = t('gettingHereSub'); proximityHint();
   renderAll();
+  const f = locator.fresh(120000); if (f && !nav.active && map.geo) homeFix(f);   // GPS already known: inside or outside this building?
 }
 function setFrom(id, { say = true, confirm = false } = {}) {
   const p = pt(id); if (!p) return false;
@@ -501,7 +502,7 @@ function renderLayerControls(where) {
 }
 
 /* ---------- Search ---------- */
-const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[̀-ًͯ-ٰٟـ]/g, '')
+const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f\u064b-\u065f\u0670\u0640]/g, '')
   .replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();
 const FILTERS = { rooms: ['room'], toilets: ['toilet', 'toilet_acc', 'baby'], lifts: ['lift', 'stairs', 'ramp'], food: ['cafe'], prayer: ['prayer', 'wudu'], services: ['reception', 'entrance', 'exit'] };
 const FILTER_LABEL = { rooms: 'filterRooms', toilets: 'filterToilets', lifts: 'filterLifts', food: 'filterFood', prayer: 'filterPrayer', services: 'filterServices' };
