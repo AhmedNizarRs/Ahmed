@@ -117,7 +117,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
       if (pins) e.setAttribute('aria-label', name); else e.setAttribute('aria-hidden', 'true');   // MapLibre names every marker "Map marker"
       return mk;
     });
-    const showNames = () => { el.classList.toggle('out-names', m.getZoom() >= 18.5); el.classList.toggle('out-pins', m.getZoom() >= 17.2); }; showNames(); m.on('zoom', showNames);
+    const showNames = () => { el.classList.toggle('out-names', m.getZoom() >= 18.5); el.classList.toggle('out-pins', m.getZoom() >= 17.2); el.classList.toggle('out-far', m.getZoom() < 16.5); }; showNames(); m.on('zoom', showNames);
   };
   // Failover once the style is in: if its tiles keep failing and none arrive, move to the next map.
   // (Listening from the start: failed tiles can arrive before the map's 'load' event.)
@@ -138,7 +138,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
   drawPlaces();
   const mainEntr = gj.entrances.features.find(f => f.properties.main) || gj.entrances.features[0];
   const target = mainEntr ? mainEntr.geometry.coordinates : [(gj.bounds[0][0] + gj.bounds[1][0]) / 2, (gj.bounds[0][1] + gj.bounds[1][1]) / 2];
-  let watch = null, youMk = null;
+  let watch = null, youMk = null, bldMks = [];
   ctl = {
     map: m, streets: active !== PLAIN, provider: active, failed, target, geojson: gj, vis,
     /** Show or hide a layer group: 'plan' | 'places' | 'outline' | 'entrances' | 'route' | 'me'. */
@@ -184,7 +184,21 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     frame(pad = padding) { m.fitBounds(gj.bounds, { padding: pad, maxZoom: 18.6, duration: 0 }); },
     flyTo(lngLat, zoom = 19) { m.easeTo({ center: lngLat, zoom: Math.max(m.getZoom(), zoom), duration: 600 }); },
     resize() { m.resize(); },
-    destroy() { if (watch != null) navigator.geolocation.clearWatch(watch); for (const mk of placeMarkers) mk.remove(); youMk?.remove(); m.remove(); },
+    /** Every building with a DALIL indoor map, as a marker you can tap: [{ id, name, lngLat, current }]. */
+    setBuildings(list, onBuilding) {
+      for (const mk of bldMks) mk.remove();
+      bldMks = list.map(b => {
+        const e = document.createElement('button'); e.type = 'button'; e.className = 'out-bld' + (b.current ? ' current' : '');
+        e.innerHTML = `<span class="ob-ico">${iconFor ? iconFor('building') : ''}</span><span class="ob-name"></span>`;
+        e.querySelector('.ob-name').textContent = b.name;
+        e.addEventListener('click', ev => { ev.stopPropagation(); onBuilding?.(b.id); });
+        const mk = new maplibregl.Marker({ element: e, anchor: 'bottom' }).setLngLat(b.lngLat).addTo(m);
+        e.setAttribute('aria-label', b.name); return mk;
+      });
+    },
+    /** Zoom out to show these points (other buildings, or you and a building). */
+    show(points, pad = padding) { if (!points.length) return; const bb = new maplibregl.LngLatBounds(points[0], points[0]); points.forEach(p => bb.extend(p)); m.fitBounds(bb, { padding: pad, maxZoom: 18.6, duration: 600 }); },
+    destroy() { if (watch != null) navigator.geolocation.clearWatch(watch); for (const mk of [...placeMarkers, ...bldMks]) mk.remove(); youMk?.remove(); m.remove(); },
   };
   return ctl;
 }

@@ -53,6 +53,12 @@ export class MapView {
     this.svgRoute.done.setAttribute('d', this.pathD(done));
   }
 
+  /** Turn bubbles along the route: [{ x, y, html, key }] (tap one to hear that step). */
+  setTurns(list = []) {
+    for (const m of this.turnMks || []) this.removeMarker(m);
+    this.turnMks = list.map(t => { const m = this.addMarker('mk-turn', `<button type="button" class="turn-bub" data-turn="${t.key}" tabindex="-1">${t.html}</button>`, t.x, t.y); m.key = t.key; return m; });
+  }
+  markTurnsDone(isDone) { for (const m of this.turnMks || []) m.el.classList.toggle('done', !!isDone(m.key)); }
   /** The GPS position and how sure it is (a circle of radius acc metres), or null to hide it. */
   setAccuracy(p, acc) {
     if (!this.gpsEl) return;

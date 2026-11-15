@@ -211,7 +211,7 @@ test('walking past a DALIL sign on the route needs no tap; scanning one confirms
   await ctx.close();
 });
 
-test('camera mode: a yellow guide line on the floor ahead; it says where to look when the line is out of view', async () => {
+test('camera mode: a blue guide line on the floor ahead; it says where to look when the line is out of view', async () => {
   const { ctx, page, errors } = await open('#at-P001&to-P007', { permissions: [...SENSORS, 'camera'] }, camBrowser);
   await page.click('#btnStartCam');
   await wakeSensors(page, 25, 80);
@@ -225,10 +225,10 @@ test('camera mode: a yellow guide line on the floor ahead; it says where to look
   await page.waitForFunction(() => window.DALIL_APP.camera().drawn > 5);
   const px = await page.evaluate(() => {
     const c = document.querySelector('#navCam canvas'), d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data; let y = 0;
-    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 40 && d[i] > 200 && d[i + 1] > 150 && d[i + 2] < 90) y++;
+    for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 40 && d[i + 2] > 180 && d[i] < 90 && d[i + 1] < 160) y++;   // the blue ribbon
     return y;
   });
-  assert.ok(px > 2000, `yellow ribbon pixels: ${px}`);
+  assert.ok(px > 2000, `blue ribbon pixels: ${px}`);
   assert.match(await page.textContent('#camNote'), /Guide line/);
   await walk(page, { seconds: 0.6, pitch: 80, face: 'back', live: true });
   await page.waitForFunction(() => /Turn around/.test(document.querySelector('#camHint').textContent) && !document.querySelector('#camHint').hidden);
@@ -472,6 +472,33 @@ test('home is a map: search bar, category chips, floor switcher, tappable pins, 
   await page.click('#dlgLayers [data-close]');
   // Directions button asks where to go
   await page.click('#btnDirections'); await pageIs(page, 'search');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('indoor maps find you: near a DALIL building the app offers it; inside one it opens by itself (no Settings)', async () => {
+  const stub = async page => { for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://*.tile.opentopomap.org/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 })); };
+  // About 250 m from the House of Wisdom, with the sample hospital open
+  let { ctx, page, errors } = await open('', { permissions: ['geolocation'], geolocation: { latitude: 25.3165, longitude: 55.5045, accuracy: 20 } });
+  await stub(page);
+  await page.waitForSelector('#nearCard:not([hidden])');
+  assert.match(await page.textContent('#nearTitle'), /House of Wisdom \(test\): indoor map available/);
+  assert.equal(await page.evaluate(() => window.DALIL_APP.state.map.building.name), 'Sample Hospital', 'near is only an offer');
+  await page.click('#btnNearOpen');
+  await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'house-of-wisdom-test');
+  await page.waitForFunction(() => window.DALIL_APP.homeMap()?.map.getLayer('walls'));
+  // The list of indoor maps in the sheet, and the chip that opens it
+  await page.click('#chipBuildings');
+  assert.ok((await page.$$eval('#buildingList [data-building]', b => b.map(x => x.dataset.building))).includes('sample-hospital'));
+  await page.click('#buildingList [data-building="sample-hospital"]');
+  await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'sample-hospital');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+  // Standing inside it: it opens by itself
+  ({ ctx, page, errors } = await open('', { permissions: ['geolocation'], geolocation: { latitude: 25.3184, longitude: 55.5061, accuracy: 10 } }));
+  await stub(page);
+  await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'house-of-wisdom-test');
+  assert.match(await page.textContent('#toast'), /Opened the indoor map of House of Wisdom/);
   assert.deepEqual(errors, []);
   await ctx.close();
 });

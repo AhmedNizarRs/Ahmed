@@ -363,7 +363,8 @@ function renderHome() {
   if (!$('#homeSheet').classList.contains('open')) $('#homeSheetBody').scrollTop = 0;   // the sheet always peeks at its top
   // Tiles: the essentials this building has, with the walk to the nearest one
   const cats = Object.keys(TILE_CATS).filter(c => TILE_CATS[c].some(k => here.has(k))).slice(0, 6);
-  $('#homeChips').innerHTML = cats.map(c => `<button class="hm-chip" type="button" data-cat="${c}"><span class="ico">${catIco(c === 'help' ? 'help' : TILE_CATS[c][0])}</span><span>${esc(t('cat_' + c))}</span></button>`).join('');
+  renderBuildings();
+  $('#homeChips').innerHTML = (buildingsList().length > 1 ? `<button class="hm-chip hm-chip-bld" type="button" id="chipBuildings"><span class="ico">${svgIco(UI.building)}</span><span>${esc(t('indoorMaps'))}</span></button>` : '') + cats.map(c => `<button class="hm-chip" type="button" data-cat="${c}"><span class="ico">${catIco(c === 'help' ? 'help' : TILE_CATS[c][0])}</span><span>${esc(t('cat_' + c))}</span></button>`).join('');
   $('#tiles').innerHTML = cats.map(c => {
     let best = null;
     for (const p of state.map.points) if (TILE_CATS[c].includes(p.category) && p.id !== state.fromId) { const d = distFor(state.map, from, p); if (d != null && (best == null || d < best)) best = d; }
@@ -395,7 +396,7 @@ async function renderHomeMap(from = pt(state.fromId)) {
   const geo = !!state.map.geo;
   $('#homeGL').hidden = !geo; $('#homeMap').hidden = geo; $('#btnLayers').hidden = !geo;
   if (!geo) {
-    if (homeCtl) { try { homeCtl.destroy(); } catch { } homeCtl = null; homeCtlFor = null; }
+    if (homeCtl) { try { homeCtl.destroy(); } catch { } homeCtl = null; homeCtlFor = null; }   // a building not placed on Earth: its plan
     homeMap.setMap(homeFloor);
     homeMap.setYou(homeFloor === state.map ? from : null, from?.facingDeg ?? 90);
     homeMap.setRoute(null); homeMap.setDest(null);
@@ -403,18 +404,23 @@ async function renderHomeMap(from = pt(state.fromId)) {
     return;
   }
   const bid = state.map.building.id;
+  if (homeCtl && homeCtlFor !== bid) {                    // another DALIL building on the same map: move there
+    homeCtlFor = bid; homeCtl.setFloor(homeFloor); homeCtl.frame(); renderBuildings();
+  }
   if (!homeCtl || homeCtlFor !== bid) {
     if (homeLoading === bid) return;                      // one map at a time per building (a second call waits for it)
     homeLoading = bid;
     try { homeCtl?.destroy(); } catch { } homeCtl = null; homeCtlFor = null;
     try {
+      const floor = homeFloor;                            // read before waiting: the floor can change meanwhile
       const { createOutdoorMap } = await import('./outdoor.js');
       const choice = settings.mapProvider === 'auto' ? (cfg.maps?.homeBase || 'esri-imagery-labels') : settings.mapProvider;
-      const ctl = await createOutdoorMap($('#homeGL'), { map: homeFloor, dark: document.documentElement.dataset.theme === 'dark' || settings.contrast, lang: settings.lang,
+      const ctl = await createOutdoorMap($('#homeGL'), { map: floor, dark: document.documentElement.dataset.theme === 'dark' || settings.contrast, lang: settings.lang,
         attribution: t('attrPlan'), providers: { choice, cfg: cfg.maps }, layers: settings.mapLayers, opacity: settings.mapOpacity / 100,
-        pins: true, onPick: id => { const m = homeFloor; setDest(keyOf(m, pointOf(m, id))); }, iconFor: c => svgIco(CAT_ICONS[c] || CAT_ICONS.room), padding: SHEET_PAD,
+        pins: true, onPick: id => { const m = homeFloor; setDest(keyOf(m, pointOf(m, id))); }, iconFor: c => svgIco(c === 'building' ? UI.building : CAT_ICONS[c] || CAT_ICONS.room), padding: SHEET_PAD,
         onProvider: () => renderLayerControls('home') });
       homeCtl = ctl; homeCtlFor = bid;                   // kept even if you left Home meanwhile: it shows again on return
+      renderBuildings();
     } catch { return; } finally { homeLoading = null; }
     if (pageNow !== 'home' || state.map?.building.id !== bid) return;
   } else homeCtl.setFloor(homeFloor);
@@ -432,6 +438,51 @@ function setHomeFloor(m) { if (!m || m === homeFloor) return; homeFloor = m; ann
 function setSheet(open) {
   $('#homeSheet').classList.toggle('open', open); $('#btnSheet').setAttribute('aria-expanded', String(open));
   if (!open) $('#homeSheetBody').scrollTop = 0;
+}
+// Buildings with a DALIL indoor map (every building in maps.json). Those placed on Earth show on the home map,
+// and when your location is near one the app offers it (or opens it when you are clearly inside it).
+function buildingsList() {
+  const by = new Map();
+  for (const m of state.maps) { const b = by.get(m.building.id) || { id: m.building.id, name: m.building.name, maps: [] }; b.maps.push(m); by.set(b.id, b); }
+  for (const b of by.values()) {
+    const g = b.maps.find(m => m.geo);
+    if (g) { const xs = g.plan.walls.flat(), T = geoTransform(g.geo); let a = Infinity, c = -Infinity, d = Infinity, e = -Infinity;
+      for (const [x, y] of xs) { a = Math.min(a, x); c = Math.max(c, x); d = Math.min(d, y); e = Math.max(e, y); }
+      b.at = T((a + c) / 2, (d + e) / 2); b.radius = Math.hypot(c - a, e - d) / 2; }
+  }
+  return [...by.values()];
+}
+let nearDismissed = null;
+function openBuilding(id, { say = true } = {}) {
+  const b = buildingsList().find(x => x.id === id); if (!b) return;
+  setSheet(false); $('#nearCard').hidden = true;
+  if (state.map.building.id !== id) { homeFloor = null; selectFloor(b.maps[0]); state.fromManual = false; if (say) { const msg = t('openedBuilding', b.name); toast(msg); announce(msg); } }
+  else renderHome();
+  if (homeCtl) homeCtl.frame();
+}
+// Which building is near you (GPS), and what to offer: open it, or nothing.
+function nearCheck() {
+  const f = locator.fresh(60000); const card = $('#nearCard');
+  if (!f || pageNow !== 'home') { card.hidden = true; return; }
+  let best = null;
+  for (const b of buildingsList()) if (b.at) { const d = haversine([f.lng, f.lat], b.at); if (!best || d < best.d) best = { b, d }; }
+  if (!best || best.d > 400 + best.b.radius) { card.hidden = true; return; }
+  const cur = best.b.id === state.map.building.id, inside = best.d <= best.b.radius + Math.min(25, f.acc);
+  if (!cur && inside && !state.fromManualBuilding) { openBuilding(best.b.id); return; }   // clearly inside another DALIL building
+  if (cur || nearDismissed === best.b.id) { card.hidden = true; return; }
+  $('#nearTitle').textContent = t('nearTitle', best.b.name); $('#nearSub').textContent = t('nearSub', fmtDist(Math.max(0, best.d - best.b.radius)));
+  card.hidden = false; card.dataset.bld = best.b.id;
+}
+let rbT = 0; function renderBuildingsThrottled() { const n = Date.now(); if (n - rbT > 15000) { rbT = n; renderBuildings(); } }
+function renderBuildings() {
+  const list = buildingsList(), f = locator.fresh(600000);
+  $('#secBuildings').hidden = list.length < 2;
+  $('#buildingList').innerHTML = list.map(b => {
+    const cur = b.id === state.map.building.id, d = f && b.at ? haversine([f.lng, f.lat], b.at) : null;
+    const sub = [cur ? t('openNow') : d != null ? t('bldAway', fmtDist(d)) : '', t('floorsCount', b.maps.length), b.at ? '' : t('noGeoYet')].filter(Boolean).join(' · ');
+    return `<li><button class="row-btn${cur ? ' is-current' : ''}" type="button" data-building="${esc(b.id)}"${cur ? ' aria-current="true"' : ''}><span class="r-ico"><span class="ico">${svgIco(UI.building)}</span></span><span class="r-main"><span class="r-name">${esc(b.name)}</span><span class="r-sub">${esc(sub)}</span></span><span class="ico r-chev flip-rtl">${svgIco(UI.fwd)}</span></button></li>`;
+  }).join('');
+  homeCtl?.setBuildings(list.filter(b => b.at).map(b => ({ id: b.id, name: b.name, lngLat: b.at, current: b.id === state.map.building.id })), id => { state.fromManualBuilding = true; openBuilding(id); });
 }
 // Base map and layer controls, shared by Home (the Layers button) and the real-map page.
 function renderLayerControls(where) {
@@ -934,10 +985,19 @@ function renderHud() {
   else if (h.dist == null) d.textContent = '';
   else { const [v, ...u] = fmtM(h.dist).split(' '); d.innerHTML = `<span class="v">${esc(v)}</span><span class="u">${esc(u.join(' '))}</span>`; }
   $('#navStepText').textContent = h.main;
-  $('#navStepSub').textContent = h.sub;
+  $('#navStepSub').textContent = h.sub; $('#navStepSub').hidden = !h.sub;
+  $('#hudCard').classList.toggle('soon', h.dist === 'now' || (typeof h.dist === 'number' && h.dist <= 8));   // the banner pulses near a turn
   nav.hud = h;
 }
+// Turn bubbles for the leg on screen (each turn of the route, with its arrow; tap = hear it).
+function drawTurns() {
+  const s = nav.steps[nav.i]; if (!s) return;
+  const leg = nav.legs[s.leg];
+  navMap.setTurns(nav.steps.map((st, i) => ({ st, i })).filter(({ st }) => st.leg === s.leg && st.kind === 'move' && st.turn && st.turn !== 'straight')
+    .map(({ st, i }) => { const p = pointAt(leg.route.path, leg.cum, st.d0); return { x: p.x, y: p.y, key: i, html: svgIco(TURN_ICONS[st.turn] || TURN_ICONS.straight) }; }));
+}
 function legChanged(prevLeg, leg) {
+  drawTurns();
   const f = nav.follower; if (!f) return;
   const a = prevLeg?.map.geo, b = leg.map.geo;
   if (prevLeg && a && b) f.shiftFrame(b.bearing - a.bearing); else if (prevLeg) f.resetFrame();
@@ -971,6 +1031,7 @@ function updateNavPos(animate) {
   const [vw, vh] = navMap.size();
   navMap.setCam({ x: px, y: py, k: Math.max(.6, Math.min(3.2, vw / (22 * BASE))), rot, tilt: 52, ax: .5, ay: vh > 700 ? .66 : .7 }, animate);
   navMap.setYou({ x: p.x, y: p.y }, face ?? h);
+  navMap.markTurnsDone(k => nav.steps[k] && nav.steps[k].leg === s.leg && nav.steps[k].d0 < nav.pos - 0.5);
   if (face == null) drawArrow();
 }
 // The big arrow: live (where to walk, relative to where you face) when tracking; otherwise the turn to make now.
@@ -1064,11 +1125,11 @@ function stepAt(li, s) {
 const locator = new Locator(), GPS_MAX_ACC = 30;
 const gps = { used: false, acc: null, at: 0, fromId: null };
 const gpsAllowed = () => settings.gps && cfg.features?.gps !== false && !state.kiosk && !!navigator.geolocation;
-const gpsMapHere = () => state.maps.some(m => m.geo && m.building.id === state.map?.building.id);
+const gpsMapHere = () => state.maps.some(m => m.geo);   // any DALIL building on Earth: needed to notice you are near one
 const gpsLive = () => gps.used && Date.now() - gps.at < 60000;   // phones report again when you move
 function gpsStart() { if (gpsAllowed() && gpsMapHere()) { locator.start(onFix, onGpsError); renderGpsBits(); } }
 function gpsStop() { locator.stop(); gps.used = false; gps.fromId = null; navMap?.setAccuracy(null); homeMap?.setAccuracy(null); renderGpsBits(); }
-function onGpsError(kind) { gps.used = false; if (kind === 'denied') toast(t('gpsDenied')); renderGpsBits(); if (nav.active) { renderMode(); showMotionCard(); } }
+function onGpsError(kind) { gps.used = false; if (kind === 'denied' && gps.userAsked) toast(t('gpsDenied')); renderGpsBits(); if (nav.active) { renderMode(); showMotionCard(); } }
 function fixOn(map, f) { if (!map?.geo) return null; const p = planFromGeo(map.geo)(f.lng, f.lat); return { x: p.x, y: p.y, acc: f.acc }; }
 function onFix(f) { if (nav.active) fuseFix(f); else homeFix(f); }
 function fuseFix(f) {
@@ -1091,8 +1152,9 @@ function fuseFix(f) {
 }
 // On Home: "You are here" = the nearest place to the GPS position, unless you chose one yourself.
 function homeFix(f) {
+  nearCheck();
   const m = state.map, q = fixOn(m, f); gps.acc = q?.acc ?? null;
-  homeMap?.setAccuracy(q, q?.acc); homeYou();
+  homeMap?.setAccuracy(q, q?.acc); homeYou(); nearCheck(); renderBuildingsThrottled();
   if (q && q.acc <= GPS_MAX_ACC && !state.fromManual) {
     let best = null, bd = Infinity;
     for (const p of m.points) { if (p.virtual) continue; const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; best = p; } }
@@ -1417,7 +1479,7 @@ function bind() {
   toggle('#setVoice', 'voice', () => { if (!settings.voice) try { speechSynthesis.cancel(); } catch { } });
   toggle('#setVibrate', 'vibrate');
   toggle('#setGps', 'gps', () => settings.gps ? gpsStart() : gpsStop());
-  $('#btnLocate').onclick = () => { state.fromManual = false; gpsStart(); };
+  $('#btnLocate').onclick = () => { state.fromManual = false; gps.userAsked = true; gpsStart(); };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { gps.paused = locator.on; locator.stop(); } else if (gps.paused) { gps.paused = false; gpsStart(); } });
   $('#setStepFree').addEventListener('change', e => setStepFree(e.target.checked));
   toggle('#setContrast', 'contrast', rerenderAll); toggle('#setMotion', 'motion', rerenderAll);
@@ -1444,11 +1506,18 @@ function bind() {
   $('#btnPreview').onclick = startSim;
   $('#btnSignsOnly').onclick = () => { nav.signsOnly = true; hideMotionCard(); };
   // Home map controls
+  $('#navMap').addEventListener('click', e => { const b = e.target.closest('[data-turn]'); if (!b) return; const st = nav.steps[+b.dataset.turn]; if (st) { const msg = stepText(st); speak(msg); announce(msg); buzz([30]); b.classList.add('ping'); setTimeout(() => b.classList.remove('ping'), 600); } });
+  $('#hudCard').addEventListener('click', () => $('#btnRepeat').click());
   $('#btnSheet').onclick = () => setSheet(!$('#homeSheet').classList.contains('open'));
+  $('#homeChips').addEventListener('click', e => { if (e.target.closest('#chipBuildings')) { setSheet(true); requestAnimationFrame(() => $('#secBuildings').scrollIntoView({ block: 'start' })); } });
+  $('#buildingList').addEventListener('click', e => { const b = e.target.closest('[data-building]'); if (b) { state.fromManualBuilding = true; openBuilding(b.dataset.building); } });
+  $('#btnNearOpen').onclick = () => { state.fromManualBuilding = true; openBuilding($('#nearCard').dataset.bld); };
+  $('#btnNearClose').onclick = () => { nearDismissed = $('#nearCard').dataset.bld; $('#nearCard').hidden = true; };
   $('#homeFloors').addEventListener('click', e => { const b = e.target.closest('[data-hfloor]'); if (b) setHomeFloor(mapByFloor(b.dataset.hfloor)); });
   $('#btnScanTop').onclick = () => { go('where'); startWhereScan(); };
   $('#btnDirections').onclick = () => go('search');
   $('#btnLocateMe').onclick = () => {
+    gps.userAsked = true;
     if (state.map?.geo) { state.fromManual = false; gpsStart(); const f = locator.fresh(60000); if (f && homeCtl) homeCtl.flyTo([f.lng, f.lat]); else if (homeCtl) { const p = pt(state.fromId); if (p) homeCtl.flyTo(geoTransform(state.map.geo)(p.x, p.y)); } }
     else { setHomeFloor(state.map); renderHomeMap(); }
   };
@@ -1502,7 +1571,10 @@ async function init() {
   bind();
   await loadConfig();
   const r = await boot();
+  // Location: on if already allowed; otherwise asked once on the first visit (like a maps app), so the app can
+  // tell when you are at a building with an indoor map.
   if (await locationGranted()) gpsStart();
+  else if (!store.get('dalil.locAsked', false) && !state.kiosk) { store.set('dalil.locAsked', true); gpsStart(); }
   return r;
 }
 

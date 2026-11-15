@@ -96,12 +96,12 @@ export class CameraGuide {
       const p = S[i - 1], q = S[i];
       any = polyPath([cam(p.x - p.uy * RIBBON, p.y + p.ux * RIBBON), cam(q.x - q.uy * RIBBON, q.y + q.ux * RIBBON), cam(q.x + q.uy * RIBBON, q.y - q.ux * RIBBON), cam(p.x + p.uy * RIBBON, p.y - p.ux * RIBBON)]) || any;
     }
-    ctx.fillStyle = 'rgba(255,199,0,0.58)'; ctx.fill();
+    ctx.fillStyle = 'rgba(26,115,232,0.55)'; ctx.fill();   // blue = follow this (yellow is the destination)
     // Edges for contrast on light floors.
     for (const side of [1, -1]) {
       ctx.beginPath(); let pen = false;
       for (const p of S) { const c = cam(p.x - side * p.uy * RIBBON, p.y + side * p.ux * RIBBON); if (c[2] < NEAR) { pen = false; continue; } const s = scr(c); if (!pen) { ctx.moveTo(s[0], s[1]); pen = true; } else ctx.lineTo(s[0], s[1]); }
-      ctx.lineWidth = 2.5; ctx.strokeStyle = 'rgba(17,17,17,0.7)'; ctx.stroke();
+      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
     }
     // Chevrons every 1.5 m, gliding forward (still if reduced motion is on).
     const off = fr.motion === false ? 0.6 : (now / 1000 * 0.9) % 1.5;
@@ -111,7 +111,7 @@ export class CameraGuide {
       const { x, y, ux, uy } = p, n = 0.2;
       polyPath([cam(x + ux * 0.22, y + uy * 0.22), cam(x - uy * n - ux * 0.12, y + ux * n - uy * 0.12), cam(x - ux * 0.02, y - uy * 0.02), cam(x + uy * n - ux * 0.12, y - ux * n - uy * 0.12)]);
     }
-    ctx.fillStyle = 'rgba(17,17,17,0.78)'; ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
     // Destination: a ring on the floor and a post with its name.
     if (fr.dest && acc <= AHEAD + 0.5) {
       const ring = [], ring2 = [];

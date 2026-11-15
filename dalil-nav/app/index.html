@@ -47,6 +47,12 @@
         <button class="hm-icon hm-help" type="button" data-help data-i18n-aria="help"><span class="ico" data-ico="help"></span></button>
       </div>
       <div id="homeChips" class="hm-chips" role="group" data-i18n-aria="nearestTitle"></div>
+      <div id="nearCard" class="hm-near" role="status" hidden>
+        <span class="hm-near-ico"><span class="ico" data-ico="building"></span></span>
+        <span class="hm-near-text"><strong id="nearTitle"></strong><small id="nearSub"></small></span>
+        <button id="btnNearOpen" class="btn primary sm" type="button" data-i18n="openIndoor">Open</button>
+        <button id="btnNearClose" class="hm-icon sm" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button>
+      </div>
     </div>
 
     <div class="hm-right">
@@ -72,6 +78,7 @@
           <button id="btnFrom" class="pill" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="change">Change</span></button>
           <button id="btnLocate" class="pill" type="button" hidden><span class="ico" data-ico="gps"></span><span data-i18n="useLocation">Use my location</span></button>
         </div>
+      <section id="secBuildings" class="sec" hidden><h2 class="sec-title" data-i18n="indoorMaps">Indoor maps</h2><ul id="buildingList" class="rows"></ul></section>
       <h2 class="sec-title" data-i18n="nearestTitle">Find the nearest</h2>
       <ul id="tiles" class="tiles"></ul>
       <section id="secSaved" class="sec" hidden><h2 class="sec-title" data-i18n="secSaved">Saved places</h2><ul id="savedList" class="rows"></ul></section>
@@ -303,7 +310,7 @@
       <div id="hudCard" class="hud-card">
         <div id="navArrow" class="hud-arrow" aria-hidden="true">
           <svg class="arrow-big" viewBox="0 0 100 100">
-            <defs><linearGradient id="arrowFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFE27A"/><stop offset=".55" stop-color="#FFC700"/><stop offset="1" stop-color="#E9A800"/></linearGradient></defs>
+            <defs><linearGradient id="arrowFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCE8FF"/></linearGradient></defs>
             <path class="arrow-shape" d="M50 7 87 51H63.5v40h-27V51H13z"/>
             <path class="arrow-shine" d="M50 7 87 51H63.5v40h-13.5V7z"/>
           </svg>

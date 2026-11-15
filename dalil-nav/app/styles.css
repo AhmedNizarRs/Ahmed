@@ -621,3 +621,73 @@ html.contrast .home-map .hm-top, html.contrast .home-map .hm-right, html.contras
 }
 
 .hm-sheet.open .hm-sheet-body { overflow-y: auto; }   /* collapsed: always shows its top (no stray scroll) */
+
+/* =====================================================================
+   Directions, redesign 4 (Nov 2026): blue = "follow this", yellow = "your destination", like the maps apps
+   people already know. A bold blue route with flowing light, turn bubbles you can tap, a big instruction banner
+   you can tap to hear again, and a large bottom card.
+   ===================================================================== */
+:root, :root[data-theme="light"] { --route: #1A73E8; --route-casing: #FFFFFF; --route-glow: rgba(26, 115, 232, .22); --route-done: rgba(95, 99, 104, .45); --guide: #1A73E8; --guide-2: #0B57D0; }
+:root[data-theme="dark"] { --route: #4C8DF6; --route-casing: #0B1A33; --route-glow: rgba(76, 141, 246, .3); --route-done: rgba(255, 255, 255, .22); --guide: #1A73E8; --guide-2: #0B57D0; }
+:root.contrast { --route: #FFE600; --route-casing: #000; --guide: #000; --guide-2: #000; }
+.route-glow { stroke-width: 26px; }
+.route-casing { stroke-width: 15px; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+.route-main { stroke-width: 10px; }
+.route-flow { stroke: #FFFFFF; stroke-opacity: .9; stroke-width: 4px; stroke-dasharray: 2 16; animation: flow 1.2s linear infinite; }
+.route-done { stroke-width: 7px; stroke-dasharray: 1 9; }
+/* turn bubbles */
+.mk-turn { pointer-events: none; z-index: 2; }
+.turn-bub { pointer-events: auto; position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: 50%; border: 3px solid #FFFFFF; background: var(--guide); color: #FFFFFF; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); cursor: pointer; padding: 0; transition: transform .2s var(--ease), background .2s; }
+.turn-bub svg { width: 1.35rem; height: 1.35rem; }
+.turn-bub.ping { transform: translate(-50%, -50%) scale(1.25); }
+.mk-turn.done .turn-bub { background: #9AA0A6; transform: translate(-50%, -50%) scale(.8); }
+html.contrast .turn-bub { background: #000; border-color: #FFE600; color: #FFE600; }
+/* destination: the DALIL ring as a yellow pin with a soft pulse */
+.dest svg { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .4)); }
+.dest-ring { stroke: #FFC700; fill: #1F1F1F; }
+.dest-core { fill: #FFC700; }
+.dest::before { content: ""; position: absolute; left: 50%; top: 50%; width: 3.5rem; height: 3.5rem; margin: -1.75rem 0 0 -1.75rem; border-radius: 50%; background: rgba(255, 199, 0, .35); animation: pulse 2.2s var(--ease) infinite; }
+html.reduce-motion .dest::before { display: none; }
+/* the instruction banner */
+.nav .hud-card { background: linear-gradient(135deg, var(--guide), var(--guide-2)); color: #FFFFFF; border: 0; box-shadow: 0 8px 28px rgba(11, 87, 208, .35); cursor: pointer; padding: 1rem 1.125rem; }
+.nav .hud-card .hud-arrow { background: rgba(255, 255, 255, .16); border: 0; box-shadow: none; }
+.nav .hud-card .arrow-shine { opacity: .25; }
+.nav .hud-card .hud-ico { color: #FFFFFF; }
+.nav .hud-card .hud-dist .v { font-size: 2.75rem; color: #FFFFFF; }
+.nav .hud-card .hud-dist .u, .nav .hud-card .eyebrow { color: rgba(255, 255, 255, .8); }
+.nav .hud-card .hud-main { color: #FFFFFF; font-size: 1.5rem; line-height: 1.2; }
+.nav .hud-card .hud-sub { display: inline-flex; margin-top: .5rem; padding: .25rem .75rem; border-radius: 1rem; background: rgba(0, 0, 0, .22); color: #FFFFFF; font-size: .9375rem; }
+.nav .hud-card .hud-sub[hidden] { display: none; }
+.nav .hud-card.soon { animation: soon 1.4s var(--ease) infinite; }
+@keyframes soon { 0%, 100% { box-shadow: 0 8px 28px rgba(11, 87, 208, .35); } 50% { box-shadow: 0 0 0 6px rgba(26, 115, 232, .35), 0 8px 28px rgba(11, 87, 208, .45); } }
+html.reduce-motion .nav .hud-card.soon { animation: none; }
+.nav .hud-card.wrong { background: linear-gradient(135deg, #D93025, #A50E0E); }
+html.contrast .nav .hud-card { background: #000; border: 2px solid #FFE600; box-shadow: none; }
+.nav .hud-status { background: var(--glass-2); box-shadow: var(--shadow); }
+/* the bottom card: time and distance big, a clear End */
+.nav .hud-bottom { border-radius: 1.5rem; box-shadow: 0 -2px 24px rgba(0, 0, 0, .14); }
+.nav .nav-dest { display: grid; gap: .125rem; }
+.nav #navDest { font-size: 1rem; color: var(--ink-2); font-weight: 600; order: 2; }
+.nav #navRemain { font-size: 1.5rem; font-weight: 700; color: #137333; font-family: var(--font); letter-spacing: 0; order: 1; }
+:root[data-theme="dark"] .nav #navRemain { color: #81C995; }
+.nav .progress span { background: var(--route); }
+.nav .hud-btn.end { color: #FFFFFF; background: #D93025; border-radius: 1.25rem; }
+.nav .hud-btn.end .ico { color: #FFFFFF; }
+/* camera note pill follows the blue */
+.cam-note { border-color: rgba(26, 115, 232, .4); }
+/* Home: buildings with indoor maps */
+.out-bld { display: inline-flex; align-items: center; gap: .5rem; min-height: 2.75rem; padding: .25rem .875rem .25rem .25rem; border: 0; border-radius: 2rem; background: #FFFFFF; color: #1F1F1F; font-weight: 700; font-size: .9375rem; box-shadow: 0 2px 10px rgba(0, 0, 0, .35); cursor: pointer; }
+.out-bld .ob-ico { width: 2.25rem; height: 2.25rem; display: grid; place-items: center; border-radius: 50%; background: var(--guide); color: #FFFFFF; }
+.out-bld .ob-ico svg { width: 1.2rem; height: 1.2rem; }
+.out-bld.current { display: none; }
+#homeGL.out-far .out-bld.current { display: inline-flex; }
+.hm-near { display: flex; align-items: center; gap: .75rem; padding: .625rem .5rem .625rem .75rem; border-radius: 1.25rem; background: #FFFFFF; color: #1F1F1F; box-shadow: 0 4px 18px rgba(0, 0, 0, .25); }
+.hm-near[hidden] { display: none; }
+.hm-near-ico { flex: none; width: 2.75rem; height: 2.75rem; display: grid; place-items: center; border-radius: 50%; background: var(--guide); color: #FFFFFF; }
+.hm-near-text { flex: 1; display: grid; min-width: 0; }
+.hm-near-text strong { font-size: 1rem; }
+.hm-near-text small { color: #5F6368; font-size: .8125rem; }
+.btn.sm { min-height: 3rem; padding: 0 1.125rem; font-size: 1rem; width: auto; }
+.hm-icon.sm { width: 3rem; height: 3rem; color: #5F6368; }
+.hm-chip-bld .ico { color: var(--guide) !important; }
+.row-btn.is-current .r-ico { background: var(--guide); color: #FFFFFF; }
