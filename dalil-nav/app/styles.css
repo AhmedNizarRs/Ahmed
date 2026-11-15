@@ -510,11 +510,6 @@ html.reduce-motion .route-flow { animation: none; }
 .you-cone { position: absolute; inset: 0; z-index: 1; background: conic-gradient(from -30deg, color-mix(in srgb, var(--you) 55%, transparent) 0 60deg, transparent 60deg); border-radius: 50%; transform-origin: 50% 50%; mask: radial-gradient(circle, #000 0 70%, transparent 71%); -webkit-mask: radial-gradient(circle, #000 0 70%, transparent 71%); }
 .you-pulse { position: absolute; width: 18px; height: 18px; border-radius: 50%; border: 2px solid var(--you); animation: pulse 2.2s var(--ease) infinite; }
 @keyframes pulse { from { transform: scale(1); opacity: .8; } to { transform: scale(3.2); opacity: 0; } }
-.dest { position: relative; display: flex; flex-direction: column; align-items: center; gap: 2px; }
-.dest svg { width: 40px; height: 40px; filter: drop-shadow(0 0 10px var(--brand-glow)); }
-.dest-ring { fill: none; stroke: var(--brand); stroke-width: 7; }
-.dest-core { fill: var(--on-brand); stroke: var(--brand); stroke-width: 2; }
-.dest-cap { font-size: 12px; font-weight: 650; padding: 2px 8px; border-radius: 7px; background: var(--brand); color: var(--on-brand); white-space: nowrap; }
 
 /* ---------- Kiosk (a fixed screen in the building) ---------- */
 html.kiosk #btnFrom, html.kiosk #btnStartCam, html.kiosk #btnView, html.kiosk .rows.more li:has(#btnScanHome, #btnSettings) { display: none !important; }
@@ -641,24 +636,59 @@ html.contrast .home-map .hm-top, html.contrast .home-map .hm-right, html.contras
 :root, :root[data-theme="light"] { --route: #1A73E8; --route-casing: #FFFFFF; --route-glow: rgba(26, 115, 232, .22); --route-done: rgba(95, 99, 104, .45); --guide: #1A73E8; --guide-2: #0B57D0; }
 :root[data-theme="dark"] { --route: #4C8DF6; --route-casing: #0B1A33; --route-glow: rgba(76, 141, 246, .3); --route-done: rgba(255, 255, 255, .22); --guide: #1A73E8; --guide-2: #0B57D0; }
 :root.contrast { --route: #FFE600; --route-casing: #000; --guide: #000; --guide-2: #000; }
-.route-glow { stroke-width: 26px; }
-.route-casing { stroke-width: 15px; filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+.route-glow { stroke-width: 22px; stroke: rgba(26, 115, 232, .12); }
+.route-casing { stroke: #1557B0; stroke-width: 14px; }   /* a darker blue edge, like a maps app */
 .route-main { stroke-width: 10px; }
-.route-flow { stroke: #FFFFFF; stroke-opacity: .9; stroke-width: 4px; stroke-dasharray: 2 16; animation: flow 1.2s linear infinite; }
-.route-done { stroke-width: 7px; stroke-dasharray: 1 9; }
+.route-flow { display: none; }                          /* the dots are gone: arrows show the way */
+.route-done { stroke-width: 6px; stroke-dasharray: 1 8; }
+:root[data-theme="dark"] .route-casing { stroke: #0B3A82; }
+html.contrast .route-casing { stroke: #000; }
+/* direction arrows along the route */
+.mk-arrow { z-index: 1; }
+.r-arrow { position: absolute; left: 0; top: 0; width: 13px; height: 13px; display: grid; place-items: center; transform: translate(-50%, -50%); }
+#navMap .r-arrow, #navMap .r-arrow svg { width: 17px; height: 17px; }
+.r-arrow svg { width: 13px; height: 13px; fill: none; stroke: #fff; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+html.contrast .r-arrow svg { stroke: #000; }
+/* start of a planned route: white disc with an icon and a label */
+.mk-start { z-index: 3; }
+.spin { position: relative; display: flex; align-items: center; }
+.spin-disc { width: 30px; height: 30px; flex: none; display: grid; place-items: center; border-radius: 50%; background: #fff; color: #1A73E8; border: 3px solid #1A73E8; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+.spin-disc svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.spin-label { position: absolute; left: 36px; top: 50%; transform: translateY(-50%); white-space: nowrap; font-size: 12px; font-weight: 650; padding: 3px 8px; border-radius: 8px; background: #fff; color: #1F1F1F; box-shadow: 0 1px 4px rgba(0, 0, 0, .25); }
+/* destination: a pin with the place's icon, its name beside it */
+.mk-dest { z-index: 4; }
+.mk-dest .mk-inner { transform: translate(-50%, -100%); }   /* the pin's tip on the spot */
+.dpin { position: relative; width: 36px; height: 46px; display: block; }
+.dpin-shape { position: absolute; inset: 0; width: 36px; height: 46px; filter: drop-shadow(0 3px 4px rgba(0, 0, 0, .35)); }
+.dpin-shape path { fill: #FFC700; stroke: #1F1F1F; stroke-width: 1.6; }
+.dpin-ico { position: absolute; left: 7px; top: 7px; width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #1F1F1F; color: #FFC700; }
+.dpin-ico svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.dpin-label { position: absolute; left: 50%; top: calc(100% + 6px); transform: translateX(-50%); white-space: nowrap; max-width: 12rem; overflow: hidden; text-overflow: ellipsis; font-size: 13px; font-weight: 700; padding: 4px 9px; border-radius: 8px; background: #1F1F1F; color: #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .3); }
+.dpin-label.cap { background: #FFC700; color: #1F1F1F; }
+.dpin-pulse { position: absolute; left: 50%; bottom: -6px; width: 26px; height: 10px; margin-left: -13px; border-radius: 50%; background: rgba(31, 31, 31, .25); }
+.dpin-pulse::after { content: ""; position: absolute; inset: -6px -10px; border-radius: 50%; border: 2px solid rgba(255, 199, 0, .8); animation: pulse 2.2s var(--ease) infinite; }
+html.reduce-motion .dpin-pulse::after { display: none; }
+/* key places on the plan: small icon chips instead of grey dots */
+.pt-chip { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; background: #fff; color: #3C4043; border: 1.5px solid #DADCE0; box-shadow: 0 1px 3px rgba(0, 0, 0, .2); }
+.pt-chip svg { width: 13px; height: 13px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.pt-chip.pt-toilet, .pt-chip.pt-toilet_acc, .pt-chip.pt-baby { color: #1A73E8; }
+.pt-chip.pt-lift, .pt-chip.pt-stairs, .pt-chip.pt-ramp { color: #188038; }
+.pt-chip.pt-entrance, .pt-chip.pt-exit { color: #1F1F1F; border-color: #1F1F1F; }
+html.contrast .pt-chip { background: #000; color: #FFE600; border-color: #FFE600; }
+/* the floor plan, cleaner: no grid, firmer walls */
+:root[data-theme="light"] .plan-gridfill { display: none; }
+:root[data-theme="light"] .plan-floor { fill: #FFFFFF; stroke: #DADCE0; stroke-width: 1px; vector-effect: non-scaling-stroke; }
+:root[data-theme="light"] .plan-walls { stroke: #5F6368; stroke-width: 1.8px; }
+:root[data-theme="light"] .plan-doors { stroke: #BDC1C6; }
+#routeMap, #navMap { background: #F1F3F4; }
+:root[data-theme="dark"] #routeMap, :root[data-theme="dark"] #navMap, html.contrast #routeMap, html.contrast #navMap { background: none; }
 /* turn bubbles */
 .mk-turn { pointer-events: none; z-index: 2; }
 .turn-bub { pointer-events: auto; position: absolute; left: 0; top: 0; transform: translate(-50%, -50%); width: 2.5rem; height: 2.5rem; display: grid; place-items: center; border-radius: 50%; border: 3px solid #FFFFFF; background: var(--guide); color: #FFFFFF; box-shadow: 0 2px 8px rgba(0, 0, 0, .35); cursor: pointer; padding: 0; transition: transform .2s var(--ease), background .2s; }
-.turn-bub svg { width: 1.35rem; height: 1.35rem; }
+.turn-bub svg { width: 1.35rem; height: 1.35rem; fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }   /* white arrows, not black blobs */
 .turn-bub.ping { transform: translate(-50%, -50%) scale(1.25); }
 .mk-turn.done .turn-bub { background: #9AA0A6; transform: translate(-50%, -50%) scale(.8); }
 html.contrast .turn-bub { background: #000; border-color: #FFE600; color: #FFE600; }
-/* destination: the DALIL ring as a yellow pin with a soft pulse */
-.dest svg { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .4)); }
-.dest-ring { stroke: #FFC700; fill: #1F1F1F; }
-.dest-core { fill: #FFC700; }
-.dest::before { content: ""; position: absolute; left: 50%; top: 50%; width: 3.5rem; height: 3.5rem; margin: -1.75rem 0 0 -1.75rem; border-radius: 50%; background: rgba(255, 199, 0, .35); animation: pulse 2.2s var(--ease) infinite; }
-html.reduce-motion .dest::before { display: none; }
 /* the instruction banner */
 .nav .hud-card { background: linear-gradient(135deg, var(--guide), var(--guide-2)); color: #FFFFFF; border: 0; box-shadow: 0 8px 28px rgba(11, 87, 208, .35); cursor: pointer; padding: 1rem 1.125rem; }
 .nav .hud-card .hud-arrow { background: rgba(255, 255, 255, .16); border: 0; box-shadow: none; }

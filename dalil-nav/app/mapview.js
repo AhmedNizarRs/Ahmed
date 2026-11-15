@@ -3,9 +3,12 @@
 export const BASE = 10; // px per metre in world space
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
+const KEY_CATS = ['toilet', 'toilet_acc', 'lift', 'stairs', 'ramp', 'entrance', 'exit', 'reception', 'prayer', 'wudu', 'cafe', 'baby'];
+
 export class MapView {
   static uid = 0;
-  // opts: interactive, points: 'all' | 'nodes' | 'none', label(p), pickKey(map, p), onTap({x,y}), onCam(cam)
+  // opts: interactive, points: 'all' | 'key' | 'nodes' | 'none', label(p), pickKey(map, p), onTap({x,y}), onCam(cam),
+  //       iconFor(category) → svg (key places drawn as small icon chips instead of dots)
   constructor(el, opts = {}) {
     this.el = el; this.opts = opts;
     this.cam = { x: 0, y: 0, k: 1, rot: 0, tilt: 0, ax: .5, ay: .5 };
@@ -42,7 +45,7 @@ export class MapView {
     const q = s => this.world.querySelector(s);
     this.svgRoute = { done: q('.route-done'), glow: q('.route-glow'), casing: q('.route-casing'), main: q('.route-main'), flow: q('.route-flow') };
     this.gpsEl = q('.gps-acc');
-    this.markers = []; this.you = null; this.dest = null;
+    this.markers = []; this.you = null; this.dest = null; this.start = null; this.arrows = []; this.arrowKey = null;
     this.renderPoints();
   }
   px(x, y) { return [(x - this.b.minX) * BASE, (this.b.maxY - y) * BASE]; }
@@ -52,7 +55,27 @@ export class MapView {
     const d = this.pathD(path);
     for (const k of ['glow', 'casing', 'main', 'flow']) this.svgRoute[k].setAttribute('d', d);
     this.svgRoute.done.setAttribute('d', this.pathD(done));
+    this.setArrows(path);
   }
+  // Small white arrows along the route, every 5 m, pointing the way (counted from the end, so they stay put as you walk).
+  setArrows(path) {
+    const pts = [];
+    if (path && path.length > 1) {
+      let i = path.length - 1, need = 2.5, acc = 0;
+      while (i > 0 && pts.length < 60) {
+        const [ax, ay] = path[i - 1], [bx, by] = path[i], L = Math.hypot(bx - ax, by - ay);
+        if (acc + L >= need) { const f = (need - acc) / L; pts.push({ x: bx - (bx - ax) * f, y: by - (by - ay) * f, a: Math.atan2(by - ay, bx - ax) * 180 / Math.PI }); need += 5; continue; }
+        acc += L; i--;
+      }
+      pts.pop();   // none right at your feet
+    }
+    const key = pts.length + ':' + (path?.length ? path[path.length - 1].join(',') : '');
+    if (key === this.arrowKey) return; this.arrowKey = key;
+    for (const m of this.arrows || []) this.removeMarker(m);
+    this.arrows = pts.map(q => { const m = this.addMarker('mk-arrow', '<span class="r-arrow"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M3 7.5 6 4.5l3 3"/></svg></span>', q.x, q.y); m.a = q.a; return m; });
+    this.orientArrows();
+  }
+  orientArrows() { for (const m of this.arrows || []) m.el.firstChild.style.transform = `translate(-50%, -50%) rotate(${90 - m.a + this.cam.rot}deg)`; }
 
   /** Turn bubbles along the route: [{ x, y, html, key }] (tap one to hear that step). */
   setTurns(list = []) {
@@ -83,8 +106,11 @@ export class MapView {
     if (mode === 'none') return;
     for (const p of this.map.points) {
       if (mode === 'nodes' && !p.dalilNode) continue;
+      const key = KEY_CATS.includes(p.category);
+      if (mode === 'key' && !key) continue;                          // route preview: only toilets, lifts, stairs, entrances…
       const name = this.opts.label ? this.opts.label(p) : p.nameEn;
-      const inner = `<span class="pt-dot pt-${esc(p.category)}${p.dalilNode ? ' node' : ''}"></span><span class="pt-label">${esc(name)}</span>`;
+      const mark = key && this.opts.iconFor ? `<span class="pt-chip pt-${esc(p.category)}">${this.opts.iconFor(p.category)}</span>` : `<span class="pt-dot pt-${esc(p.category)}${p.dalilNode ? ' node' : ''}"></span>`;
+      const inner = `${mark}<span class="pt-label">${esc(name)}</span>`;
       const html = this.opts.interactive && this.opts.pickKey ? `<button type="button" class="pt-btn" tabindex="-1" data-pick="${esc(this.opts.pickKey(this.map, p))}" aria-label="${esc(name)}">${inner}</button>` : inner;
       const m = this.addMarker('mk-point', html, p.x, p.y); m.point = p.id;
     }
@@ -98,10 +124,17 @@ export class MapView {
     this.you.heading = headingDeg ?? 90; this.orientYou();
   }
   orientYou() { if (this.you) this.you.el.querySelector('.you-cone').style.transform = `rotate(${90 - this.you.heading + this.cam.rot}deg)`; }
-  // Destination: the DALIL ring-and-dot. An optional caption (e.g. "To Level 2") sits under it.
-  setDest(p, caption = '') {
+  // Start of a planned route (route preview): a white disc with an icon and a "Start" label.
+  setStart(p, { icon = '', label = '' } = {}) {
+    if (this.start) this.removeMarker(this.start); this.start = null;
+    if (!p) return;
+    this.start = this.addMarker('mk-start', `<div class="spin"><span class="spin-disc">${icon}</span>${label ? `<span class="spin-label">${esc(label)}</span>` : ''}</div>`, p.x, p.y);
+  }
+  // Destination: a map pin with the place's icon, its name beside it. An optional caption (e.g. "To Level 2") replaces the name.
+  setDest(p, caption = '', { icon = '', name = '' } = {}) {
     if (!p) { this.removeMarker(this.dest); this.dest = null; return; }
-    const html = `<div class="dest"><svg viewBox="0 0 40 40" aria-hidden="true"><circle class="dest-ring" cx="20" cy="20" r="13"/><circle class="dest-core" cx="20" cy="20" r="5.5"/></svg>${caption ? `<span class="dest-cap">${esc(caption)}</span>` : ''}</div>`;
+    const text = caption || name;
+    const html = `<div class="dest dpin"><span class="dpin-pulse"></span><svg class="dpin-shape" viewBox="0 0 36 46" aria-hidden="true"><path d="M18 45s15-15.2 15-27A15 15 0 0 0 3 18c0 11.8 15 27 15 27z"/></svg><span class="dpin-ico">${icon}</span>${text ? `<span class="dpin-label${caption ? ' cap' : ''}">${esc(text)}</span>` : ''}</div>`;
     if (this.dest) this.removeMarker(this.dest);
     this.dest = this.addMarker('mk-dest', html, p.x, p.y);
   }
@@ -131,7 +164,7 @@ export class MapView {
     this.tiltEl.style.transform = `rotateX(${c.tilt}deg)`;
     this.world.style.transform = `translate(${vw * c.ax}px,${vh * c.ay}px) rotate(${c.rot}deg) scale(${c.k}) translate(${-c.x}px,${-c.y}px)`;
     for (const m of this.markers) this.placeMarker(m);
-    this.orientYou();
+    this.orientYou(); this.orientArrows();
     this.opts.onCam?.(c);
   }
   planToScreen(x, y) { // flat, unrotated view

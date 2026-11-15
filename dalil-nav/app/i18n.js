@@ -2,6 +2,7 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    youStartHere: 'You start here', routeStart: n => `Start · ${n}`,
     startPoint: 'Starting point', doorN: d => `Door ${d}`, factDoors: d => `Door ${d}`, distFromStart: n => `Distances from ${n}, where the indoor route starts`, youAreInside: 'You’re inside', moreBuildings: n => `Show ${n} more, far away`, noResAskDesk: 'Ask at the help desk', noResGetHelp: 'Get help', outStartBody: n => `The indoor directions start at ${n}. Walk there first, then tap “I’m at the entrance now”.`, outShowMap: 'Show the way on the map', outAtDoor: 'I’m at the entrance now',
     outsideEyebrow: 'Not in this building · start at', outTitle: d => `You’re about ${d} from this building`, outBody: n => `Go to ${n} first. The directions below start there.`, outBodyHere: n => `${n} is outside your current position: walk there first.`, outDirections: 'Walking directions to the entrance',
     surveyBtn: 'Map a building by walking it', surveyRowSub: 'No floor plan needed', surveyTitle: 'Map a building', surveyIntro: 'No floor plan? Walk the building with your phone and DALIL draws the map.',
@@ -125,6 +126,7 @@ export const STR = {
     cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    youStartHere: 'تبدأ من هنا', routeStart: n => `البداية · ${n}`,
     startPoint: 'نقطة البداية', doorN: d => `باب ${d}`, factDoors: d => `باب ${d}`, distFromStart: n => `المسافات من ${n}، حيث يبدأ المسار الداخلي`, youAreInside: 'أنت في الداخل', moreBuildings: n => `عرض ${n} أخرى بعيدة`, noResAskDesk: 'اسأل في مكتب المساعدة', noResGetHelp: 'اطلب المساعدة', outStartBody: n => `تبدأ الاتجاهات الداخلية من ${n}. امشِ إليه أولًا، ثم اضغط «أنا عند المدخل الآن».`, outShowMap: 'اعرض الطريق على الخريطة', outAtDoor: 'أنا عند المدخل الآن',
     outsideEyebrow: 'لست في هذا المبنى · ابدأ من', outTitle: d => `أنت على بُعد نحو ${d} من هذا المبنى`, outBody: n => `اذهب أولًا إلى ${n}. الاتجاهات أدناه تبدأ من هناك.`, outBodyHere: n => `${n} بعيد عن موقعك الحالي: امشِ إليه أولًا.`, outDirections: 'اتجاهات المشي إلى المدخل',
     surveyBtn: 'ارسم خريطة مبنى بالمشي فيه', surveyRowSub: 'لا حاجة إلى مخطط الطابق', surveyTitle: 'ارسم خريطة مبنى', surveyIntro: 'لا يوجد مخطط للطابق؟ امشِ في المبنى بهاتفك وسيرسم دليل الخريطة.',

@@ -684,14 +684,17 @@ function renderRouteMap(route, dest) {
   routeMap.setMap(m);
   routeMap.setRoute(leg && leg.route.distance_m > 0 ? leg.route.path : null);
   const from = pt(state.fromId);
-  routeMap.setYou(m === state.map ? from : null, from?.facingDeg ?? 90);
-  if (dest.m === m) routeMap.setDest(dest.p);
-  else if (route?.via && route.legs[0].map === m) routeMap.setDest(route.via.pa, t('toFloor', floorName(dest.m.floor)));
+  routeMap.setYou(null);
+  const confirmed = !outsideNow() && (state.fromManual || (gps.fromId === state.fromId && Date.now() - gps.at < 60000));
+  routeMap.setStart(m === state.map ? from : null, { icon: svgIco(confirmed ? UI.locate : CAT_ICONS[from?.category] || UI.walk), label: confirmed ? t('youStartHere') : t('routeStart', pname(from)) });
+  const pinOpts = p => ({ icon: catIco(p.category), name: pname(p) });
+  if (dest.m === m) routeMap.setDest(dest.p, '', pinOpts(dest.p));
+  else if (route?.via && route.legs[0].map === m) routeMap.setDest(route.via.pa, t('toFloor', floorName(dest.m.floor)), pinOpts(route.via.pa));
   else routeMap.setDest(null);
   routeMap.hidePoints([m === state.map ? state.fromId : null, dest.m === m ? dest.p.id : null, route?.via?.pa?.id]);
   $('#routeMap').setAttribute('aria-label', t('routeMap', pname(dest.p)));
   const pts = leg && leg.route.distance_m > 0 ? leg.route.path : [[dest.p.x - 15, dest.p.y - 15], [dest.p.x + 15, dest.p.y + 15]];
-  requestAnimationFrame(() => routeMap.fit({ pts, padTop: 40, padBot: 40, padL: 30, padR: 30, maxK: 3, tilt: 36 }, false));
+  requestAnimationFrame(() => routeMap.fit({ pts, padTop: 70, padBot: 60, padL: 50, padR: 50, maxK: 3, tilt: 36 }, false));
 }
 
 /* ---------- Saved ---------- */
@@ -1077,7 +1080,7 @@ function updateNavPos(animate) {
   const s = nav.steps[nav.i], leg = nav.legs[s.leg], path = leg.route.path;
   if (nav.leg !== s.leg) {
     const prevLeg = nav.legs[nav.leg]; nav.leg = s.leg; nav.rot = null; navMap.setMap(leg.map);
-    const d = resolve(nav.toKey); navMap.setDest(d && d.m === leg.map ? d.p : nav.plan.via?.pa || null, d && d.m !== leg.map ? t('toFloor', floorName(d.m.floor)) : '');
+    const d = resolve(nav.toKey), dp = d && d.m === leg.map ? d.p : nav.plan.via?.pa || null; navMap.setDest(dp, d && d.m !== leg.map ? t('toFloor', floorName(d.m.floor)) : '', dp ? { icon: catIco(dp.category), name: pname(dp) } : {});
     legChanged(prevLeg, leg);
     animate = false;
   }
@@ -1821,9 +1824,9 @@ async function boot() {
 async function init() {
   applyDisplay(); fillIcons();
   homeMap = new MapView($('#homeMap'), { points: 'none', label: pname });
-  routeMap = new MapView($('#routeMap'), { label: pname });
+  routeMap = new MapView($('#routeMap'), { label: pname, points: 'key', iconFor: c => svgIco(CAT_ICONS[c] || CAT_ICONS.room) });
   mainMap = new MapView($('#mainMap'), { interactive: true, label: pname, pickKey: keyOf, onTap: p => onMapTap(p), onCam: c => $('#mainMap').classList.toggle('show-labels', c.k * BASE >= 16) });
-  navMap = new MapView($('#navMap'), { points: 'nodes', label: pname });
+  navMap = new MapView($('#navMap'), { points: 'nodes', label: pname, iconFor: c => svgIco(CAT_ICONS[c] || CAT_ICONS.room) });
   bind();
   await loadConfig();
   const r = await boot();
