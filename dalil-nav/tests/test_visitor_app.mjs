@@ -642,6 +642,63 @@ test('home remembers recent places and searches; the phone\'s back button works;
   await ctx.close();
 });
 
+test('no floor plan: walk the building to map it (survey); places, back-at-a-place, a lift to a new floor; then directions work', async () => {
+  const { ctx, page, errors } = await open('', { permissions: [...SENSORS, 'geolocation'], geolocation: { latitude: 25.2900, longitude: 55.4100, accuracy: 6 } });
+  await page.click('#btnSheet').catch(() => {});
+  await page.evaluate(() => document.querySelector('#btnSurveyHome').click());
+  await pageIs(page, 'survey');
+  await page.fill('#svBuilding', 'Test Hall');
+  // The phone's sensors are on (real events) so Start sees them
+  await page.evaluate(() => { window.__sv = setInterval(() => { window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: 0, beta: 60, gamma: 0, absolute: true })); window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.81, z: 0.3 }, interval: 20 })); }, 20); });
+  await page.waitForFunction(() => window.DALIL_APP.gps().fix || true);
+  await page.click('#btnSvStart');
+  await page.waitForSelector('#svLive:not([hidden])');
+  await page.evaluate(() => clearInterval(window.__sv));
+  const stroll = (H, seconds) => page.evaluate(({ H, seconds }) => {
+    const tr = window.DALIL_APP.tracker, t0 = (window.__simT ||= performance.now() + 5000);
+    let k = 0; for (; k < seconds * 50; k++) { const t = t0 + k * 20; tr.orient({ alpha: (360 - H) % 360, beta: 60, gamma: 0, absolute: true }, true, t); tr.motion({ accelerationIncludingGravity: { x: 0, y: 9.81 + 2.6 * Math.sin(2 * Math.PI * 1.8 * t / 1000), z: 0.3 } }, t); }
+    window.__simT = t0 + k * 20; return window.DALIL_APP.survey().s.pos;
+  }, { H, seconds });
+  const place = async (cat, name) => { await page.click('#btnSvPlace'); await page.click(`#svCats [data-svcat="${cat}"]`); if (name) await page.fill('#svName', name); await page.click('#btnSvSave'); };
+  await place('entrance', 'Main Entrance');
+  let p = await stroll(0, 8);                    // north along the corridor
+  assert.ok(p.y > 7 && Math.abs(p.x) < 1.5, `walked north: ${JSON.stringify(p)}`);
+  await place('lift', 'Lift A');
+  await stroll(90, 6);                            // east
+  await place('room', 'Room 101');
+  await stroll(270, 6.5);                         // back west, a bit too far
+  await page.click('#btnSvBack'); await page.click('#svPickList [data-svplace="P002"]');
+  assert.match(await page.textContent('#svStatus'), /Straightened/);
+  assert.ok(await page.$$eval('#svMap .sv-line', l => l.length) >= 1, 'the trail is drawn');
+  // Lift A to the first floor
+  await page.click('#btnSvFloor'); await page.fill('#svNewFloor', 'First floor'); await page.click('#svPickList [data-svplace="P002"]');
+  assert.equal(await page.textContent('#svFloorNow'), 'First floor');
+  await stroll(90, 7);
+  await place('room', 'Room 201');
+  // Saved as it goes: a reload would offer to continue
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.survey')).floors.length), 2);
+  await page.click('#btnSvFinish');
+  await page.waitForSelector('#svDone:not([hidden])');
+  assert.match(await page.textContent('#svDoneText'), /Test Hall: 2 floors, 4 places/);
+  const m = await page.evaluate(() => window.DALIL_APP.state.maps.filter(x => x.building.id === 'test-hall').map(x => ({ f: x.floor.name, n: x.points.length, geo: !!x.geo, src: x.source.type, corr: x.plan.corridors.length })));
+  assert.deepEqual(m.map(x => [x.f, x.n, x.geo, x.src]), [['Ground floor', 3, true, 'survey'], ['First floor', 2, true, 'survey']]);
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.userMaps')).filter(x => x.building.id === 'test-hall').length), 2, 'kept on the phone');
+  // Open it: from the entrance to Room 201 on the first floor, by the lift
+  await page.click('#btnSvOpen');
+  await pageIs(page, 'home');
+  assert.equal(await page.evaluate(() => window.DALIL_APP.state.map.building.name), 'Test Hall');
+  await search(page, 'Room 201');
+  await page.click('#results button[data-pick]');
+  await pageIs(page, 'route');
+  assert.match(await page.textContent('#routeVia'), /lift to First floor/i);
+  await page.click('#btnStart');
+  const st = (await steps(page)).join(' | ');
+  assert.match(st, /Take the lift up to First floor/, st);
+  assert.match(st, /Room 201/, st);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('every button is at least 48 px and text is readable (contrast) on the main screens, Night and Day', async () => {
   for (const theme of ['dark', 'light']) {
     const ctx = await browser.newContext({ ...devices['Pixel 7'], serviceWorkers: 'block' });

@@ -30,13 +30,15 @@ function hull(pts) {
 export function floorGeoJSON(map) {
   const T = geoTransform(map.geo), walls = [], all = [];
   for (const w of map.plan.walls) { if (w.length < 2) continue; const line = w.map(([x, y]) => T(x, y)); walls.push({ type: 'Feature', properties: { kind: 'wall' }, geometry: { type: 'LineString', coordinates: line } }); for (const c of line) all.push(c); }
+  const corridors = (map.plan.corridors || []).filter(w => w.length > 1).map(w => ({ type: 'Feature', properties: { kind: 'corridor' }, geometry: { type: 'LineString', coordinates: w.map(([x, y]) => T(x, y)) } }));
+  for (const f of corridors) for (const c of f.geometry.coordinates) all.push(c);
   let ring = map.building_context?.footprint;
   if (!ring) { const h = hull(all.filter((_, i) => i % 3 === 0)); ring = h.concat([h[0]]); }
   const doors = (map.plan.doors || []).filter(w => w.length > 1).map(w => ({ type: 'Feature', properties: { kind: 'door' }, geometry: { type: 'LineString', coordinates: w.map(([x, y]) => T(x, y)) } }));
   const places = map.points.filter(p => !p.virtual && p.nameEn).map(p => ({ id: p.id, nameEn: p.nameEn, nameAr: p.nameAr || p.nameEn, category: p.category, lngLat: T(p.x, p.y) }));
   const entrances = map.points.filter(p => p.category === 'entrance' || p.category === 'exit')
     .map(p => ({ type: 'Feature', properties: { kind: 'entrance', id: p.id, nameEn: p.nameEn, nameAr: p.nameAr || p.nameEn, main: p.category === 'entrance' }, geometry: { type: 'Point', coordinates: T(p.x, p.y) } }));
-  return { doors: { type: 'FeatureCollection', features: doors }, places, walls: { type: 'FeatureCollection', features: walls }, outline: { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { kind: 'outline' }, geometry: { type: 'Polygon', coordinates: [ring] } }] }, entrances: { type: 'FeatureCollection', features: entrances }, bounds: bbox(ring) };
+  return { corridors: { type: 'FeatureCollection', features: corridors }, doors: { type: 'FeatureCollection', features: doors }, places, walls: { type: 'FeatureCollection', features: walls }, outline: { type: 'FeatureCollection', features: [{ type: 'Feature', properties: { kind: 'outline' }, geometry: { type: 'Polygon', coordinates: [ring] } }] }, entrances: { type: 'FeatureCollection', features: entrances }, bounds: bbox(ring) };
 }
 function bbox(ring) { let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity; for (const [x, y] of ring) { a = Math.min(a, x); b = Math.min(b, y); c = Math.max(c, x); d = Math.max(d, y); } return [[a, b], [c, d]]; }
 
@@ -54,7 +56,7 @@ export function loadMapLibre(base = 'vendor/maplibre/') {
  *  providers: { choice, cfg }. onProvider(active, failedNames) reports which map is showing. */
 // Layer groups the visitor can switch on and off (checkboxes on the page).
 export const LAYERS = ['plan', 'places', 'outline', 'entrances', 'route', 'me'];
-const GROUPS = { plan: ['walls', 'doors'], outline: ['outline-fill', 'outline-line'], entrances: ['entr-ring', 'entr-label'], route: ['route-casing', 'route-line'], me: ['me-acc', 'me-dot'] };
+const GROUPS = { plan: ['corridors', 'walls', 'doors'], outline: ['outline-fill', 'outline-line'], entrances: ['entr-ring', 'entr-label'], route: ['route-casing', 'route-line'], me: ['me-acc', 'me-dot'] };
 
 export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvider, attribution, providers = {}, layers = {}, opacity = 0.85, pins = false, onPick = null, iconFor = null, padding = 60 }) {
   const maplibregl = await loadMapLibre();
@@ -76,7 +78,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     // Start as the small (i) button: the credits open on tap, so they never cover the map.
     const fold = () => el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'); fold(); setTimeout(fold, 0); m.once('load', fold); };
   setAttribution();
-  const accent = '#FFC700', ink = dark ? '#E9E7E1' : '#2B2E33', OURS = new Set(['outline', 'walls', 'doors', 'entrances', 'me', 'route']);
+  const accent = '#FFC700', ink = dark ? '#E9E7E1' : '#2B2E33', OURS = new Set(['outline', 'walls', 'doors', 'corridors', 'entrances', 'me', 'route']);
   let meData = { type: 'FeatureCollection', features: [] };
   // DALIL's own layers go on top of whichever street map is showing (again after every style switch).
   const addOverlays = () => {
@@ -84,6 +86,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     m.addSource('outline', { type: 'geojson', data: gj.outline });
     m.addSource('walls', { type: 'geojson', data: gj.walls });
     m.addSource('doors', { type: 'geojson', data: gj.doors });
+    m.addSource('corridors', { type: 'geojson', data: gj.corridors });
     m.addSource('route', { type: 'geojson', data: routeData });
     m.addSource('entrances', { type: 'geojson', data: gj.entrances });
     m.addSource('me', { type: 'geojson', data: meData });
@@ -91,6 +94,8 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     m.addLayer({ id: 'outline-line', type: 'line', source: 'outline', paint: { 'line-color': accent, 'line-width': 2 } });
     // On satellite the plan is drawn light with a dark edge, so it reads over roofs and trees.
     const sat = active.kind === 'satellite', planInk = sat ? '#FFFFFF' : ink;
+    // Surveyed corridors: lanes about 1.8 m wide (the width follows the zoom, so it stays true to scale).
+    m.addLayer({ id: 'corridors', type: 'line', source: 'corridors', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': sat ? '#FFFFFF' : '#C9D7F2', 'line-opacity': sat ? 0.55 : 0.9, 'line-width': ['interpolate', ['exponential', 2], ['zoom'], 15, 0.42, 22, 54] } });
     m.addLayer({ id: 'walls', type: 'line', source: 'walls', minzoom: 15, paint: { 'line-color': planInk, 'line-opacity': opacity, 'line-width': ['interpolate', ['linear'], ['zoom'], 15, .4, 18, 1.1, 21, 2.4] } });
     m.addLayer({ id: 'doors', type: 'line', source: 'doors', minzoom: 17, paint: { 'line-color': accent, 'line-opacity': opacity * .8, 'line-width': ['interpolate', ['linear'], ['zoom'], 17, .5, 21, 1.6] } });
     m.addLayer({ id: 'route-casing', type: 'line', source: 'route', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': '#0B0D10', 'line-width': ['interpolate', ['linear'], ['zoom'], 15, 4, 20, 10] } });
@@ -151,7 +156,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
       onProvider?.(active, failed.slice()); return active;
     },
     /** Overlay another floor of the same building (needs its own geo). */
-    setFloor(next) { if (!next?.geo) return; gj = floorGeoJSON(next); ctl.geojson = gj; for (const k of ['walls', 'doors', 'outline', 'entrances']) m.getSource(k)?.setData(gj[k]); drawPlaces(); },
+    setFloor(next) { if (!next?.geo) return; gj = floorGeoJSON(next); ctl.geojson = gj; for (const k of ['walls', 'doors', 'corridors', 'outline', 'entrances']) m.getSource(k)?.setData(gj[k]); drawPlaces(); },
     setOpacity(v) { opacity = v; if (m.getLayer('walls')) m.setPaintProperty('walls', 'line-opacity', v); if (m.getLayer('doors')) m.setPaintProperty('doors', 'line-opacity', v * .8); },
     /** The planned route on this floor, as [lng, lat] points, or null. */
     setRoute(coords) { routeData = { type: 'FeatureCollection', features: coords?.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }] : [] }; m.getSource('route')?.setData(routeData); },

@@ -22,19 +22,20 @@ export class MapView {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     const grow = (x, y) => { if (x < minX) minX = x; if (x > maxX) maxX = x; if (y < minY) minY = y; if (y > maxY) maxY = y; };
     for (const w of map.plan.walls) for (const [x, y] of w) grow(x, y);
+    for (const w of map.plan.corridors || []) for (const [x, y] of w) grow(x, y);   // surveyed buildings: walked corridors, no walls
     for (const p of map.points) grow(p.x, p.y);
     const pad = 3;
     this.b = { minX: minX - pad, maxY: maxY + pad, W: maxX - minX + 2 * pad, H: maxY - minY + 2 * pad };
     const P = ([x, y]) => `${(x - this.b.minX).toFixed(2)} ${(this.b.maxY - y).toFixed(2)}`;
     const d = lines => lines.filter(l => l.length > 1).map(l => 'M' + l.map(P).join('L')).join('');
-    const walls = d(map.plan.walls), doors = d(map.plan.doors || []);
+    const walls = d(map.plan.walls), doors = d(map.plan.doors || []), corr = d(map.plan.corridors || []), cw = map.plan.corridorWidth || 1.8;
     const { W, H } = this.b, gid = `grid${++MapView.uid}`;
     this.world.innerHTML =
       `<svg width="${W * BASE}" height="${H * BASE}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
         <defs><pattern id="${gid}" width="2" height="2" patternUnits="userSpaceOnUse"><path class="plan-grid" d="M2 0H0V2"/></pattern></defs>
         <rect class="plan-floor" x="${pad - 1}" y="${pad - 1}" width="${W - 2 * pad + 2}" height="${H - 2 * pad + 2}" rx="1"/>
         <rect class="plan-gridfill" x="${pad - 1}" y="${pad - 1}" width="${W - 2 * pad + 2}" height="${H - 2 * pad + 2}" fill="url(#${gid})"/>
-        <path class="plan-doors" d="${doors}"/><path class="plan-walls" d="${walls}"/>
+        <path class="plan-corr" d="${corr}" stroke-width="${cw}"/><path class="plan-doors" d="${doors}"/><path class="plan-walls" d="${walls}"/>
         <path class="plan-closure" d="${d((map.closures || []).map(c => [c.a, c.b]))}"/>
         <circle class="gps-acc" cx="0" cy="0" r="0" visibility="hidden"/><g class="route-layer"><path class="route-done" d=""/><path class="route-glow" d=""/><path class="route-casing" d=""/><path class="route-main" d=""/><path class="route-flow" d=""/></g>
       </svg>`;

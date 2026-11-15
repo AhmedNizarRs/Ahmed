@@ -9,6 +9,7 @@ import { Tracker, Follower, wrap180 } from './tracker.js';
 import { CameraGuide, QRScanner, openCamera, closeCamera, cameraError } from './camera.js';
 import { availableProviders, allProviders } from './providers.js';
 import { Locator, planFromGeo, locationGranted } from './locate.js';
+import { Survey } from './survey.js';
 
 /* =========================================================================
    Settings, storage and the building's config (every read/write guarded: private mode may throw)
@@ -51,6 +52,8 @@ const $ = s => document.querySelector(s);
 const $$ = s => [...document.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 const ico = name => svgIco(UI[name] || '');
+// All the plan's points (walls, and walked corridors for surveyed buildings) for fitting the view.
+const planPts = m => m.plan.walls.flat().concat((m.plan.corridors || []).flat());
 const catIco = c => svgIco(CAT_ICONS[c] || CAT_ICONS.room);
 const fillIcons = (root = document) => root.querySelectorAll('[data-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = ico(el.dataset.ico); });
 const pt = id => state.map?.points.find(p => p.id === id) || null;
@@ -246,7 +249,7 @@ async function loadFile(file) {
 /* =========================================================================
    Pages: one at a time, each with a Back button; the phone's back button works too
    ========================================================================= */
-const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav' };
+const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav', survey: '#pgSurvey' };
 const stack = ['home'];
 let pageNow = 'home', histOK = true, skipPop = 0;
 function display(name) {
@@ -291,9 +294,11 @@ function enterPage(name, prev) {
   else if (name === 'map') { state.viewMap ||= state.map; renderFloorMap(); }
   else if (name === 'settings') renderSettings();
   else if (name === 'outdoor') openOutdoor();
+  else if (name === 'survey') renderSurvey();
   if (!['nav', 'route', 'search', 'home'].includes(name) && prev !== name) requestAnimationFrame(() => $(PAGES[name]).querySelector('[data-back]')?.focus?.({ preventScroll: true }));
 }
 function leavePage(name) {
+  if (name === 'survey') svStop();
   if (name === 'where') stopWhere();
   if (name === 'map') { pinPoint = null; $('#pinCard').hidden = true; }
   if (name === 'outdoor') { outdoorSeq++; outdoorCtl?.destroy(); outdoorCtl = null; }
@@ -400,7 +405,7 @@ async function renderHomeMap(from = pt(state.fromId)) {
     homeMap.setMap(homeFloor);
     homeMap.setYou(homeFloor === state.map ? from : null, from?.facingDeg ?? 90);
     homeMap.setRoute(null); homeMap.setDest(null);
-    requestAnimationFrame(() => homeMap.fit({ pts: homeFloor.plan.walls.flat(), padTop: 170, padBot: 250, padL: 20, padR: 70, maxK: 3, tilt: 30 }, false));
+    requestAnimationFrame(() => homeMap.fit({ pts: planPts(homeFloor), padTop: 170, padBot: 250, padL: 20, padR: 70, maxK: 3, tilt: 30 }, false));
     return;
   }
   const bid = state.map.building.id;
@@ -446,7 +451,7 @@ function buildingsList() {
   for (const m of state.maps) { const b = by.get(m.building.id) || { id: m.building.id, name: m.building.name, maps: [] }; b.maps.push(m); by.set(b.id, b); }
   for (const b of by.values()) {
     const g = b.maps.find(m => m.geo);
-    if (g) { const xs = g.plan.walls.flat(), T = geoTransform(g.geo); let a = Infinity, c = -Infinity, d = Infinity, e = -Infinity;
+    if (g) { const xs = planPts(g), T = geoTransform(g.geo); let a = Infinity, c = -Infinity, d = Infinity, e = -Infinity;
       for (const [x, y] of xs) { a = Math.min(a, x); c = Math.max(c, x); d = Math.min(d, y); e = Math.max(e, y); }
       b.at = T((a + c) / 2, (d + e) / 2); b.radius = Math.hypot(c - a, e - d) / 2; }
   }
@@ -659,7 +664,7 @@ function renderFloorMap() {
   rail.setAttribute('aria-label', t('floorsLabel'));
   rail.innerHTML = floors.length < 2 ? '' : floors.map(f => `<button class="floor-btn${f === state.map ? ' here' : ''}" type="button" data-floor="${esc(f.floor.id)}" aria-pressed="${f === vm}" aria-label="${esc(t('viewFloor', floorName(f.floor)))}${f === state.map ? '. ' + esc(t('yourFloor')) : ''}">${esc(floorShort(f.floor))}</button>`).join('');
   $('#mapTip').hidden = !!pinPoint;
-  requestAnimationFrame(() => mainMap.fit({ pts: vm.plan.walls.flat(), padTop: 96, padBot: pinPoint ? 200 : 80, padL: 20, padR: 84, maxK: 2.6 }, false));
+  requestAnimationFrame(() => mainMap.fit({ pts: planPts(vm), padTop: 96, padBot: pinPoint ? 200 : 80, padL: 20, padR: 84, maxK: 2.6 }, false));
 }
 function onMapTap({ x, y }) {
   const vm = state.viewMap, R = routerOf(vm);
@@ -1411,12 +1416,170 @@ async function proximityHint() {
 }
 function setProvider(v) { settings.mapProvider = v; saveSettings(); $('#setProvider').value = v; if (pageNow === 'outdoor') openOutdoor(); }
 
+
+/* =========================================================================
+   Survey: map a building with no floor plan by walking it (survey.js). The compass and step counter draw the
+   trail, the person marks places, coming back to a place straightens the trail, lifts and stairs link floors.
+   The walk is saved on the phone as it goes, so a closed tab or a phone call loses nothing.
+   ========================================================================= */
+const SV_KEY = 'dalil.survey';
+const SV_CATS = ['entrance', 'room', 'toilet', 'toilet_acc', 'lift', 'stairs', 'prayer', 'cafe', 'reception', 'exit'];
+const sv = { s: null, cat: 'entrance', pick: null, maps: null, wake: null, saveN: 0, view: null };
+const svLoad = () => { const d = store.get(SV_KEY, null); return d?.floors?.length ? Object.assign(new Survey({ building: d.building }), d) : null; };
+const svSave = () => { if (sv.s) store.set(SV_KEY, sv.s); };
+function renderSurvey() {
+  const live = !!sv.s && !sv.maps;
+  $('#svSetup').hidden = live || !!sv.maps; $('#svLive').hidden = !live; $('#svDone').hidden = !sv.maps;
+  if (!live && !sv.maps) {
+    $('#svFloor').value ||= t('svFloorDefault');
+    const old = svLoad(); $('#btnSvResume').hidden = !old;
+    if (old) $('#btnSvResume').lastElementChild.textContent = `${t('svResume')}: ${old.building}`;
+  }
+  if (live) svDraw();
+}
+async function svStart(resume = false) {
+  let s = null;
+  if (resume) s = svLoad();
+  else {
+    const name = $('#svBuilding').value.trim(); if (!name) { toast(t('svNeedName')); $('#svBuilding').focus(); return; }
+    s = new Survey({ building: name, stride: STRIDE[settings.pace] });
+  }
+  if (!s) return;
+  const sensors = tracker.start();          // inside the tap: the iPhone asks for motion here
+  if (!locator.on && settings.gps && navigator.geolocation) locator.start(onFix, onGpsError);
+  const res = await sensors;
+  if (!(res.orientation && res.motion)) { tracker.stop(); toast(t('svNeedSensors'), 6000); return; }
+  if (!resume) {
+    const f = locator.fresh(30000);
+    s.startFloor($('#svFloor').value.trim() || t('svFloorDefault'), { origin: f && f.acc <= 50 ? { lng: f.lng, lat: f.lat, acc: f.acc } : null });
+  }
+  sv.s = s; sv.maps = null; sv.view = null; svSave();
+  tracker.onStep = svStep;
+  try { sv.wake = await navigator.wakeLock?.request('screen'); } catch { sv.wake = null; }
+  renderSurvey();
+  svStatus(s.floor.places.length ? t('svWalk', s.steps) : t('svFirstPlaceHint'));
+  announce(t('svWalk', s.steps));
+}
+function svStep() {
+  const s = sv.s; if (!s || s.paused || pageNow !== 'survey') return;
+  s.step(tracker.heading);
+  // No GPS at the door yet? Take the first good fix in the first few steps, moved back to where you started.
+  if (!s.origin && s.steps < 12) {
+    const f = locator.fresh(8000);
+    if (f && f.acc <= 50) { const r = Math.PI / 180, mlng = 111412.84 * Math.cos(f.lat * r), mlat = 111132.92 - 559.82 * Math.cos(2 * f.lat * r);
+      s.origin = { lng: f.lng - s.pos.x / mlng, lat: f.lat - s.pos.y / mlat, acc: f.acc }; }
+  }
+  if (++sv.saveN % 10 === 0) svSave();
+  svDraw(); if (s.steps % 5 === 0 || s.floor.places.length) $('#svStats').textContent = t('svStats', Math.round(s.dist), svPlaces().length);
+}
+function svStop() {
+  if (sv.s) svSave();
+  if (tracker.onStep === svStep) { tracker.onStep = null; if (!nav.active) tracker.stop(); }
+  sv.wake?.release?.().catch(() => {}); sv.wake = null;
+  if (!sv.maps) sv.s = null;     // the walk stays saved: "Continue the unfinished walk"
+}
+const svPlaces = () => { const seen = new Map(); (sv.s?.floors || []).forEach((f, i) => f.places.forEach(p => seen.set(p.link || i + ':' + p.id, p))); return [...seen.values()]; };   // a lift on two floors is one place
+function svStatus(text) { $('#svStatus').textContent = text; }
+// The live trail: a little SVG, north up, scaled to fit, with you as the blue dot.
+function svDraw() {
+  const s = sv.s, el = $('#svMap'); if (!s?.floor) return;
+  $('#svFloorNow').textContent = s.floor.name;
+  $('#svStats').textContent = t('svStats', Math.round(s.dist), svPlaces().length);
+  const lines = s.trail(), pts = lines.flat().concat(s.floor.places.map(p => [p.x, p.y]), [[s.pos.x, s.pos.y]]);
+  let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
+  for (const [x, y] of pts) { a = Math.min(a, x); b = Math.min(b, y); c = Math.max(c, x); d = Math.max(d, y); }
+  const pad = 4, span = Math.max(16, c - a + 2 * pad, d - b + 2 * pad), cx = (a + c) / 2, cy = (b + d) / 2;
+  el.setAttribute('viewBox', `${cx - span / 2} ${-cy - span / 2} ${span} ${span}`);
+  const P = ([x, y]) => `${x.toFixed(2)},${(-y).toFixed(2)}`, w = (span / 60).toFixed(2);
+  el.innerHTML = lines.map(L => `<polyline class="sv-trail" points="${L.map(P).join(' ')}" stroke-width="${(1.8).toFixed(2)}"/><polyline class="sv-line" points="${L.map(P).join(' ')}" stroke-width="${w}"/>`).join('')
+    + s.floor.places.map(p => `<g class="sv-pl sv-${esc(p.category)}"><circle cx="${p.x.toFixed(2)}" cy="${(-p.y).toFixed(2)}" r="${(span / 45).toFixed(2)}"/><text x="${p.x.toFixed(2)}" y="${(-p.y - span / 28).toFixed(2)}" font-size="${(span / 26).toFixed(2)}">${esc(p.nameEn)}</text></g>`).join('')
+    + `<g class="sv-you" transform="translate(${P([s.pos.x, s.pos.y])}) rotate(${tracker.heading ?? 0})"><circle r="${(span / 30).toFixed(2)}"/><path d="M0 ${(-span / 14).toFixed(2)} L${(span / 40).toFixed(2)} ${(-span / 28).toFixed(2)} L${(-span / 40).toFixed(2)} ${(-span / 28).toFixed(2)}z"/></g>`;
+}
+function svOpenPlace() {
+  sv.cat = sv.s.floor.places.length ? 'room' : 'entrance';
+  $('#svCats').innerHTML = SV_CATS.map(c => `<button type="button" role="radio" class="sv-cat" data-svcat="${c}" aria-checked="${c === sv.cat}"><span class="ico">${catIco(c)}</span><span>${esc(t('cats')[c] || c)}</span></button>`).join('');
+  $('#svName').value = ''; $('#svNameAr').value = '';
+  openDlg($('#dlgSvPlace'));
+}
+function svSavePlace() {
+  const typed = $('#svName').value.trim(), nameEn = typed || STR.en.cats[sv.cat] || sv.cat, nameAr = $('#svNameAr').value.trim() || (typed ? '' : STR.ar.cats[sv.cat] || '');
+  const p = sv.s.addPlace({ nameEn, nameAr, category: sv.cat });
+  $('#dlgSvPlace').close(); svSave(); svDraw();
+  const msg = t('svAdded', p.nameEn); svStatus(msg); announce(msg); navigator.vibrate?.(40);
+}
+function svOpenPick(kind) {
+  const fl = sv.s.floor, list = kind === 'floor' ? fl.places.filter(p => p.category === 'lift' || p.category === 'stairs') : fl.places;
+  if (!list.length) { toast(t(kind === 'floor' ? 'svNoLinks' : 'svNoPlaces')); return; }
+  sv.pick = kind;
+  $('#svPickTitle').textContent = t(kind === 'floor' ? 'svPickFloor' : 'svPickBack');
+  $('#svNewFloorWrap').hidden = kind !== 'floor';
+  if (kind === 'floor') $('#svNewFloor').value = '';
+  $('#svPickList').innerHTML = list.map(p => `<li><button class="row-btn" type="button" data-svplace="${esc(p.id)}"><span class="r-ico"><span class="ico">${catIco(p.category)}</span></span><span class="r-main"><span class="r-name">${esc(p.nameEn)}</span></span></button></li>`).join('');
+  openDlg($('#dlgSvPick'));
+}
+function svPicked(id) {
+  const s = sv.s;
+  if (sv.pick === 'floor') {
+    const name = $('#svNewFloor').value.trim(); if (!name) { $('#svNewFloor').focus(); return; }
+    s.changeFloor(id, name); $('#dlgSvPick').close();
+    const msg = t('svNewFloorNow', name); svStatus(msg); announce(msg);
+  } else {
+    const err = s.backAt(id); $('#dlgSvPick').close();
+    const msg = t('svFixed', fmtM(err)); svStatus(msg); announce(msg);
+  }
+  svSave(); svDraw();
+}
+function svFinish() {
+  const s = sv.s; if (!svPlaces().length) { toast(t('svNoPlaces')); return; }
+  const maps = s.toMaps();
+  const user = store.get('dalil.userMaps', []).filter(o => o.building.id !== maps[0].building.id);
+  for (const m of maps) { state.maps = state.maps.filter(o => !(o.building.id === m.building.id && o.floor.id === m.floor.id)); addMap(m); user.push(m); }
+  store.set('dalil.userMaps', user);
+  try { localStorage.removeItem(SV_KEY); } catch { /* private mode */ }
+  sv.maps = maps;
+  if (tracker.onStep === svStep) { tracker.onStep = null; tracker.stop(); }
+  $('#svDoneText').textContent = t('svDoneText', s.building, maps.length, svPlaces().length) + (s.origin ? '' : ' ' + t('svGpsNone'));
+  renderSurvey(); announce(t('svDoneTitle'));
+  analytics.add('survey_done', { floors: maps.length, places: svPlaces().length });
+}
+function svShare() {
+  const maps = sv.maps; if (!maps) return;
+  const body = JSON.stringify(maps.length === 1 ? maps[0] : { format: 'dalil-maps', maps }, null, 1);
+  const name = `dalil-map_${maps[0].building.id}_survey.json`, file = new File([body], name, { type: 'application/json' });
+  if (navigator.canShare?.({ files: [file] })) { navigator.share({ files: [file], title: maps[0].building.name }).catch(() => {}); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+function svOpenMap() {
+  const m = sv.maps?.[0]; if (!m) return;
+  sv.maps = null; sv.s = null;
+  goHome(); homeFloor = null; selectFloor(state.maps.find(o => o.building.id === m.building.id && o.floor.id === m.floor.id) || m); state.fromManual = false;
+  if (homeCtl) homeCtl.frame();
+}
+function bindSurvey() {
+  $('#btnSurvey').onclick = $('#btnSurveyHome').onclick = () => { sv.maps = null; go('survey'); };
+  $('#btnSvStart').onclick = () => svStart(false);
+  $('#btnSvResume').onclick = () => svStart(true);
+  $('#btnSvPlace').onclick = svOpenPlace;
+  $('#btnSvSave').onclick = svSavePlace;
+  $('#svName').addEventListener('keydown', e => { if (e.key === 'Enter') svSavePlace(); });
+  $('#btnSvBack').onclick = () => svOpenPick('back');
+  $('#btnSvFloor').onclick = () => svOpenPick('floor');
+  $('#btnSvPause').onclick = () => { const s = sv.s; if (!s) return; s.paused = !s.paused; $('#btnSvPause').setAttribute('aria-pressed', s.paused); $('#btnSvPause').textContent = t(s.paused ? 'svGoOn' : 'svPause'); svStatus(s.paused ? t('svPaused') : t('svWalk', s.steps)); };
+  $('#btnSvFinish').onclick = svFinish;
+  $('#btnSvShare').onclick = svShare;
+  $('#btnSvOpen').onclick = svOpenMap;
+  $('#svCats').addEventListener('click', e => { const b = e.target.closest('[data-svcat]'); if (!b) return; sv.cat = b.dataset.svcat; $$('#svCats [data-svcat]').forEach(x => x.setAttribute('aria-checked', x === b)); if (!$('#svName').value) $('#svName').focus(); });
+  $('#svPickList').addEventListener('click', e => { const b = e.target.closest('[data-svplace]'); if (b) svPicked(b.dataset.svplace); });
+}
+
 /* =========================================================================
    Wiring
    ========================================================================= */
 function bind() {
   $('#btnLang').onclick = () => setLang(settings.lang === 'ar' ? 'en' : 'ar');
   $('#btnSettings').onclick = () => go('settings');
+  bindSurvey();
   $('#btnSearchOpen').onclick = () => go('search');
   $('#btnFrom').onclick = () => go('where');
   $('#btnScanHome').onclick = () => { go('where'); startWhereScan(); };
@@ -1579,6 +1742,6 @@ async function init() {
 }
 
 window.DALIL_APP = { state, settings, spoken, nav, tracker, analytics, parseLink, buildSteps, routeFor, pointOf, go, page: () => pageNow, config: () => cfg,
-  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, homeMap: () => homeCtl, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
+  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, homeMap: () => homeCtl, survey: () => sv, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));

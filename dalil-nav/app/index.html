@@ -87,6 +87,7 @@
         <li><button id="btnFloorMap" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="map"></span></span><span class="r-main"><span class="r-name" data-i18n="floorMap">Floor map</span><span class="r-sub" data-i18n="floorMapSub">See every floor and tap a place</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li id="liGettingHere" hidden><button id="btnGettingHere" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="building"></span></span><span class="r-main"><span class="r-name" data-i18n="gettingHere">Getting here</span><span id="ghSub" class="r-sub" data-i18n="gettingHereSub">Street map and directions to the entrance</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li><button id="btnScanHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="qr"></span></span><span class="r-main"><span class="r-name" data-i18n="scanSign">Scan a DALIL sign</span><span class="r-sub" data-i18n="scanSignSub">Tells the app exactly where you are</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnSurveyHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="walk"></span></span><span class="r-main"><span class="r-name" data-i18n="surveyBtn">Map a building by walking it</span><span class="r-sub" data-i18n="surveyRowSub">No floor plan needed</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li><button id="btnSettings" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="gear"></span></span><span class="r-main"><span class="r-name" data-i18n="settings">Settings</span><span class="r-sub" data-i18n="settingsSub">Language, text size, voice</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
       </ul>
       <p class="fine" data-i18n="aboutShort">DALIL helps you find your way inside. Building signs and staff always come first.</p>
@@ -102,10 +103,75 @@
   </section>
 
   <dialog id="dlgLayers" class="sheet-dlg" aria-labelledby="dlgLayersTitle">
-    <div class="sheet-head"><h2 id="dlgLayersTitle" data-i18n="mapLayers">Map and layers</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div class="dlg-head"><h2 id="dlgLayersTitle" data-i18n="mapLayers">Map and layers</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
     <div class="out-layers-body">
       <fieldset><legend data-i18n="baseMap">Base map</legend><div id="homeBases" class="opt-list" role="radiogroup"></div><p id="homeKeyNote" class="muted small" hidden></p></fieldset>
       <fieldset><legend data-i18n="layersTitle">Layers</legend><div id="homeChecks" class="opt-list"></div></fieldset>
+    </div>
+  </dialog>
+
+  <!-- ================= SURVEY: map a building by walking it (no floor plan) ================= -->
+  <section id="pgSurvey" class="page" data-page="survey" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="surveyTitle">Map a building</h1>
+    </header>
+    <main class="page-body survey">
+      <div id="svSetup">
+        <p class="sv-lead" data-i18n="surveyIntro">No floor plan? Walk the building with your phone and DALIL draws the map.</p>
+        <ol class="sv-how">
+          <li data-i18n="surveyHow1">Stand at the main entrance and tap Start.</li>
+          <li data-i18n="surveyHow2">Walk the corridors holding the phone in front of you.</li>
+          <li data-i18n="surveyHow3">At each place (room, toilets, lift, stairs…) tap “Add place here”.</li>
+          <li data-i18n="surveyHow4">Back at a place you already added? Tap “I’m back at a place” to straighten the map.</li>
+        </ol>
+        <label class="field"><span data-i18n="svBuildingName">Building name</span><input id="svBuilding" type="text" autocomplete="off"></label>
+        <label class="field"><span data-i18n="svFloorName">Floor</span><input id="svFloor" type="text" autocomplete="off"></label>
+        <button id="btnSvStart" class="btn primary xl" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="svStart">Start here</span></button>
+        <button id="btnSvResume" class="btn secondary" type="button" hidden><span class="ico" data-ico="play"></span><span data-i18n="svResume">Continue the unfinished walk</span></button>
+        <p class="muted small" data-i18n="svNote">It maps where you walk, not the walls. Your location stays on your phone until you share the map.</p>
+      </div>
+      <div id="svLive" hidden>
+        <div class="sv-top"><strong id="svFloorNow"></strong><span id="svStats" class="num"></span></div>
+        <div class="sv-view"><svg id="svMap" aria-hidden="true"></svg></div>
+        <p id="svStatus" class="sv-status" role="status"></p>
+        <div class="sv-actions">
+          <button id="btnSvPlace" class="btn primary xl" type="button"><span class="ico" data-ico="pin"></span><span data-i18n="svAddPlace">Add place here</span></button>
+          <div class="pair">
+            <button id="btnSvBack" class="btn secondary" type="button" data-i18n="svBackAt">I’m back at a place</button>
+            <button id="btnSvFloor" class="btn secondary" type="button" data-i18n="svChangeFloor">Change floor</button>
+          </div>
+          <div class="pair">
+            <button id="btnSvPause" class="btn secondary" type="button" aria-pressed="false" data-i18n="svPause">Pause</button>
+            <button id="btnSvFinish" class="btn secondary" type="button" data-i18n="svFinish">Finish</button>
+          </div>
+        </div>
+      </div>
+      <div id="svDone" hidden>
+        <span class="sv-done-ico"><span class="ico" data-ico="check"></span></span>
+        <h2 data-i18n="svDoneTitle">Your map is ready</h2>
+        <p id="svDoneText"></p>
+        <button id="btnSvOpen" class="btn primary xl" type="button" data-i18n="svOpen">Open it</button>
+        <button id="btnSvShare" class="btn secondary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="svShare">Share the map file</span></button>
+        <p class="muted small" data-i18n="svShareNote">Send the file to the DALIL team to publish it for everyone.</p>
+      </div>
+    </main>
+  </section>
+
+  <dialog id="dlgSvPlace" class="sheet-dlg" aria-labelledby="svPlaceTitle">
+    <div class="dlg-head"><h2 id="svPlaceTitle" data-i18n="svAddPlace">Add place here</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div class="sv-form">
+      <div id="svCats" class="sv-cats" role="radiogroup" data-i18n-aria="svWhat"></div>
+      <label class="field"><span data-i18n="svPlaceName">Name (as on the sign)</span><input id="svName" type="text" autocomplete="off"></label>
+      <label class="field"><span data-i18n="svPlaceNameAr">Arabic name (optional)</span><input id="svNameAr" type="text" dir="rtl" lang="ar" autocomplete="off"></label>
+      <button id="btnSvSave" class="btn primary xl" type="button" data-i18n="save">Save</button>
+    </div>
+  </dialog>
+  <dialog id="dlgSvPick" class="sheet-dlg" aria-labelledby="svPickTitle">
+    <div class="dlg-head"><h2 id="svPickTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div class="sv-form">
+      <label class="field" id="svNewFloorWrap" hidden><span data-i18n="svNewFloor">New floor name</span><input id="svNewFloor" type="text" autocomplete="off"></label>
+      <ul id="svPickList" class="rows"></ul>
     </div>
   </dialog>
 
@@ -259,6 +325,7 @@
       <fieldset class="set-group" id="setMapSec"><legend data-i18n="mapData">Building map</legend>
         <label class="field"><span data-i18n="building">Building</span><select id="setBuilding"></select></label>
         <label class="field"><span data-i18n="mapStyle">Street map</span><select id="setProvider"></select></label>
+        <button id="btnSurvey" class="btn secondary" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="surveyBtn">Map a building by walking it</span></button>
         <label class="btn secondary file-btn"><span class="ico" data-ico="map"></span><span data-i18n="loadMap">Load a map file</span><input id="fileMap" type="file" accept=".json,application/json"></label>
         <p id="loadMsg" class="muted" role="status"></p>
       </fieldset>

@@ -691,3 +691,36 @@ html.contrast .nav .hud-card { background: #000; border: 2px solid #FFE600; box-
 .hm-icon.sm { width: 3rem; height: 3rem; color: #5F6368; }
 .hm-chip-bld .ico { color: var(--guide) !important; }
 .row-btn.is-current .r-ico { background: var(--guide); color: #FFFFFF; }
+.plan-corr { fill: none; stroke: var(--corr, rgba(26, 115, 232, .14)); stroke-linecap: round; stroke-linejoin: round; }
+:root[data-theme="dark"] .plan-corr { stroke: rgba(120, 170, 255, .18); }
+
+/* ---------- Survey: map a building by walking it ---------- */
+.survey { display: grid; gap: 1rem; }
+.survey > div { display: grid; gap: 1rem; }
+.sv-lead { font-size: 1.1875rem; font-weight: 600; margin: 0; }
+.sv-how { margin: 0; padding-inline-start: 1.5rem; display: grid; gap: .5rem; color: var(--ink-2); }
+.survey .field input, .sv-form .field input { min-height: var(--tap); padding: .625rem .875rem; border-radius: var(--r); border: 1px solid var(--line); background: var(--bg-1); font-size: 1.0625rem; font-weight: 500; }
+.survey .field input:focus-visible, .sv-form .field input:focus-visible { outline: 3px solid var(--you); outline-offset: 1px; }
+.sv-top { display: flex; justify-content: space-between; align-items: baseline; gap: 1rem; font-size: 1.125rem; }
+.sv-view { aspect-ratio: 1; max-height: 52vh; width: 100%; border-radius: var(--r-lg); border: 1px solid var(--line); overflow: hidden;
+  background: radial-gradient(circle at 50% 50%, transparent 0 60%, rgba(0,0,0,.03)), repeating-linear-gradient(0deg, var(--line) 0 1px, transparent 1px 32px), repeating-linear-gradient(90deg, var(--line) 0 1px, transparent 1px 32px), var(--bg-1); }
+.sv-view svg { width: 100%; height: 100%; display: block; }
+.sv-trail { fill: none; stroke: rgba(26, 115, 232, .18); stroke-linecap: round; stroke-linejoin: round; }
+.sv-line { fill: none; stroke: #1A73E8; stroke-linecap: round; stroke-linejoin: round; }
+.sv-pl circle { fill: #fff; stroke: #EA4335; stroke-width: .35; }
+.sv-pl.sv-entrance circle, .sv-pl.sv-exit circle { stroke: #188038; }
+.sv-pl.sv-lift circle, .sv-pl.sv-stairs circle { stroke: #9334E6; }
+.sv-pl text { fill: var(--ink); paint-order: stroke; stroke: var(--bg-1); stroke-width: .4; text-anchor: middle; font-weight: 600; }
+.sv-you circle { fill: #2F7BFF; stroke: #fff; stroke-width: .35; }
+.sv-you path { fill: #2F7BFF; opacity: .7; }
+.sv-status { margin: 0; min-height: 1.5em; font-weight: 600; color: var(--ink-2); }
+.sv-actions { display: grid; gap: .75rem; }
+.sv-cats { display: grid; grid-template-columns: repeat(auto-fill, minmax(8.5rem, 1fr)); gap: .5rem; }
+.sv-cat { display: flex; align-items: center; gap: .5rem; min-height: var(--tap); padding: .5rem .75rem; border-radius: var(--r); border: 1px solid var(--line); background: var(--bg-1); font-weight: 600; text-align: start; }
+.sv-cat[aria-checked="true"] { border-color: #1A73E8; background: rgba(26, 115, 232, .1); box-shadow: inset 0 0 0 1px #1A73E8; }
+.sv-form { display: grid; gap: .875rem; }
+#svDone { justify-items: center; text-align: center; }
+.sv-done-ico { display: grid; place-items: center; width: 4.5rem; height: 4.5rem; border-radius: 50%; background: #188038; color: #fff; }
+.sv-done-ico .ico svg { width: 2.25rem; height: 2.25rem; }
+#svDone .btn { width: 100%; }
+@media (prefers-reduced-motion: no-preference) { .sv-you circle { transition: none; } }

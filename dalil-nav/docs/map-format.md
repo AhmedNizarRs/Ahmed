@@ -58,3 +58,7 @@ World position (optional, v2)
 - Set it in the Mapper (**World position**: two points + their lat/lng) or compute it exactly from survey-coordinate CAD (`data/test-calpoly-library/georef.py`).
 - `building_context` (optional): `{ "footprint": [[lng, lat], …], "height_m", "floors", "source" }`, e.g. from Overture Maps (ODbL; keep the attribution).
 - See `docs/data-providers.md`.
+
+Walked surveys (optional, v2)
+- Maps made with the visitor app's **Map a building by walking it** (`app/survey.js`) have `source: { "type": "survey", … }`, no walls (`plan.walls: []`) and `plan.corridors`: the walked lanes as polylines, with `plan.corridorWidth` (1.8 m). The app draws them as wide grey lanes on the floor plan and on the real map. `nav` is carved 0.9 m either side of the lanes (0.75 m for the wheelchair grid), cell 0.2 m.
+- `geo.origin` comes from the phone's GPS at the entrance and `bearing` is 0 (the compass is the plan's north), so a surveyed floor is as good as that fix (typically ±5–15 m outdoors at the door). Each floor has its own origin; floors are joined by `link` codes `LIFT-n` / `STAIR-n`.
