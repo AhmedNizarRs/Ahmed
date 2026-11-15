@@ -1,0 +1,4 @@
+﻿node_id,name_en,name_ar,category,x_m,y_m,facing,nfc_url
+P001,"Entrance MD19","المدخل MD19",entrance,39.44,3.96,0,https://dalil.app/t/uos-central-labs-b3-test/ground-floor/P001
+P002,"Entrance MD20","المدخل MD20",entrance,68.83,3.96,180,https://dalil.app/t/uos-central-labs-b3-test/ground-floor/P002
+P004,"Entrance Lobby","بهو المدخل",reception,54.14,3.96,90,https://dalil.app/t/uos-central-labs-b3-test/ground-floor/P004

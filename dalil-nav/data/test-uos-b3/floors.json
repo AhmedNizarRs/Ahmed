@@ -1,0 +1,247 @@
+{
+ "building": "UoS Central Labs B3 (test)",
+ "floors": [
+  {
+   "dxf": "b3_ground.dxf",
+   "floor": "Ground Floor",
+   "points": [
+    [
+     "Entrance MD19",
+     "المدخل MD19",
+     "entrance",
+     39.442,
+     3.959,
+     {
+      "node": true,
+      "face": 0
+     }
+    ],
+    [
+     "Entrance MD20",
+     "المدخل MD20",
+     "entrance",
+     68.832,
+     3.959,
+     {
+      "node": true,
+      "face": 180
+     }
+    ],
+    [
+     "Entrance MD5",
+     "المدخل MD5",
+     "entrance",
+     92.589,
+     71.574,
+     {
+      "face": 270
+     }
+    ],
+    [
+     "Entrance Lobby",
+     "بهو المدخل",
+     "reception",
+     54.137,
+     3.959,
+     {
+      "node": true,
+      "face": 90
+     }
+    ],
+    [
+     "Lift (west)",
+     "المصعد (الغربي)",
+     "lift",
+     36.853,
+     16.523,
+     {}
+    ],
+    [
+     "Lift (east)",
+     "المصعد (الشرقي)",
+     "lift",
+     71.65,
+     16.523,
+     {}
+    ],
+    [
+     "Stairs (west)",
+     "الدرج (الغربي)",
+     "stairs",
+     33.959,
+     11.954,
+     {}
+    ],
+    [
+     "Stairs (east)",
+     "الدرج (الشرقي)",
+     "stairs",
+     74.315,
+     11.954,
+     {}
+    ],
+    [
+     "Toilets (west)",
+     "دورات المياه (الغربية)",
+     "toilet",
+     33.579,
+     22.614,
+     {}
+    ],
+    [
+     "Toilets (east)",
+     "دورات المياه (الشرقية)",
+     "toilet",
+     74.315,
+     22.614,
+     {}
+    ],
+    [
+     "Analytical Chemistry Lab",
+     "مختبر الكيمياء التحليلية",
+     "room",
+     7.31,
+     63.35,
+     {}
+    ],
+    [
+     "Ultrasound Lab / Radiographic Skills Lab",
+     "مختبر الموجات فوق الصوتية / مختبر مهارات التصوير الشعاعي",
+     "room",
+     7.31,
+     53.452,
+     {}
+    ],
+    [
+     "Sand Casting Lab",
+     "مختبر السباكة الرملية",
+     "room",
+     5.787,
+     47.36,
+     {}
+    ],
+    [
+     "General Chemistry Lab (west)",
+     "مختبر الكيمياء العامة (الغربي)",
+     "room",
+     7.31,
+     37.843,
+     {}
+    ],
+    [
+     "Organic Chemistry Lab",
+     "مختبر الكيمياء العضوية",
+     "room",
+     6.929,
+     19.949,
+     {}
+    ],
+    [
+     "Pharmaceutical Technology Lab",
+     "مختبر التقنية الصيدلانية",
+     "room",
+     22.538,
+     17.665,
+     {}
+    ],
+    [
+     "Biotechnology Research Lab",
+     "مختبر أبحاث التقنية الحيوية",
+     "room",
+     22.919,
+     35.939,
+     {}
+    ],
+    [
+     "General Chemistry Lab (centre)",
+     "مختبر الكيمياء العامة (الأوسط)",
+     "room",
+     37.005,
+     35.178,
+     {}
+    ],
+    [
+     "Materials & Mechanics Lab / Structures & Materials Lab",
+     "مختبر المواد والميكانيكا / مختبر الإنشاءات والمواد",
+     "room",
+     54.518,
+     28.325,
+     {}
+    ],
+    [
+     "Mechanics Lab",
+     "مختبر الميكانيكا",
+     "room",
+     54.137,
+     15.0,
+     {}
+    ],
+    [
+     "Lecture Room",
+     "قاعة المحاضرات",
+     "room",
+     62.513,
+     15.0,
+     {}
+    ],
+    [
+     "Multi Purpose Workshop / Engineering Workshop",
+     "الورشة متعددة الأغراض / الورشة الهندسية",
+     "room",
+     79.645,
+     37.462,
+     {}
+    ],
+    [
+     "Geotechnical Lab",
+     "مختبر الجيوتقنية",
+     "room",
+     86.497,
+     18.426,
+     {}
+    ],
+    [
+     "Fluid Mechanics Lab / Wind Energy Lab",
+     "مختبر ميكانيكا الموائع / مختبر طاقة الرياح",
+     "room",
+     101.345,
+     64.492,
+     {}
+    ],
+    [
+     "Fluid Mechanics Lab (CEE)",
+     "مختبر ميكانيكا الموائع (الهندسة المدنية والبيئية)",
+     "room",
+     101.345,
+     48.883,
+     {}
+    ],
+    [
+     "Radiation Detection Lab",
+     "مختبر الكشف الإشعاعي",
+     "room",
+     101.345,
+     35.939,
+     {}
+    ],
+    [
+     "Applied Radiation Measurement Lab",
+     "مختبر القياس الإشعاعي التطبيقي",
+     "room",
+     101.345,
+     21.472,
+     {}
+    ]
+   ],
+   "geo": {
+    "origin": [
+     55.47785903,
+     25.28763324
+    ],
+    "bearing": 124.0,
+    "scale": 1.0,
+    "source": "Google Maps place pin + roof outline in Esri World Imagery (106 x 61 m, edges at 34°/124°); about ±5 m and ±2°, not surveyed"
+   }
+  }
+ ]
+}
