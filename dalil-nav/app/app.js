@@ -729,7 +729,7 @@ function renderFloorMap() {
   rail.setAttribute('aria-label', t('floorsLabel'));
   rail.innerHTML = floors.length < 2 ? '' : floors.map(f => `<button class="floor-btn${f === state.map ? ' here' : ''}" type="button" data-floor="${esc(f.floor.id)}" aria-pressed="${f === vm}" aria-label="${esc(t('viewFloor', floorName(f.floor)))}${f === state.map ? '. ' + esc(t('yourFloor')) : ''}">${esc(floorShort(f.floor))}</button>`).join('');
   $('#mapTip').hidden = !!pinPoint;
-  requestAnimationFrame(() => mainMap.fit({ pts: planPts(vm), padTop: 96, padBot: pinPoint ? 200 : 80, padL: 20, padR: 84, maxK: 2.6 }, false));
+  requestAnimationFrame(() => mainMap.fit({ pts: planPts(vm), padTop: 110, padBot: pinPoint ? 200 : 90, padL: 12, padR: 12, maxK: 2.6 }, false));
 }
 function onMapTap({ x, y }) {
   const vm = state.viewMap, R = routerOf(vm);
@@ -1768,6 +1768,7 @@ function bind() {
   $('#hudCard').addEventListener('click', () => $('#btnRepeat').click());
   $('#btnSheet').onclick = () => { if ($('#homeSheet').dataset.dragged) return; setSheet(!$('#homeSheet').classList.contains('open')); };
   bindSheetDrag();
+  document.addEventListener('pointerdown', e => { if (e.target.closest('.btn.primary, .tile, .hm-fab, .turn-bub')) buzz(8); }, { passive: true });   // a light tick under the finger (Android)
   $('#homeChips').addEventListener('click', e => { if (e.target.closest('#chipBuildings')) { setSheet(true); requestAnimationFrame(() => $('#secBuildings').scrollIntoView({ block: 'start' })); } });
   $('#buildingList').addEventListener('click', e => { if (e.target.closest('#btnMoreBld')) { state.showFarBld = true; renderBuildings(); return; } const b = e.target.closest('[data-building]'); if (b) { state.fromManualBuilding = true; openBuilding(b.dataset.building); } });
   $('#btnNearOpen').onclick = () => { state.fromManualBuilding = true; openBuilding($('#nearCard').dataset.bld); };

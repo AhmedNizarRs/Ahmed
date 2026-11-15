@@ -84,9 +84,9 @@ button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
 [dir="rtl"] .flip-rtl { transform: scaleX(-1); }
 .muted { color: var(--ink-3); }
 .small { font-size: .9375rem; }
-.num { font-family: var(--mono); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
+.num { font-family: var(--font); font-variant-numeric: tabular-nums; letter-spacing: -.01em; }
 [dir="rtl"] .nav-remain, [dir="rtl"] #arrivedStats, [dir="rtl"] .r-end, [dir="rtl"] .tile-sub { font-family: var(--font-ar); letter-spacing: 0; }   /* Arabic words must join */
-.eyebrow { font-family: var(--mono); font-size: .8125rem; font-weight: 500; text-transform: uppercase; letter-spacing: .14em; color: var(--ink-3); }
+.eyebrow { font-family: var(--font); font-size: .875rem; font-weight: 600; letter-spacing: .005em; color: var(--ink-3); }
 [dir="rtl"] .eyebrow { font-family: var(--font-ar); letter-spacing: 0; text-transform: none; font-size: .9375rem; }
 h1, h2, h3, p { margin: 0; }
 
@@ -132,11 +132,13 @@ h1, h2, h3, p { margin: 0; }
 
 /* ---------- Buttons ---------- */
 .btn { position: relative; display: inline-flex; align-items: center; justify-content: center; gap: .625rem; min-height: var(--tap); padding: .75rem 1.25rem; border-radius: var(--r); border: 1px solid transparent; font-weight: 650; font-size: 1.125rem; text-decoration: none; text-align: center; line-height: 1.2; transition: transform .14s var(--ease), box-shadow .2s, background .2s, border-color .2s; width: 100%; min-width: 0; overflow-wrap: anywhere; }
-.btn:active:not(:disabled) { transform: scale(.985); }
+.btn:active:not(:disabled) { transform: scale(.97); }
 .btn:disabled { opacity: .4; cursor: not-allowed; }
-.btn.primary { color: var(--on-brand); background: linear-gradient(180deg, var(--brand-2), var(--brand) 55%, var(--brand-3)) var(--brand); border-color: rgba(255, 214, 80, .9); box-shadow: inset 0 1px 0 rgba(255, 255, 255, .55), 0 0 0 1px rgba(255, 199, 0, .25), 0 10px 28px var(--brand-glow); }
-.btn.primary:hover:not(:disabled) { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .6), 0 0 0 1px rgba(255, 199, 0, .4), 0 12px 34px var(--brand-glow); }
-.btn.secondary { color: var(--ink); background: linear-gradient(180deg, var(--hi), transparent), var(--bg-1); border-color: var(--line-2); }
+.btn.primary { color: var(--on-brand); background: var(--brand); border-color: transparent; box-shadow: 0 1px 2px rgba(0, 0, 0, .14), 0 2px 8px rgba(0, 0, 0, .08); }
+.btn.primary:hover:not(:disabled) { background: var(--brand-2); }
+.btn.primary:active:not(:disabled) { background: var(--brand-3); box-shadow: 0 1px 1px rgba(0, 0, 0, .14); }
+.btn.secondary { color: var(--ink); background: var(--bg-1); border-color: var(--line-2); }
+.btn.secondary:active:not(:disabled), .btn.tertiary:active:not(:disabled) { background: var(--bg-2); }
 .btn.secondary:hover:not(:disabled) { border-color: var(--line-3); }
 .btn.tertiary { color: var(--ink); background: var(--bg-2); border-color: var(--line); }
 .btn.xl { min-height: var(--tap-lg); font-size: 1.3125rem; border-radius: var(--r-lg); letter-spacing: .01em; }
@@ -765,3 +767,42 @@ html.contrast .nav .hud-card { background: #000; border: 2px solid #FFE600; box-
 .sv-done-ico .ico svg { width: 2.25rem; height: 2.25rem; }
 #svDone .btn { width: 100%; }
 @media (prefers-reduced-motion: no-preference) { .sv-you circle { transition: none; } }
+
+/* ================= Design pass 6 (Nov 2026): one calm system ================= */
+/* Day theme: no brand glows. */
+:root[data-theme="light"] { --brand-glow: rgba(0, 0, 0, 0); }
+/* Route page: one summary line; Start always in reach (sticky bar), camera beside it */
+.route-sum { display: grid; gap: .5rem; }
+.rs-line { margin: 0; display: flex; align-items: center; flex-wrap: wrap; gap: .25rem .5rem; font-size: 1.25rem; color: var(--ink-2); }
+.rs-line strong { font-size: 1.75rem; font-weight: 700; color: var(--ink); letter-spacing: -.02em; }
+.rs-line .ico { width: 1.5rem; height: 1.5rem; color: #188038; }
+.rs-sep { color: var(--ink-3); }
+.cta-bar { flex: none; display: grid; grid-template-columns: 1fr auto; gap: .625rem; width: 100%; max-width: 40rem; margin: 0 auto; padding: .75rem var(--gut) calc(.75rem + var(--safe-b)); background: var(--bg); border-top: 1px solid var(--line); box-shadow: 0 -6px 18px rgba(0, 0, 0, .05); }
+.cta-bar .btn.xl { min-height: 3.75rem; }
+.cam-btn { width: auto; min-width: 5.5rem; flex-direction: column; gap: .125rem; padding: .5rem .875rem; font-size: .875rem; }
+.cam-btn .ico { width: 1.5rem; height: 1.5rem; }
+.cam-btn[hidden] { display: none; }
+#pgRoute .dest-name { font-size: 1.625rem; }
+#pgRoute .page-body { padding-bottom: 1.25rem; }
+/* Press feedback on everything you tap */
+.tile, .row-btn, .chip, .hm-chip, .pill, .icon-btn, .hm-fab, .opt, .sv-cat { transition: transform .12s var(--ease), background-color .15s, border-color .15s; }
+.tile:active, .row-btn:active, .chip:active, .hm-chip:active, .pill:active, .hm-fab:active, .sv-cat:active { transform: scale(.97); }
+.icon-btn:active { transform: scale(.92); }
+/* Lists arrive softly, one after another */
+@keyframes rowIn { from { opacity: 0; transform: translateY(6px); } }
+#results li, #tiles li, #buildingList li, #recentList li, #savedList li { animation: rowIn .28s var(--ease) both; }
+#results li:nth-child(2), #tiles li:nth-child(2), #buildingList li:nth-child(2) { animation-delay: .03s; }
+#results li:nth-child(3), #tiles li:nth-child(3), #buildingList li:nth-child(3) { animation-delay: .06s; }
+#results li:nth-child(4), #tiles li:nth-child(4), #buildingList li:nth-child(4) { animation-delay: .09s; }
+#results li:nth-child(5), #tiles li:nth-child(5) { animation-delay: .12s; }
+#results li:nth-child(n+6), #tiles li:nth-child(n+6) { animation-delay: .15s; }
+html.reduce-motion #results li, html.reduce-motion #tiles li, html.reduce-motion #buildingList li, html.reduce-motion #recentList li, html.reduce-motion #savedList li, html.reduce-motion .page { animation: none; }
+@media (prefers-reduced-motion: reduce) { #results li, #tiles li, #buildingList li, .page { animation: none; } }
+/* Home map: at building zoom only the key places (entrances, toilets, lifts…); every room appears as you zoom in */
+#homeGL:not(.out-all) .out-pin:not(.out-key) { display: none !important; }
+/* Section titles: quieter, sentence case */
+.sec-title { letter-spacing: -.005em; }
+/* One typeface for the interface (Geist), tabular figures for numbers; mono stays only for codes and URLs */
+.tile-sub, .r-end, .floor-btn, .ctrl, .hm-floor { font-family: var(--font); font-variant-numeric: tabular-nums; }
+.r-end, .tile-sub { font-weight: 600; color: var(--ink-2); }
+.group-title, .set-group legend, .set-group .legend, .out-layers legend { font-family: var(--font); text-transform: none; letter-spacing: 0; font-size: .9375rem; font-weight: 650; color: var(--ink-2); }

@@ -122,7 +122,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
       if (pins) e.setAttribute('aria-label', name); else e.setAttribute('aria-hidden', 'true');   // MapLibre names every marker "Map marker"
       return mk;
     });
-    const showNames = () => { el.classList.toggle('out-names', m.getZoom() >= 18.5); el.classList.toggle('out-pins', m.getZoom() >= 17.2); el.classList.toggle('out-far', m.getZoom() < 16.5); }; showNames(); m.on('zoom', showNames);
+    const showNames = () => { el.classList.toggle('out-names', m.getZoom() >= 18.5); el.classList.toggle('out-pins', m.getZoom() >= 17.2); el.classList.toggle('out-far', m.getZoom() < 16.5); el.classList.toggle('out-all', m.getZoom() >= 18.3); }; showNames(); m.on('zoom', showNames);
     // Names that would cover another name or pin are hidden (key places first: entrances, toilets, lifts), so labels never pile up.
     const declutter = () => {
       if (!pins) return;

@@ -179,7 +179,7 @@ test('motion off: the app says so (never "tap Next"), offers Allow motion, signs
   await page.click('#btnStart');
   await page.waitForSelector('#motionCard:not([hidden])', { timeout: 5000 });
   assert.match(await page.textContent('#motionCard'), /Turn on motion/);
-  assert.match(await page.textContent('#motionBody'), /motion sensor, and it is switched off/);
+  assert.match(await page.textContent('#motionBody'), /Motion is off, so DALIL can’t follow your steps/);
   assert.ok(await page.isVisible('#btnAllowMotion'));
   assert.equal(await page.$('#btnNext'), null);
   assert.doesNotMatch(await page.textContent('#nav'), /tap Next/i);

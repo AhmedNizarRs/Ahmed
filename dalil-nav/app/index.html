@@ -78,9 +78,9 @@
           <button id="btnFrom" class="pill" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="change">Change</span></button>
           <button id="btnLocate" class="pill" type="button" hidden><span class="ico" data-ico="gps"></span><span data-i18n="useLocation">Use my location</span></button>
         </div>
-      <section id="secBuildings" class="sec" hidden><h2 class="sec-title" data-i18n="indoorMaps">Indoor maps</h2><ul id="buildingList" class="rows"></ul></section>
       <h2 class="sec-title" data-i18n="nearestTitle">Find the nearest</h2>
       <ul id="tiles" class="tiles"></ul>
+      <section id="secBuildings" class="sec" hidden><h2 class="sec-title" data-i18n="indoorMaps">Indoor maps</h2><ul id="buildingList" class="rows"></ul></section>
       <section id="secSaved" class="sec" hidden><h2 class="sec-title" data-i18n="secSaved">Saved places</h2><ul id="savedList" class="rows"></ul></section>
       <section id="secRecent" class="sec" hidden><h2 class="sec-title" data-i18n="secRecent">Recent</h2><ul id="recentList" class="rows"></ul></section>
       <ul class="rows more">
@@ -213,9 +213,8 @@
         <div class="dest-text"><h1 id="destName" class="dest-name" tabindex="-1"></h1><p id="destMeta" class="dest-meta"></p></div>
       </div>
       <div class="holo route-holo"><div id="routeMap" class="map-view holo-map" role="img"></div></div>
-      <div id="routeStats" class="stats" hidden>
-        <div class="stat"><strong id="statEta" class="num"></strong><span class="eyebrow" data-i18n="minWalk">min walk</span></div>
-        <div class="stat"><strong id="statDist" class="num"></strong><span class="eyebrow" data-i18n="metres">metres</span></div>
+      <div id="routeStats" class="route-sum" hidden>
+        <p class="rs-line"><span class="ico" data-ico="walk"></span><span><strong id="statEta" class="num"></strong> <span data-i18n="sumMin">min walk</span></span><span class="rs-sep" aria-hidden="true">·</span><span><strong id="statDist" class="num"></strong> <span data-i18n="sumM">m</span></span></p>
         <p id="routeVia" class="via" hidden></p>
       </div>
       <div id="routeMsg" class="route-msg" role="status"></div>
@@ -225,8 +224,6 @@
         <span class="sw-text"><strong data-i18n="stepFree">Avoid stairs</strong><small data-i18n="stepFreeHint">Step-free route: lifts and wide doors only</small></span>
         <input id="optStepFree" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span>
       </label>
-      <button id="btnStart" class="btn primary xl" type="button"><span class="ico" data-ico="nav"></span><span id="startText" data-i18n="start">Start</span></button>
-      <button id="btnStartCam" class="btn secondary" type="button"><span class="ico" data-ico="camera"></span><span class="btn-2l"><span data-i18n="startCam">Start with camera</span><small data-i18n="startCamHint">A yellow line on the floor in the camera view</small></span></button>
       <div class="pair">
         <button id="btnFav" class="btn tertiary" type="button" aria-pressed="false"><span class="ico" data-ico="heart"></span><span id="favText" data-i18n="save">Save</span></button>
         <button id="btnShare" class="btn tertiary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="share">Share</span></button>
@@ -234,6 +231,10 @@
       <details id="secPreview" class="steps-box" hidden><summary id="stepsSummary"></summary><ol id="previewSteps" class="step-rows"></ol></details>
       <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
     </main>
+    <div class="cta-bar">
+      <button id="btnStart" class="btn primary xl" type="button"><span class="ico" data-ico="nav"></span><span id="startText" data-i18n="start">Start</span></button>
+      <button id="btnStartCam" class="btn secondary cam-btn" type="button" data-i18n-aria="startCamAria"><span class="ico" data-ico="camera"></span><span data-i18n="camShort">Camera</span></button>
+    </div>
   </section>
 
   <!-- ================= WHERE AM I ================= -->

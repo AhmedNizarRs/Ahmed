@@ -2,6 +2,7 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    sumMin: 'min walk', sumM: 'm', camShort: 'Camera', startCamAria: 'Start with the camera: a blue line on the floor in the camera view',
     youStartHere: 'You start here', routeStart: n => `Start · ${n}`,
     startPoint: 'Starting point', doorN: d => `Door ${d}`, factDoors: d => `Door ${d}`, distFromStart: n => `Distances from ${n}, where the indoor route starts`, youAreInside: 'You’re inside', moreBuildings: n => `Show ${n} more, far away`, noResAskDesk: 'Ask at the help desk', noResGetHelp: 'Get help', outStartBody: n => `The indoor directions start at ${n}. Walk there first, then tap “I’m at the entrance now”.`, outShowMap: 'Show the way on the map', outAtDoor: 'I’m at the entrance now',
     outsideEyebrow: 'Not in this building · start at', outTitle: d => `You’re about ${d} from this building`, outBody: n => `Go to ${n} first. The directions below start there.`, outBodyHere: n => `${n} is outside your current position: walk there first.`, outDirections: 'Walking directions to the entrance',
@@ -37,7 +38,7 @@ export const STR = {
     noResultsHint: 'Try a room number such as 104, or a word like restroom or café.', clearSearch: 'Clear search',
     // Route
     routeTo: (n, d, t) => `Route to ${n}: ${d}, ${t}.`, walkTime: t => `${t} walk`, start: 'Start', startCam: 'Start with camera',
-    startCamHint: 'A yellow line on the floor in the camera view', save: 'Save', saved: 'Saved', unsave: 'Remove from saved', share: 'Share',
+    startCamHint: 'A blue line on the floor in the camera view', save: 'Save', saved: 'Saved', unsave: 'Remove from saved', share: 'Share',
     stepFree: 'Avoid stairs', stepFreeHint: 'Step-free route: lifts and wide doors only', stepFreeOn: 'Step-free route on', stepFreeOff: 'Step-free route off',
     noStepFreeTitle: 'No step-free route to this place.', noStepFreeBody: 'A door or step on the way is too narrow for a wheelchair. Ask staff for help, or turn off “Avoid stairs” to see the walking route.',
     noRoute: 'No route was found to this place.', alreadyHere: 'You are already here.', closureNote: 'This route goes around a temporary closure.',
@@ -57,11 +58,11 @@ export const STR = {
     now: 'Now', arriveAt: n => `Arrive at ${n}`, youAreHere: 'You are here', youAreHereGps: a => `Near you · GPS ±${a} m`, useLocation: 'Use my location', gpsAcc: a => `GPS ±${a} m`, modeGps: 'Following your location',
     gpsDenied: 'Location is off. Allow it in your browser settings to use GPS.', set_gps: 'Use my location (GPS)', set_gpsHint: 'Blends your phone’s location with your steps. It stays on your phone.',
     minWalk: 'min walk', metres: 'metres', watchRoute: 'Watch the route',
-    motionTitle: 'Turn on motion', motionTitleNoSensors: 'Can’t feel your steps here', motionStill: 'Still no motion from this phone.', motionBody: 'DALIL follows you with your phone’s compass and step counter. Nothing leaves your phone.',
+    motionTitle: 'Turn on motion', motionTitleNoSensors: 'Can’t feel your steps here', motionStill: 'Still no motion from this phone.', motionBody: 'DALIL follows your steps with the phone’s compass. Nothing leaves your phone.',
     allowMotion: 'Allow motion', watchPreview: 'Watch a preview', orScan: 'You can also scan DALIL signs as you walk.', signsOnly: 'Continue with signs only',
     camNoMotion: 'Motion is off, so there is no guide line. DALIL signs can still be scanned.',
     motionNone: 'This device has no motion sensors. Open DALIL on your phone to walk with it.',
-    motionDenied: 'DALIL follows your steps with the phone’s motion sensor, and it is switched off. On iPhone: tap Allow motion, then Allow. If you tapped “Don’t Allow” before, close Safari fully and open DALIL again.',
+    motionDenied: 'Motion is off, so DALIL can’t follow your steps. Tap Allow motion, then Allow. No prompt on iPhone? Close Safari fully and open DALIL again.',
     motionEmbedded: 'This preview can’t read your phone’s sensors. Open DALIL from its own web address to walk with it.',
     liftTitle: (up, f) => `Take the lift ${up ? 'up' : 'down'} to ${f}`, liftBody: n => `Step out at ${n}. The arrow carries on when you walk out.`,
     stairsTitle: (up, f) => `Take the stairs ${up ? 'up' : 'down'} to ${f}`, stairsBody: (n, total) => `${n} of about ${total} steps`,
@@ -126,6 +127,7 @@ export const STR = {
     cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    sumMin: 'دقيقة مشي', sumM: 'م', camShort: 'الكاميرا', startCamAria: 'ابدأ بالكاميرا: خط أزرق على الأرض في صورة الكاميرا',
     youStartHere: 'تبدأ من هنا', routeStart: n => `البداية · ${n}`,
     startPoint: 'نقطة البداية', doorN: d => `باب ${d}`, factDoors: d => `باب ${d}`, distFromStart: n => `المسافات من ${n}، حيث يبدأ المسار الداخلي`, youAreInside: 'أنت في الداخل', moreBuildings: n => `عرض ${n} أخرى بعيدة`, noResAskDesk: 'اسأل في مكتب المساعدة', noResGetHelp: 'اطلب المساعدة', outStartBody: n => `تبدأ الاتجاهات الداخلية من ${n}. امشِ إليه أولًا، ثم اضغط «أنا عند المدخل الآن».`, outShowMap: 'اعرض الطريق على الخريطة', outAtDoor: 'أنا عند المدخل الآن',
     outsideEyebrow: 'لست في هذا المبنى · ابدأ من', outTitle: d => `أنت على بُعد نحو ${d} من هذا المبنى`, outBody: n => `اذهب أولًا إلى ${n}. الاتجاهات أدناه تبدأ من هناك.`, outBodyHere: n => `${n} بعيد عن موقعك الحالي: امشِ إليه أولًا.`, outDirections: 'اتجاهات المشي إلى المدخل',
@@ -158,7 +160,7 @@ export const STR = {
     results: n => n === 1 ? 'تم العثور على مكان واحد' : n === 2 ? 'تم العثور على مكانين' : n <= 10 ? `تم العثور على ${n} أماكن` : `تم العثور على ${n} مكاناً`,
     noResults: 'لا توجد أماكن مطابقة.', noResultsFor: q => `لا توجد أماكن مطابقة لـ«${q}».`, noResultsHint: 'جرّب رقم غرفة مثل 104، أو كلمة مثل دورة مياه أو مقهى.', clearSearch: 'مسح البحث',
     routeTo: (n, d, t) => `المسار إلى ${n}: ${d}، ${t}.`, walkTime: t => `${t} مشياً`, start: 'ابدأ', startCam: 'ابدأ بالكاميرا',
-    startCamHint: 'خط أصفر على الأرض في صورة الكاميرا', save: 'حفظ', saved: 'تم الحفظ', unsave: 'إزالة من المحفوظة', share: 'مشاركة',
+    startCamHint: 'خط أزرق على الأرض في صورة الكاميرا', save: 'حفظ', saved: 'تم الحفظ', unsave: 'إزالة من المحفوظة', share: 'مشاركة',
     stepFree: 'تجنّب الدرج', stepFreeHint: 'مسار بدون درج: المصاعد والأبواب الواسعة فقط', stepFreeOn: 'تم تشغيل المسار بدون درج', stepFreeOff: 'تم إيقاف المسار بدون درج',
     noStepFreeTitle: 'لا يوجد مسار بدون درج إلى هذا المكان.', noStepFreeBody: 'في الطريق باب أو درجة لا تناسب الكرسي المتحرك. اطلب المساعدة من الموظفين، أو أوقف «تجنّب الدرج» لترى مسار المشي.',
     noRoute: 'لم يتم العثور على مسار إلى هذا المكان.', alreadyHere: 'أنت في هذا المكان الآن.', closureNote: 'هذا المسار يتجنب إغلاقاً مؤقتاً.',
@@ -181,7 +183,7 @@ export const STR = {
     allowMotion: 'السماح بالحركة', watchPreview: 'شاهد معاينة', orScan: 'يمكنك أيضاً مسح لافتات دليل أثناء المشي.', signsOnly: 'المتابعة باللافتات فقط',
     camNoMotion: 'الحركة متوقفة، لذلك لا يظهر الخط الإرشادي. ما زال بإمكانك مسح لافتات دليل.',
     motionNone: 'لا توجد مستشعرات حركة في هذا الجهاز. افتح دليل على هاتفك لتمشي معه.',
-    motionDenied: 'يتابع دليل خطواتك عبر مستشعر الحركة في الهاتف، وهو متوقف الآن. على iPhone: اضغط «السماح بالحركة» ثم «السماح». إذا اخترت «عدم السماح» من قبل، أغلق Safari تمامًا وافتح دليل من جديد.',
+    motionDenied: 'الحركة متوقفة، لذلك لا يستطيع دليل متابعة خطواتك. اضغط «السماح بالحركة» ثم «السماح». لا تظهر رسالة على iPhone؟ أغلق Safari تمامًا وافتح دليل من جديد.',
     motionEmbedded: 'لا تستطيع هذه المعاينة قراءة مستشعرات هاتفك. افتح دليل من عنوانه على الويب لتمشي معه.',
     liftTitle: (up, f) => `استقل المصعد ${up ? 'صعوداً' : 'نزولاً'} إلى ${f}`, liftBody: n => `اخرج عند ${n}. يتابع السهم عندما تخرج وتمشي.`,
     stairsTitle: (up, f) => `${up ? 'اصعد' : 'انزل'} الدرج إلى ${f}`, stairsBody: (n, total) => `${n} من حوالي ${total} خطوة`,
