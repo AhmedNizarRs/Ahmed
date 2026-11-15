@@ -193,7 +193,7 @@ const CATS = [
   ['lift','Lift','مصعد'],['stairs','Stairs','درج'],['ramp','Ramp','منحدر'],
   ['toilet','Toilets','دورات مياه'],['toilet_acc','Accessible toilet','دورة مياه لأصحاب الهمم'],
   ['prayer','Prayer room','مصلى'],['wudu','Wudu area','مكان الوضوء'],['baby','Baby room','غرفة الأطفال'],['cafe','Café','مقهى'],
-  ['room','Room / department','غرفة / قسم'],['corridor','Corridor point','نقطة ممر'],['parking','Parking','موقف']
+  ['room','Room / department','غرفة / قسم'],['lab','Lab','مختبر'],['corridor','Corridor point','نقطة ممر'],['parking','Parking','موقف']
 ];
 const CAT = Object.fromEntries(CATS.map(c=>[c[0],{en:c[1],ar:c[2]}]));
 const ACI = ['#000000','#FF0000','#FFFF00','#00FF00','#00FFFF','#0000FF','#FF00FF','#000000','#808080','#C0C0C0'];
@@ -624,6 +624,7 @@ function routeBetween(mode, A, B){
 /* ---------------- INSTRUCTIONS (EN + AR) ---------------- */
 const ang = (a,b)=>Math.atan2(b[1]-a[1], b[0]-a[0])*180/Math.PI;
 const norm = d=>{ while(d>180)d-=360; while(d<=-180)d+=360; return d; };
+const CLOCK_WORDS={1:['Bear right','اتجه قليلاً إلى اليمين'],2:['Bear right','اتجه قليلاً إلى اليمين'],3:['Turn right','انعطف إلى اليمين'],4:['Turn sharp right','انعطف بحدة إلى اليمين'],5:['Turn sharp right','انعطف بحدة إلى اليمين'],6:['Turn around','استدر إلى الخلف'],7:['Turn sharp left','انعطف بحدة إلى اليسار'],8:['Turn sharp left','انعطف بحدة إلى اليسار'],9:['Turn left','انعطف إلى اليسار'],10:['Bear left','اتجه قليلاً إلى اليسار'],11:['Bear left','اتجه قليلاً إلى اليسار']};
 function instructions(path, A, B, mode){
   // merge into legs
   const legs=[]; // {heading, len, end}
@@ -633,6 +634,8 @@ function instructions(path, A, B, mode){
     else legs.push({h, len, start:path[i], end:path[i+1]}); }
   // absorb tiny legs
   for (let i=legs.length-1;i>0;i--) if (legs[i].len<0.8){ legs[i-1].len+=legs[i].len; legs[i-1].end=legs[i].end; legs.splice(i,1); }
+  // a short jog between two slight turns is one leg
+  for (let i=legs.length-2;i>0;i--) if (legs[i].len<3 && Math.abs(norm(legs[i].h-legs[i-1].h))<=55 && Math.abs(norm(legs[i+1].h-legs[i].h))<=55){ legs[i-1].len+=legs[i].len; legs[i-1].end=legs[i].end; legs.splice(i,1); }
   const total=legs.reduce((a,l)=>a+l.len,0);
   const m=d=>Math.max(1,Math.round(d)), st=d=>Math.max(1,Math.round(d/0.7));
   const arM=n=>n===1?'متراً واحداً':n===2?'مترين':(n<=10?`${n} أمتار`:`${n} متراً`);
@@ -653,7 +656,7 @@ function instructions(path, A, B, mode){
     if (i===0){
       const rel=norm(l.h-(A.face??90)); let ck=Math.round(-rel/30); ck=((ck%12)+12)%12; if(ck===0) ck=12;
       if (ck===12){ turnEn='Go straight ahead'; turnAr='اتجه إلى الأمام'; }
-      else { turnEn=`Turn to your ${ck} o'clock`; turnAr=`استدر نحو اتجاه الساعة ${ck}`; }
+      else { const w=CLOCK_WORDS[ck]; turnEn=`${w[0]} (${ck} o'clock)`; turnAr=`${w[1]} (اتجاه الساعة ${ck})`; }
     } else {
       const d=norm(l.h-legs[i-1].h), side=d>0?'left':'right', sideAr=d>0?'اليسار':'اليمين';
       if (Math.abs(d)>145){ turnEn='Turn around'; turnAr='استدر إلى الخلف'; }
@@ -936,6 +939,7 @@ const AUTO_RULES=[ // [category, test(text), nameEn, nameAr]
   ['prayer', s=>/\b(prayer|musall?a|mosque)\b/i.test(s)||/مصلى|مسجد/.test(s), 'Prayer room', 'المصلى'],
   ['wudu', s=>/\b(wudu|ablution)\b/i.test(s)||/وضوء/.test(s), 'Wudu area', 'مكان الوضوء'],
   ['cafe', s=>/^caf[eé]\b|\bcoffee\b|\bcafeteria\b/i.test(s)||/مقهى|كافتيريا/.test(s), 'Café', 'مقهى'],
+  ['lab', s=>/\b(lab|labs|laboratory|laboratories)\b/i.test(s)||/مختبر|معمل/.test(s), null, null],
   ['entrance', s=>/\b(main )?entrance\b|\blobby\b/i.test(s)||/مدخل/.test(s), 'Entrance', 'مدخل'],
   ['reception', s=>/\breception\b|\binformation desk\b/i.test(s)||/استقبال/.test(s), 'Reception', 'الاستقبال'],
 ];

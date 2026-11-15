@@ -195,7 +195,7 @@
       </section>
       <p id="searchHint" class="hint" data-i18n="searchHint">Type a room number, a name or a service.</p>
       <ul id="results" class="rows"></ul>
-      <div id="noResults" class="empty" hidden><p id="noResultsTitle" class="empty-title"></p><p class="muted" data-i18n="noResultsHint">Try a room number such as 104.</p></div>
+      <div id="noResults" class="empty" hidden><p id="noResultsTitle" class="empty-title"></p><p class="muted" data-i18n="noResultsHint">Try a room number such as 104.</p><div class="empty-actions"><button id="btnNoResHelpDesk" class="btn secondary" type="button" data-i18n="noResAskDesk">Ask at the help desk</button><button id="btnNoResHelp" class="btn secondary" type="button"><span class="ico" data-ico="help"></span><span data-i18n="noResGetHelp">Get help</span></button></div></div>
     </main>
   </section>
 
@@ -442,6 +442,13 @@
   </div>
 
   <!-- All steps (an overview; the steps move on by themselves) -->
+  <dialog id="dlgOutside" class="sheet-dlg" aria-labelledby="outDlgTitle">
+    <div class="dlg-head"><h2 id="outDlgTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="outDlgBody"></p>
+    <a id="btnOutWalk" class="btn primary xl" href="#" target="_blank" rel="noopener"><span class="ico" data-ico="walk"></span><span data-i18n="outDirections">Walking directions to the entrance</span></a>
+    <button id="btnOutMap" class="btn secondary" type="button"><span class="ico" data-ico="map"></span><span data-i18n="outShowMap">Show the way on the map</span></button>
+    <button id="btnOutAtDoor" class="btn secondary" type="button" data-i18n="outAtDoor">I’m at the entrance now</button>
+  </dialog>
   <dialog id="dlgSteps" class="sheet-dlg" aria-labelledby="stepsTitle">
     <div class="dlg-head"><h2 id="stepsTitle" data-i18n="stepsTitle">All steps</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
     <ol id="stepList" class="step-rows"></ol>

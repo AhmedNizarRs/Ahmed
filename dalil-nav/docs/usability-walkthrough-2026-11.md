@@ -16,17 +16,17 @@ Screenshots were kept out of the repo.
 - **Arabic search returned every place** (the text clean-up removed all Arabic letters). Now "مختبر" finds only labs, "حمام" the toilets, and vowel marks are ignored.
 - **Opening B3 from the nearby card said "You are here: Entrance MD19"** while GPS was 150 m away (only a deep link re-checked). Now any building opened while GPS is known is checked.
 
-## Needs improving (not done)
-1. **First screen shows the Sample Hospital** and "You are here: Main Entrance" on the UoS campus. With GPS near a mapped building, open on that building or on a neutral "Nearby indoor maps" view; never claim a place in a building without geo.
-2. **Indoor maps list is not sorted by distance**: B3 (174 m) is last, Cal Poly (13,266 km) above it. Sort by distance; hide far test buildings.
-3. **Distances disagree**: the card says 108 m (to the building edge), the list 174 m (to the centre). Use one.
-4. **Starting directions while outside** begins "Now: turn to your 11 o'clock" as if at the entrance. Start with a first step "Walk to Entrance MD19 (138 m)" (outdoor map + GPS), then go indoors.
-5. **Search results show distances from the entrance** (27 m, 52 m) while you are 138 m away. Show "from the entrance" or add the outdoor part.
-6. **No results for common words**: "library", "coffee", "professor office", door codes like "MD9", room codes like "012B". Add synonyms per building, door/room codes from the drawing, and offer "Ask at the help desk" when nothing matches.
-7. **Home pins all look alike** (yellow square, no labels until zoomed in). Use category icons (lab, toilet, lift) and show names for the nearest few.
-8. **Your own blue dot is not in view** on Home when you are outside: frame both you and the building.
-9. **Clock directions** ("turn to your 9 o'clock") suit blind users but many sighted visitors find them hard: say "Turn left (9 o'clock)".
-10. **Tiny zigzag steps** ("Bear right, walk 2 m. Bear left, walk 2 m"): merge legs under 3 m.
-11. **"Room" for every lab**: show "Lab" (add a `lab` category or read it from the name).
-12. **Motion card wording** ("Allow it in your browser settings") is technical for a visitor; explain in one line why (it follows your steps) and how on iPhone.
-13. **Building names are English-only in Arabic** ("UoS Central Labs B3 (test)"): add `building.nameAr`.
+## Fixed after the walkthrough (all 13)
+1. **First screen:** with GPS near a mapped building while showing one that isn't placed (or is over 2 km away), the app opens the nearby building by itself (once; a building chosen by hand or by a link stays). "You are here" is only shown when GPS, a sign, a link or the visitor confirms it; otherwise "Starting point".
+2. **Indoor maps list:** nearest first; buildings over 50 km away are folded under "Show N more, far away".
+3. **One distance:** the card and the list both measure to the building's edge ("You're inside" at 0).
+4. **Start while outside:** a sheet first: "You're about 138 m from this building. The indoor directions start at Entrance MD19…" with walking directions, "Show the way on the map", and "I'm at the entrance now".
+5. **Honest distances in search:** while outside, one line above the results: "Distances from Entrance MD19, where the indoor route starts".
+6. **Search coverage:** door numbers from the drawing are searchable and shown ("Lab · Door 034", "MD9" finds the workshop); more words for rooms (class, hall, office); when nothing matches: "Ask at the help desk" and "Get help".
+7. **Pins:** labs are a purple flask, not the room square; key places (entrances, toilets, lifts, help desk) are named from zoom 17.2; labels that would overlap are hidden.
+8. **Your blue dot** is framed with the building when you are within 1.5 km.
+9. **Turns in plain words first:** "Turn left (9 o'clock)", "Bear right (2 o'clock)" (app router and Mapper, EN + AR).
+10. **No tiny zigzags:** a leg under 3 m between two slight turns is merged (app router and Mapper).
+11. **"Lab" category** (`lab`) in the app, the Mapper (list + auto-places from "lab"/"laboratory"/مختبر/معمل) and B3's data.
+12. **Motion message** explains why (it follows your steps) and how on iPhone.
+13. **Arabic building names** (`building.nameAr`) for every bundled map; drafts for a native-speaker check.

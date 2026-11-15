@@ -113,7 +113,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     for (const mk of placeMarkers) mk.remove();
     placeMarkers = gj.places.map(p => {
       const e = document.createElement(pins ? 'button' : 'div');
-      e.className = `${pins ? 'out-pin' : 'out-place'} cat-${p.category}`;
+      e.className = `${pins ? 'out-pin' : 'out-place'} cat-${p.category}${['entrance', 'toilet', 'toilet_acc', 'lift', 'reception', 'prayer', 'cafe'].includes(p.category) ? ' out-key' : ''}`;
       e.innerHTML = pins ? `<span class="op-pin">${iconFor ? iconFor(p.category) : ''}</span><span class="op-name"></span>` : '<span class="op-dot"></span><span class="op-name"></span>';
       const name = lang === 'ar' ? p.nameAr : p.nameEn;
       e.querySelector('.op-name').textContent = name; e.hidden = !vis.places;
@@ -123,6 +123,20 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
       return mk;
     });
     const showNames = () => { el.classList.toggle('out-names', m.getZoom() >= 18.5); el.classList.toggle('out-pins', m.getZoom() >= 17.2); el.classList.toggle('out-far', m.getZoom() < 16.5); }; showNames(); m.on('zoom', showNames);
+    // Names that would cover another name or pin are hidden (key places first: entrances, toilets, lifts), so labels never pile up.
+    const declutter = () => {
+      if (!pins) return;
+      const els = placeMarkers.map(mk => mk.getElement()).sort((a, b) => b.classList.contains('out-key') - a.classList.contains('out-key'));
+      for (const e of els) e.classList.remove('nm-hide');
+      const taken = els.map(e => e.querySelector('.op-pin')?.getBoundingClientRect()).filter(r => r && r.width);
+      for (const e of els) {
+        const n = e.querySelector('.op-name'); if (!n || getComputedStyle(n).display === 'none') continue;
+        const r = n.getBoundingClientRect(), mine = e.querySelector('.op-pin')?.getBoundingClientRect();
+        const hit = taken.some(t => t !== mine && !(r.right < t.left || r.left > t.right || r.bottom < t.top || r.top > t.bottom) && !(t.left === mine?.left && t.top === mine?.top));
+        if (hit) e.classList.add('nm-hide'); else taken.push(r);
+      }
+    };
+    m.on('moveend', declutter); m.on('zoomend', declutter); requestAnimationFrame(declutter);
   };
   // Failover once the style is in: if its tiles keep failing and none arrive, move to the next map.
   // (Listening from the start: failed tiles can arrive before the map's 'load' event.)
@@ -186,7 +200,11 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
       cone.hidden = heading == null; if (heading != null) cone.style.transform = `rotate(${heading}deg)`;
     },
     /** Show the building (or a point) with room left for the panels around the map. */
-    frame(pad = padding) { m.fitBounds(gj.bounds, { padding: pad, maxZoom: 18.6, duration: 0 }); },
+    frame(pad = padding, also = null) {
+      const b = gj.bounds.map(c => c.slice());
+      if (also) { b[0][0] = Math.min(b[0][0], also[0]); b[0][1] = Math.min(b[0][1], also[1]); b[1][0] = Math.max(b[1][0], also[0]); b[1][1] = Math.max(b[1][1], also[1]); }
+      m.fitBounds(b, { padding: pad, maxZoom: 18.6, duration: 0 });
+    },
     flyTo(lngLat, zoom = 19) { m.easeTo({ center: lngLat, zoom: Math.max(m.getZoom(), zoom), duration: 600 }); },
     resize() { m.resize(); },
     /** Every building with a DALIL indoor map, as a marker you can tap: [{ id, name, lngLat, current }]. */

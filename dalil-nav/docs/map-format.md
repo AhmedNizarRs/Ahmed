@@ -62,3 +62,9 @@ World position (optional, v2)
 Walked surveys (optional, v2)
 - Maps made with the visitor app's **Map a building by walking it** (`app/survey.js`) have `source: { "type": "survey", … }`, no walls (`plan.walls: []`) and `plan.corridors`: the walked lanes as polylines, with `plan.corridorWidth` (1.8 m). The app draws them as wide grey lanes on the floor plan and on the real map. `nav` is carved 0.9 m either side of the lanes (0.75 m for the wheelchair grid), cell 0.2 m.
 - `geo.origin` comes from the phone's GPS at the entrance and `bearing` is 0 (the compass is the plan's north), so a surveyed floor is as good as that fix (typically ±5–15 m outdoors at the door). Each floor has its own origin; floors are joined by `link` codes `LIFT-n` / `STAIR-n`.
+
+Visitor-friendly extras (optional, v2)
+- `building.nameAr`: the building's Arabic name (shown when the app is in Arabic).
+- `points[].doors`: the door numbers printed next to the place on the drawing, space-separated (e.g. `"024 024A"`). The app searches them and shows the first as "Door 024".
+- Category `lab` (labs, shown as "Lab" / "مختبر" with a flask icon); the Mapper's "Find places" picks it from "lab", "laboratory", مختبر, معمل.
+- First-turn wording: "Turn left (9 o'clock)", i.e. plain words with the clock direction in brackets (was "Turn to your 9 o'clock"). Older files with stored routes keep their wording.

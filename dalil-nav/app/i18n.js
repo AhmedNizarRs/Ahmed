@@ -2,6 +2,7 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    startPoint: 'Starting point', doorN: d => `Door ${d}`, factDoors: d => `Door ${d}`, distFromStart: n => `Distances from ${n}, where the indoor route starts`, youAreInside: 'You’re inside', moreBuildings: n => `Show ${n} more, far away`, noResAskDesk: 'Ask at the help desk', noResGetHelp: 'Get help', outStartBody: n => `The indoor directions start at ${n}. Walk there first, then tap “I’m at the entrance now”.`, outShowMap: 'Show the way on the map', outAtDoor: 'I’m at the entrance now',
     outsideEyebrow: 'Not in this building · start at', outTitle: d => `You’re about ${d} from this building`, outBody: n => `Go to ${n} first. The directions below start there.`, outBodyHere: n => `${n} is outside your current position: walk there first.`, outDirections: 'Walking directions to the entrance',
     surveyBtn: 'Map a building by walking it', surveyRowSub: 'No floor plan needed', surveyTitle: 'Map a building', surveyIntro: 'No floor plan? Walk the building with your phone and DALIL draws the map.',
     surveyHow1: 'Stand at the main entrance and tap Start.', surveyHow2: 'Walk the corridors holding the phone in front of you.',
@@ -59,7 +60,7 @@ export const STR = {
     allowMotion: 'Allow motion', watchPreview: 'Watch a preview', orScan: 'You can also scan DALIL signs as you walk.', signsOnly: 'Continue with signs only',
     camNoMotion: 'Motion is off, so there is no guide line. DALIL signs can still be scanned.',
     motionNone: 'This device has no motion sensors. Open DALIL on your phone to walk with it.',
-    motionDenied: 'Motion access is off. Allow it in your browser settings, then tap Allow motion again.',
+    motionDenied: 'DALIL follows your steps with the phone’s motion sensor, and it is switched off. On iPhone: tap Allow motion, then Allow. If you tapped “Don’t Allow” before, close Safari fully and open DALIL again.',
     motionEmbedded: 'This preview can’t read your phone’s sensors. Open DALIL from its own web address to walk with it.',
     liftTitle: (up, f) => `Take the lift ${up ? 'up' : 'down'} to ${f}`, liftBody: n => `Step out at ${n}. The arrow carries on when you walk out.`,
     stairsTitle: (up, f) => `Take the stairs ${up ? 'up' : 'down'} to ${f}`, stairsBody: (n, total) => `${n} of about ${total} steps`,
@@ -121,9 +122,10 @@ export const STR = {
     liftTo: (up, f, n) => `Take the lift ${up ? 'up' : 'down'} to ${f}. Step out at ${n}.`, stairsTo: (up, f) => `Take the stairs ${up ? 'up' : 'down'} to ${f}.`,
     noneOfCat: c => `There is no ${c.toLowerCase()} in this building.`, noneReachable: c => `No ${c.toLowerCase()} can be reached step-free from here.`,
     nearest: (c, n, d) => `Nearest ${c.toLowerCase()}: ${n}, ${d}.`, kioskReset: 'Starting over for the next visitor.',
-    cats: { entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
+    cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    startPoint: 'نقطة البداية', doorN: d => `باب ${d}`, factDoors: d => `باب ${d}`, distFromStart: n => `المسافات من ${n}، حيث يبدأ المسار الداخلي`, youAreInside: 'أنت في الداخل', moreBuildings: n => `عرض ${n} أخرى بعيدة`, noResAskDesk: 'اسأل في مكتب المساعدة', noResGetHelp: 'اطلب المساعدة', outStartBody: n => `تبدأ الاتجاهات الداخلية من ${n}. امشِ إليه أولًا، ثم اضغط «أنا عند المدخل الآن».`, outShowMap: 'اعرض الطريق على الخريطة', outAtDoor: 'أنا عند المدخل الآن',
     outsideEyebrow: 'لست في هذا المبنى · ابدأ من', outTitle: d => `أنت على بُعد نحو ${d} من هذا المبنى`, outBody: n => `اذهب أولًا إلى ${n}. الاتجاهات أدناه تبدأ من هناك.`, outBodyHere: n => `${n} بعيد عن موقعك الحالي: امشِ إليه أولًا.`, outDirections: 'اتجاهات المشي إلى المدخل',
     surveyBtn: 'ارسم خريطة مبنى بالمشي فيه', surveyRowSub: 'لا حاجة إلى مخطط الطابق', surveyTitle: 'ارسم خريطة مبنى', surveyIntro: 'لا يوجد مخطط للطابق؟ امشِ في المبنى بهاتفك وسيرسم دليل الخريطة.',
     surveyHow1: 'قف عند المدخل الرئيسي واضغط ابدأ.', surveyHow2: 'امشِ في الممرات والهاتف أمامك.',
@@ -177,7 +179,7 @@ export const STR = {
     allowMotion: 'السماح بالحركة', watchPreview: 'شاهد معاينة', orScan: 'يمكنك أيضاً مسح لافتات دليل أثناء المشي.', signsOnly: 'المتابعة باللافتات فقط',
     camNoMotion: 'الحركة متوقفة، لذلك لا يظهر الخط الإرشادي. ما زال بإمكانك مسح لافتات دليل.',
     motionNone: 'لا توجد مستشعرات حركة في هذا الجهاز. افتح دليل على هاتفك لتمشي معه.',
-    motionDenied: 'الوصول إلى الحركة متوقف. اسمح به من إعدادات المتصفح، ثم اضغط «السماح بالحركة» مرة أخرى.',
+    motionDenied: 'يتابع دليل خطواتك عبر مستشعر الحركة في الهاتف، وهو متوقف الآن. على iPhone: اضغط «السماح بالحركة» ثم «السماح». إذا اخترت «عدم السماح» من قبل، أغلق Safari تمامًا وافتح دليل من جديد.',
     motionEmbedded: 'لا تستطيع هذه المعاينة قراءة مستشعرات هاتفك. افتح دليل من عنوانه على الويب لتمشي معه.',
     liftTitle: (up, f) => `استقل المصعد ${up ? 'صعوداً' : 'نزولاً'} إلى ${f}`, liftBody: n => `اخرج عند ${n}. يتابع السهم عندما تخرج وتمشي.`,
     stairsTitle: (up, f) => `${up ? 'اصعد' : 'انزل'} الدرج إلى ${f}`, stairsBody: (n, total) => `${n} من حوالي ${total} خطوة`,
@@ -233,7 +235,7 @@ export const STR = {
     liftTo: (up, f, n) => `استقل المصعد ${up ? 'صعوداً' : 'نزولاً'} إلى ${f}. اخرج عند ${n}.`, stairsTo: (up, f) => `${up ? 'اصعد' : 'انزل'} الدرج إلى ${f}.`,
     noneOfCat: c => `لا يوجد ${c} في هذا المبنى.`, noneReachable: c => `لا يمكن الوصول إلى ${c} بمسار بدون درج من هنا.`,
     nearest: (c, n, d) => `الأقرب (${c}): ${n}، ${d}.`, kioskReset: 'البدء من جديد للزائر التالي.',
-    cats: { entrance: 'مدخل', exit: 'مخرج', reception: 'الاستقبال', lift: 'مصعد', stairs: 'درج', ramp: 'منحدر', toilet: 'دورة مياه', toilet_acc: 'دورة مياه مهيأة', prayer: 'مصلى', wudu: 'مكان الوضوء', baby: 'غرفة رعاية الأطفال', cafe: 'مقهى', room: 'غرفة', corridor: 'ممر', parking: 'موقف سيارات', pin: 'نقطة' },
+    cats: { lab: 'مختبر', entrance: 'مدخل', exit: 'مخرج', reception: 'الاستقبال', lift: 'مصعد', stairs: 'درج', ramp: 'منحدر', toilet: 'دورة مياه', toilet_acc: 'دورة مياه مهيأة', prayer: 'مصلى', wudu: 'مكان الوضوء', baby: 'غرفة رعاية الأطفال', cafe: 'مقهى', room: 'غرفة', corridor: 'ممر', parking: 'موقف سيارات', pin: 'نقطة' },
   },
 };
 
@@ -241,10 +243,11 @@ export const STR = {
 export const TILE_CATS = { toilet: ['toilet', 'toilet_acc'], lift: ['lift'], prayer: ['prayer', 'wudu'], cafe: ['cafe'], help: ['reception'], entrance: ['entrance'], baby: ['baby'], stairs: ['stairs', 'ramp'] };
 // Extra words people type, per category.
 export const CAT_WORDS = {
+  lab: 'lab labs laboratory laboratories مختبر مختبرات معمل',
   toilet: 'toilet restroom wc bathroom washroom loo دورة مياه حمام', toilet_acc: 'accessible toilet restroom wc دورة مياه حمام مهيأة',
   lift: 'lift elevator مصعد مصاعد', stairs: 'stairs staircase درج سلم', ramp: 'ramp منحدر', prayer: 'prayer mosque masjid musalla مصلى مسجد صلاة',
   wudu: 'wudu ablution وضوء', reception: 'reception desk information help استقبال مساعدة', entrance: 'entrance entry way in مدخل', exit: 'exit مخرج',
-  baby: 'baby nursing lactation رضاعة اطفال', cafe: 'cafe café coffee food مقهى قهوة كافيه', parking: 'parking car موقف', corridor: 'corridor hall ممر', room: 'room غرفة',
+  baby: 'baby nursing lactation رضاعة اطفال', cafe: 'cafe café coffee food مقهى قهوة كافيه', parking: 'parking car موقف', corridor: 'corridor hall ممر', room: 'room class classroom hall office غرفة قاعة مكتب',
 };
 // Line icons on a 24px grid, drawn in currentColor.
 export const CAT_ICONS = {
@@ -252,6 +255,7 @@ export const CAT_ICONS = {
   lift: '<rect x="5" y="7" width="14" height="13" rx="1.5"/><path d="M12 7v13M8.5 2.5 7 4.5h3zM15.5 4.5 14 2.5h3z"/>',
   stairs: '<path d="M4 20h4v-4h4v-4h4V8h4"/>', prayer: '<path d="M5 20v-8a7 7 0 0 1 14 0v8zM12 5V3M9.5 20v-4a2.5 2.5 0 0 1 5 0v4"/>',
   entrance: '<path d="M14 4h5v16h-5M4 12h11M11 8l4 4-4 4"/>', reception: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5.5M12 7.6v.2"/>',
+  lab: '<path d="M9.5 3h5M10.5 3v6.2L5.3 18.4A1.7 1.7 0 0 0 6.8 21h10.4a1.7 1.7 0 0 0 1.5-2.6L13.5 9.2V3M7.6 15h8.8"/>',
   room: '<rect x="5" y="3" width="14" height="18" rx="1"/><circle cx="15" cy="12" r=".8"/>', corridor: '<path d="M4 20 9 4M20 20 15 4M12 7v2M12 12v2M12 17v2"/>',
   node: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/>', pin: '<path d="M12 21s6-5.5 6-10.5a6 6 0 0 0-12 0C6 15.5 12 21 12 21z"/><circle cx="12" cy="10.5" r="2"/>',
   cafe: '<path d="M4 9h13v5a5 5 0 0 1-5 5H9a5 5 0 0 1-5-5zM17 10h1.5a2.5 2.5 0 0 1 0 5H17M8 2.5c-.6 1 .6 2 0 3M12 2.5c-.6 1 .6 2 0 3"/>',

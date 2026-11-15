@@ -130,6 +130,8 @@ export class Router {
 // ---- Turn-by-turn wording (kept identical to the Mapper's export) ----
 const ang = (a, b) => Math.atan2(b[1] - a[1], b[0] - a[0]) * 180 / Math.PI;
 const norm = d => { while (d > 180) d -= 360; while (d <= -180) d += 360; return d; };
+// The first turn as plain words, with the clock direction (for blind users) in brackets.
+const CLOCK_WORDS = { 1: ['Bear right', 'اتجه قليلاً إلى اليمين'], 2: ['Bear right', 'اتجه قليلاً إلى اليمين'], 3: ['Turn right', 'انعطف إلى اليمين'], 4: ['Turn sharp right', 'انعطف بحدة إلى اليمين'], 5: ['Turn sharp right', 'انعطف بحدة إلى اليمين'], 6: ['Turn around', 'استدر إلى الخلف'], 7: ['Turn sharp left', 'انعطف بحدة إلى اليسار'], 8: ['Turn sharp left', 'انعطف بحدة إلى اليسار'], 9: ['Turn left', 'انعطف إلى اليسار'], 10: ['Bear left', 'اتجه قليلاً إلى اليسار'], 11: ['Bear left', 'اتجه قليلاً إلى اليسار'] };
 function instructions(path, A, B, mode, points, speed = {}) {
   const legs = [];
   for (let i = 0; i < path.length - 1; i++) {
@@ -139,6 +141,8 @@ function instructions(path, A, B, mode, points, speed = {}) {
     else legs.push({ h, len, start: path[i], end: path[i + 1] });
   }
   for (let i = legs.length - 1; i > 0; i--) if (legs[i].len < 0.8) { legs[i - 1].len += legs[i].len; legs[i - 1].end = legs[i].end; legs.splice(i, 1); }
+  // A short jog between two slight turns ("bear right 2 m, bear left 2 m") is one leg, not two steps.
+  for (let i = legs.length - 2; i > 0; i--) if (legs[i].len < 3 && Math.abs(norm(legs[i].h - legs[i - 1].h)) <= 55 && Math.abs(norm(legs[i + 1].h - legs[i].h)) <= 55) { legs[i - 1].len += legs[i].len; legs[i - 1].end = legs[i].end; legs.splice(i, 1); }
   const total = legs.reduce((a, l) => a + l.len, 0);
   const m = d => Math.max(1, Math.round(d)), st = d => Math.max(1, Math.round(d / 0.7));
   const arM = n => n === 1 ? 'متراً واحداً' : n === 2 ? 'مترين' : (n <= 10 ? `${n} أمتار` : `${n} متراً`);
@@ -160,7 +164,7 @@ function instructions(path, A, B, mode, points, speed = {}) {
     if (i === 0) {
       const rel = norm(l.h - (A.facingDeg ?? 90)); let ck = Math.round(-rel / 30); ck = ((ck % 12) + 12) % 12; if (ck === 0) ck = 12;
       if (ck === 12) { turnEn = 'Go straight ahead'; turnAr = 'اتجه إلى الأمام'; }
-      else { turnEn = `Turn to your ${ck} o'clock`; turnAr = `استدر نحو اتجاه الساعة ${ck}`; }
+      else { const w = CLOCK_WORDS[ck]; turnEn = `${w[0]} (${ck} o'clock)`; turnAr = `${w[1]} (اتجاه الساعة ${ck})`; }
     } else {
       const d = norm(l.h - legs[i - 1].h), side = d > 0 ? 'left' : 'right', sideAr = d > 0 ? 'اليسار' : 'اليمين';
       if (Math.abs(d) > 145) { turnEn = 'Turn around'; turnAr = 'استدر إلى الخلف'; }

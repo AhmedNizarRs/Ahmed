@@ -1,5 +1,6 @@
 {
  "building": "UoS Central Labs B3 (test)",
+ "buildingAr": "مبنى المختبرات المركزية B3 - جامعة الشارقة (تجريبي)",
  "floors": [
   {
    "dxf": "b3_ground.dxf",
@@ -86,7 +87,9 @@
      "toilet",
      33.579,
      25.888,
-     {}
+     {
+      "doors": "022 023"
+     }
     ],
     [
      "Toilets (east)",
@@ -94,87 +97,109 @@
      "toilet",
      74.848,
      25.888,
-     {}
+     {
+      "doors": "004 005"
+     }
     ],
     [
      "Analytical Chemistry Lab",
      "مختبر الكيمياء التحليلية",
-     "room",
+     "lab",
      7.31,
      63.35,
-     {}
+     {
+      "doors": "034"
+     }
     ],
     [
      "Ultrasound Lab / Radiographic Skills Lab",
      "مختبر الموجات فوق الصوتية / مختبر مهارات التصوير الشعاعي",
-     "room",
+     "lab",
      7.31,
      53.452,
-     {}
+     {
+      "doors": "033"
+     }
     ],
     [
      "Sand Casting Lab",
      "مختبر السباكة الرملية",
-     "room",
+     "lab",
      5.787,
      47.36,
-     {}
+     {
+      "doors": "032"
+     }
     ],
     [
      "General Chemistry Lab (west)",
      "مختبر الكيمياء العامة (الغربي)",
-     "room",
+     "lab",
      7.31,
      37.843,
-     {}
+     {
+      "doors": "031"
+     }
     ],
     [
      "Organic Chemistry Lab",
      "مختبر الكيمياء العضوية",
-     "room",
+     "lab",
      6.929,
      19.949,
-     {}
+     {
+      "doors": "029"
+     }
     ],
     [
      "Pharmaceutical Technology Lab",
      "مختبر التقنية الصيدلانية",
-     "room",
+     "lab",
      22.538,
      17.665,
-     {}
+     {
+      "doors": "024 024A"
+     }
     ],
     [
      "Biotechnology Research Lab",
      "مختبر أبحاث التقنية الحيوية",
-     "room",
+     "lab",
      22.919,
      35.939,
-     {}
+     {
+      "doors": "026"
+     }
     ],
     [
      "General Chemistry Lab (centre)",
      "مختبر الكيمياء العامة (الأوسط)",
-     "room",
+     "lab",
      37.005,
      35.178,
-     {}
+     {
+      "doors": "025"
+     }
     ],
     [
      "Materials & Mechanics Lab / Structures & Materials Lab",
      "مختبر المواد والميكانيكا / مختبر الإنشاءات والمواد",
-     "room",
+     "lab",
      54.518,
      28.325,
-     {}
+     {
+      "doors": "001 001H"
+     }
     ],
     [
      "Mechanics Lab",
      "مختبر الميكانيكا",
-     "room",
+     "lab",
      54.137,
      15.0,
-     {}
+     {
+      "doors": "001G"
+     }
     ],
     [
      "Lecture Room",
@@ -190,47 +215,59 @@
      "room",
      79.645,
      37.462,
-     {}
+     {
+      "doors": "002 MD9"
+     }
     ],
     [
      "Geotechnical Lab",
      "مختبر الجيوتقنية",
-     "room",
+     "lab",
      86.497,
      18.426,
-     {}
+     {
+      "doors": "006"
+     }
     ],
     [
      "Fluid Mechanics Lab / Wind Energy Lab",
      "مختبر ميكانيكا الموائع / مختبر طاقة الرياح",
-     "room",
+     "lab",
      101.345,
      64.492,
-     {}
+     {
+      "doors": "013"
+     }
     ],
     [
      "Fluid Mechanics Lab (CEE)",
      "مختبر ميكانيكا الموائع (الهندسة المدنية والبيئية)",
-     "room",
+     "lab",
      101.345,
      48.883,
-     {}
+     {
+      "doors": "012"
+     }
     ],
     [
      "Radiation Detection Lab",
      "مختبر الكشف الإشعاعي",
-     "room",
+     "lab",
      101.345,
      35.939,
-     {}
+     {
+      "doors": "010"
+     }
     ],
     [
      "Applied Radiation Measurement Lab",
      "مختبر القياس الإشعاعي التطبيقي",
-     "room",
+     "lab",
      101.345,
      21.472,
-     {}
+     {
+      "doors": "009"
+     }
     ]
    ],
    "geo": {

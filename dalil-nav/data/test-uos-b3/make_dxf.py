@@ -117,6 +117,7 @@ def dxf(segs, corner):
 
 # Places, read off the drawing (positions in the 1654 px wide preview; x1.5 = picture pixels). Names are the
 # drawing's own labels; door codes (MD19…) are the drawing's. Toilets are not marked men/women on the drawing.
+# "doors": the door numbers printed next to each room on the drawing (searchable in the app; check on site).
 # Arabic names are drafts: they need a native-speaker check.
 PLACES = [
     # name EN, name AR, category, x, y, options
@@ -128,25 +129,25 @@ PLACES = [
     ["Lift (east)", "المصعد (الشرقي)", "lift", 1055, 895, {}],
     ["Stairs (west)", "الدرج (الغربي)", "stairs", 560, 955, {}],
     ["Stairs (east)", "الدرج (الشرقي)", "stairs", 1090, 955, {}],
-    ["Toilets (west)", "دورات المياه (الغربية)", "toilet", 555, 772, {}],    # at the WC doors (022/023) on the corridor,
-    ["Toilets (east)", "دورات المياه (الشرقية)", "toilet", 1097, 772, {}],   # at the WC doors (004/005) on the corridor,
-    ["Analytical Chemistry Lab", "مختبر الكيمياء التحليلية", "room", 210, 280, {}],
-    ["Ultrasound Lab / Radiographic Skills Lab", "مختبر الموجات فوق الصوتية / مختبر مهارات التصوير الشعاعي", "room", 210, 410, {}],
-    ["Sand Casting Lab", "مختبر السباكة الرملية", "room", 190, 490, {}],
-    ["General Chemistry Lab (west)", "مختبر الكيمياء العامة (الغربي)", "room", 210, 615, {}],
-    ["Organic Chemistry Lab", "مختبر الكيمياء العضوية", "room", 205, 850, {}],
-    ["Pharmaceutical Technology Lab", "مختبر التقنية الصيدلانية", "room", 410, 880, {}],
-    ["Biotechnology Research Lab", "مختبر أبحاث التقنية الحيوية", "room", 415, 640, {}],
-    ["General Chemistry Lab (centre)", "مختبر الكيمياء العامة (الأوسط)", "room", 600, 650, {}],
-    ["Materials & Mechanics Lab / Structures & Materials Lab", "مختبر المواد والميكانيكا / مختبر الإنشاءات والمواد", "room", 830, 740, {}],
-    ["Mechanics Lab", "مختبر الميكانيكا", "room", 825, 915, {}],
+    ["Toilets (west)", "دورات المياه (الغربية)", "toilet", 555, 772, {"doors": "022 023"}],    # at the WC doors (022/023) on the corridor,
+    ["Toilets (east)", "دورات المياه (الشرقية)", "toilet", 1097, 772, {"doors": "004 005"}],   # at the WC doors (004/005) on the corridor,
+    ["Analytical Chemistry Lab", "مختبر الكيمياء التحليلية", "lab", 210, 280, {"doors": "034"}],
+    ["Ultrasound Lab / Radiographic Skills Lab", "مختبر الموجات فوق الصوتية / مختبر مهارات التصوير الشعاعي", "lab", 210, 410, {"doors": "033"}],
+    ["Sand Casting Lab", "مختبر السباكة الرملية", "lab", 190, 490, {"doors": "032"}],
+    ["General Chemistry Lab (west)", "مختبر الكيمياء العامة (الغربي)", "lab", 210, 615, {"doors": "031"}],
+    ["Organic Chemistry Lab", "مختبر الكيمياء العضوية", "lab", 205, 850, {"doors": "029"}],
+    ["Pharmaceutical Technology Lab", "مختبر التقنية الصيدلانية", "lab", 410, 880, {"doors": "024 024A"}],
+    ["Biotechnology Research Lab", "مختبر أبحاث التقنية الحيوية", "lab", 415, 640, {"doors": "026"}],
+    ["General Chemistry Lab (centre)", "مختبر الكيمياء العامة (الأوسط)", "lab", 600, 650, {"doors": "025"}],
+    ["Materials & Mechanics Lab / Structures & Materials Lab", "مختبر المواد والميكانيكا / مختبر الإنشاءات والمواد", "lab", 830, 740, {"doors": "001 001H"}],
+    ["Mechanics Lab", "مختبر الميكانيكا", "lab", 825, 915, {"doors": "001G"}],
     ["Lecture Room", "قاعة المحاضرات", "room", 935, 915, {}],
-    ["Multi Purpose Workshop / Engineering Workshop", "الورشة متعددة الأغراض / الورشة الهندسية", "room", 1160, 620, {}],
-    ["Geotechnical Lab", "مختبر الجيوتقنية", "room", 1250, 870, {}],
-    ["Fluid Mechanics Lab / Wind Energy Lab", "مختبر ميكانيكا الموائع / مختبر طاقة الرياح", "room", 1445, 265, {}],
-    ["Fluid Mechanics Lab (CEE)", "مختبر ميكانيكا الموائع (الهندسة المدنية والبيئية)", "room", 1445, 470, {}],
-    ["Radiation Detection Lab", "مختبر الكشف الإشعاعي", "room", 1445, 640, {}],
-    ["Applied Radiation Measurement Lab", "مختبر القياس الإشعاعي التطبيقي", "room", 1445, 830, {}],
+    ["Multi Purpose Workshop / Engineering Workshop", "الورشة متعددة الأغراض / الورشة الهندسية", "room", 1160, 620, {"doors": "002 MD9"}],
+    ["Geotechnical Lab", "مختبر الجيوتقنية", "lab", 1250, 870, {"doors": "006"}],
+    ["Fluid Mechanics Lab / Wind Energy Lab", "مختبر ميكانيكا الموائع / مختبر طاقة الرياح", "lab", 1445, 265, {"doors": "013"}],
+    ["Fluid Mechanics Lab (CEE)", "مختبر ميكانيكا الموائع (الهندسة المدنية والبيئية)", "lab", 1445, 470, {"doors": "012"}],
+    ["Radiation Detection Lab", "مختبر الكشف الإشعاعي", "lab", 1445, 640, {"doors": "010"}],
+    ["Applied Radiation Measurement Lab", "مختبر القياس الإشعاعي التطبيقي", "lab", 1445, 830, {"doors": "009"}],
 ]
 
 
@@ -156,5 +157,5 @@ if __name__ == "__main__":
     (HERE / "b3_ground.dxf").write_text(dxf(segs, corner))
     pts = [[en, ar, cat, *to_m(corner, x * 1.5, y * 1.5), opt] for en, ar, cat, x, y, opt in PLACES]
     floors = [{"dxf": "b3_ground.dxf", "floor": "Ground Floor", "points": pts, "geo": geo(corner)}]
-    (HERE / "floors.json").write_text(json.dumps({"building": "UoS Central Labs B3 (test)", "floors": floors}, ensure_ascii=False, indent=1))
+    (HERE / "floors.json").write_text(json.dumps({"building": "UoS Central Labs B3 (test)", "buildingAr": "مبنى المختبرات المركزية B3 - جامعة الشارقة (تجريبي)", "floors": floors}, ensure_ascii=False, indent=1))
     print("Ground Floor: {} wall segments, {} places, corner {} -> b3_ground.dxf, floors.json".format(len(segs), len(pts), corner))

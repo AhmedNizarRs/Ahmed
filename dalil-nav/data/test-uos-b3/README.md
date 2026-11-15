@@ -20,6 +20,7 @@ node data/test-uos-b3/build-maps.cjs      # runs the Mapper headless → dalil-m
   roof outline: edges at 34° / 124°, the service court (pump room, substation) faces the road to the south-east,
   so the drawing's "up" is 124° from north. The traced plan overlays the roof within about 1–2 m. About ±5 m and ±2°; not surveyed.
 - **Lift and stair points** are at their doors (lift cars and stair flights are closed shapes on the plan).
+- **Door numbers** (`doors`, e.g. Analytical Chemistry Lab = 034) are the numbers printed next to each room's door on the drawing; check on site. Labs use the `lab` category. Arabic building name is a draft.
 - **Toilets** are not marked men's/women's on the drawing, so each block is one "Toilets" place.
 - **Entrance MD13** is left out: the drawing closes its vestibule off from the corridor with a line, and we did not guess a door.
 - Arabic names are drafts and need a native-speaker check. Only the ground floor was supplied, so lifts and stairs have no floor links yet.

@@ -179,7 +179,7 @@ test('motion off: the app says so (never "tap Next"), offers Allow motion, signs
   await page.click('#btnStart');
   await page.waitForSelector('#motionCard:not([hidden])', { timeout: 5000 });
   assert.match(await page.textContent('#motionCard'), /Turn on motion/);
-  assert.match(await page.textContent('#motionBody'), /Motion access is off/);
+  assert.match(await page.textContent('#motionBody'), /motion sensor, and it is switched off/);
   assert.ok(await page.isVisible('#btnAllowMotion'));
   assert.equal(await page.$('#btnNext'), null);
   assert.doesNotMatch(await page.textContent('#nav'), /tap Next/i);
@@ -478,20 +478,27 @@ test('home is a map: search bar, category chips, floor switcher, tappable pins, 
 
 test('indoor maps find you: near a DALIL building the app offers it; inside one it opens by itself (no Settings)', async () => {
   const stub = async page => { for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://*.tile.opentopomap.org/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 })); };
-  // About 250 m from the House of Wisdom, with the sample hospital open
+  // About 250 m from the House of Wisdom, with the sample hospital (not placed on Earth) open: the nearby building opens
   let { ctx, page, errors } = await open('', { permissions: ['geolocation'], geolocation: { latitude: 25.3165, longitude: 55.5045, accuracy: 20 } });
   await stub(page);
-  await page.waitForSelector('#nearCard:not([hidden])');
-  assert.match(await page.textContent('#nearTitle'), /House of Wisdom \(test\): indoor map available/);
-  assert.equal(await page.evaluate(() => window.DALIL_APP.state.map.building.name), 'Sample Hospital', 'near is only an offer');
-  await page.click('#btnNearOpen');
   await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'house-of-wisdom-test');
+  assert.match(await page.textContent('#toast'), /Opened the indoor map of House of Wisdom/);
   await page.waitForFunction(() => window.DALIL_APP.homeMap()?.map.getLayer('walls'));
-  // The list of indoor maps in the sheet, and the chip that opens it
+  // The list of indoor maps: nearest first, far ones folded away
   await page.click('#chipBuildings');
-  assert.ok((await page.$$eval('#buildingList [data-building]', b => b.map(x => x.dataset.building))).includes('sample-hospital'));
+  const ids = await page.$$eval('#buildingList [data-building]', b => b.map(x => x.dataset.building));
+  assert.equal(ids[0], 'house-of-wisdom-test', 'nearest first');
+  assert.ok(!ids.includes('kennedy-library-cal-poly-test'), 'California is folded away');
+  await page.click('#btnMoreBld');
+  assert.ok((await page.$$eval('#buildingList [data-building]', b => b.map(x => x.dataset.building))).includes('kennedy-library-cal-poly-test'));
+  // Choosing another building by hand wins; the nearby one is then only offered
   await page.click('#buildingList [data-building="sample-hospital"]');
   await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'sample-hospital');
+  await page.waitForSelector('#nearCard:not([hidden])');
+  assert.match(await page.textContent('#nearTitle'), /House of Wisdom \(test\): indoor map available/);
+  assert.equal(await page.textContent('#fromEyebrow'), 'Starting point', 'never "you are here" in a building GPS cannot place you in');
+  await page.click('#btnNearOpen');
+  await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'house-of-wisdom-test');
   assert.deepEqual(errors, []);
   await ctx.close();
   // Standing inside it: it opens by itself
@@ -642,6 +649,15 @@ test('home remembers recent places and searches; the phone\'s back button works;
   await ctx.close();
 });
 
+test('Arabic: building names are Arabic too', async () => {
+  const { ctx, page, errors } = await open('#b=uos-central-labs-b3-test&f=ground-floor');
+  await page.click('#btnSheet').catch(() => {}); await page.click('#btnLang');
+  await page.waitForFunction(() => document.documentElement.lang === 'ar');
+  assert.match(await page.textContent('#bldName'), /مبنى المختبرات المركزية B3/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('GPS outside the building: never "you are here" inside it; the route starts at the nearest entrance, with walking directions there', async () => {
   const B3 = '#b=uos-central-labs-b3-test&f=ground-floor';
   const stub = async page => { for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 })); };
@@ -673,10 +689,7 @@ test('a lost visitor on campus: Arabic search finds the right places; opening th
   const stub = async page => { for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 })); };
   const { ctx, page, errors } = await open('', { permissions: ['geolocation'], geolocation: { latitude: 25.2882, longitude: 55.4767, accuracy: 12 } });
   await stub(page);
-  await page.waitForSelector('#nearCard:not([hidden])');
-  assert.match(await page.textContent('#nearTitle'), /UoS Central Labs B3/);
-  await page.click('#btnNearOpen');
-  await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'uos-central-labs-b3-test');
+  await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'uos-central-labs-b3-test');   // opened by itself: the nearest indoor map
   await page.waitForFunction(() => document.querySelector('#fromEyebrow').textContent.includes('Not in this building'));
   await page.click('#btnSearchOpen');
   const names = async q => { await page.fill('#search', q); await page.waitForTimeout(150); return page.$$eval('#results button[data-pick]', b => b.map(x => x.innerText)); };
@@ -685,6 +698,24 @@ test('a lost visitor on campus: Arabic search finds the right places; opening th
   const wc = await names('حمام');
   assert.deepEqual(wc.map(n => n.split('\n')[0]).sort(), ['Toilets (east)', 'Toilets (west)']);
   assert.equal((await names('مُختَبر الكيمياء')).length, 4, 'harakat ignored; two words narrow it');
+  // Door numbers from the drawing, labs labelled as labs, honest distances while outside
+  assert.match((await names('034'))[0], /Analytical Chemistry Lab\nLab · Door 034/);
+  assert.match((await names('MD9'))[0], /Multi Purpose Workshop/);
+  await names('Organic'); assert.match(await page.textContent('#results'), /Distances from Entrance MD\d+, where the indoor route starts/);
+  // Nothing matches: offer the help desk and help
+  await names('library');
+  assert.ok(await page.isVisible('#noResults')); assert.ok(await page.isVisible('#btnNoResHelpDesk')); assert.ok(await page.isVisible('#btnNoResHelp'));
+  // A route while outside: Start first sends you to the entrance
+  await page.fill('#search', 'Organic'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  assert.match(await page.textContent('#placeFacts'), /Door 029/);
+  await page.click('#btnStart');
+  await page.waitForSelector('#dlgOutside[open]');
+  assert.match(await page.textContent('#dlgOutside'), /from this building.*Entrance MD\d+.*I’m at the entrance now/s);
+  await page.click('#btnOutAtDoor');
+  await pageIs(page, 'nav');
+  const st = await steps(page);
+  assert.ok(!st.some(x => /Turn to your/.test(x)), 'plain words first: ' + st[1]);
+  assert.ok(!st.some((x, i) => i && /^Bear (left|right), then walk [12] m/.test(x) && /^Bear/.test(st[i + 1] || '')), 'no 1–2 m zigzags');
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -833,7 +864,7 @@ test('Getting here: the floor plan on a street map; providers fail over (OpenFre
   await page.route('https://tiles.openfreemap.org/**', r => r.fulfill({ status: 503, body: 'down' }));
   for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://*.tile.opentopomap.org/**']) await page.route(h, r => r.fulfill({ status: 503, body: 'down' }));
   await page.route('https://tiles.versatiles.org/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#f3efe6' } }] }) }));
-  await page.goto(base); await page.evaluate(() => window.DALIL_APP.ready);
+  await page.goto(base + '#b=sample-hospital'); await page.evaluate(() => window.DALIL_APP.ready);
   assert.ok(await page.isHidden('#btnGettingHere'), 'only buildings with a world position offer it');
   await page.goto(base + KENNEDY); await page.evaluate(() => window.DALIL_APP.ready);
   assert.ok(await page.isVisible('#btnGettingHere'));

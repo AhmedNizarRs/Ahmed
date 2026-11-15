@@ -57,6 +57,7 @@ const planPts = m => m.plan.walls.flat().concat((m.plan.corridors || []).flat())
 const catIco = c => svgIco(CAT_ICONS[c] || CAT_ICONS.room);
 const fillIcons = (root = document) => root.querySelectorAll('[data-ico]').forEach(el => { if (!el.firstChild) el.innerHTML = ico(el.dataset.ico); });
 const pt = id => state.map?.points.find(p => p.id === id) || null;
+const bname = b => b ? ((settings.lang === 'ar' && b.nameAr) || b.name) : '';
 const pname = p => p ? (settings.lang === 'ar' ? (p.nameAr || p.nameEn) : (p.nameEn || p.nameAr)) : '';
 const catName = c => T().cats[c] || STR.en.cats[c] || c;
 const mode = () => settings.stepFree ? 'chair' : 'walk';
@@ -242,7 +243,7 @@ async function loadFile(file) {
   addMap(m);
   const user = store.get('dalil.userMaps', []).filter(o => !(o.building.id === m.building.id && o.floor.id === m.floor.id)); user.push(m);
   const kept = store.set('dalil.userMaps', user);
-  $('#loadMsg').textContent = t('mapLoaded', `${m.building.name} · ${floorName(m.floor)}`) + (kept ? '' : ' ' + t('mapSessionOnly'));
+  $('#loadMsg').textContent = t('mapLoaded', `${bname(m.building)} · ${floorName(m.floor)}`) + (kept ? '' : ' ' + t('mapSessionOnly'));
   selectFloor(m);
 }
 
@@ -319,7 +320,7 @@ function selectFloor(map, { keepFrom = false } = {}) {
   store.set('dalil.last', { b: map.building.id, f: map.floor.id });
   $('#ghSub').textContent = t('gettingHereSub'); proximityHint();
   renderAll();
-  const f = locator.fresh(120000); if (f && !nav.active && map.geo) homeFix(f);   // GPS already known: inside or outside this building?
+  const f = locator.fresh(120000); if (f && !nav.active) { if (map.geo) homeFix(f); else nearCheck(); }   // GPS already known: inside or outside this building? any DALIL building near?
 }
 function setFrom(id, { say = true, confirm = false } = {}) {
   const p = pt(id); if (!p) return false;
@@ -352,7 +353,7 @@ function renderAll() {
 function rowHTML(m, p, { dist = null, floor = false, q = '' } = {}) {
   return `<li><button class="row-btn" type="button" data-pick="${esc(keyOf(m, p))}"${q ? ` data-q="${esc(q)}"` : ''}>
     <span class="r-ico${isService(p.category) ? ' svc' : ''}">${catIco(p.category)}</span>
-    <span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(catName(p.category))}${floor ? ` · ${esc(floorName(m.floor))}` : ''}</span></span>
+    <span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(catName(p.category))}${p.doors ? ` · ${esc(t('doorN', p.doors.split(' ')[0]))}` : ''}${floor ? ` · ${esc(floorName(m.floor))}` : ''}</span></span>
     <span class="r-end">${dist != null ? `<span>${esc(fmtM(dist))}</span>` : ''}</span></button></li>`;
 }
 const presentCats = () => { const s = new Set(); for (const m of bFloors()) for (const p of m.points) s.add(p.category); return s; };
@@ -362,7 +363,7 @@ function renderHome() {
   if (!state.map) return;
   const from = pt(state.fromId), multi = bFloors().length > 1, here = presentCats(), bid = state.map.building.id;
   const inst = settings.lang === 'ar' ? (cfg.institution?.nameAr || cfg.institution?.name) : cfg.institution?.name;
-  $('#bldName').innerHTML = `<bdi>${esc([inst, state.map.building.name].filter(Boolean).join(' · '))}</bdi>`;
+  $('#bldName').innerHTML = `<bdi>${esc([inst, bname(state.map.building)].filter(Boolean).join(' · '))}</bdi>`;
   $('#fromName').textContent = from ? `${pname(from)}${multi ? ` · ${floorName(state.map.floor)}` : ''}` : t('fromUnknown');
   $('#liGettingHere').hidden = !state.map.geo;
   renderHolo(from); renderGpsBits();
@@ -411,7 +412,7 @@ async function renderHomeMap(from = pt(state.fromId)) {
   }
   const bid = state.map.building.id;
   if (homeCtl && homeCtlFor !== bid) {                    // another DALIL building on the same map: move there
-    homeCtlFor = bid; homeCtl.setFloor(homeFloor); homeCtl.frame(); renderBuildings();
+    homeCtlFor = bid; homeCtl.setFloor(homeFloor); homeFrame(); renderBuildings();
   }
   if (!homeCtl || homeCtlFor !== bid) {
     if (homeLoading === bid) return;                      // one map at a time per building (a second call waits for it)
@@ -426,7 +427,7 @@ async function renderHomeMap(from = pt(state.fromId)) {
         pins: true, onPick: id => { const m = homeFloor; setDest(keyOf(m, pointOf(m, id))); }, iconFor: c => svgIco(c === 'building' ? UI.building : CAT_ICONS[c] || CAT_ICONS.room), padding: SHEET_PAD,
         onProvider: () => renderLayerControls('home') });
       homeCtl = ctl; homeCtlFor = bid;                   // kept even if you left Home meanwhile: it shows again on return
-      renderBuildings();
+      renderBuildings(); homeFrame();
     } catch { return; } finally { homeLoading = null; }
     if (pageNow !== 'home' || state.map?.building.id !== bid) return;
   } else homeCtl.setFloor(homeFloor);
@@ -449,7 +450,7 @@ function setSheet(open) {
 // and when your location is near one the app offers it (or opens it when you are clearly inside it).
 function buildingsList() {
   const by = new Map();
-  for (const m of state.maps) { const b = by.get(m.building.id) || { id: m.building.id, name: m.building.name, maps: [] }; b.maps.push(m); by.set(b.id, b); }
+  for (const m of state.maps) { const b = by.get(m.building.id) || { id: m.building.id, name: bname(m.building), maps: [] }; b.maps.push(m); by.set(b.id, b); }
   for (const b of by.values()) {
     const g = b.maps.find(m => m.geo);
     if (g) { const xs = planPts(g), T = geoTransform(g.geo); let a = Infinity, c = -Infinity, d = Infinity, e = -Infinity;
@@ -464,7 +465,13 @@ function openBuilding(id, { say = true } = {}) {
   setSheet(false); $('#nearCard').hidden = true;
   if (state.map.building.id !== id) { homeFloor = null; selectFloor(b.maps[0]); state.fromManual = false; if (say) { const msg = t('openedBuilding', b.name); toast(msg); announce(msg); } }
   else renderHome();
-  if (homeCtl) homeCtl.frame();
+  if (homeCtl) homeFrame();
+}
+// Show the building, and you too when GPS puts you within 1.5 km of it (so you see where it is from where you stand).
+function homeFrame() {
+  if (!homeCtl) return;
+  const f = locator.fresh(120000), b = buildingsList().find(x => x.id === state.map.building.id);
+  homeCtl.frame(undefined, f && b?.at && haversine([f.lng, f.lat], b.at) < 1500 ? [f.lng, f.lat] : null);
 }
 // Which building is near you (GPS), and what to offer: open it, or nothing.
 function nearCheck() {
@@ -475,19 +482,27 @@ function nearCheck() {
   if (!best || best.d > 400 + best.b.radius) { card.hidden = true; return; }
   const cur = best.b.id === state.map.building.id, inside = best.d <= best.b.radius + Math.min(25, f.acc);
   if (!cur && inside && !state.fromManualBuilding) { openBuilding(best.b.id); return; }   // clearly inside another DALIL building
+  if (!cur && !state.fromManualBuilding && !state.autoNear) {     // near a DALIL building but showing one that is not placed here
+    const curB = buildingsList().find(b => b.id === state.map.building.id), far = !curB?.at || haversine([f.lng, f.lat], curB.at) > 2000;
+    if (far) { state.autoNear = true; openBuilding(best.b.id); return; }
+  }
   if (cur || nearDismissed === best.b.id) { card.hidden = true; return; }
-  $('#nearTitle').textContent = t('nearTitle', best.b.name); $('#nearSub').textContent = t('nearSub', fmtDist(Math.max(0, best.d - best.b.radius)));
+  $('#nearTitle').textContent = t('nearTitle', best.b.name); $('#nearSub').textContent = t('nearSub', fmtDist(edgeDist(best.b, f)));
   card.hidden = false; card.dataset.bld = best.b.id;
 }
 let rbT = 0; function renderBuildingsThrottled() { const n = Date.now(); if (n - rbT > 15000) { rbT = n; renderBuildings(); } }
+const edgeDist = (b, f) => f && b.at ? Math.max(0, haversine([f.lng, f.lat], b.at) - b.radius) : null;   // what the near card says too
 function renderBuildings() {
   const list = buildingsList(), f = locator.fresh(600000);
   $('#secBuildings').hidden = list.length < 2;
-  $('#buildingList').innerHTML = list.map(b => {
-    const cur = b.id === state.map.building.id, d = f && b.at ? haversine([f.lng, f.lat], b.at) : null;
-    const sub = [cur ? t('openNow') : d != null ? t('bldAway', fmtDist(d)) : '', t('floorsCount', b.maps.length), b.at ? '' : t('noGeoYet')].filter(Boolean).join(' · ');
+  const rows = list.map(b => ({ b, d: edgeDist(b, f) })).sort((x, y) => (x.d ?? 1e12) - (y.d ?? 1e12));
+  const near = rows.filter(r => !f || r.d == null || r.d <= 50000 || r.b.id === state.map.building.id), far = rows.filter(r => !near.includes(r));
+  const row = ({ b, d }) => {
+    const cur = b.id === state.map.building.id;
+    const sub = [cur ? t('openNow') : d != null ? (d < 1 ? t('youAreInside') : t('bldAway', fmtDist(d))) : '', t('floorsCount', b.maps.length), b.at ? '' : t('noGeoYet')].filter(Boolean).join(' · ');
     return `<li><button class="row-btn${cur ? ' is-current' : ''}" type="button" data-building="${esc(b.id)}"${cur ? ' aria-current="true"' : ''}><span class="r-ico"><span class="ico">${svgIco(UI.building)}</span></span><span class="r-main"><span class="r-name">${esc(b.name)}</span><span class="r-sub">${esc(sub)}</span></span><span class="ico r-chev flip-rtl">${svgIco(UI.fwd)}</span></button></li>`;
-  }).join('');
+  };
+  $('#buildingList').innerHTML = near.map(row).join('') + (far.length ? (state.showFarBld ? far.map(row).join('') : `<li><button class="row-btn more-bld" type="button" id="btnMoreBld"><span class="r-main"><span class="r-name">${esc(t('moreBuildings', far.length))}</span></span></button></li>`) : '');
   homeCtl?.setBuildings(list.filter(b => b.at).map(b => ({ id: b.id, name: b.name, lngLat: b.at, current: b.id === state.map.building.id })), id => { state.fromManualBuilding = true; openBuilding(id); });
 }
 // Base map and layer controls, shared by Home (the Layers button) and the real-map page.
@@ -504,7 +519,7 @@ function renderLayerControls(where) {
 /* ---------- Search ---------- */
 const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f\u064b-\u065f\u0670\u0640]/g, '')
   .replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();
-const FILTERS = { rooms: ['room'], toilets: ['toilet', 'toilet_acc', 'baby'], lifts: ['lift', 'stairs', 'ramp'], food: ['cafe'], prayer: ['prayer', 'wudu'], services: ['reception', 'entrance', 'exit'] };
+const FILTERS = { rooms: ['room', 'lab'], toilets: ['toilet', 'toilet_acc', 'baby'], lifts: ['lift', 'stairs', 'ramp'], food: ['cafe'], prayer: ['prayer', 'wudu'], services: ['reception', 'entrance', 'exit'] };
 const FILTER_LABEL = { rooms: 'filterRooms', toilets: 'filterToilets', lifts: 'filterLifts', food: 'filterFood', prayer: 'filterPrayer', services: 'filterServices' };
 function searchPoints(q) {
   const nq = norm(q), words = nq ? nq.split(/\s+/) : [], from = pt(state.fromId), scored = [];
@@ -514,7 +529,7 @@ function searchPoints(q) {
     for (const p of m.points) {
       if (cats && !cats.includes(p.category)) continue;
       if (m === state.map && p.id === state.fromId) continue;
-      const names = norm(`${p.nameEn} ${p.nameAr}`), catText = norm(`${catName(p.category)} ${STR.en.cats[p.category] || ''} ${STR.ar.cats[p.category] || ''} ${CAT_WORDS[p.category] || ''}`);
+      const names = norm(`${p.nameEn} ${p.nameAr} ${p.doors || ''}`), catText = norm(`${catName(p.category)} ${STR.en.cats[p.category] || ''} ${STR.ar.cats[p.category] || ''} ${CAT_WORDS[p.category] || ''}`);
       if (words.length && !words.every(w => names.includes(w) || catText.includes(w))) continue;
       const starts = !nq ? 1 : norm(pname(p)).startsWith(nq) ? 0 : names.includes(nq) ? 1 : 2;
       const d = m === state.map ? distFor(m, from, p) : null;
@@ -544,7 +559,9 @@ function renderSearch() {
   const res = searchPoints(q), multi = bFloors().length > 1;
   $('#noResults').hidden = res.length > 0;
   $('#noResultsTitle').textContent = q ? t('noResultsFor', q) : t('noResults');
+  $('#btnNoResHelpDesk').hidden = !bFloors().some(m => m.points.some(p => p.category === 'reception'));
   let html = '', group = null;
+  const out = outsideNow(); if (out && res.length) html += `<li class="group-title res-note" role="presentation">${esc(t('distFromStart', pname(pt(out.id))))}</li>`;
   for (const r of res.slice(0, 80)) {
     const g = r.m === state.map ? 'here' : r.m.floor.id;
     if (multi && g !== group) { group = g; html += `<li class="group-title" role="presentation">${esc(g === 'here' ? t('groupHere') : floorName(r.m.floor))}</li>`; }
@@ -579,13 +596,21 @@ function setStepFree(on) {
 
 /* ---------- Route ready ---------- */
 const roomNo = p => { if (['lift', 'stairs', 'pin', 'corridor'].includes(p.category)) return null; const m = (p.nameEn || '').match(/\(?\b([A-Z]?\d{2,4}[A-Z]?)\b\)?\s*$/); return m ? m[1] : null; };
+function openOutsideStart() {
+  const out = outsideNow(), e = pt(out.id), ll = state.map.geo ? geoTransform(state.map.geo)(e.x, e.y) : null;
+  $('#outDlgTitle').textContent = t('outTitle', fmtDist(out.d));
+  $('#outDlgBody').textContent = t('outStartBody', pname(e));
+  const a = $('#btnOutWalk'); a.hidden = !ll; if (ll) a.href = `https://www.google.com/maps/dir/?api=1&destination=${ll[1].toFixed(6)},${ll[0].toFixed(6)}&travelmode=walking`;
+  $('#btnOutMap').hidden = !state.map.geo;
+  openDlg($('#dlgOutside'));
+}
 function renderRoute() {
   const dest = destRef(); if (!dest) return;
   const to = dest.p, here = dest.m === state.map && state.fromId === to.id;
   const route = here ? null : planTo(state.toKey), multi = bFloors().length > 1;
   $('#placeIco').innerHTML = catIco(to.category);
   $('#destName').textContent = pname(to);
-  $('#destMeta').innerHTML = [`<span>${esc(catName(to.category))}</span>`, multi || dest.m !== state.map ? `<span class="badge">${esc(floorName(dest.m.floor))}</span>` : '', `<bdi>${esc(dest.m.building.name)}</bdi>`].join('');
+  $('#destMeta').innerHTML = [`<span>${esc(catName(to.category))}</span>`, multi || dest.m !== state.map ? `<span class="badge">${esc(floorName(dest.m.floor))}</span>` : '', `<bdi>${esc(bname(dest.m.building))}</bdi>`].join('');
   const isSaved = isFav(state.toKey);
   $('#btnFav').setAttribute('aria-pressed', String(isSaved)); $('#favText').textContent = t(isSaved ? 'saved' : 'save');
   const msg = $('#routeMsg'); msg.className = 'route-msg'; msg.innerHTML = '';
@@ -615,6 +640,7 @@ function renderRoute() {
   const facts = [], rn = roomNo(to);
   const fi = n => `<span class="ico">${ico(n)}</span>`;
   if (rn) facts.push(`<li>${fi('pin')}${esc(t('factRoom', rn))}</li>`);
+  if (to.doors) facts.push(`<li>${fi('pin')}${esc(t('factDoors', to.doors.split(' ').join(', ')))}</li>`);
   if (to.category === 'toilet_acc') facts.push(`<li class="ok">${fi('wheel')}${esc(t('accToilet'))}</li>`);
   if (!here) { const chair = settings.stepFree ? route : planTo(state.toKey, 'chair'); facts.push(chair ? `<li class="ok">${fi('check')}${esc(t('accYes'))}</li>` : `<li class="no">${fi('alert')}${esc(t('accNo'))}</li>`); }
   $('#placeFacts').innerHTML = facts.join('');
@@ -666,8 +692,8 @@ function renderFloorMap() {
   mainMap.setRoute(null);
   mainMap.setDest(pinPoint && pinPoint.f === vm.floor.id ? pinPoint : null);
   mainMap.hidePoints([vm === state.map ? state.fromId : null]);
-  $('#mapTitle').innerHTML = `<bdi>${esc(vm.building.name)}</bdi> · <bdi>${esc(floorName(vm.floor))}</bdi>`;
-  $('#mainMap').setAttribute('aria-label', t('mapOf', vm.building.name, floorName(vm.floor)) + ' ' + t('mapTip'));
+  $('#mapTitle').innerHTML = `<bdi>${esc(bname(vm.building))}</bdi> · <bdi>${esc(floorName(vm.floor))}</bdi>`;
+  $('#mainMap').setAttribute('aria-label', t('mapOf', bname(vm.building), floorName(vm.floor)) + ' ' + t('mapTip'));
   const floors = [...bFloors()].reverse(), rail = $('#floorRail');
   rail.setAttribute('aria-label', t('floorsLabel'));
   rail.innerHTML = floors.length < 2 ? '' : floors.map(f => `<button class="floor-btn${f === state.map ? ' here' : ''}" type="button" data-floor="${esc(f.floor.id)}" aria-pressed="${f === vm}" aria-label="${esc(t('viewFloor', floorName(f.floor)))}${f === state.map ? '. ' + esc(t('yourFloor')) : ''}">${esc(floorShort(f.floor))}</button>`).join('');
@@ -749,7 +775,7 @@ function renderSettings() {
   for (const [name, val] of [['lang', settings.lang], ['theme', settings.theme], ['textSize', settings.textSize], ['pace', settings.pace]]) $$(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
   $('#setGps').checked = settings.gps; $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree;
   $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion;
-  $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${m.building.name} · ${floorName(m.floor)}`)}</option>`).join('');
+  $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${bname(m.building)} · ${floorName(m.floor)}`)}</option>`).join('');
   $('#setProvider').innerHTML = providerOptions();
   $('#privacyStats').hidden = !cfg.analytics?.endpoint;
 }
@@ -1189,7 +1215,7 @@ function homeFix(f) {
   const out = q && q.acc <= 80 && !state.fromManual ? outsideOf(m, q) : null;
   if (out) {
     const changed = state.fromId !== out.id || !outsideNow(); state.outside = out; gps.fromId = null;
-    if (changed) { state.fromId = out.id; renderAll(); }
+    if (changed) { state.fromId = out.id; renderAll(); homeFrame(); }
     renderGpsBits(); return;
   }
   if (state.outside) { state.outside = null; if (!state.fromManual) renderAll(); }
@@ -1202,7 +1228,7 @@ function homeFix(f) {
 }
 function renderGpsBits() {
   const near = gps.fromId && gps.fromId === state.fromId && Date.now() - gps.at < 60000 && gps.acc != null;
-  $('#fromEyebrow').textContent = outsideNow() ? t('outsideEyebrow') : near ? t('youAreHereGps', Math.round(gps.acc)) : t('youAreHere');
+  $('#fromEyebrow').textContent = outsideNow() ? t('outsideEyebrow') : near ? t('youAreHereGps', Math.round(gps.acc)) : state.fromManual ? t('youAreHere') : t('startPoint');
   $('#btnLocate').hidden = !(gpsAllowed() && state.map?.geo) || locator.on;
 }
 function navTag(link) {
@@ -1308,6 +1334,7 @@ function applyLink(link, { fromTag = false } = {}) {
   } else if (link.at && !map.points.some(p => p.id === link.at)) map = state.maps.find(m => m.points.some(p => p.id === link.at)) || map;
   if (link.f && !link.b) map = state.maps.find(m => m.building.id === map.building.id && m.floor.id === link.f) || map;
   if (link.at && !map.points.some(p => p.id === link.at)) { if (fromTag) toast(t('nfcUnknown')); return false; }
+  if (link.b) state.fromManualBuilding = true;          // a link or sign for this building: don't swap it for a nearby one
   if (map !== state.map) selectFloor(map);
   if (link.at) setFrom(link.at, { confirm: fromTag, say: fromTag });
   if (link.to) {
@@ -1378,9 +1405,9 @@ let outdoorCtl = null, outdoorSeq = 0;
 async function openOutdoor() {
   const map = state.map; if (!map?.geo) { back(); return; }
   const seq = ++outdoorSeq;
-  $('#outBuilding').textContent = map.building.name;
+  $('#outBuilding').textContent = bname(map.building);
   $('#outStatus').textContent = t('outLoading');
-  $('#outMap').setAttribute('aria-label', t('outMapLabel', map.building.name));
+  $('#outMap').setAttribute('aria-label', t('outMapLabel', bname(map.building)));
   renderOutLayers(map);
   const T = geoTransform(map.geo), entr = map.points.find(p => p.category === 'entrance') || map.points[0];
   const [lng, lat] = T(entr.x, entr.y), ll = `${lat.toFixed(6)},${lng.toFixed(6)}`;
@@ -1456,7 +1483,7 @@ function setProvider(v) { settings.mapProvider = v; saveSettings(); $('#setProvi
    The walk is saved on the phone as it goes, so a closed tab or a phone call loses nothing.
    ========================================================================= */
 const SV_KEY = 'dalil.survey';
-const SV_CATS = ['entrance', 'room', 'toilet', 'toilet_acc', 'lift', 'stairs', 'prayer', 'cafe', 'reception', 'exit'];
+const SV_CATS = ['entrance', 'room', 'lab', 'toilet', 'toilet_acc', 'lift', 'stairs', 'prayer', 'cafe', 'reception', 'exit'];
 const sv = { s: null, cat: 'entrance', pick: null, maps: null, wake: null, saveN: 0, view: null };
 const svLoad = () => { const d = store.get(SV_KEY, null); return d?.floors?.length ? Object.assign(new Survey({ building: d.building }), d) : null; };
 const svSave = () => { if (sv.s) store.set(SV_KEY, sv.s); };
@@ -1650,7 +1677,11 @@ function bind() {
   // Route page
   $('#optStepFree').addEventListener('change', e => setStepFree(e.target.checked));
   $('#btnFav').onclick = () => { if (state.toKey) { const on = toggleFav(state.toKey); announce(t(on ? 'saved' : 'unsave')); toast(t(on ? 'saved' : 'unsave')); } };
-  $('#btnStart').onclick = () => startNav({ preview: !!state.kiosk });
+  $('#btnStart').onclick = () => { if (outsideNow() && !state.kiosk) { openOutsideStart(); return; } startNav({ preview: !!state.kiosk }); };
+  $('#btnOutAtDoor').onclick = () => { $('#dlgOutside').close(); setFrom(state.fromId, { say: false }); startNav(); };
+  $('#btnOutMap').onclick = () => { $('#dlgOutside').close(); go('outdoor'); };
+  $('#btnNoResHelp').onclick = () => openHelp();
+  $('#btnNoResHelpDesk').onclick = () => pickNearest('help');
   $('#btnStartCam').onclick = () => startNav({ camera: true });
   $('#btnShare').onclick = openShare;
   $('#btnShareCopy').onclick = async () => { const v = $('#shareUrl').value; try { await navigator.clipboard.writeText(v); toast(t('copied')); } catch { $('#shareUrl').select(); } };
@@ -1706,7 +1737,7 @@ function bind() {
   $('#hudCard').addEventListener('click', () => $('#btnRepeat').click());
   $('#btnSheet').onclick = () => setSheet(!$('#homeSheet').classList.contains('open'));
   $('#homeChips').addEventListener('click', e => { if (e.target.closest('#chipBuildings')) { setSheet(true); requestAnimationFrame(() => $('#secBuildings').scrollIntoView({ block: 'start' })); } });
-  $('#buildingList').addEventListener('click', e => { const b = e.target.closest('[data-building]'); if (b) { state.fromManualBuilding = true; openBuilding(b.dataset.building); } });
+  $('#buildingList').addEventListener('click', e => { if (e.target.closest('#btnMoreBld')) { state.showFarBld = true; renderBuildings(); return; } const b = e.target.closest('[data-building]'); if (b) { state.fromManualBuilding = true; openBuilding(b.dataset.building); } });
   $('#btnNearOpen').onclick = () => { state.fromManualBuilding = true; openBuilding($('#nearCard').dataset.bld); };
   $('#btnNearClose').onclick = () => { nearDismissed = $('#nearCard').dataset.bld; $('#nearCard').hidden = true; };
   $('#homeFloors').addEventListener('click', e => { const b = e.target.closest('[data-hfloor]'); if (b) setHomeFloor(mapByFloor(b.dataset.hfloor)); });

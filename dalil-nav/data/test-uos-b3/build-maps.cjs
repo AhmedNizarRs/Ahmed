@@ -40,7 +40,12 @@ const CFG = JSON.parse(fs.readFileSync(path.join(DIR, 'floors.json'), 'utf8'));
     console.log(`\n${F.floor}\n  ${res.grid}\n  ${res.exp}\n  unreachable from ${F.points[0][0]}: ${res.unreachable.length ? res.unreachable.join(', ') : 'none'}\n  no step-free route from ${F.points[0][0]}: ${res.noChair.length ? res.noChair.join(', ') : 'none'}`);
     for (const [name, body] of Object.entries(res.out)) {
       let out = body;
-      if (name.startsWith('dalil-map_')) { const m = JSON.parse(body); m.geo = { ...m.geo, source: F.geo.source }; out = JSON.stringify(m); }
+      if (name.startsWith('dalil-map_')) {
+        const m = JSON.parse(body); m.geo = { ...m.geo, source: F.geo.source };
+        if (CFG.buildingAr) m.building.nameAr = CFG.buildingAr;                    // Arabic building name (draft)
+        for (const p of m.points) { const src = F.points.find(q => q[0] === p.nameEn); if (src?.[5]?.doors) p.doors = src[5].doors; }   // door numbers from the drawing
+        out = JSON.stringify(m);
+      }
       fs.writeFileSync(path.join(DIR, name), out); console.log('  wrote', name, (out.length / 1024).toFixed(0) + ' KB');
     }
     await page.screenshot({ path: path.join(DIR, `preview_${F.floor.toLowerCase().replace(/\s+/g, '-')}.png`) });

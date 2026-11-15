@@ -597,6 +597,12 @@ html.reduce-motion .you-pulse, html.reduce-motion .holo::after, html.reduce-moti
 .cat-entrance .op-pin, .cat-exit .op-pin { background: #FFFFFF; color: #0B0D10; border-color: var(--brand); }
 .out-pin .op-name { display: none; color: #fff; font-size: .8125rem; font-weight: 650; white-space: nowrap; text-shadow: 0 0 3px #000, 0 0 2px #000, 0 1px 3px rgba(0, 0, 0, .9); }
 #homeGL.out-names .out-pin .op-name, #outMap.out-names .out-pin .op-name { display: block; }
+#homeGL.out-pins .out-pin.out-key .op-name, #outMap.out-pins .out-pin.out-key .op-name { display: block; font-size: .75rem; }   /* toilets, lifts, entrances: named sooner */
+.cat-lab .op-pin { background: #8E44D9; color: #fff; }   /* labs: a flask on purple, not the room square */
+.out-pin.nm-hide .op-name { display: none !important; }
+.res-note { text-transform: none; letter-spacing: 0; font-weight: 500; font-family: inherit; }
+.more-bld .r-name { color: var(--ink-2); font-weight: 600; }
+.empty-actions { display: grid; gap: .625rem; margin-top: 1rem; justify-items: center; }
 .out-you { position: relative; width: 1.5rem; height: 1.5rem; pointer-events: none; }
 .oy-dot { position: absolute; inset: .125rem; border-radius: 50%; background: #2F7BFF; border: 3px solid #fff; box-shadow: 0 1px 6px rgba(0, 0, 0, .5); }
 .oy-pulse { position: absolute; inset: -.5rem; border-radius: 50%; background: rgba(47, 123, 255, .25); animation: pulse 2.4s var(--ease) infinite; }

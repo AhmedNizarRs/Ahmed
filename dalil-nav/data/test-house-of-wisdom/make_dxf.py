@@ -197,5 +197,5 @@ if __name__ == "__main__":
         pts = [[en, ar, cat, *to_m(floor, px, py), opt] for en, ar, cat, px, py, opt in PLACES[floor]]
         floors.append({"dxf": name, "floor": label, "points": pts, "geo": geo_for(floor)})
         print("{}: {} wall segments, {} places -> {}".format(label, len(segs), len(pts), name))
-    (HERE / "floors.json").write_text(json.dumps({"building": "House of Wisdom (test)", "floors": floors}, ensure_ascii=False, indent=1))
+    (HERE / "floors.json").write_text(json.dumps({"building": "House of Wisdom (test)", "buildingAr": "بيت الحكمة (تجريبي)", "floors": floors}, ensure_ascii=False, indent=1))
     print("wrote floors.json")
