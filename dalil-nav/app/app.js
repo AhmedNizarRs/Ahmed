@@ -671,7 +671,7 @@ function startNav({ camera = false, preview = false } = {}) {
   const sensors = !preview && cfg.features.motion !== false ? tracker.start() : null;
   const { legs, steps } = planSteps(plan), dest = destRef();
   rememberTrip(state.toKey);
-  Object.assign(nav, { active: true, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null, mode: sensors ? 'starting' : 'off',
+  Object.assign(nav, { active: true, retried: false, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null, mode: sensors ? 'starting' : 'off',
     view: 'map', follower: null, arrow: 0, soonFor: -1, started: performance.now(), everStepped: false, transfer: null, kiosk: preview, offReason: preview ? 'preview' : 'none' });
   $('#nav').classList.remove('tracking'); hideMotionCard();
   setViewUI('map');
@@ -694,12 +694,20 @@ function sensorsResult(s) {
 function showMotionCard() {
   const off = nav.active && nav.mode === 'off' && !nav.sim && !nav.kiosk && !nav.signsOnly;
   $('#motionCard').hidden = !off; $('#nav').classList.toggle('motion-off', off);
-  if (off) $('#motionBody').textContent = t({ embedded: 'motionEmbedded', denied: 'motionDenied', none: 'motionNone' }[nav.offReason] || 'motionBody');
+  if (!off) return;
+  // Asking again only helps when permission was refused. In a preview frame or on a device without sensors,
+  // "Allow motion" can never work, so the preview becomes the main button instead of a button that does nothing.
+  const canAsk = nav.offReason === 'denied' || !nav.offReason;
+  $('#btnAllowMotion').hidden = !canAsk;
+  $('#btnPreview').classList.toggle('primary', !canAsk); $('#btnPreview').classList.toggle('secondary', canAsk);
+  $('#motionTitle').textContent = t(canAsk ? 'motionTitle' : 'motionTitleNoSensors');
+  const body = t({ embedded: 'motionEmbedded', denied: 'motionDenied', none: 'motionNone' }[nav.offReason] || 'motionBody');
+  $('#motionBody').textContent = nav.retried ? `${t('motionStill')} ${body}` : body;
 }
 function hideMotionCard() { $('#motionCard').hidden = true; $('#nav').classList.remove('motion-off'); }
 function allowMotion() {
   const p = tracker.start();          // this tap is the permission prompt on iPhone
-  nav.mode = 'starting'; nav.signsOnly = false; hideMotionCard(); renderMode();
+  nav.retried = true; nav.mode = 'starting'; nav.signsOnly = false; hideMotionCard(); renderMode();
   p.then(sensorsResult);
 }
 function endNav({ silent = false } = {}) {
