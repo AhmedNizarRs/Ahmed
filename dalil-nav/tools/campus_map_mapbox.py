@@ -30,9 +30,18 @@ BASE MAPS (the "Base map" list in the panel; your choice is remembered in the br
            light use (OSM's tile policy forbids heavy traffic; CARTO is free for non-commercial).
   Light presets and Mapbox indoor floors only exist on the Mapbox Standard styles.
 
-INDOOR LAYOUTS: the page has a floor selector. It shows indoor rooms and corridors from
-  (a) OpenStreetMap features tagged indoor=* with a level, if anyone has mapped them here, and
-  (b) your own GeoJSON files via --indoor-file (run --make-indoor-template for the format).
+INDOOR LAYOUTS: the page has a floor selector. Every source below is placed on the real map (georeferenced):
+  (a) OpenStreetMap indoor mapping, downloaded automatically: rooms, corridors, areas, walls, doors, entrances,
+      lifts and shops/amenities with a level (Simple Indoor Tagging and the older buildingpart/room tags,
+      including multipolygon rooms), for the campus or any --indoor-bbox in the world;
+  (b) the official building directory (codes and names in English and Arabic, from the University's public
+      campus map) matched to the building footprints; it lists buildings, not rooms;
+  (c) indoor maps you point it at, from a file or any URL (GitHub links work): GeoJSON (--indoor-file),
+      IMDF archives (--imdf), DALIL Mapper exports (--dalil-map), and floor-plan pictures placed by control
+      points (--plan-image).
+No public room-level layout of the University of Sharjah exists online (checked 2026-11-15: the University
+publishes a building map, not floor plans), so rooms appear here when OpenStreetMap mappers add them or when
+you supply a layout (from the University's facilities office, your own survey, or the DALIL Mapper).
 Mapbox's own Indoor Maps data covers airports and similar venues, and its custom-indoor service
 is by arrangement with Mapbox, so for this campus the rooms have to come from (a) or (b).
 
@@ -57,7 +66,14 @@ Options:
                         If you leave it out, the page asks for it when you pick a Google map.
     --base ID           Base map to open with (default: standard). IDs are listed in the page.
     --osm-file FILE     Use a saved Overpass JSON answer instead of downloading.
-    --indoor-file FILE  GeoJSON with your own indoor rooms (repeatable). Needs a "level" property.
+    --indoor-file SRC   GeoJSON indoor rooms with a "level" property: a path or any URL, e.g. a GitHub link (repeatable).
+    --imdf SRC          An IMDF indoor map (Apple Indoor Mapping Data Format: .zip, folder or URL) (repeatable).
+    --dalil-map SRC[@LEVEL]  A DALIL Mapper export that has a world position (walls + labelled places) (repeatable).
+    --plan-image "SRC|LEVEL|px,py,lng,lat;px,py,lng,lat[;...]"
+                        A floor-plan picture (PNG/JPG, path or URL) placed on the map by control points:
+                        a pixel and the real latitude/longitude it shows. 2 points = move/rotate/scale,
+                        3+ = best fit with the error in metres. Use pictures you are allowed to use.
+    --indoor-bbox S,W,N,E  Also harvest OpenStreetMap indoor data in this box (anywhere in the world).
     --make-indoor-template   Write uos_indoor_template.geojson showing the format, then exit.
     --no-indoor         Do not look for OpenStreetMap indoor data.
     --refresh           Ignore the cache and download again.
@@ -298,7 +314,7 @@ def process(elements):
         buildings.append({
             "type": "Feature",
             "geometry": {"type": "Polygon", "coordinates": [[list(c) for c in coords]]},
-            "properties": {"id": "w%s" % el["id"], "name": label, "name_ar": ar,
+            "properties": {"id": "w%s" % el["id"], "name": label, "name_ar": ar, "ref": tags.get("ref", ""),
                            "height": round(height, 1), "height_estimated": estimated,
                            "named": bool(label), "area_m2": round(area, 1),
                            "kind": "building" if is_building else "place"}})
@@ -317,6 +333,112 @@ def process(elements):
 # Indoor layouts: OpenStreetMap indoor=* features and/or your own GeoJSON
 # ---------------------------------------------------------------------------
 INDOOR_CACHE = HERE / ".cache" / "uos_osm_indoor.json"
+DOWNLOAD_DIR = HERE / ".cache" / "downloads"
+
+# ---------------------------------------------------------------------------
+# Official building directory: every building code and name on the University of Sharjah main campus,
+# from the University's public campus map (sharjah.ac.ae, "uosmap-2026.pdf", read 2026-11-15).
+# The PDF has no room-level floor plans; it gives building codes and names. Codes are matched to
+# OpenStreetMap footprints by their `ref` tag or name; unmatched codes are listed in the page as "not placed".
+# ---------------------------------------------------------------------------
+DIRECTORY_SOURCE = "University of Sharjah campus map (sharjah.ac.ae, uosmap-2026.pdf)"
+DIRECTORY_URL = "https://www.sharjah.ac.ae/-/media/project/uos/sites/uos/discover-uos/uos-map/uosmap-2026.pdf"
+UOS_DIRECTORY = [  # (code, English, Arabic, what is inside)
+    ("A1", "Ibn Rushd Building", "مبنى ابن رشد", "College of Sharia and Islamic Studies; Research Institute of Science and Engineering"),
+    ("A2", "Ibn Khaldun Building", "مبنى ابن خلدون", "College of Arts, Humanities and Social Sciences; College of Law"),
+    ("A3", "Ibn Al-Haytham Building", "مبنى ابن الهيثم", "College of Graduate Studies"),
+    ("A4", "Dining Hall (Men)", "مجمع المطاعم", ""),
+    ("A5", "Men's Students Center", "مركز الطلاب", ""),
+    ("A6", "Men's Students Forum", "منتدى الطلاب", ""),
+    ("A7", "Library Building (Men)", "مبنى المكتبة", ""),
+    ("A8", "Classrooms A8", "قاعات دراسية", ""),
+    ("A9", "Business and Computing Building", "", "College of Business Administration; College of Computing and Informatics"),
+    ("A10", "Classrooms A10", "قاعات دراسية", ""),
+    ("A11", "College of Sciences", "كلية العلوم", ""),
+    ("A12", "Classrooms A12", "قاعات دراسية", ""),
+    ("A13", "College of Engineering (Men)", "كلية الهندسة", ""),
+    ("A14", "Classrooms A14", "قاعات دراسية", ""),
+    ("A16", "Sports Complex - Men", "المجمع الرياضي - طلاب", ""),
+    ("A17", "Innovation Hub", "مركز الابتكار", ""),
+    ("A19", "University of Sharjah Stadium", "استاد جامعة الشارقة", ""),
+    ("A20", "Classrooms A20", "قاعات دراسية", ""),
+    ("C1", "Al Ghazali Building", "مبنى الغزالي", "College of Sharia and Islamic Studies; College of Law"),
+    ("C2", "Al Farabi Building", "مبنى الفارابي", "College of Arts, Humanities and Social Sciences; College of Public Policy"),
+    ("C3", "Arts, Humanities and Social Sciences (Women)", "", "College of Arts, Humanities and Social Sciences"),
+    ("C4", "Dining Hall (Women)", "مجمع المطاعم", ""),
+    ("C5", "Women's Students Center", "مركز الطالبات", ""),
+    ("C6", "Women's Students Forum", "منتدى الطالبات", ""),
+    ("C7", "Library Building (Women)", "مبنى المكتبة", ""),
+    ("C8", "Classrooms C8", "قاعات دراسية", ""),
+    ("C9", "College of Computing and Informatics (Women)", "كلية الحوسبة والمعلوماتية", ""),
+    ("C10", "College of Business Administration (Women)", "كلية إدارة الأعمال", ""),
+    ("C11", "College of Communication", "كلية الاتصال", ""),
+    ("C12", "Classrooms C12", "قاعات دراسية", ""),
+    ("C13", "College of Engineering (Women)", "كلية الهندسة", ""),
+    ("C14", "Classrooms C14", "قاعات دراسية", ""),
+    ("C15", "Sports Complex - Women", "المجمع الرياضي - طالبات", ""),
+    ("C16", "Classrooms C16", "قاعات دراسية", ""),
+    ("E1", "Jabir Bin Hayyan Building", "مبنى جابر بن حيان", "College of Pharmacy; College of Health Sciences"),
+    ("E2", "Al Razi Auditorium", "مسرح الرازي", ""),
+    ("E3", "Administration, Colleges of Medical and Health Sciences", "", ""),
+    ("E4", "Library Building (Medical)", "مبنى المكتبة", ""),
+    ("E5", "College of Medicine", "كلية الطب", ""),
+    ("E6", "Research Institute for Medical and Health Sciences", "معهد البحوث الطبية والعلوم الصحية", ""),
+    ("E7", "Ibn Sina Building", "مبنى ابن سينا", "Clinical Surgical Training Center; Diabetes Center"),
+    ("E8", "Dining Hall (Medical)", "مجمع المطاعم", ""),
+    ("E9", "College of Dental Medicine", "كلية طب الأسنان", ""),
+    ("E11", "University Dental Hospital Sharjah", "مستشفى الأسنان الجامعي بالشارقة", ""),
+    ("G6", "Administration - Men", "", ""),
+    ("H10", "Administration - Women", "", ""),
+]
+
+
+def match_directory(buildings):
+    """Puts the directory codes on the OpenStreetMap footprints (by ref, then by name). Returns the directory rows
+    with where each one is (lng, lat) or None, and marks matched footprints with their code."""
+    rows = []
+    feats = buildings["features"]
+    by_ref = {str(f["properties"].get("ref", "")).upper(): f for f in feats if f["properties"].get("ref")}
+    for code, en, ar, inside in UOS_DIRECTORY:
+        f = by_ref.get(code)
+        if f is None:
+            key = en.lower().split(" (")[0]
+            f = next((g for g in feats if g["properties"].get("name") and (g["properties"]["name"].lower() == key or
+                      (len(key) > 8 and key in g["properties"]["name"].lower()))), None)
+        where = None
+        if f is not None:
+            ring = f["geometry"]["coordinates"][0][:-1]
+            where = [round(sum(c[0] for c in ring) / len(ring), 7), round(sum(c[1] for c in ring) / len(ring), 7)]
+            f["properties"]["code"] = code
+            if not f["properties"].get("name"):
+                f["properties"]["name"], f["properties"]["named"] = en, True
+        rows.append({"code": code, "name": en, "name_ar": ar, "inside": inside, "at": where})
+    return rows
+
+
+# ---------------------------------------------------------------------------
+# Fetching inputs from files or the web (GitHub raw links, APIs, any https URL), cached
+# ---------------------------------------------------------------------------
+def fetch_bytes(src, offline=False):
+    """Reads a local path, or downloads an http(s) URL once (cached in .cache/downloads)."""
+    if not str(src).startswith(("http://", "https://")):
+        return Path(src).read_bytes()
+    import hashlib
+    url = str(src)
+    if "github.com/" in url and "/blob/" in url:  # a GitHub page link -> the raw file
+        url = url.replace("https://github.com/", "https://raw.githubusercontent.com/").replace("/blob/", "/", 1)
+    cached = DOWNLOAD_DIR / (hashlib.sha1(url.encode()).hexdigest()[:16] + "_" + url.rstrip("/").split("/")[-1].split("?")[0][-60:])
+    if cached.exists():
+        return cached.read_bytes()
+    if offline:
+        raise RuntimeError("--offline set and {} is not cached".format(url))
+    print("Downloading " + url)
+    req = urllib.request.Request(url, headers={"User-Agent": "campus-map-prototype/1.0"})
+    with urllib.request.urlopen(req, timeout=120) as r:
+        data = r.read()
+    DOWNLOAD_DIR.mkdir(parents=True, exist_ok=True)
+    cached.write_bytes(data)
+    return data
 
 
 def norm_level(v):
@@ -329,79 +451,313 @@ def norm_level(v):
         return first
 
 
-def indoor_query():
-    b = CAMPUS["bbox"]
+# ---------------------------------------------------------------------------
+# Source 1: OpenStreetMap indoor mapping (Simple Indoor Tagging, plus the older buildingpart/room tags)
+# ---------------------------------------------------------------------------
+def indoor_query(bbox=None):
+    b = bbox or CAMPUS["bbox"]
     bb = "{},{},{},{}".format(b["s"], b["w"], b["n"], b["e"])
-    return '[out:json][timeout:60];(way["indoor"]({bb}););out geom tags;'.format(bb=bb)
+    return ("[out:json][timeout:90];("
+            'nwr["indoor"]({bb});'                       # rooms, corridors, areas, walls, doors, levels
+            'nwr["buildingpart"]({bb});'                 # older indoor tagging
+            'nwr["room"]({bb});'
+            'nwr["door"]["level"]({bb});'
+            'node["entrance"]({bb});'
+            'node["highway"="elevator"]({bb});'
+            'nwr["level"]["amenity"]({bb});'
+            'nwr["level"]["shop"]({bb});'
+            'relation["type"="level"]({bb});'
+            ");out geom tags;").format(bb=bb)
 
 
 def load_indoor_elements(args):
     if args.no_indoor or args.osm_file:
         return []
+    bbox = parse_bbox(args.indoor_bbox) if getattr(args, "indoor_bbox", None) else None
+    cache = INDOOR_CACHE if not bbox else INDOOR_CACHE.with_name("osm_indoor_{s}_{w}_{n}_{e}.json".format(**bbox))
     try:
-        if INDOOR_CACHE.exists() and not args.refresh:
-            if time.time() - INDOOR_CACHE.stat().st_mtime < CACHE_TTL_S or args.offline:
-                with open(INDOOR_CACHE, encoding="utf-8") as f:
+        if cache.exists() and not args.refresh:
+            if time.time() - cache.stat().st_mtime < CACHE_TTL_S or args.offline:
+                with open(cache, encoding="utf-8") as f:
                     return json.load(f)
         if args.offline:
             return []
-        body = ("data=" + urllib.parse.quote(indoor_query())).encode()
-        for url in ENDPOINTS:
-            try:
-                req = urllib.request.Request(url, data=body, headers={
-                    "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "campus-map-prototype/1.0"})
-                with urllib.request.urlopen(req, timeout=90) as r:
-                    els = json.loads(r.read().decode("utf-8")).get("elements", [])
-                INDOOR_CACHE.parent.mkdir(parents=True, exist_ok=True)
-                with open(INDOOR_CACHE, "w", encoding="utf-8") as f:
-                    json.dump(els, f)
-                return els
-            except (urllib.error.URLError, TimeoutError, ValueError, OSError) as e:
-                print("  indoor query {} failed: {}".format(url, e), file=sys.stderr)
+        body = ("data=" + urllib.parse.quote(indoor_query(bbox))).encode()
+        for attempt in range(3):
+            for url in ENDPOINTS:
+                try:
+                    req = urllib.request.Request(url, data=body, headers={
+                        "Content-Type": "application/x-www-form-urlencoded", "User-Agent": "campus-map-prototype/1.0"})
+                    with urllib.request.urlopen(req, timeout=120) as r:
+                        els = json.loads(r.read().decode("utf-8")).get("elements", [])
+                    cache.parent.mkdir(parents=True, exist_ok=True)
+                    with open(cache, "w", encoding="utf-8") as f:
+                        json.dump(els, f)
+                    return els
+                except (urllib.error.URLError, TimeoutError, ValueError, OSError) as e:
+                    print("  indoor query {} failed: {}".format(url, e), file=sys.stderr)
+            time.sleep(10 * (attempt + 1))  # public Overpass servers are often busy: back off and retry
     except Exception as e:  # indoor data is optional: never stop the map for it
         print("  indoor data skipped: {}".format(e), file=sys.stderr)
     return []
 
 
-def process_indoor(elements, extra_files=()):
+def parse_bbox(text):
+    s, w, n, e = [float(v) for v in str(text).split(",")]
+    if not (s < n and w < e):
+        raise ValueError("--indoor-bbox must be south,west,north,east")
+    return {"s": s, "w": w, "n": n, "e": e}
+
+
+def join_rings(segments):
+    """Joins way geometries (lists of [lng, lat]) end to end into closed rings (multipolygon outer members)."""
+    segs = [list(s) for s in segments if len(s) >= 2]
+    rings = []
+    while segs:
+        ring = segs.pop(0)
+        changed = True
+        while ring[0] != ring[-1] and changed:
+            changed = False
+            for i, s in enumerate(segs):
+                if s[0] == ring[-1]: ring += s[1:]
+                elif s[-1] == ring[-1]: ring += s[::-1][1:]
+                elif s[-1] == ring[0]: ring = s[:-1] + ring
+                elif s[0] == ring[0]: ring = s[::-1][:-1] + ring
+                else: continue
+                segs.pop(i); changed = True; break
+        if len(ring) >= 4 and ring[0] == ring[-1]:
+            rings.append(ring)
+    return rings
+
+
+INDOOR_KINDS = {"room", "corridor", "area", "wall", "door", "level", "stairs", "elevator", "toilets", "entrance", "amenity"}
+
+
+def osm_kind(tags):
+    if tags.get("highway") == "elevator": return "elevator"
+    if "entrance" in tags: return "entrance"
+    if tags.get("door"): return "door"
+    if tags.get("stairs") == "yes" or tags.get("highway") == "steps": return "stairs"
+    if tags.get("amenity") == "toilets" or tags.get("room") == "toilets": return "toilets"
+    k = tags.get("indoor") or tags.get("buildingpart") or ("room" if "room" in tags else None)
+    if k in ("verticalpassage",): return "stairs"
+    if k: return k
+    return "amenity" if (tags.get("amenity") or tags.get("shop")) else "room"
+
+
+def process_indoor(elements, extra_files=(), clip=True):
+    """OpenStreetMap indoor elements (+ GeoJSON files) -> one FeatureCollection with level, kind, name, source."""
     campus_local = [to_local(lng, lat) for lng, lat in CAMPUS["boundary"]]
     feats = []
+
+    def inside(coords):
+        if not clip: return True
+        cx, cy = centroid([to_local(*c) for c in coords])
+        return point_in_polygon(cx, cy, campus_local)
+
     for el in elements:
         tags = el.get("tags", {})
-        geom = el.get("geometry", [])
-        if el.get("type") != "way" or len(geom) < 2:
-            continue
-        level = tags.get("level") or tags.get("repeat_on")
-        if level is None:
-            continue
-        coords = [[g["lon"], g["lat"]] for g in geom]
-        closed = len(coords) >= 4 and coords[0] == coords[-1]
-        cx, cy = centroid([to_local(*c) for c in coords])
-        if not point_in_polygon(cx, cy, campus_local):
-            continue
+        level = tags.get("level") or tags.get("repeat_on") or tags.get("level:ref")
+        if level is None or tags.get("type") == "level" or tags.get("indoor") == "level":
+            continue  # a level outline itself is not a room
         name, ar = names(tags)
-        feats.append({"type": "Feature",
-                      "geometry": {"type": "Polygon", "coordinates": [coords]} if closed
-                      else {"type": "LineString", "coordinates": coords},
-                      "properties": {"level": norm_level(level), "kind": tags.get("indoor", "room"),
-                                     "name": name or tags.get("ref", ""), "name_ar": ar, "source": "OpenStreetMap"}})
-    for path in extra_files:
-        with open(path, encoding="utf-8") as f:
-            gj = json.load(f)
-        for ft in (gj.get("features", []) if gj.get("type") == "FeatureCollection" else [gj]):
-            pr = dict(ft.get("properties") or {})
-            if ft.get("geometry") is None or pr.get("level") in (None, ""):
-                print("  skipped a feature without geometry or level in " + str(path), file=sys.stderr)
+        label = name or tags.get("ref", "") or tags.get("room:ref", "")
+        props = {"level": norm_level(level), "kind": osm_kind(tags), "name": label, "name_ar": ar, "source": "OpenStreetMap"}
+        if el.get("type") == "node":
+            if "lat" in el and inside([[el["lon"], el["lat"]]]):
+                feats.append({"type": "Feature", "geometry": {"type": "Point", "coordinates": [el["lon"], el["lat"]]}, "properties": props})
+            continue
+        if el.get("type") == "way":
+            coords = [[g["lon"], g["lat"]] for g in el.get("geometry", [])]
+            if len(coords) < 2 or not inside(coords):
                 continue
-            pr["level"] = norm_level(pr["level"])
-            pr.setdefault("kind", "room")
-            pr["name"] = pr.get("name", "")
-            pr["source"] = "file"
-            feats.append({"type": "Feature", "geometry": ft["geometry"], "properties": pr})
+            closed = len(coords) >= 4 and coords[0] == coords[-1]
+            geom = {"type": "Polygon", "coordinates": [coords]} if closed and props["kind"] not in ("wall", "door") else {"type": "LineString", "coordinates": coords}
+            feats.append({"type": "Feature", "geometry": geom, "properties": props})
+        elif el.get("type") == "relation" and tags.get("type") == "multipolygon":
+            outers = [[[g["lon"], g["lat"]] for g in m.get("geometry", [])] for m in el.get("members", []) if m.get("role") in ("outer", "") and m.get("geometry")]
+            for ring in join_rings(outers):
+                if inside(ring):
+                    feats.append({"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [ring]}, "properties": dict(props)})
+    for path in extra_files:
+        feats.extend(load_geojson_layout(path))
     return {"type": "FeatureCollection", "features": feats}
 
 
+# ---------------------------------------------------------------------------
+# Source 2: your own GeoJSON (traced on geojson.io, exported from QGIS, downloaded from GitHub ...)
+# ---------------------------------------------------------------------------
+def load_geojson_layout(src, offline=False):
+    gj = json.loads(fetch_bytes(src, offline).decode("utf-8"))
+    out = []
+    for ft in (gj.get("features", []) if gj.get("type") == "FeatureCollection" else [gj]):
+        pr = dict(ft.get("properties") or {})
+        lvl = pr.get("level", pr.get("floor", pr.get("ordinal")))
+        if ft.get("geometry") is None or lvl in (None, ""):
+            print("  skipped a feature without geometry or level in " + str(src), file=sys.stderr)
+            continue
+        pr["level"] = norm_level(lvl)
+        pr["kind"] = str(pr.get("kind") or pr.get("indoor") or pr.get("category") or "room")
+        pr["name"] = str(pr.get("name") or pr.get("ref") or "")
+        pr["source"] = "file: " + str(src).split("/")[-1]
+        out.append({"type": "Feature", "geometry": ft["geometry"], "properties": pr})
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Source 3: IMDF (Apple's Indoor Mapping Data Format, the format venues publish indoor maps in).
+# A .zip or a folder with level.geojson, unit.geojson, opening.geojson, amenity.geojson, occupant.geojson,
+# anchor.geojson. Already georeferenced (WGS84). Floors come from each level's "ordinal".
+# ---------------------------------------------------------------------------
+def load_imdf(src, offline=False):
+    import io, zipfile
+    files = {}
+    p = Path(str(src))
+    if not str(src).startswith(("http://", "https://")) and p.is_dir():
+        for f in p.glob("*.geojson"):
+            files[f.name.lower()] = json.loads(f.read_text(encoding="utf-8"))
+    else:
+        with zipfile.ZipFile(io.BytesIO(fetch_bytes(src, offline))) as z:
+            for n in z.namelist():
+                if n.lower().endswith(".geojson"):
+                    files[n.split("/")[-1].lower()] = json.loads(z.read(n).decode("utf-8"))
+    get = lambda n: files.get(n + ".geojson", {}).get("features", [])
+    label = lambda nm: (nm or {}).get("en") or next(iter((nm or {}).values()), "") if isinstance(nm, dict) else (nm or "")
+    levels = {f["id"]: f["properties"] for f in get("level")}
+    lvl = lambda lid: norm_level(levels.get(lid, {}).get("ordinal", "0"))
+    anchors = {f["id"]: f["properties"].get("unit_id") for f in get("anchor")}
+    occ = {}
+    for f in get("occupant"):
+        u = anchors.get(f["properties"].get("anchor_id"))
+        if u: occ[u] = label(f["properties"].get("name"))
+    out, tag = [], "IMDF: " + str(src).split("/")[-1]
+    for f in get("unit"):
+        pr = f["properties"]
+        if f.get("geometry") and pr.get("level_id") in levels:
+            name = label(pr.get("name")) or occ.get(f["id"], "")
+            out.append({"type": "Feature", "geometry": f["geometry"], "properties": {"level": lvl(pr["level_id"]), "kind": pr.get("category", "room"),
+                        "name": name, "name_ar": (pr.get("name") or {}).get("ar", "") if isinstance(pr.get("name"), dict) else "", "source": tag}})
+    for f in get("opening"):
+        pr = f["properties"]
+        if f.get("geometry") and pr.get("level_id") in levels:
+            out.append({"type": "Feature", "geometry": f["geometry"], "properties": {"level": lvl(pr["level_id"]), "kind": "door", "name": "", "source": tag}})
+    units = {f["id"]: f["properties"].get("level_id") for f in get("unit")}
+    for f in get("amenity"):
+        pr = f["properties"]; uid = (pr.get("unit_ids") or [None])[0]
+        if f.get("geometry") and units.get(uid) in levels:
+            out.append({"type": "Feature", "geometry": f["geometry"], "properties": {"level": lvl(units[uid]), "kind": pr.get("category", "amenity"),
+                        "name": label(pr.get("name")), "source": tag}})
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Source 4: DALIL Mapper exports (dalil-map_<building>_<floor>.json) aligned with the Mapper's World position
+# (`geo`: origin, bearing, scale). Walls become lines, places become labelled points, on their floor.
+# ---------------------------------------------------------------------------
+def geo_transform(geo):
+    lng0, lat0 = geo["origin"]; b = math.radians(geo["bearing"]); k = geo.get("scale") or 1
+    mlng = 111412.84 * math.cos(math.radians(lat0)); mlat = 111132.92 - 559.82 * math.cos(2 * math.radians(lat0))
+    def T(x, y):
+        e = k * (x * math.cos(b) + y * math.sin(b)); n = k * (-x * math.sin(b) + y * math.cos(b))
+        return [round(lng0 + e / mlng, 8), round(lat0 + n / mlat, 8)]
+    return T
+
+
+def load_dalil_map(src, level=None, offline=False):
+    m = json.loads(fetch_bytes(src, offline).decode("utf-8"))
+    if not m.get("geo"):
+        raise RuntimeError("{} has no world position: set it in the DALIL Mapper (World position) and export again".format(src))
+    T = geo_transform(m["geo"])
+    floor = m.get("floor") or {}
+    lv = norm_level(level if level is not None else floor.get("level", floor.get("ordinal", floor.get("id", "0"))))
+    tag = "DALIL map: " + (m.get("building", {}).get("name") or str(src).split("/")[-1])
+    out = []
+    for w in (m.get("plan") or {}).get("walls", []):
+        if len(w) >= 2:
+            out.append({"type": "Feature", "geometry": {"type": "LineString", "coordinates": [T(x, y) for x, y in w]}, "properties": {"level": lv, "kind": "wall", "name": "", "source": tag}})
+    for p in m.get("points", []):
+        if p.get("virtual"): continue
+        out.append({"type": "Feature", "geometry": {"type": "Point", "coordinates": T(p["x"], p["y"])},
+                    "properties": {"level": lv, "kind": p.get("category", "room"), "name": p.get("nameEn", ""), "name_ar": p.get("nameAr", ""), "source": tag}})
+    return out
+
+
+# ---------------------------------------------------------------------------
+# Source 5: a floor-plan picture (PNG/JPG: a scan, a photo of the evacuation plan, an image from a website you
+# may use) placed on the map with control points: pixel (x, y) -> (lng, lat). 2 points = move/rotate/scale,
+# 3 or more = affine fit (least squares) with the error reported in metres.
+# ---------------------------------------------------------------------------
+def image_size(data):
+    import struct
+    if data[:8] == b"\x89PNG\r\n\x1a\n":
+        return struct.unpack(">II", data[16:24])
+    if data[:2] == b"\xff\xd8":
+        i = 2
+        while i < len(data):
+            if data[i] != 0xFF: i += 1; continue
+            marker = data[i + 1]; size = struct.unpack(">H", data[i + 2:i + 4])[0]
+            if marker in (0xC0, 0xC1, 0xC2):
+                h, w = struct.unpack(">HH", data[i + 5:i + 9]); return w, h
+            i += 2 + size
+    raise ValueError("only PNG and JPEG pictures are supported")
+
+
+def fit_image(points):
+    """points: [(px, py, lng, lat), ...] -> (f(px, py) -> [lng, lat], rms metres)."""
+    if len(points) < 2:
+        raise ValueError("give at least 2 control points: px,py,lng,lat;px,py,lng,lat")
+    loc = [(px, py) + to_local(lng, lat) for px, py, lng, lat in points]
+    if len(loc) == 2:  # similarity: image y points down, map y points up
+        (x1, y1, X1, Y1), (x2, y2, X2, Y2) = loc
+        a = complex(x2 - x1, -(y2 - y1)); A = complex(X2 - X1, Y2 - Y1)
+        if abs(a) == 0: raise ValueError("the two control points are the same pixel")
+        s = A / a
+        f = lambda x, y: (complex(X1, Y1) + s * complex(x - x1, -(y - y1)))
+        mf = lambda x, y: (f(x, y).real, f(x, y).imag)
+    else:  # affine least squares: X = a x + b y + c, Y = d x + e y + g
+        def solve(target):
+            M = [[0.0] * 3 for _ in range(3)]; v = [0.0] * 3
+            for x, y, X, Y in loc:
+                r = (x, y, 1.0); t = X if target == 0 else Y
+                for i in range(3):
+                    v[i] += r[i] * t
+                    for j in range(3): M[i][j] += r[i] * r[j]
+            for i in range(3):  # Gauss-Jordan
+                piv = max(range(i, 3), key=lambda k: abs(M[k][i]))
+                M[i], M[piv] = M[piv], M[i]; v[i], v[piv] = v[piv], v[i]
+                if abs(M[i][i]) < 1e-12: raise ValueError("control points are in a line: spread them out")
+                for k in range(3):
+                    if k != i:
+                        c = M[k][i] / M[i][i]
+                        for j in range(3): M[k][j] -= c * M[i][j]
+                        v[k] -= c * v[i]
+            return [v[i] / M[i][i] for i in range(3)]
+        ca, cb = solve(0), solve(1)
+        mf = lambda x, y: (ca[0] * x + ca[1] * y + ca[2], cb[0] * x + cb[1] * y + cb[2])
+    err = [math.hypot(mf(x, y)[0] - X, mf(x, y)[1] - Y) for x, y, X, Y in loc]
+    rms = math.sqrt(sum(e * e for e in err) / len(err))
+    to_ll = lambda X, Y: [round(LNG0 + X / (M_PER_DEG_LNG * _K), 8), round(LAT0 + Y / M_PER_DEG_LAT, 8)]
+    return (lambda x, y: to_ll(*mf(x, y))), rms
+
+
+def load_plan_image(src, level, points_text, name="", offline=False):
+    import base64
+    data = fetch_bytes(src, offline)
+    w, h = image_size(data)
+    pts = [tuple(float(v) for v in p.split(",")) for p in points_text.split(";") if p.strip()]
+    if any(len(p) != 4 for p in pts):
+        raise ValueError("control points are px,py,lng,lat separated by ';'")
+    f, rms = fit_image(pts)
+    mime = "image/png" if data[:4] == b"\x89PNG" else "image/jpeg"
+    if len(data) > 8e6:
+        print("  warning: {} is {:.1f} MB; the page embeds it, so it will be slow. Shrink it first.".format(src, len(data) / 1e6), file=sys.stderr)
+    return {"level": norm_level(level), "name": name or str(src).split("/")[-1], "rms_m": round(rms, 2),
+            "coordinates": [f(0, 0), f(w, 0), f(w, h), f(0, h)],  # top-left, top-right, bottom-right, bottom-left
+            "url": "data:{};base64,{}".format(mime, base64.b64encode(data).decode())}
+
+
 def write_indoor_template():
+
     lng, lat = CAMPUS["center"]
     d = 0.00012
     def sq(o, a):
@@ -464,6 +820,9 @@ PAGE = r"""<!doctype html>
   #places { list-style:none; margin:0; padding:0; max-height:160px; overflow:auto; border:1px solid #23272d; border-radius:8px; }
   #places button { width:100%; text-align:start; background:none; border:0; border-bottom:1px solid #1d2026; padding:7px 10px; cursor:pointer; display:flex; justify-content:space-between; gap:10px; }
   #places button:hover { background:var(--bg3); } #places .ar { color:var(--fg3); }
+  .dir { list-style:none; margin:0; padding:0; max-height:180px; overflow:auto; border:1px solid #23272d; border-radius:8px; }
+  .dir button { width:100%; text-align:start; background:none; border:0; border-bottom:1px solid #1d2026; padding:7px 10px; cursor:pointer; display:grid; grid-template-columns:3.2em 1fr; gap:8px; }
+  .dir button:hover { background:var(--bg3); } .dir .code { font:600 12px var(--mono); color:var(--accent); } .dir .off { color:var(--fg3); } .dir small { display:block; color:var(--fg3); }
   .hint { color:var(--fg3); font-size:13px; margin:0; } #status { min-height:1.4em; color:var(--fg2); font-size:13px; margin:0; } #status.err { color:var(--err); }
   .note { border:1px solid #2a2e35; border-radius:8px; padding:8px 10px; color:var(--fg2); font-size:13px; background:var(--bg2); }
   #toggle { position:fixed; z-index:6; top:16px; left:16px; }
@@ -511,6 +870,8 @@ PAGE = r"""<!doctype html>
       <label><input type="checkbox" id="lyIndoor" checked> Indoor maps</label>
     </div>
     <div><span class="lbl" id="placesLbl">Named places</span><ul id="places" aria-labelledby="placesLbl"></ul></div>
+    <div><span class="lbl" id="dirLbl">Buildings (official campus map)</span><ul id="directory" class="dir" aria-labelledby="dirLbl"></ul>
+      <p class="hint" id="dirInfo" style="margin-top:6px"></p></div>
     <div><span class="lbl">Pick coordinates</span>
       <div class="row"><span class="readout" id="coords">Click the map</span><button class="btn" id="copy">Copy</button></div></div>
     <div><span class="lbl" id="floorsLbl">Indoor layouts</span>
@@ -771,6 +1132,13 @@ function onStyle() {
     paint: { 'fill-color': kindColor, 'fill-opacity': 0.55, 'fill-emissive-strength': 1 } });
   addLayer({ id: 'indoor-outline', type: 'line', slot: 'top', source: 'campus-indoor', layout: { visibility: 'none' },
     paint: { 'line-color': '#F2F1EC', 'line-width': 1.2, 'line-emissive-strength': 1 } });
+  addLayer({ id: 'indoor-points', type: 'circle', slot: 'top', source: 'campus-indoor', layout: { visibility: 'none' }, filter: ['==', ['geometry-type'], 'Point'],
+    paint: { 'circle-radius': ['interpolate', ['linear'], ['zoom'], 17, 3, 20, 7], 'circle-color': ['match', ['get', 'kind'], 'door', '#F2F1EC', 'entrance', ACCENT, 'elevator', '#8BF5B0', 'stairs', '#8BF5B0', '#7aa7ff'],
+             'circle-stroke-color': '#0B0C0E', 'circle-stroke-width': 1.5, 'circle-emissive-strength': 1 } });
+  (DATA.planImages || []).forEach((im, i) => {
+    map.addSource('plan-img-' + i, { type: 'image', url: im.url, coordinates: im.coordinates });
+    addLayer({ id: 'plan-img-' + i, type: 'raster', slot: 'middle', source: 'plan-img-' + i, layout: { visibility: 'none' }, paint: { 'raster-opacity': 0.85, 'raster-fade-duration': 0 } });
+  });
   addLayer({ id: 'indoor-labels', type: 'symbol', slot: 'top', source: 'campus-indoor', minzoom: 17.5,
     layout: { visibility: 'none', 'text-field': ['get', 'name'], 'text-size': 11, 'text-font': ['DIN Pro Medium', 'Arial Unicode MS Regular'], 'text-optional': true },
     paint: { 'text-color': '#F2F1EC', 'text-halo-color': '#0B0C0E', 'text-halo-width': 1.4, 'text-emissive-strength': 1 } });
@@ -826,7 +1194,7 @@ function initPanel() {
     if (p.ar && p.ar !== p.name) { const a = document.createElement('span'); a.className = 'ar'; a.lang = 'ar'; a.dir = 'rtl'; a.textContent = p.ar; b.appendChild(a); }
     b.addEventListener('click', () => choose(p)); li.appendChild(b); ul.appendChild(li);
   });
-  initIndoor();
+  initIndoor(); initDirectory();
   $('credit').textContent = DATA.campus.source + ' · base map credits bottom right';
   $('swap').onclick = () => { [S.from, S.to] = [S.to, S.from]; syncSelects(); updateRoute(); };
   $('clear').onclick = () => { S.from = S.to = null; syncSelects(); updateRoute(); setStatus(''); };
@@ -853,16 +1221,33 @@ function initPanel() {
   $('toggle').onclick = () => { $('panel').hidden = false; $('toggle').hidden = true; };
 }
 
-const INDOOR_LAYERS = ['indoor-fill', 'indoor-outline', 'indoor-labels'];
+function initDirectory() {
+  const rows = DATA.directory || [], ul = $('directory');
+  rows.forEach((r) => {
+    const li = document.createElement('li'), b = document.createElement('button'); b.type = 'button';
+    const c = document.createElement('span'); c.className = 'code'; c.textContent = r.code;
+    const n = document.createElement('span'); n.textContent = r.name; if (!r.at) n.className = 'off';
+    if (r.inside || r.name_ar) { const sm = document.createElement('small'); sm.textContent = [r.name_ar, r.inside].filter(Boolean).join(' · '); n.appendChild(sm); }
+    b.append(c, n);
+    b.onclick = () => r.at ? camera({ center: r.at, zoom: 18.3, pitch: 60 }, 1400) : setStatus(r.code + ' is not placed on the map yet: no OpenStreetMap footprint carries ref=' + r.code + ' or its name.');
+    li.appendChild(b); ul.appendChild(li);
+  });
+  const placed = rows.filter((r) => r.at).length;
+  $('dirInfo').textContent = rows.length ? placed + ' of ' + rows.length + ' buildings placed on the map (' + DATA.directorySource + '). The campus map lists buildings, not rooms.' : '';
+}
+
+const INDOOR_LAYERS = ['indoor-fill', 'indoor-outline', 'indoor-labels', 'indoor-points'];
 function initIndoor() {
-  const feats = DATA.indoor.features, box = $('floors');
-  if (!feats.length) {
+  const feats = DATA.indoor.features, box = $('floors'), imgs = DATA.planImages || [];
+  if (!feats.length && !imgs.length) {
     $('indoorInfo').textContent = 'No indoor layouts yet. OpenStreetMap has none tagged for this campus, and Mapbox’s own indoor data does not cover it. Add your rooms with --indoor-file (run the script with --make-indoor-template for the format).';
     return;
   }
-  const levels = Array.from(new Set(feats.map((f) => String(f.properties.level)))).sort((a, b) => parseFloat(a) - parseFloat(b));
-  const sources = Array.from(new Set(feats.map((f) => f.properties.source))).join(' + ');
-  $('indoorInfo').textContent = feats.length + ' indoor shapes on ' + levels.length + ' level' + (levels.length > 1 ? 's' : '') + ' (' + sources + '). Pick a level, then zoom in.';
+  const levels = Array.from(new Set(feats.map((f) => String(f.properties.level)).concat(imgs.map((im) => String(im.level))))).sort((a, b) => parseFloat(a) - parseFloat(b));
+  const bySource = {}; feats.forEach((f) => { bySource[f.properties.source] = (bySource[f.properties.source] || 0) + 1; });
+  const parts = Object.entries(bySource).map(([k, n]) => n + ' from ' + k).concat(imgs.map((im) => 'plan picture "' + im.name + '" (fit error ' + im.rms_m + ' m)'));
+  const named = feats.filter((f) => f.properties.name).length;
+  $('indoorInfo').textContent = feats.length + ' indoor shapes (' + named + ' labelled) on ' + levels.length + ' level' + (levels.length > 1 ? 's' : '') + ': ' + parts.join('; ') + '. Pick a level, then zoom in.';
   const mk = (label, lvl) => { const b = document.createElement('button'); b.type = 'button'; b.className = 'btn'; b.textContent = label;
     b.setAttribute('aria-pressed', String(lvl === null)); b.dataset.level = lvl === null ? '' : lvl; b.onclick = () => setLevel(lvl); box.appendChild(b); };
   mk('Outdoor', null); levels.forEach((l) => mk('Level ' + l, l));
@@ -871,7 +1256,7 @@ function initIndoor() {
 function indoorBounds() {
   const bb = new mapboxgl.LngLatBounds(); let any = false;
   const walk = (c) => { if (typeof c[0] === 'number') { bb.extend(c); any = true; } else c.forEach(walk); };
-  DATA.indoor.features.forEach((f) => walk(f.geometry.coordinates)); return any ? bb : null;
+  DATA.indoor.features.forEach((f) => walk(f.geometry.coordinates)); (DATA.planImages || []).forEach((im) => walk(im.coordinates)); return any ? bb : null;
 }
 function fitIndoor() { const bb = indoorBounds(); if (bb) S.map.fitBounds(bb, { padding: 80, maxZoom: 19.5, pitch: 45, duration: reduceMotion ? 0 : 1200 }); }
 function setLevel(lvl, { noFly = false } = {}) {
@@ -880,6 +1265,7 @@ function setLevel(lvl, { noFly = false } = {}) {
   map.setFilter('indoor-fill', ['all', f, ['==', ['geometry-type'], 'Polygon']]);
   map.setFilter('indoor-outline', f); map.setFilter('indoor-labels', f);
   INDOOR_LAYERS.forEach((l) => map.setLayoutProperty(l, 'visibility', on ? 'visible' : 'none'));
+  (DATA.planImages || []).forEach((im, i) => map.getLayer('plan-img-' + i) && map.setLayoutProperty('plan-img-' + i, 'visibility', on && String(im.level) === lvl ? 'visible' : 'none'));
   map.setPaintProperty('buildings', 'fill-extrusion-opacity', on ? 0.12 : 0.72); // see through the blocks to the floor
   document.querySelectorAll('#floors button[data-level]').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.level === (on ? lvl : ''))));
   if (on && !noFly && map.getZoom() < 17.5) fitIndoor();
@@ -1002,7 +1388,7 @@ if (token) start(token); else $('gate').hidden = false;
 """
 
 
-def build_page(token, gl_version, buildings, pois, source, indoor=None, google_key="", base="standard"):
+def build_page(token, gl_version, buildings, pois, source, indoor=None, google_key="", base="standard", plan_images=None, directory=None):
     boundary_ring = [list(p) for p in CAMPUS["boundary"]] + [list(CAMPUS["boundary"][0])]
     data = {
         "campus": {
@@ -1018,6 +1404,9 @@ def build_page(token, gl_version, buildings, pois, source, indoor=None, google_k
         "buildings": buildings,
         "pois": pois,
         "indoor": indoor or {"type": "FeatureCollection", "features": []},
+        "planImages": plan_images or [],
+        "directory": directory or [],
+        "directorySource": DIRECTORY_SOURCE,
         "source": source,
     }
     # '</' is escaped so the data can never close the <script> tag early.
@@ -1093,6 +1482,56 @@ def selftest():
     assert len(ind["features"]) == 1 and ind["features"][0]["properties"]["level"] == "1"
     assert norm_level(" -1 ") == "-1" and norm_level(2.0) == "2" and norm_level("0;1") == "0"
     assert "indoor-fill" in build_page("pk.t", "v3.35.0", b, p, "t", ind)
+    # OSM indoor: nodes, doors, relations (multipolygon rooms from two ways), level outlines skipped
+    half1 = [{"lat": a, "lon": o} for o, a in ring[:3]]; half2 = [{"lat": a, "lon": o} for o, a in ring[2:]]
+    ind2 = process_indoor([
+        {"type": "node", "id": 20, "lat": lat, "lon": lng, "tags": {"door": "hinged", "level": "0"}},
+        {"type": "relation", "id": 21, "tags": {"type": "multipolygon", "indoor": "room", "level": "1", "ref": "M201"},
+         "members": [{"role": "outer", "geometry": half1}, {"role": "outer", "geometry": half2}]},
+        {"type": "way", "id": 22, "tags": {"indoor": "level", "level": "0"}, "geometry": [{"lat": a, "lon": o} for o, a in ring]},
+        {"type": "way", "id": 23, "tags": {"buildingpart": "corridor", "level": "0"}, "geometry": [{"lat": a, "lon": o} for o, a in ring]},
+    ])
+    kinds = sorted((f["properties"]["kind"], f["geometry"]["type"], f["properties"]["name"]) for f in ind2["features"])
+    assert kinds == [("corridor", "Polygon", ""), ("door", "Point", ""), ("room", "Polygon", "M201")], kinds
+    # IMDF folder: a level, a named unit, an opening, an occupant through an anchor
+    import tempfile
+    with tempfile.TemporaryDirectory() as td:
+        poly = {"type": "Polygon", "coordinates": [[list(c) for c in ring]]}
+        def w(n, feats): Path(td, n + ".geojson").write_text(json.dumps({"type": "FeatureCollection", "features": feats}))
+        w("level", [{"id": "L1", "type": "Feature", "geometry": poly, "properties": {"ordinal": 2, "name": {"en": "Level 3"}}}])
+        w("unit", [{"id": "U1", "type": "Feature", "geometry": poly, "properties": {"level_id": "L1", "category": "classroom", "name": {"en": "Room 301", "ar": "قاعة 301"}}},
+                   {"id": "U2", "type": "Feature", "geometry": poly, "properties": {"level_id": "L1", "category": "office", "name": None}}])
+        w("opening", [{"id": "O1", "type": "Feature", "geometry": {"type": "LineString", "coordinates": [list(ring[0]), list(ring[1])]}, "properties": {"level_id": "L1"}}])
+        w("anchor", [{"id": "A1", "type": "Feature", "geometry": {"type": "Point", "coordinates": list(ring[0])}, "properties": {"unit_id": "U2"}}])
+        w("occupant", [{"id": "C1", "type": "Feature", "geometry": None, "properties": {"anchor_id": "A1", "name": {"en": "Dean's Office"}}}])
+        im = load_imdf(td)
+    assert sorted((f["properties"]["kind"], f["properties"]["name"], f["properties"]["level"]) for f in im) == \
+        [("classroom", "Room 301", "2"), ("door", "", "2"), ("office", "Dean's Office", "2")]
+    # DALIL Mapper export -> georeferenced walls and labelled places
+    with tempfile.TemporaryDirectory() as td:
+        mp = Path(td, "m.json"); mp.write_text(json.dumps({"geo": {"origin": [lng, lat], "bearing": 90, "scale": 1}, "floor": {"id": "level-1", "level": 1},
+            "plan": {"walls": [[[0, 0], [10, 0]]]}, "points": [{"x": 0, "y": 10, "nameEn": "Lab 1", "category": "room"}]}))
+        dm = load_dalil_map(str(mp))
+    wall = dm[0]["geometry"]["coordinates"]; pt = dm[1]["geometry"]["coordinates"]
+    assert dm[1]["properties"]["name"] == "Lab 1" and dm[0]["properties"]["level"] == "1"
+    assert abs(to_local(*wall[1])[1] + 10) < 0.2 and abs(to_local(*pt)[0] - 10) < 0.2  # bearing 90: plan +x points south, +y east
+    # floor-plan picture fit: 3 exact control points give ~0 m error; corners follow the transform
+    f3, rms = fit_image([(0, 0, lng, lat), (1000, 0, lng + 0.001, lat), (0, 500, lng, lat - 0.0005)])
+    assert rms < 0.01 and abs(f3(1000, 500)[0] - (lng + 0.001)) < 1e-7 and abs(f3(1000, 500)[1] - (lat - 0.0005)) < 1e-7
+    f2, rms2 = fit_image([(0, 0, lng, lat), (1000, 0, lng + 0.001, lat)])
+    assert rms2 < 0.01 and abs(f2(0, 1000)[1] - lat) > 0.0005  # 2 points: image down = map south
+    png = b"\x89PNG\r\n\x1a\n" + b"\x00\x00\x00\rIHDR" + (640).to_bytes(4, "big") + (480).to_bytes(4, "big") + b"\x08\x02\x00\x00\x00"
+    assert image_size(png) == (640, 480)
+    assert join_rings([[[0, 0], [1, 0], [1, 1]], [[1, 1], [0, 1], [0, 0]]]) == [[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]
+    # directory: matched by ref, then by name; the page gets the rows
+    bd = {"type": "FeatureCollection", "features": [
+        {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[list(c) for c in ring]]}, "properties": {"ref": "A1", "name": ""}},
+        {"type": "Feature", "geometry": {"type": "Polygon", "coordinates": [[list(c) for c in ring]]}, "properties": {"name": "Ibn Sina Building"}}]}
+    rows = {r["code"]: r for r in match_directory(bd)}
+    assert rows["A1"]["at"] and rows["E7"]["at"] and rows["C1"]["at"] is None and bd["features"][0]["properties"]["name"] == "Ibn Rushd Building"
+    assert len(UOS_DIRECTORY) == len({c for c, *_ in UOS_DIRECTORY})
+    pg = build_page("pk.t", "v3.35.0", b, p, "t", ind2, directory=list(rows.values()))
+    assert '"code":"A1"' in pg and "plan-img-" in pg and "indoor-points" in pg
     print("selftest ok")
 
 
@@ -1109,7 +1548,11 @@ def main():
     ap.add_argument("--no-serve", action="store_true", help="only write the HTML file")
     ap.add_argument("--port", type=int, default=8000)
     ap.add_argument("--gl-version", default="v3.35.0")
-    ap.add_argument("--indoor-file", action="append", default=[])
+    ap.add_argument("--indoor-file", action="append", default=[], help="GeoJSON rooms with a level (path or URL, repeatable)")
+    ap.add_argument("--imdf", action="append", default=[], help="IMDF indoor map: .zip, folder or URL (repeatable)")
+    ap.add_argument("--dalil-map", action="append", default=[], help="DALIL Mapper export with a world position, FILE or FILE@LEVEL (repeatable)")
+    ap.add_argument("--plan-image", action="append", default=[], help='floor-plan picture placed by control points: "FILE|LEVEL|px,py,lng,lat;px,py,lng,lat[;...]" (repeatable)')
+    ap.add_argument("--indoor-bbox", help="also harvest OpenStreetMap indoor data here: south,west,north,east (anywhere in the world)")
     ap.add_argument("--no-indoor", action="store_true")
     ap.add_argument("--make-indoor-template", action="store_true")
     ap.add_argument("--selftest", action="store_true")
@@ -1131,12 +1574,40 @@ def main():
         print("Error:", e, file=sys.stderr)
         return 1
     buildings, pois = process(elements)
-    indoor = process_indoor(load_indoor_elements(args), args.indoor_file)
+    directory = match_directory(buildings)
+    names_have = {f["properties"]["name"].lower() for f in pois["features"]}
+    for r in directory:  # every placed directory building gets a label "A1 · Ibn Rushd Building"
+        if r["at"] and r["name"].lower() not in names_have:
+            pois["features"].append({"type": "Feature", "geometry": {"type": "Point", "coordinates": r["at"]},
+                                     "properties": {"id": "dir-" + r["code"], "name": r["code"] + " · " + r["name"], "name_ar": r["name_ar"], "area_m2": 500.0, "kind": "building"}})
+    indoor = process_indoor(load_indoor_elements(args), (), clip=not args.indoor_bbox)
+    plan_images, problems = [], []
+    for src in args.indoor_file:
+        try: indoor["features"] += load_geojson_layout(src, args.offline)
+        except Exception as e: problems.append("{}: {}".format(src, e))
+    for src in args.imdf:
+        try: indoor["features"] += load_imdf(src, args.offline)
+        except Exception as e: problems.append("{}: {}".format(src, e))
+    for item in args.dalil_map:
+        src, lv = item, ""
+        if "@" in item and len(item.rsplit("@", 1)[1]) <= 12 and "/" not in item.rsplit("@", 1)[1]:
+            src, lv = item.rsplit("@", 1)  # FILE@LEVEL
+        try: indoor["features"] += load_dalil_map(src, lv or None, args.offline)
+        except Exception as e: problems.append("{}: {}".format(src, e))
+    for item in args.plan_image:
+        try:
+            src, lv, pts = item.split("|", 2)
+            plan_images.append(load_plan_image(src, lv, pts, offline=args.offline))
+            print("  placed {} on level {} (fit error {} m)".format(src, plan_images[-1]["level"], plan_images[-1]["rms_m"]))
+        except Exception as e: problems.append("{}: {}".format(item.split("|")[0], e))
+    for msg in problems:
+        print("  indoor source skipped: " + msg, file=sys.stderr)
     out = Path(args.out).resolve()
     out.write_text(build_page(args.token.strip(), args.gl_version, buildings, pois, source, indoor,
-                              google_key=args.google_key.strip(), base=args.base), encoding="utf-8")
-    print("Wrote {}  ({} footprints, {} named places, {} indoor shapes, data: {})".format(
-        out, len(buildings["features"]), len(pois["features"]), len(indoor["features"]), source))
+                              google_key=args.google_key.strip(), base=args.base, plan_images=plan_images, directory=directory), encoding="utf-8")
+    print("Wrote {}  ({} footprints, {} named places, {} indoor shapes, {} plan pictures, {}/{} directory buildings placed, data: {})".format(
+        out, len(buildings["features"]), len(pois["features"]), len(indoor["features"]), len(plan_images),
+        sum(1 for r in directory if r["at"]), len(directory), source))
     if not args.token:
         print("No Mapbox token given: the page will ask for your Mapbox public token in the browser.")
     if not args.google_key:
