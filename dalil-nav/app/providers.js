@@ -9,6 +9,12 @@ export const PROVIDERS = [
     style: dark => `https://tiles.openfreemap.org/styles/${dark ? 'positron' : 'liberty'}`, darken: true },
   { id: 'versatiles', name: 'VersaTiles', kind: 'streets', terms: 'Free and open (public tile server), no key. Attribution required.',
     style: dark => `https://tiles.versatiles.org/assets/styles/${dark ? 'colorful-dark' : 'colorful'}/style.json` },
+  // Google: only through the official Map Tiles API (a Google Maps Platform key with Map Tiles API enabled, billing
+  // account, free monthly quota). Raw google.com tile URLs are against Google's terms, so they are never used.
+  { id: 'google', name: 'Google', kind: 'streets', key: 'google', google: { mapType: 'roadmap' }, attribution: 'Map data © Google', logo: 'Google',
+    terms: 'Google Maps Platform Map Tiles API: key + billing account, free monthly quota. The Google logo and data attribution must show.' },
+  { id: 'google-satellite', name: 'Google', kind: 'satellite', key: 'google', google: { mapType: 'satellite' }, attribution: 'Imagery © Google', logo: 'Google', terms: 'As above.' },
+  { id: 'google-hybrid', name: 'Google + labels', kind: 'satellite', key: 'google', google: { mapType: 'satellite', layerTypes: ['layerRoadmap'] }, attribution: 'Imagery and map data © Google', logo: 'Google', terms: 'As above.' },
   { id: 'esri', name: 'Esri', kind: 'satellite', key: 'esri', terms: 'ArcGIS Location Platform account (free tier for basemap tiles). “Powered by Esri” must show.',
     style: (dark, k) => `https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/arcgis/imagery?token=${encodeURIComponent(k)}`, attribution: 'Powered by Esri' },
   { id: 'esri-streets', name: 'Esri', kind: 'streets', key: 'esri', terms: 'As above.',
@@ -58,6 +64,7 @@ export const plainStyle = dark => ({ version: 8, sources: {}, layers: [{ id: 'bg
 /** A provider's MapLibre style. Vector styles are fetched first, so a provider that is down fails here. */
 export async function loadStyle(p, { dark = false, cfg = {}, timeout = 7000 } = {}) {
   const k = keyFor(p, cfg);
+  if (p.google) return googleStyle(p, k, cfg, timeout);
   if (p.raster) return { version: 8, sources: { base: { type: 'raster', tiles: p.tiles(dark, k), tileSize: 512, maxzoom: 22, attribution: p.attribution } }, layers: [{ id: 'base', type: 'raster', source: 'base' }] };
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), timeout);
   try {
@@ -68,3 +75,19 @@ export async function loadStyle(p, { dark = false, cfg = {}, timeout = 7000 } = 
     return dark && p.darken ? darken(s) : s;
   } finally { clearTimeout(tm); }
 }
+
+// Google Map Tiles API: a session (map type, language, region), then 2D tiles for that session.
+async function googleStyle(p, k, cfg, timeout) {
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), timeout);
+  try {
+    const r = await fetch(`https://tile.googleapis.com/v1/createSession?key=${encodeURIComponent(k)}`, { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...p.google, language: cfg.language || 'en-US', region: cfg.region || 'AE', scale: 'scaleFactor2x', highDpi: true }) });
+    if (!r.ok) throw new Error(`google ${r.status}`);
+    const { session } = await r.json(); if (!session) throw new Error('google no session');
+    return { version: 8, sources: { base: { type: 'raster', tileSize: 256, maxzoom: 22, attribution: p.attribution,
+      tiles: [`https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}?session=${encodeURIComponent(session)}&key=${encodeURIComponent(k)}`] } },
+      layers: [{ id: 'base', type: 'raster', source: 'base' }] };
+  } finally { clearTimeout(tm); }
+}
+/** Every provider (also those without a key yet), for the base-map list. */
+export function allProviders(cfg = {}) { return PROVIDERS.map(p => ({ ...p, available: !p.key || !!keyFor(p, cfg) })); }

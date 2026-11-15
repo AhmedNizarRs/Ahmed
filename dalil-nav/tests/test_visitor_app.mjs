@@ -675,9 +675,22 @@ test('Getting here: the floor plan on a street map; providers fail over (OpenFre
   assert.match(await page.getAttribute('#lnkGmaps', 'href'), /destination=35\.3015\d+,-120\.6635\d+&travelmode=walking/);
   await page.click('#btnMyLoc');
   await page.waitForFunction(() => /from the main entrance/.test(document.querySelector('#outStatus').textContent));
-  assert.deepEqual(await page.$$eval('#outProvider option', o => o.map(x => x.value)), ['auto', 'openfreemap', 'versatiles', 'plain']);
+  // Map and layers: every base map is listed (keyed ones switched off until the building adds its key), layers are checkboxes.
+  await page.click('#outLayers summary');
+  assert.deepEqual(await page.$$eval('#outBases input:not([disabled])', o => o.map(x => x.value)), ['auto', 'openfreemap', 'versatiles', 'plain']);
+  assert.ok(await page.isDisabled('#outBases input[value="google-satellite"]') && await page.isDisabled('#outBases input[value="esri"]'));
+  assert.deepEqual(await page.$$eval('#outChecks input', o => o.map(x => x.value)), ['plan', 'places', 'outline', 'entrances', 'me']);
+  const visOf = id => page.evaluate(id => window.DALIL_APP.outdoor().map.getLayoutProperty(id, 'visibility') ?? 'visible', id);
+  await page.uncheck('#outChecks input[value="plan"]');
+  assert.equal(await visOf('walls'), 'none'); assert.equal(await visOf('doors'), 'none'); assert.equal(await visOf('outline-line'), 'visible');
+  await page.uncheck('#outChecks input[value="places"]');
+  assert.ok(await page.$$eval('.out-place', e => e.length > 20 && e.every(x => x.hidden)), 'room and place labels hidden');
+  await page.check('#outChecks input[value="plan"]'); assert.equal(await visOf('walls'), 'visible');
+  assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.settings')).mapLayers.places), false, 'layer choices remembered');
+  await page.fill('#outOpacity', '40'); await page.dispatchEvent('#outOpacity', 'input');
+  assert.equal(await page.evaluate(() => window.DALIL_APP.outdoor().map.getPaintProperty('walls', 'line-opacity')), 0.4);
   await page.route('https://tiles.versatiles.org/**', r => r.fulfill({ status: 503, body: 'down' }));
-  await page.selectOption('#outProvider', 'versatiles');
+  await page.check('#outBases input[value="versatiles"]');
   await page.waitForFunction(() => window.DALIL_APP.outdoor()?.provider.id === 'plain');
   assert.match(await page.textContent('#outStatus'), /needs an internet connection/);
   await page.click('#pgOutdoor [data-back]');
@@ -693,8 +706,25 @@ test('Getting here: the floor plan on a street map; providers fail over (OpenFre
   await p3.click('#btnGettingHere');
   await p3.waitForFunction(() => window.DALIL_APP.outdoor()?.provider.id === 'versatiles', null, { timeout: 20000 });
   assert.match(await p3.textContent('#outStatus'), /Mapbox didn’t load, so this is VersaTiles/);
-  assert.ok((await p3.$$eval('#outProvider option', o => o.map(x => x.value))).includes('mapbox-satellite'));
+  assert.ok(await p3.isEnabled('#outBases input[value="mapbox-satellite"]'));
   await c3.close();
+  // Google satellite through the official Map Tiles API (session, then tiles), with the Google logo shown.
+  const c4 = await browser.newContext(opts); const p4 = await c4.newPage(); const g = JSON.parse(JSON.stringify(cfg)); g.maps.keys = { google: 'AIza-test' }; g.maps.order = ['openfreemap'];
+  let session = null;
+  await p4.route('**/config.json', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify(g) }));
+  await p4.route('https://tiles.openfreemap.org/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#eee' } }] }) }));
+  await p4.route('https://tile.googleapis.com/v1/createSession**', r => { session = JSON.parse(r.request().postData()); r.fulfill({ contentType: 'application/json', body: JSON.stringify({ session: 'S1', expiry: '9999' }) }); });
+  const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', 'base64');
+  await p4.route('https://tile.googleapis.com/v1/2dtiles/**', r => r.fulfill({ contentType: 'image/png', body: png }));
+  await p4.goto(base + KENNEDY); await p4.evaluate(() => window.DALIL_APP.ready);
+  await p4.click('#btnGettingHere'); await p4.waitForFunction(() => window.DALIL_APP.outdoor()?.provider.id === 'openfreemap');
+  await p4.click('#outLayers summary'); await p4.check('#outBases input[value="google-satellite"]');
+  await p4.waitForFunction(() => window.DALIL_APP.outdoor()?.provider.id === 'google-satellite');
+  assert.equal(session.mapType, 'satellite');
+  await p4.waitForFunction(() => window.DALIL_APP.outdoor().map.getLayer('walls'));
+  assert.equal(await p4.getAttribute('#outMap', 'data-logo'), 'Google');
+  assert.match(await p4.evaluate(() => window.DALIL_APP.outdoor().map.getStyle().sources.base.tiles[0]), /^https:\/\/tile\.googleapis\.com\/v1\/2dtiles\/\{z\}\/\{x\}\/\{y\}\?session=S1&key=AIza-test$/);
+  await c4.close();
 });
 
 test('works offline after the first visit (service worker)', async () => {

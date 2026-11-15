@@ -7,7 +7,7 @@ import { MapView, BASE } from './mapview.js';
 import { geoTransform, haversine } from './outdoor.js';
 import { Tracker, Follower, wrap180 } from './tracker.js';
 import { CameraGuide, QRScanner, openCamera, closeCamera, cameraError } from './camera.js';
-import { availableProviders } from './providers.js';
+import { availableProviders, allProviders } from './providers.js';
 import { Locator, planFromGeo, locationGranted } from './locate.js';
 
 /* =========================================================================
@@ -24,7 +24,7 @@ const saved0 = store.get('dalil.settings', {});
 if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; delete saved0.theme; delete saved0.large; delete saved0.sensors; saved0.v = SETTINGS_V; }
 const settings = Object.assign({
   v: SETTINGS_V, lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
-  theme: 'dark', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true,
+  theme: 'dark', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true, mapLayers: {}, mapOpacity: 85,
   contrast: mq('(prefers-contrast: more)'), motion: mq('(prefers-reduced-motion: reduce)'),
 }, saved0);
 const saveSettings = () => store.set('dalil.settings', settings);
@@ -539,7 +539,7 @@ function rememberTrip(key) {
 let pinPoint = null;
 function renderFloorMap() {
   const vm = state.viewMap || state.map; if (!vm || pageNow !== 'map') return;
-  mainMap.setMap(vm);
+  mainMap.setMap(vm); $('#btnRealMap').hidden = !vm.geo;
   const from = pt(state.fromId);
   mainMap.setYou(vm === state.map ? from : null, from?.facingDeg ?? 90);
   mainMap.setRoute(null);
@@ -1224,7 +1224,7 @@ async function openOutdoor() {
   $('#outBuilding').textContent = map.building.name;
   $('#outStatus').textContent = t('outLoading');
   $('#outMap').setAttribute('aria-label', t('outMapLabel', map.building.name));
-  $('#outProvider').innerHTML = providerOptions();
+  renderOutLayers(map);
   const T = geoTransform(map.geo), entr = map.points.find(p => p.category === 'entrance') || map.points[0];
   const [lng, lat] = T(entr.x, entr.y), ll = `${lat.toFixed(6)},${lng.toFixed(6)}`;
   $('#lnkGmaps').href = `https://www.google.com/maps/dir/?api=1&destination=${ll}&travelmode=walking`;
@@ -1234,11 +1234,39 @@ async function openOutdoor() {
     const attribution = [t('attrPlan'), map.building_context ? t('attrOverture') : ''].filter(Boolean).join(' · ');
     outdoorCtl?.destroy(); outdoorCtl = null;
     const ctl = await createOutdoorMap($('#outMap'), { map, dark: document.documentElement.dataset.theme === 'dark' || settings.contrast, lang: settings.lang, attribution, onStatus: outStatus,
-      onProvider: (p, failed) => { $('#outStatus').textContent = providerLine(p, failed); }, providers: { choice: settings.mapProvider, cfg: cfg.maps } });
+      onProvider: (p, failed) => { $('#outStatus').textContent = providerLine(p, failed); }, providers: { choice: settings.mapProvider, cfg: cfg.maps },
+      layers: settings.mapLayers, opacity: settings.mapOpacity / 100 });
     if (seq !== outdoorSeq || pageNow !== 'outdoor') { ctl.destroy(); return; }
-    outdoorCtl = ctl;
+    outdoorCtl = ctl; ctl.setRoute(outRoute(map)); if (outFloor && outFloor !== map) ctl.setFloor(outFloor);
     $('#outStatus').textContent = providerLine(ctl.provider, ctl.failed);
   } catch { if (seq === outdoorSeq) $('#outStatus').textContent = t('outFail'); }
+}
+// Base map list (every provider; ones without the building's key are shown but switched off) and layer checkboxes.
+let outFloor = null;
+function renderOutLayers(map) {
+  const all = allProviders(cfg.maps), row = (type, name, val, label, on, dis = false, sub = '') =>
+    `<label class="opt${dis ? ' off' : ''}"><input type="${type}" name="${name}" value="${esc(val)}" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}><span>${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></label>`;
+  const base = [row('radio', 'outBase', 'auto', t('provider_auto'), settings.mapProvider === 'auto')];
+  for (const kind of ['streets', 'satellite']) for (const p of all.filter(p => p.kind === kind))
+    base.push(row('radio', 'outBase', p.id, `${t(kind === 'satellite' ? 'kindSatellite' : 'kindStreets')} · ${p.name}`, settings.mapProvider === p.id, !p.available, p.available ? (p.key ? t('provKey') : t('provFree')) : t('needsKey')));
+  base.push(row('radio', 'outBase', 'plain', t('provider_plain'), settings.mapProvider === 'plain'));
+  $('#outBases').innerHTML = base.join('');
+  const missing = [...new Set(all.filter(p => !p.available).map(p => p.key))];
+  $('#outKeyNote').hidden = !missing.length; $('#outKeyNote').textContent = t('keyNote');
+  const hasRoute = !!outRoute(map);
+  $('#outChecks').innerHTML = ['plan', 'places', 'outline', 'entrances', 'route', 'me'].filter(k => k !== 'route' || hasRoute)
+    .map(k => row('checkbox', 'outLayer', k, t('lyr_' + k), settings.mapLayers[k] ?? true)).join('');
+  const floors = bFloors().filter(m => m.geo);
+  $('#outFloorsSet').hidden = floors.length < 2; outFloor = outFloor && floors.includes(outFloor) ? outFloor : map;
+  $('#outFloors').innerHTML = floors.map((m, i) => row('radio', 'outFloor', String(i), floorName(m.floor), m === outFloor)).join('');
+  $('#outOpacity').value = settings.mapOpacity;
+}
+// The planned route on the floor shown, as [lng, lat] points (the first leg on that floor), or null.
+function outRoute(map) {
+  if (!state.toKey || !map?.geo) return null;
+  const plan = planTo(state.toKey); if (!plan) return null;
+  const leg = planSteps(plan).legs.find(l => l.map === (outFloor || map)); if (!leg) return null;
+  const T = geoTransform(leg.map.geo); return leg.route.path.map(([x, y]) => T(x, y));
 }
 function providerLine(p, failed = []) {
   if (!p || p.kind === 'plain') return settings.mapProvider === 'plain' ? t('outProvider', t('provider_plain')) : t('outNoStreet');
@@ -1262,7 +1290,7 @@ async function proximityHint() {
     }, () => { }, { maximumAge: 60000, timeout: 8000 });
   } catch { }
 }
-function setProvider(v) { settings.mapProvider = v; saveSettings(); $('#setProvider').value = v; $('#outProvider').value = v; if (pageNow === 'outdoor') openOutdoor(); }
+function setProvider(v) { settings.mapProvider = v; saveSettings(); $('#setProvider').value = v; if (pageNow === 'outdoor') openOutdoor(); }
 
 /* =========================================================================
    Wiring
@@ -1338,7 +1366,11 @@ function bind() {
   toggle('#setContrast', 'contrast', rerenderAll); toggle('#setMotion', 'motion', rerenderAll);
   $('#setBuilding').addEventListener('change', e => { const m = state.maps[+e.target.value]; if (m) { state.toKey = null; selectFloor(m); } });
   $('#setProvider').addEventListener('change', e => setProvider(e.target.value));
-  $('#outProvider').addEventListener('change', e => setProvider(e.target.value));
+  $('#outBases').addEventListener('change', e => { const v = e.target.value; settings.mapProvider = v; saveSettings(); $('#setProvider').value = v; outdoorCtl?.setBase(v); });
+  $('#outChecks').addEventListener('change', e => { settings.mapLayers = { ...settings.mapLayers, [e.target.value]: e.target.checked }; saveSettings(); outdoorCtl?.setLayer(e.target.value, e.target.checked); if (e.target.value === 'me' && e.target.checked && outdoorCtl) outdoorCtl.locate(); });
+  $('#outFloors').addEventListener('change', e => { outFloor = bFloors().filter(m => m.geo)[+e.target.value]; outdoorCtl?.setFloor(outFloor); outdoorCtl?.setRoute(outRoute(state.map)); });
+  $('#outOpacity').addEventListener('input', e => { settings.mapOpacity = +e.target.value; saveSettings(); outdoorCtl?.setOpacity(settings.mapOpacity / 100); });
+  $('#btnRealMap').onclick = () => { outFloor = state.viewMap; go('outdoor'); };
   $('#fileMap').addEventListener('change', e => { const f = e.target.files[0]; if (f) loadFile(f); e.target.value = ''; });
   // Getting here
   $('#btnMyLoc').onclick = () => outdoorCtl ? outdoorCtl.locate() : outStatus('unavailable');

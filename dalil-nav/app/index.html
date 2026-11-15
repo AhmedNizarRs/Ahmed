@@ -160,6 +160,7 @@
     <header class="bar float">
       <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
       <p id="mapTitle" class="map-title"></p>
+      <button id="btnRealMap" class="pill solid" type="button" hidden><span class="ico" data-ico="layers"></span><span data-i18n="realMap">Real map</span></button>
     </header>
     <div class="map-ctrls">
       <div id="floorRail" class="floor-switch" role="group"></div>
@@ -249,7 +250,15 @@
         <a id="lnkGmaps" class="btn primary" href="#" target="_blank" rel="noopener" data-i18n="dirGoogle">Directions in Google Maps</a>
         <a id="lnkAmaps" class="btn secondary" href="#" target="_blank" rel="noopener" data-i18n="dirApple">Apple Maps</a>
       </div>
-      <label class="field inline"><span data-i18n="mapStyle">Street map</span><select id="outProvider"></select></label>
+      <details id="outLayers" class="out-layers">
+        <summary><span class="ico" data-ico="layers"></span><span data-i18n="mapLayers">Map and layers</span></summary>
+        <div class="out-layers-body">
+          <fieldset><legend data-i18n="baseMap">Base map</legend><div id="outBases" class="opt-list" role="radiogroup"></div><p id="outKeyNote" class="muted small" hidden></p></fieldset>
+          <fieldset><legend data-i18n="layersTitle">Layers</legend><div id="outChecks" class="opt-list"></div></fieldset>
+          <fieldset id="outFloorsSet" hidden><legend data-i18n="floorLayer">Floor shown</legend><div id="outFloors" class="opt-list" role="radiogroup"></div></fieldset>
+          <label class="field"><span data-i18n="planOpacity">Plan opacity</span><input id="outOpacity" type="range" min="20" max="100" step="5"></label>
+        </div>
+      </details>
     </div>
   </section>
 

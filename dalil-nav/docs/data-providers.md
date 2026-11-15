@@ -66,3 +66,12 @@ web app are public: restrict each one to the client's web address in the provide
 This environment blocks the tile servers, so real street tiles could not be seen here. Failover was tested
 with stand-in responses (OpenFreeMap down → VersaTiles; both down → plain map; Mapbox tiles refused →
 VersaTiles). On a phone or laptop with internet, the street map loads.
+
+## Google (added November 2026)
+
+Google maps are used only through Google's official **Map Tiles API** (2D tiles): the app creates a session
+(`roadmap` or `satellite`, optionally with road labels) and loads that session's tiles. It needs a Google Maps
+Platform key with the Map Tiles API enabled and a billing account (Google gives a monthly free quota; check current
+pricing). Put it in `config.json` as `maps.keys.google`, and restrict the key to the building's web address.
+The Google logo and the data attribution must stay visible; the app shows both. Tile URLs copied from google.com
+are not used: that is against Google's terms.
