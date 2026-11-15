@@ -18,13 +18,13 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
 };
 const mq = q => window.matchMedia && window.matchMedia(q).matches;
-const SETTINGS_V = 3;
+const SETTINGS_V = 4;
 const saved0 = store.get('dalil.settings', {});
 // v3: Night is the new default look, and motion is always on (there is no step-by-step mode any more).
-if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; delete saved0.theme; delete saved0.large; delete saved0.sensors; saved0.v = SETTINGS_V; }
+if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; if ((saved0.v ?? 0) < 4) delete saved0.theme; delete saved0.large; delete saved0.sensors; saved0.v = SETTINGS_V; }   // v4: Day becomes the default look
 const settings = Object.assign({
   v: SETTINGS_V, lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
-  theme: 'dark', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true, mapLayers: {}, mapOpacity: 85,
+  theme: 'light', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true, mapLayers: {}, mapOpacity: 85,
   contrast: mq('(prefers-contrast: more)'), motion: mq('(prefers-reduced-motion: reduce)'),
 }, saved0);
 const saveSettings = () => store.set('dalil.settings', settings);
@@ -382,7 +382,7 @@ function renderHome() {
 // The hologram on Home: the floor you are on, tilted in 3D, with your beacon.
 // Home is a map, like a phone's maps app: the real map with the floor plan on top when the building is placed on
 // Earth (geo), otherwise the floor plan itself. Floors switch on the right; "you" is the blue dot.
-let homeCtl = null, homeCtlFor = null, homeFloor = null, homeSeq = 0;
+let homeCtl = null, homeCtlFor = null, homeFloor = null, homeLoading = null;
 const SHEET_PAD = { top: 150, bottom: 230, left: 24, right: 64 };
 function renderHolo(from) { renderHomeMap(from); }
 function homeFloors() { return bFloors(); }
@@ -395,7 +395,7 @@ async function renderHomeMap(from = pt(state.fromId)) {
   const geo = !!state.map.geo;
   $('#homeGL').hidden = !geo; $('#homeMap').hidden = geo; $('#btnLayers').hidden = !geo;
   if (!geo) {
-    if (homeCtl) { homeCtl.destroy(); homeCtl = null; homeCtlFor = null; }
+    if (homeCtl) { try { homeCtl.destroy(); } catch { } homeCtl = null; homeCtlFor = null; }
     homeMap.setMap(homeFloor);
     homeMap.setYou(homeFloor === state.map ? from : null, from?.facingDeg ?? 90);
     homeMap.setRoute(null); homeMap.setDest(null);
@@ -404,8 +404,9 @@ async function renderHomeMap(from = pt(state.fromId)) {
   }
   const bid = state.map.building.id;
   if (!homeCtl || homeCtlFor !== bid) {
-    const seq = ++homeSeq;
-    homeCtl?.destroy(); homeCtl = null; homeCtlFor = null;
+    if (homeLoading === bid) return;                      // one map at a time per building (a second call waits for it)
+    homeLoading = bid;
+    try { homeCtl?.destroy(); } catch { } homeCtl = null; homeCtlFor = null;
     try {
       const { createOutdoorMap } = await import('./outdoor.js');
       const choice = settings.mapProvider === 'auto' ? (cfg.maps?.homeBase || 'esri-imagery-labels') : settings.mapProvider;
@@ -413,9 +414,9 @@ async function renderHomeMap(from = pt(state.fromId)) {
         attribution: t('attrPlan'), providers: { choice, cfg: cfg.maps }, layers: settings.mapLayers, opacity: settings.mapOpacity / 100,
         pins: true, onPick: id => { const m = homeFloor; setDest(keyOf(m, pointOf(m, id))); }, iconFor: c => svgIco(CAT_ICONS[c] || CAT_ICONS.room), padding: SHEET_PAD,
         onProvider: () => renderLayerControls('home') });
-      if (seq !== homeSeq || pageNow !== 'home') { ctl.destroy(); return; }
-      homeCtl = ctl; homeCtlFor = bid;
-    } catch { return; }
+      homeCtl = ctl; homeCtlFor = bid;                   // kept even if you left Home meanwhile: it shows again on return
+    } catch { return; } finally { homeLoading = null; }
+    if (pageNow !== 'home' || state.map?.building.id !== bid) return;
   } else homeCtl.setFloor(homeFloor);
   homeCtl.resize();
   homeYou(from);
@@ -698,7 +699,7 @@ function applyDisplay() {
   $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   $$('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
-  $('meta[name="theme-color"]').content = settings.contrast ? '#000000' : resolvedTheme() === 'dark' ? '#07090D' : '#EEF1F5';
+  $('meta[name="theme-color"]').content = settings.contrast ? '#000000' : resolvedTheme() === 'dark' ? '#07090D' : '#FFFFFF';
 }
 function rerenderAll() {
   applyDisplay();
@@ -707,7 +708,7 @@ function rerenderAll() {
   renderAll();
   if (nav.active) { renderNavStep(); renderMode(); }
 }
-function setLang(l) { settings.lang = l; saveSettings(); homeCtl?.destroy(); homeCtl = null; homeCtlFor = null; rerenderAll(); }
+function setLang(l) { settings.lang = l; saveSettings(); try { homeCtl?.destroy(); } catch { } homeCtl = null; homeCtlFor = null; rerenderAll(); }
 
 /* =========================================================================
    Navigation: a heads-up display that moves with you. There is no "Next": the compass and the step counter

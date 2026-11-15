@@ -595,7 +595,9 @@ test('home remembers recent places and searches; the phone\'s back button works;
   await page.click('#btnSearchBack');
   await pageIs(page, 'home');
   await page.click('#btnSettings');
-  assert.equal(await page.getAttribute('html', 'data-theme'), 'dark', 'Night is the default');
+  assert.equal(await page.getAttribute('html', 'data-theme'), 'light', 'Day is the default');
+  await page.click('input[name="theme"][value="dark"]');
+  assert.equal(await page.getAttribute('html', 'data-theme'), 'dark');
   await page.click('input[name="theme"][value="light"]');
   assert.equal(await page.getAttribute('html', 'data-theme'), 'light');
   const h0 = await page.$eval('#pgSettings [data-back]', e => e.getBoundingClientRect().height);
@@ -616,7 +618,7 @@ test('home remembers recent places and searches; the phone\'s back button works;
 test('every button is at least 48 px and text is readable (contrast) on the main screens, Night and Day', async () => {
   for (const theme of ['dark', 'light']) {
     const ctx = await browser.newContext({ ...devices['Pixel 7'], serviceWorkers: 'block' });
-    await ctx.addInitScript(th => localStorage.setItem('dalil.settings', JSON.stringify({ v: 3, theme: th, lang: 'en' })), theme);
+    await ctx.addInitScript(th => localStorage.setItem('dalil.settings', JSON.stringify({ v: 4, theme: th, lang: 'en' })), theme);
     const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
     await page.goto(base + '#at-P001&to-P007'); await page.evaluate(() => window.DALIL_APP.ready);
     const check = async scope => page.evaluate(sc => {
