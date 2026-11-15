@@ -75,3 +75,20 @@ Platform key with the Map Tiles API enabled and a billing account (Google gives 
 pricing). Put it in `config.json` as `maps.keys.google`, and restrict the key to the building's web address.
 The Google logo and the data attribution must stay visible; the app shows both. Tile URLs copied from google.com
 are not used: that is against Google's terms.
+
+## Keyless tiles for testing (from the leaflet-providers catalogue)
+
+Leaflet and MapLibre are both map libraries; neither owns tiles. These public tile services are the keyless ones
+from the leaflet-providers list, loaded by MapLibre as raster tiles. All need their attribution (the app shows it)
+and are labelled "free for testing (light use)" in the app:
+
+| Provider | Kind | Terms in short |
+|---|---|---|
+| Esri World Imagery (+ labels) | Satellite | Public Esri service; commercial use needs an ArcGIS account (then use the keyed Esri entries) |
+| Esri World Street Map, World Topographic | Streets | As above |
+| OpenStreetMap standard tiles | Streets | Free; OSM's tile policy forbids heavy app traffic |
+| CARTO Positron / Dark Matter | Streets | Free for non-commercial use |
+| OpenTopoMap | Streets | Free, CC-BY-SA, light use |
+
+For a paying client, turn them off with `"testTiles": false` under `maps` in `config.json` and use keyed providers.
+Raw Google tile URLs (mt0.google.com…) also circulate in such lists; they break Google's terms and are not used.

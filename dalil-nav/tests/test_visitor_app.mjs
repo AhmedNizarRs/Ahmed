@@ -658,6 +658,7 @@ test('Getting here: the floor plan on a street map; providers fail over (OpenFre
   const ctx = await browser.newContext(opts);
   const page = await ctx.newPage(); const errors = []; page.on('pageerror', e => errors.push(e.message));
   await page.route('https://tiles.openfreemap.org/**', r => r.fulfill({ status: 503, body: 'down' }));
+  for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://*.tile.opentopomap.org/**']) await page.route(h, r => r.fulfill({ status: 503, body: 'down' }));
   await page.route('https://tiles.versatiles.org/**', r => r.fulfill({ contentType: 'application/json', body: JSON.stringify({ version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': '#f3efe6' } }] }) }));
   await page.goto(base); await page.evaluate(() => window.DALIL_APP.ready);
   assert.ok(await page.isHidden('#btnGettingHere'), 'only buildings with a world position offer it');
@@ -677,7 +678,9 @@ test('Getting here: the floor plan on a street map; providers fail over (OpenFre
   await page.waitForFunction(() => /from the main entrance/.test(document.querySelector('#outStatus').textContent));
   // Map and layers: every base map is listed (keyed ones switched off until the building adds its key), layers are checkboxes.
   await page.click('#outLayers summary');
-  assert.deepEqual(await page.$$eval('#outBases input:not([disabled])', o => o.map(x => x.value)), ['auto', 'openfreemap', 'versatiles', 'plain']);
+  assert.deepEqual(await page.$$eval('#outBases input:not([disabled])', o => o.map(x => x.value)),
+    ['auto', 'openfreemap', 'versatiles', 'esri-street', 'esri-topo', 'osm', 'carto', 'opentopomap', 'esri-imagery', 'esri-imagery-labels', 'plain']);
+  assert.match(await page.textContent('#outBases label:has(input[value="esri-imagery"])'), /Satellite · Esri World Imagery.*free for testing/s);
   assert.ok(await page.isDisabled('#outBases input[value="google-satellite"]') && await page.isDisabled('#outBases input[value="esri"]'));
   assert.deepEqual(await page.$$eval('#outChecks input', o => o.map(x => x.value)), ['plan', 'places', 'outline', 'entrances', 'me']);
   const visOf = id => page.evaluate(id => window.DALIL_APP.outdoor().map.getLayoutProperty(id, 'visibility') ?? 'visible', id);

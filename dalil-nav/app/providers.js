@@ -9,6 +9,26 @@ export const PROVIDERS = [
     style: dark => `https://tiles.openfreemap.org/styles/${dark ? 'positron' : 'liberty'}`, darken: true },
   { id: 'versatiles', name: 'VersaTiles', kind: 'streets', terms: 'Free and open (public tile server), no key. Attribution required.',
     style: dark => `https://tiles.versatiles.org/assets/styles/${dark ? 'colorful-dark' : 'colorful'}/style.json` },
+  // Keyless raster tiles from the leaflet-providers catalogue. Free with attribution, but meant for light use and
+  // testing: OSM's tile policy forbids heavy app traffic, Esri's public services need an ArcGIS account for commercial
+  // use, CARTO is free for non-commercial use. Turn them off for a production site with config.maps.testTiles = false.
+  { id: 'esri-imagery', name: 'Esri World Imagery', kind: 'satellite', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    attribution: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics, GIS User Community', terms: 'Public Esri service: attribution required; commercial use needs an ArcGIS account.' },
+  { id: 'esri-imagery-labels', name: 'Esri World Imagery + labels', kind: 'satellite', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    overlays: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
+    attribution: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics, GIS User Community', terms: 'As above.' },
+  { id: 'esri-street', name: 'Esri World Street Map', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'], attribution: 'Tiles © Esri — Esri, HERE, Garmin, OpenStreetMap contributors', terms: 'As above.' },
+  { id: 'esri-topo', name: 'Esri World Topographic', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'], attribution: 'Tiles © Esri — Esri, HERE, Garmin, OpenStreetMap contributors', terms: 'As above.' },
+  { id: 'osm', name: 'OpenStreetMap', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], attribution: '© OpenStreetMap contributors', terms: 'Free with attribution; light use only (OSM tile usage policy).' },
+  { id: 'carto', name: 'CARTO', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 20,
+    tiles: dark => ['a', 'b', 'c'].map(s => `https://${s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}@2x.png`), attribution: '© OpenStreetMap contributors © CARTO', terms: 'Free for non-commercial use; commercial needs a CARTO plan.' },
+  { id: 'opentopomap', name: 'OpenTopoMap', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 17,
+    tiles: () => ['a', 'b', 'c'].map(s => `https://${s}.tile.opentopomap.org/{z}/{x}/{y}.png`), attribution: '© OpenStreetMap contributors, SRTM · © OpenTopoMap (CC-BY-SA)', terms: 'Free with attribution, light use.' },
   // Google: only through the official Map Tiles API (a Google Maps Platform key with Map Tiles API enabled, billing
   // account, free monthly quota). Raw google.com tile URLs are against Google's terms, so they are never used.
   { id: 'google', name: 'Google', kind: 'streets', key: 'google', google: { mapType: 'roadmap' }, attribution: 'Map data © Google', logo: 'Google',
@@ -33,8 +53,9 @@ export const PROVIDERS = [
 export const PLAIN = { id: 'plain', name: 'Plain', kind: 'plain' };
 
 const keyFor = (p, cfg) => !p.key ? '' : (cfg?.keys?.[p.key] || (p.key === 'stadia' && cfg?.stadiaDomainAuth ? 'domain' : ''));
+const usable = (p, cfg) => p.key ? !!keyFor(p, cfg) : !(p.test && cfg?.testTiles === false);
 /** Providers this building can use (free ones, plus keyed ones whose key is in config.json). */
-export function availableProviders(cfg = {}) { return PROVIDERS.filter(p => !p.key || keyFor(p, cfg)); }
+export function availableProviders(cfg = {}) { return PROVIDERS.filter(p => usable(p, cfg)); }
 /** The order to try. choice = a provider id, or 'auto' (config order first, then the other street maps). */
 export function providerOrder(choice = 'auto', cfg = {}) {
   const avail = availableProviders(cfg);
@@ -65,7 +86,12 @@ export const plainStyle = dark => ({ version: 8, sources: {}, layers: [{ id: 'bg
 export async function loadStyle(p, { dark = false, cfg = {}, timeout = 7000 } = {}) {
   const k = keyFor(p, cfg);
   if (p.google) return googleStyle(p, k, cfg, timeout);
-  if (p.raster) return { version: 8, sources: { base: { type: 'raster', tiles: p.tiles(dark, k), tileSize: 512, maxzoom: 22, attribution: p.attribution } }, layers: [{ id: 'base', type: 'raster', source: 'base' }] };
+  if (p.raster) {
+    const src = (tiles, attribution) => ({ type: 'raster', tiles, tileSize: p.tileSize || 512, maxzoom: p.maxzoom || 22, ...(attribution ? { attribution } : {}) });
+    const sources = { base: src(p.tiles(dark, k), p.attribution) }, layers = [{ id: 'base', type: 'raster', source: 'base' }];
+    (p.overlays || []).forEach((u, i) => { sources['ov' + i] = src([u]); layers.push({ id: 'ov' + i, type: 'raster', source: 'ov' + i }); });
+    return { version: 8, sources, layers };
+  }
   const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), timeout);
   try {
     const r = await fetch(p.style(dark, k), { signal: ctl.signal });
@@ -90,4 +116,4 @@ async function googleStyle(p, k, cfg, timeout) {
   } finally { clearTimeout(tm); }
 }
 /** Every provider (also those without a key yet), for the base-map list. */
-export function allProviders(cfg = {}) { return PROVIDERS.map(p => ({ ...p, available: !p.key || !!keyFor(p, cfg) })); }
+export function allProviders(cfg = {}) { return PROVIDERS.filter(p => !(p.test && cfg?.testTiles === false)).map(p => ({ ...p, available: usable(p, cfg) })); }

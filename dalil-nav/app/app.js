@@ -1248,7 +1248,7 @@ function renderOutLayers(map) {
     `<label class="opt${dis ? ' off' : ''}"><input type="${type}" name="${name}" value="${esc(val)}" ${on ? 'checked' : ''} ${dis ? 'disabled' : ''}><span>${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></label>`;
   const base = [row('radio', 'outBase', 'auto', t('provider_auto'), settings.mapProvider === 'auto')];
   for (const kind of ['streets', 'satellite']) for (const p of all.filter(p => p.kind === kind))
-    base.push(row('radio', 'outBase', p.id, `${t(kind === 'satellite' ? 'kindSatellite' : 'kindStreets')} · ${p.name}`, settings.mapProvider === p.id, !p.available, p.available ? (p.key ? t('provKey') : t('provFree')) : t('needsKey')));
+    base.push(row('radio', 'outBase', p.id, `${t(kind === 'satellite' ? 'kindSatellite' : 'kindStreets')} · ${p.name}`, settings.mapProvider === p.id, !p.available, p.available ? (p.key ? t('provKey') : p.test ? t('provTest') : t('provFree')) : t('needsKey')));
   base.push(row('radio', 'outBase', 'plain', t('provider_plain'), settings.mapProvider === 'plain'));
   $('#outBases').innerHTML = base.join('');
   const missing = [...new Set(all.filter(p => !p.available).map(p => p.key))];
