@@ -642,6 +642,33 @@ test('home remembers recent places and searches; the phone\'s back button works;
   await ctx.close();
 });
 
+test('GPS outside the building: never "you are here" inside it; the route starts at the nearest entrance, with walking directions there', async () => {
+  const B3 = '#b=uos-central-labs-b3-test&f=ground-floor';
+  const stub = async page => { for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 })); };
+  // About 350 m away, in another building
+  let { ctx, page, errors } = await open(B3, { permissions: ['geolocation'], geolocation: { latitude: 25.2895, longitude: 55.4750, accuracy: 15 } });
+  await stub(page);
+  await page.waitForFunction(() => document.querySelector('#fromEyebrow').textContent.includes('Not in this building'));
+  await search(page, 'Toilets (east)');
+  await page.click('#results button[data-pick]');
+  await pageIs(page, 'route');
+  assert.match(await page.textContent('#routeMsg'), /You’re about \d+ m from this building.*Go to Entrance MD\d+ first/);
+  assert.match(await page.getAttribute('#routeMsg a.out-dir', 'href'), /google\.com\/maps\/dir\/\?api=1&destination=25\.28\d+,55\.47\d+&travelmode=walking/);
+  assert.match(await page.textContent('#routeMsg'), /^((?!No step-free).)*$/s, 'the toilets are step-free');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+  // Standing inside B3: no "outside" message
+  ({ ctx, page, errors } = await open(B3, { permissions: ['geolocation'], geolocation: { latitude: 25.28701, longitude: 55.47791, accuracy: 10 } }));
+  await stub(page);
+  await page.waitForFunction(() => window.DALIL_APP.gps().state === 'on' && window.DALIL_APP.gps().acc != null);
+  await page.waitForTimeout(500);
+  assert.doesNotMatch(await page.textContent('#fromEyebrow'), /Not in this building/);
+  await search(page, 'Geotechnical'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  assert.doesNotMatch(await page.textContent('#routeMsg'), /from this building/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('no floor plan: walk the building to map it (survey); places, back-at-a-place, a lift to a new floor; then directions work', async () => {
   const { ctx, page, errors } = await open('', { permissions: [...SENSORS, 'geolocation'], geolocation: { latitude: 25.2900, longitude: 55.4100, accuracy: 6 } });
   await page.click('#btnSheet').catch(() => {});

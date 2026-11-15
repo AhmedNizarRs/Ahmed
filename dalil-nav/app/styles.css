@@ -253,6 +253,9 @@ html.contrast .gps-acc { fill: none; stroke: #fff; }
 .route-msg { color: var(--ink-2); }
 .route-msg.warn { color: var(--ink); background: var(--warn-bg); border: 1px solid var(--warn); padding: .875rem 1rem; border-radius: var(--r); }
 .route-msg.warn strong { display: block; color: var(--warn); margin-bottom: .25rem; }
+.route-msg.out { display: grid; gap: .625rem; color: var(--ink); background: rgba(26, 115, 232, .08); border: 1px solid #1A73E8; padding: .875rem 1rem; border-radius: var(--r); }
+.route-msg.out strong { color: #1A73E8; font-size: 1.0625rem; }
+.route-msg.out .out-dir { justify-self: start; text-decoration: none; }
 .facts { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: .5rem; }
 .facts:empty { display: none; }
 .facts li { display: inline-flex; align-items: center; gap: .375rem; padding: .375rem .75rem; border-radius: 2rem; background: var(--bg-2); border: 1px solid var(--line); font-weight: 550; font-size: 1rem; }

@@ -2,6 +2,7 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    outsideEyebrow: 'Not in this building · start at', outTitle: d => `You’re about ${d} from this building`, outBody: n => `Go to ${n} first. The directions below start there.`, outBodyHere: n => `${n} is outside your current position: walk there first.`, outDirections: 'Walking directions to the entrance',
     surveyBtn: 'Map a building by walking it', surveyRowSub: 'No floor plan needed', surveyTitle: 'Map a building', surveyIntro: 'No floor plan? Walk the building with your phone and DALIL draws the map.',
     surveyHow1: 'Stand at the main entrance and tap Start.', surveyHow2: 'Walk the corridors holding the phone in front of you.',
     surveyHow3: 'At each place (room, toilets, lift, stairs…) tap “Add place here”.', surveyHow4: 'Back at a place you already added? Tap “I’m back at a place” to straighten the map.',
@@ -123,6 +124,7 @@ export const STR = {
     cats: { entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    outsideEyebrow: 'لست في هذا المبنى · ابدأ من', outTitle: d => `أنت على بُعد نحو ${d} من هذا المبنى`, outBody: n => `اذهب أولًا إلى ${n}. الاتجاهات أدناه تبدأ من هناك.`, outBodyHere: n => `${n} بعيد عن موقعك الحالي: امشِ إليه أولًا.`, outDirections: 'اتجاهات المشي إلى المدخل',
     surveyBtn: 'ارسم خريطة مبنى بالمشي فيه', surveyRowSub: 'لا حاجة إلى مخطط الطابق', surveyTitle: 'ارسم خريطة مبنى', surveyIntro: 'لا يوجد مخطط للطابق؟ امشِ في المبنى بهاتفك وسيرسم دليل الخريطة.',
     surveyHow1: 'قف عند المدخل الرئيسي واضغط ابدأ.', surveyHow2: 'امشِ في الممرات والهاتف أمامك.',
     surveyHow3: 'عند كل مكان (غرفة، دورة مياه، مصعد، درج…) اضغط «أضف مكانًا هنا».', surveyHow4: 'عدت إلى مكان أضفته؟ اضغط «عدت إلى مكان» لتصحيح الخريطة.',

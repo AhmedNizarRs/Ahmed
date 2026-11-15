@@ -32,10 +32,12 @@ const CFG = JSON.parse(fs.readFileSync(path.join(DIR, 'floors.json'), 'utf8'));
       // Which places can be reached on foot from the first place (entrance / lift)? Unreachable ones need fixing.
       const g = S.grids.walk, A = S.points[0], s0 = snapFree(g, A.x, A.y), sr = s0 < 0 ? null : search(g, s0, -1);
       const unreachable = S.points.filter(B => B !== A && (!sr || (t => t < 0 || !extractPath(g, sr.par, s0, t, A, B))(snapFree(g, B.x, B.y)))).map(B => B.nameEn);
+      const gc = S.grids.chair, c0 = snapFree(gc, A.x, A.y), cr = c0 < 0 ? null : search(gc, c0, -1);
+      const noChair = S.points.filter(B => B !== A && (!cr || (t => t < 0 || !extractPath(gc, cr.par, c0, t, A, B))(snapFree(gc, B.x, B.y)))).map(B => B.nameEn);
       await exportMap(); saveProject(); exportCsv();
-      return { grid, exp: $('expStatus').innerText, out: window.__out, unreachable };
+      return { grid, exp: $('expStatus').innerText, out: window.__out, unreachable, noChair };
     }, { text, F, B: CFG.building, geo: F.geo });
-    console.log(`\n${F.floor}\n  ${res.grid}\n  ${res.exp}\n  unreachable from ${F.points[0][0]}: ${res.unreachable.length ? res.unreachable.join(', ') : 'none'}`);
+    console.log(`\n${F.floor}\n  ${res.grid}\n  ${res.exp}\n  unreachable from ${F.points[0][0]}: ${res.unreachable.length ? res.unreachable.join(', ') : 'none'}\n  no step-free route from ${F.points[0][0]}: ${res.noChair.length ? res.noChair.join(', ') : 'none'}`);
     for (const [name, body] of Object.entries(res.out)) {
       let out = body;
       if (name.startsWith('dalil-map_')) { const m = JSON.parse(body); m.geo = { ...m.geo, source: F.geo.source }; out = JSON.stringify(m); }

@@ -322,7 +322,7 @@ function selectFloor(map, { keepFrom = false } = {}) {
 }
 function setFrom(id, { say = true, confirm = false } = {}) {
   const p = pt(id); if (!p) return false;
-  state.fromId = id; state.viewMap = state.map; state.fromManual = true;
+  state.fromId = id; state.viewMap = state.map; state.fromManual = true; state.outside = null;
   if (state.toKey === keyOf(state.map, p)) state.toKey = null;
   renderAll();
   if (say) { const msg = confirm ? t('confirmed', pname(p)) : t('locSet', pname(p)); announce(msg); toast(msg); }
@@ -588,9 +588,16 @@ function renderRoute() {
   const isSaved = isFav(state.toKey);
   $('#btnFav').setAttribute('aria-pressed', String(isSaved)); $('#favText').textContent = t(isSaved ? 'saved' : 'save');
   const msg = $('#routeMsg'); msg.className = 'route-msg'; msg.innerHTML = '';
-  if (here) msg.textContent = t('alreadyHere');
+  const out = outsideNow(), outMsg = () => {
+    const e = pt(out.id), ll = state.map.geo ? geoTransform(state.map.geo)(e.x, e.y) : null, dest = ll ? `${ll[1].toFixed(6)},${ll[0].toFixed(6)}` : '';
+    msg.className = 'route-msg out';
+    msg.innerHTML = `<strong>${esc(t('outTitle', fmtDist(out.d)))}</strong>${esc(t(here ? 'outBodyHere' : 'outBody', pname(e)))}`
+      + (ll ? `<a class="btn secondary out-dir" href="https://www.google.com/maps/dir/?api=1&destination=${dest}&travelmode=walking" target="_blank" rel="noopener"><span class="ico">${ico('walk')}</span><span>${esc(t('outDirections'))}</span></a>` : '');
+  };
+  if (here) { if (out) outMsg(); else msg.textContent = t('alreadyHere'); }
   else if (!route && settings.stepFree) { msg.className = 'route-msg warn'; msg.innerHTML = `<strong>${esc(t('noStepFreeTitle'))}</strong>${esc(t('noStepFreeBody'))}`; }
   else if (!route) { msg.className = 'route-msg warn'; msg.innerHTML = `<strong>${esc(t('noRoute'))}</strong>`; }
+  else if (out) outMsg();
   else if (route.closures) msg.textContent = t('closureNote');
   $('#routeStats').hidden = !route;
   if (route) {
@@ -1155,11 +1162,36 @@ function fuseFix(f) {
   }
   renderMode(); if (wasLive !== gpsLive() && nav.mode === 'off') showMotionCard();
 }
+// GPS puts you outside this building: the indoor route starts at its nearest entrance, and the app says so
+// (it never claims you are inside a building you are not in). Cleared when you choose a place yourself.
+const boxOf = new WeakMap();
+function planBox(m) {
+  let b = boxOf.get(m); if (b) return b;
+  b = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const [x, y] of planPts(m).concat(m.points.map(p => [p.x, p.y]))) { b[0] = Math.min(b[0], x); b[1] = Math.min(b[1], y); b[2] = Math.max(b[2], x); b[3] = Math.max(b[3], y); }
+  boxOf.set(m, b); return b;
+}
+function outsideOf(m, q) {
+  const [a, b, c, d] = planBox(m), off = Math.hypot(Math.max(a - q.x, 0, q.x - c), Math.max(b - q.y, 0, q.y - d));
+  if (off <= q.acc + 10) return null;                                    // inside, or too close to tell
+  let best = null, bd = Infinity;
+  for (const p of m.points) if (p.category === 'entrance' && !p.virtual) { const e = Math.hypot(p.x - q.x, p.y - q.y); if (e < bd) { bd = e; best = p; } }
+  best ||= pt(defaultFrom(m)); if (!best) return null;
+  return { id: best.id, d: Math.hypot(best.x - q.x, best.y - q.y), b: m.building.id, f: m.floor.id, at: Date.now() };
+}
+const outsideNow = () => { const o = state.outside; return o && o.b === state.map?.building.id && o.f === state.map?.floor.id && o.id === state.fromId && Date.now() - o.at < 180000 ? o : null; };
 // On Home: "You are here" = the nearest place to the GPS position, unless you chose one yourself.
 function homeFix(f) {
   nearCheck();
   const m = state.map, q = fixOn(m, f); gps.acc = q?.acc ?? null;
   homeMap?.setAccuracy(q, q?.acc); homeYou(); nearCheck(); renderBuildingsThrottled();
+  const out = q && q.acc <= 80 && !state.fromManual ? outsideOf(m, q) : null;
+  if (out) {
+    const changed = state.fromId !== out.id || !outsideNow(); state.outside = out; gps.fromId = null;
+    if (changed) { state.fromId = out.id; renderAll(); }
+    renderGpsBits(); return;
+  }
+  if (state.outside) { state.outside = null; if (!state.fromManual) renderAll(); }
   if (q && q.acc <= GPS_MAX_ACC && !state.fromManual) {
     let best = null, bd = Infinity;
     for (const p of m.points) { if (p.virtual) continue; const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; best = p; } }
@@ -1169,7 +1201,7 @@ function homeFix(f) {
 }
 function renderGpsBits() {
   const near = gps.fromId && gps.fromId === state.fromId && Date.now() - gps.at < 60000 && gps.acc != null;
-  $('#fromEyebrow').textContent = near ? t('youAreHereGps', Math.round(gps.acc)) : t('youAreHere');
+  $('#fromEyebrow').textContent = outsideNow() ? t('outsideEyebrow') : near ? t('youAreHereGps', Math.round(gps.acc)) : t('youAreHere');
   $('#btnLocate').hidden = !(gpsAllowed() && state.map?.geo) || locator.on;
 }
 function navTag(link) {
