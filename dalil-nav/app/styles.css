@@ -570,6 +570,8 @@ html.reduce-motion .you-pulse, html.reduce-motion .holo::after, html.reduce-moti
 .hm-floor + .hm-floor { border-top: 1px solid var(--line); }
 .hm-floor.is-on { background: var(--brand); color: var(--on-brand); }
 .hm-sheet { position: absolute; z-index: 12; inset-inline: 0; bottom: var(--tabs-h); max-height: var(--peek); display: flex; flex-direction: column; border-radius: 1.5rem 1.5rem 0 0; background: var(--glass-2); border: 1px solid var(--line); border-bottom: 0; box-shadow: 0 -8px 30px rgba(0, 0, 0, .35); -webkit-backdrop-filter: blur(22px) saturate(1.4); backdrop-filter: blur(22px) saturate(1.4); transition: max-height .32s var(--ease); max-width: 40rem; margin: 0 auto; }
+.hm-sheet.dragging { transition: none; }
+.hm-sheet .hm-handle, .hm-sheet .hm-head, .hm-sheet:not(.open) { touch-action: none; }   /* the finger drags the sheet, not the page */
 .hm-sheet.open { max-height: calc(100% - var(--tabs-h) - var(--safe-t) - 5rem); }
 .hm-handle { flex: none; height: 3rem; width: 100%; display: grid; place-items: center; border: 0; background: none; cursor: pointer; margin-bottom: -.75rem; }
 .hm-handle span { width: 2.75rem; height: .3125rem; border-radius: 1rem; background: var(--line-3); }

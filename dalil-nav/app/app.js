@@ -442,6 +442,34 @@ function homeYou(from = pt(state.fromId)) {
   if (from && homeFloor === state.map) homeCtl.setYou(geoTransform(state.map.geo)(from.x, from.y), null); else homeCtl.setYou(null);
 }
 function setHomeFloor(m) { if (!m || m === homeFloor) return; homeFloor = m; announce(t('viewFloor', floorName(m.floor))); renderHomeMap(); }
+// The Home sheet follows your finger like a phone maps app: drag the handle or the building name up to open it,
+// down to close it; a quick flick is enough. When closed, a tap anywhere on it (not on a button) opens it.
+// The handle stays a button (tap, or a screen reader's double tap), so dragging is never the only way.
+function bindSheetDrag() {
+  const sh = $('#homeSheet'), body = $('#homeSheetBody'); let d = null;
+  sh.addEventListener('pointerdown', e => {
+    const open = sh.classList.contains('open'), onHandle = !!e.target.closest('#btnSheet'), ctl = e.target.closest('button, a, input, select, label');
+    const inHead = !!e.target.closest('.hm-head') && !ctl;
+    if (!onHandle && !inHead && (open || ctl)) return;          // open sheet: its body scrolls; buttons stay buttons
+    if (open && !onHandle && body.scrollTop > 0) return;
+    d = { y: e.clientY, t: performance.now(), h: sh.getBoundingClientRect().height, open, id: e.pointerId, moved: false, onHandle };
+  });
+  addEventListener('pointermove', e => {
+    if (!d || e.pointerId !== d.id) return;
+    const dy = e.clientY - d.y; if (!d.moved && Math.abs(dy) < 8) return;
+    if (!d.moved) { d.moved = true; sh.classList.add('dragging'); }
+    sh.style.maxHeight = Math.max(90, d.h - dy) + 'px';
+  });
+  const end = e => {
+    if (!d || e.pointerId !== d.id) return;
+    const g = d; d = null; sh.classList.remove('dragging'); sh.style.maxHeight = '';
+    if (!g.moved) { if (!g.onHandle && !g.open && e.type === 'pointerup') setSheet(true); return; }   // a tap on the handle is its click
+    const dy = e.clientY - g.y, v = dy / Math.max(1, performance.now() - g.t);
+    setSheet(v < -0.35 ? true : v > 0.35 ? false : g.open ? dy < 80 : dy < -60);
+    sh.dataset.dragged = '1'; setTimeout(() => { delete sh.dataset.dragged; }, 80);
+  };
+  addEventListener('pointerup', end); addEventListener('pointercancel', end);
+}
 function setSheet(open) {
   $('#homeSheet').classList.toggle('open', open); $('#btnSheet').setAttribute('aria-expanded', String(open));
   if (!open) $('#homeSheetBody').scrollTop = 0;
@@ -1735,7 +1763,8 @@ function bind() {
   // Home map controls
   $('#navMap').addEventListener('click', e => { const b = e.target.closest('[data-turn]'); if (!b) return; const st = nav.steps[+b.dataset.turn]; if (st) { const msg = stepText(st); speak(msg); announce(msg); buzz([30]); b.classList.add('ping'); setTimeout(() => b.classList.remove('ping'), 600); } });
   $('#hudCard').addEventListener('click', () => $('#btnRepeat').click());
-  $('#btnSheet').onclick = () => setSheet(!$('#homeSheet').classList.contains('open'));
+  $('#btnSheet').onclick = () => { if ($('#homeSheet').dataset.dragged) return; setSheet(!$('#homeSheet').classList.contains('open')); };
+  bindSheetDrag();
   $('#homeChips').addEventListener('click', e => { if (e.target.closest('#chipBuildings')) { setSheet(true); requestAnimationFrame(() => $('#secBuildings').scrollIntoView({ block: 'start' })); } });
   $('#buildingList').addEventListener('click', e => { if (e.target.closest('#btnMoreBld')) { state.showFarBld = true; renderBuildings(); return; } const b = e.target.closest('[data-building]'); if (b) { state.fromManualBuilding = true; openBuilding(b.dataset.building); } });
   $('#btnNearOpen').onclick = () => { state.fromManualBuilding = true; openBuilding($('#nearCard').dataset.bld); };

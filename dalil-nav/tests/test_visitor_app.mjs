@@ -649,6 +649,22 @@ test('home remembers recent places and searches; the phone\'s back button works;
   await ctx.close();
 });
 
+test('Home sheet: drag it up and down like a maps app; a tap on its handle or title still works', async () => {
+  const { ctx, page, errors } = await open('#b=uos-central-labs-b3-test&f=ground-floor');
+  const isOpen = () => page.evaluate(() => document.querySelector('#homeSheet').classList.contains('open'));
+  const drag = async (sel, dy) => { const r = await page.locator(sel).boundingBox(); const x = r.x + r.width / 2, y = r.y + r.height / 2;
+    await page.mouse.move(x, y); await page.mouse.down(); for (let i = 1; i <= 8; i++) { await page.mouse.move(x, y + dy * i / 8); await page.waitForTimeout(30); } await page.mouse.up(); await page.waitForTimeout(400); };
+  assert.equal(await isOpen(), false);
+  await drag('#btnSheet', -300); assert.equal(await isOpen(), true, 'dragged up: open');
+  await drag('#btnSheet', 300); assert.equal(await isOpen(), false, 'dragged down: closed');
+  await drag('#bldName', -250); assert.equal(await isOpen(), true, 'the building name drags too');
+  await drag('#bldName', 250); assert.equal(await isOpen(), false);
+  await page.click('#bldName'); await page.waitForTimeout(300); assert.equal(await isOpen(), true, 'a tap on the closed sheet opens it');
+  await page.click('#btnSheet'); await page.waitForTimeout(300); assert.equal(await isOpen(), false, 'the handle is still a button');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('Arabic: building names are Arabic too', async () => {
   const { ctx, page, errors } = await open('#b=uos-central-labs-b3-test&f=ground-floor');
   await page.click('#btnSheet').catch(() => {}); await page.click('#btnLang');
