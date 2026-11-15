@@ -40,6 +40,17 @@ Month 1 start date: `[TO CONFIRM]`. Status key: Not started · On track · At ri
 | 25 investors and programmes in `fundraising/investor-pipeline.csv` | Ahmed | Month 2 | Not started |
 | Monthly investor update sent every month | Ahmed | Monthly | Not started |
 
+## Objective 7 (PROPOSED 2026-11-15, needs founder OK). Make the app pilot-ready
+App = `dalil-nav/` (Mapper + visitor app). Not on the 24-month roadmap yet. See `weekly/2026-W47.md`.
+| Key result | Owner | Due | Status |
+|---|---|---|---|
+| 1 on-site walk test logged (UoS B3 ground floor, internal) | Ahmed | 2026-11-19 | Not started |
+| Pilot building agreed in writing, incl. permission to use its plans (with KR "UoS pilot agreed") | Mohammed | Month 3 | Not started |
+| Mapper setup fee per floor set in `DALIL-facts.md` | Both | 2026-11-18 | Not started |
+| Privacy notice EN/AR drafted, reviewed by a UAE lawyer | Ahmed | Month 2 | Not started |
+| 1 app user-testing session with blind and low-vision testers logged | Ahmed | Month 3 | Not started |
+| Arabic strings checked by a native speaker | Ahmed | Month 2 | Not started |
+
 ## Objective 6. Be known in Sharjah
 | Key result | Owner | Due | Status |
 |---|---|---|---|
