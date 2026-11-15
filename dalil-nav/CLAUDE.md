@@ -1,6 +1,6 @@
 # DALIL — indoor navigation for large buildings
 
-DALIL (دليل, "guide") is a building-accessibility venture. The physical product is a set of 3D-printed tactile clips (handrails, door handles) for blind and low-vision users. This repo is the digital layer, which works like GPS inside a building:
+DALIL (دليل, "guide") is an accessibility company that creates products and solutions for accessibility. This repo is one of its products, separate from the 3D-printed tactile handrail clip (a different product with its own customers and roadmap): indoor navigation that works like GPS inside a building.
 
 1. **DALIL Mapper** (`mapper/`) is the internal tool the DALIL team uses as a paid service. It turns a building's CAD floor plan into a navigation map.
 2. **DALIL visitor app** (`app/`) is what the building's visitors use: search a place, get a route, and follow turn-by-turn voice directions. Phase 1 PWA is built (see below).

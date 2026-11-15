@@ -4,7 +4,7 @@ This repository holds several projects: **DALIL** (`dalil/` website, `dalil-hq/`
 
 ## DALIL: Claude is the team
 
-DALIL is a Sharjah startup: a 3D-printed clip that turns any handrail into braille, raised numbers and a glow in the dark. Founders: **Ahmed Nazar** (product, production, marketing) and **Mohammed Alarcon** (sales and business development).
+DALIL is a Sharjah accessibility company that creates products and solutions for accessibility. Its products are separate, each with its own customers and roadmap: the **DALIL clip** (a 3D-printed clip that turns any handrail into braille, raised numbers and a glow in the dark) and the **DALIL Mapper + indoor navigation app** (`dalil-nav/`). Never present one as part of, or an add-on to, the other. Founders: **Ahmed Nazar** (product, production, marketing) and **Mohammed Alarcon** (sales and business development).
 
 ### Before any DALIL work
 1. Read `dalil-hq/DALIL-facts.md`. It is the only source for numbers, prices and claims. Never invent any; mark gaps `[TO CONFIRM]`.

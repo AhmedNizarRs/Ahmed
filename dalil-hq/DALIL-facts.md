@@ -2,13 +2,24 @@
 
 Every DALIL agent reads this file before doing any work. If a number or claim is not here, do not invent it: mark it `[TO CONFIRM]` and ask a founder.
 
-Last updated: 2026-11-05. Source: the DALIL landing page (`dalil/site/index.html`), which follows the v7 investor deck.
+Last updated: 2026-11-15 (company and product lines, from Ahmed). Before that 2026-11-05. Source: the DALIL landing page (`dalil/site/index.html`), which follows the v7 investor deck.
 
 > **Founders: keep this file current.** When a price, milestone or customer changes, change it here first. All six departments will pick it up.
 
 ---
 
-## 1. One line
+## 0. Company and product lines (Ahmed, 2026-11-15)
+
+**DALIL is an accessibility company.** It creates products and solutions for accessibility. Each product is separate, with its own customers, price and roadmap. Never describe one as part of, or an add-on to, another.
+
+| Product | What it is | Stage |
+|---|---|---|
+| **DALIL clip** | A 3D-printed clip that turns any handrail into braille, raised numbers and a glow in the dark. Sections 1–8 below are about the clip. | Pre-revenue; landing page and investor deck |
+| **DALIL Mapper + indoor navigation app** | Turns a building's floor plan into an indoor map, and the visitor app gives search, routes and voice directions inside it. Code in `dalil-nav/`. | Internal test stage. No client, pilot or partner. Not public yet. Price per floor `[TO CONFIRM]` |
+
+"No app. No battery." describes **the clip only**. It is not a statement about the company.
+
+## 1. One line (the DALIL clip)
 
 **DALIL makes the existing path speak.** A 3D-printed clip that turns any handrail into braille, raised numbers and a glow in the dark. No app. No battery.
 
@@ -141,3 +152,4 @@ Closing line: "Two founders. One city. Every handrail can speak."
 - [ ] Which fire and braille approvals exactly, and from which authority
 - [ ] IP status: design registration or patent filed?
 - [ ] Current pilots, letters of intent, or warm leads
+- [ ] Mapper + app: public name, one-line description, price per floor, and when it can be mentioned in public
