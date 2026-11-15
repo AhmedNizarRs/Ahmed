@@ -601,3 +601,19 @@ html.reduce-motion .oy-pulse { display: none; }
 #homeGL .maplibregl-ctrl-bottom-right { bottom: calc(var(--tabs-h) + var(--peek) + .25rem); }
 #homeGL[data-logo="Google"]::after { content: "Google"; position: absolute; z-index: 2; inset-inline-start: .875rem; bottom: calc(var(--tabs-h) + var(--peek) + .5rem); font: 600 1rem/1 Arial, sans-serif; color: #fff; text-shadow: 0 0 3px rgba(0, 0, 0, .8); pointer-events: none; }
 html.contrast .hm-search, html.contrast .hm-chip, html.contrast .hm-fab, html.contrast .hm-floors, html.contrast .hm-sheet { background: #000; border-color: #fff; box-shadow: none; }
+/* Map chrome in the style of phone maps apps: white floating surfaces over the map, in every theme but high
+   contrast (white reads best over satellite imagery). */
+.home-map .hm-top, .home-map .hm-right, .home-map .hm-fabs, .home-map .hm-sheet, .home-map .hm-tabs {
+  --glass-2: rgba(255, 255, 255, .97); --bg-1: #FFFFFF; --hi: rgba(32, 33, 36, .06);
+  --ink: #1F1F1F; --ink-2: #3C4043; --ink-3: #5F6368; --line: rgba(32, 33, 36, .1); --line-3: rgba(32, 33, 36, .28);
+  --on-brand: #1F1F1F; color: var(--ink);
+}
+.home-map .hm-search, .home-map .hm-chip, .home-map .hm-fab, .home-map .hm-floors { box-shadow: 0 1px 3px rgba(0, 0, 0, .3), 0 4px 10px rgba(0, 0, 0, .15); border-color: transparent; }
+.home-map .hm-chip .ico { color: #B07A00; }
+.home-map .hm-tab.is-on .ico { background: #FFE9A6; color: #1F1F1F; }
+.home-map .hm-sheet .tile, .home-map .hm-sheet .row-btn, .home-map .hm-sheet .pill { background: #F1F3F4; border-color: transparent; color: #1F1F1F; }
+.home-map .hm-sheet .tile-ico, .home-map .hm-sheet .r-ico { color: #1F1F1F; }
+.home-map .hm-sheet .eyebrow, .home-map .hm-sheet .fine, .home-map .hm-sheet .sec-title { color: #5F6368; }
+html.contrast .home-map .hm-top, html.contrast .home-map .hm-right, html.contrast .home-map .hm-fabs, html.contrast .home-map .hm-sheet, html.contrast .home-map .hm-tabs {
+  --glass-2: #000; --bg-1: #000; --ink: #FFF; --ink-2: #FFF; --ink-3: #FFF; --line: #FFF; --on-brand: #000;
+}

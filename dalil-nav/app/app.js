@@ -360,6 +360,7 @@ function renderHome() {
   $('#fromName').textContent = from ? `${pname(from)}${multi ? ` · ${floorName(state.map.floor)}` : ''}` : t('fromUnknown');
   $('#liGettingHere').hidden = !state.map.geo;
   renderHolo(from); renderGpsBits();
+  if (!$('#homeSheet').classList.contains('open')) $('#homeSheetBody').scrollTop = 0;   // the sheet always peeks at its top
   // Tiles: the essentials this building has, with the walk to the nearest one
   const cats = Object.keys(TILE_CATS).filter(c => TILE_CATS[c].some(k => here.has(k))).slice(0, 6);
   $('#homeChips').innerHTML = cats.map(c => `<button class="hm-chip" type="button" data-cat="${c}"><span class="ico">${catIco(c === 'help' ? 'help' : TILE_CATS[c][0])}</span><span>${esc(t('cat_' + c))}</span></button>`).join('');
