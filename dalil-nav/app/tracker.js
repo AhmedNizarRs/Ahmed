@@ -213,6 +213,8 @@ export class Follower {
     if (learn && n >= 12 && walked > 6) this.stride = Math.min(0.95, Math.max(0.45, 0.5 * this.stride + 0.5 * walked / n));
     this.pos = Math.max(0, Math.min(this.L, d)); this.anchorPos = this.pos; this.anchorSteps = this.stepsTotal; this.wrongN = 0; this.wrong = false;
   }
+  /** Move the position without counting it as a fix (a GPS blend): keeps step-length learning intact. */
+  nudge(d) { if (this.path) this.pos = Math.max(0, Math.min(this.L, d)); this.wrongN = 0; this.wrong = false; }
   /** One step. H = the bearing you face (sensor frame) or null. Returns the new position along the leg. */
   step(H, { steady = true } = {}) {
     this.stepsTotal++;

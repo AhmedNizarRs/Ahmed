@@ -36,10 +36,12 @@ Terms per provider (commercial use, attribution) are in `data-providers.md`; re-
   their position moves on at signs.
 - Set each node's facing in the Mapper (the direction a person faces when reading the sign).
 
-## 4. World position (makes the arrow right from the first step)
+## 4. World position (makes the arrow right from the first step, and turns on GPS)
 
 In the Mapper's World position step, enter two points with known latitude/longitude (or use the CAD's survey
-coordinates). Without it the arrow still works, but only after the visitor's first few steps.
+coordinates). Without it the arrow still works, but only after the visitor's first few steps, and GPS isn't used.
+With it, the phone's location is blended with the steps (`motion-and-camera.md`). Pick two points far apart
+(opposite corners of the building) and check the overlay on the Getting here map: a 2° error is 3.5 m at 100 m.
 
 ## 5. Usage counts (if the client turns them on)
 

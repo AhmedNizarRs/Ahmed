@@ -8,6 +8,7 @@ import { geoTransform, haversine } from './outdoor.js';
 import { Tracker, Follower, wrap180 } from './tracker.js';
 import { CameraGuide, QRScanner, openCamera, closeCamera, cameraError } from './camera.js';
 import { availableProviders } from './providers.js';
+import { Locator, planFromGeo, locationGranted } from './locate.js';
 
 /* =========================================================================
    Settings, storage and the building's config (every read/write guarded: private mode may throw)
@@ -23,7 +24,7 @@ const saved0 = store.get('dalil.settings', {});
 if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; delete saved0.theme; delete saved0.large; delete saved0.sensors; saved0.v = SETTINGS_V; }
 const settings = Object.assign({
   v: SETTINGS_V, lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
-  theme: 'dark', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto',
+  theme: 'dark', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true,
   contrast: mq('(prefers-contrast: more)'), motion: mq('(prefers-reduced-motion: reduce)'),
 }, saved0);
 const saveSettings = () => store.set('dalil.settings', settings);
@@ -316,7 +317,7 @@ function selectFloor(map, { keepFrom = false } = {}) {
 }
 function setFrom(id, { say = true, confirm = false } = {}) {
   const p = pt(id); if (!p) return false;
-  state.fromId = id; state.viewMap = state.map;
+  state.fromId = id; state.viewMap = state.map; state.fromManual = true;
   if (state.toKey === keyOf(state.map, p)) state.toKey = null;
   renderAll();
   if (say) { const msg = confirm ? t('confirmed', pname(p)) : t('locSet', pname(p)); announce(msg); toast(msg); }
@@ -358,7 +359,7 @@ function renderHome() {
   $('#bldName').innerHTML = `<bdi>${esc([inst, state.map.building.name].filter(Boolean).join(' · '))}</bdi>`;
   $('#fromName').textContent = from ? `${pname(from)}${multi ? ` · ${floorName(state.map.floor)}` : ''}` : t('fromUnknown');
   $('#liGettingHere').hidden = !state.map.geo;
-  renderHolo(from);
+  renderHolo(from); renderGpsBits();
   // Tiles: the essentials this building has, with the walk to the nearest one
   const cats = Object.keys(TILE_CATS).filter(c => TILE_CATS[c].some(k => here.has(k))).slice(0, 6);
   $('#tiles').innerHTML = cats.map(c => {
@@ -625,7 +626,7 @@ function providerOptions() {
 }
 function renderSettings() {
   for (const [name, val] of [['lang', settings.lang], ['theme', settings.theme], ['textSize', settings.textSize], ['pace', settings.pace]]) $$(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
-  $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree;
+  $('#setGps').checked = settings.gps; $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree;
   $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion;
   $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${m.building.name} · ${floorName(m.floor)}`)}</option>`).join('');
   $('#setProvider').innerHTML = providerOptions();
@@ -671,7 +672,8 @@ function startNav({ camera = false, preview = false } = {}) {
   const sensors = !preview && cfg.features.motion !== false ? tracker.start() : null;
   const { legs, steps } = planSteps(plan), dest = destRef();
   rememberTrip(state.toKey);
-  Object.assign(nav, { active: true, retried: false, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null, mode: sensors ? 'starting' : 'off',
+  gpsStart();
+  Object.assign(nav, { active: true, retried: false, var: 9, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null, mode: sensors ? 'starting' : 'off',
     view: 'map', follower: null, arrow: 0, soonFor: -1, started: performance.now(), everStepped: false, transfer: null, kiosk: preview, offReason: preview ? 'preview' : 'none' });
   $('#nav').classList.remove('tracking'); hideMotionCard();
   setViewUI('map');
@@ -680,6 +682,7 @@ function startNav({ camera = false, preview = false } = {}) {
   goStep(0, { focus: true, intro: t('navStarted', pname(dest.p)) });
   if (camera) setView('cam');
   analytics.add('nav_start', { to: dest.p.virtual ? 'pin' : dest.p.id, view: camera ? 'cam' : preview ? 'preview' : 'map' });
+  if (locator.fresh(60000)) fuseFix(locator.fix);   // the latest fix (it may have come in on Home)
   if (sensors) sensors.then(sensorsResult);
   else if (preview) startSim();
   renderMode();
@@ -692,7 +695,7 @@ function sensorsResult(s) {
   showMotionCard(); renderMode(); renderHud();
 }
 function showMotionCard() {
-  const off = nav.active && nav.mode === 'off' && !nav.sim && !nav.kiosk && !nav.signsOnly;
+  const off = nav.active && nav.mode === 'off' && !nav.sim && !nav.kiosk && !nav.signsOnly && !gpsLive();
   $('#motionCard').hidden = !off; $('#nav').classList.toggle('motion-off', off);
   if (!off) return;
   // Asking again only helps when permission was refused. In a preview frame or on a device without sensors,
@@ -715,7 +718,7 @@ function endNav({ silent = false } = {}) {
   stopSim(); saveCalibration();
   if (nav.i < nav.steps.length - 1) analytics.add('nav_stop', { step: nav.i + 1, of: nav.steps.length });
   nav.active = false; nav.signsOnly = false; cancelAnimationFrame(nav.loop);
-  tracker.onStep = null; tracker.stop(); tracker.reset();
+  tracker.onStep = null; tracker.stop(); tracker.reset(); navMap.setAccuracy(null); gps.used = false;
   stopCam();
   try { speechSynthesis?.cancel(); } catch { }
   $('#arrived').hidden = true; if ($('#dlgSteps').open) $('#dlgSteps').close();
@@ -748,7 +751,7 @@ function onTrackerStep(ts) {
   if (!nav.active || nav.mode !== 'track' || nav.sim) return;
   const s = nav.steps[nav.i];
   if (s.kind === 'arrive') return;
-  nav.everStepped = true;
+  nav.everStepped = true; nav.var += 0.15;
   if (s.kind === 'floor') { floorStep(ts); return; }
   const wasWrong = nav.follower.wrong;
   nav.pos = nav.follower.step(tracker.heading, { steady: tracker.steady() });
@@ -813,8 +816,10 @@ function renderMode() {
   const m = nav.sim ? 'preview' : nav.mode === 'starting' ? 'starting' : nav.mode === 'off' ? 'off'
     : s?.kind === 'floor' ? 'floor' : nav.follower?.wrong ? 'wrong' : !nav.follower?.usable ? 'align'
     : !nav.everStepped && performance.now() - nav.started > 6000 ? 'still' : 'follow';
-  const el = $('#navMode'); el.dataset.mode = m;
-  $('#navModeText').textContent = t({ preview: 'modePreview', starting: 'modeStarting', off: 'modeOff', floor: 'modeFloor', wrong: 'modeWrong', align: 'modeAlign', still: 'modeStill', follow: 'modeFollow' }[m]);
+  const g = gpsLive() && !nav.sim, mm = m === 'off' && g ? 'gps' : m;
+  const el = $('#navMode'); el.dataset.mode = mm === 'gps' ? 'follow' : mm;
+  $('#navModeText').textContent = t({ preview: 'modePreview', starting: 'modeStarting', off: 'modeOff', floor: 'modeFloor', wrong: 'modeWrong', align: 'modeAlign', still: 'modeStill', follow: 'modeFollow', gps: 'modeGps' }[mm])
+    + (g && mm !== 'floor' ? ` · ${t('gpsAcc', Math.round(gps.acc))}` : '');
   el.title = t(m === 'preview' ? 'previewNote' : 'modeFollowHint');
   $('#hudCard').classList.toggle('wrong', m === 'wrong');
   $('#camNote').textContent = nav.mode === 'track' && nav.follower?.usable ? t('camNote') : nav.mode === 'off' ? t('camNoMotion') : t('camAlign');
@@ -826,7 +831,7 @@ function goStep(i, { focus = false, speakIt = true, intro = '', keepPos = false 
   i = Math.max(0, Math.min(nav.steps.length - 1, i));
   const prev = nav.i; nav.i = i; nav.dwell = 0;
   const s = nav.steps[i];
-  if (!keepPos) { nav.pos = s.d0; if (nav.follower && nav.leg === s.leg) nav.follower.anchor(nav.pos, { learn: false }); }
+  if (!keepPos) { nav.pos = s.d0; nav.var = 4; if (nav.follower && nav.leg === s.leg) nav.follower.anchor(nav.pos, { learn: false }); }
   nav.transfer = s.kind === 'floor' ? { steps0: tracker.steps, lifts0: tracker.liftEvents } : null;
   renderNavStep();
   if (speakIt) {
@@ -995,6 +1000,54 @@ function stepAt(li, s) {
 }
 // A DALIL sign or tag during navigation: on (or next to) the route, here or on the floor you are heading to,
 // it confirms where you are; anywhere else it plans a new route from there.
+/* ---------- Location on Earth (GPS), blended with the steps ----------
+   The browser's position (GPS + Wi-Fi + cell, as map apps use) is placed on the plan through map.geo.
+   It pulls the position along the route by how sure each side is (a 1-D Kalman blend): GPS by its reported
+   accuracy, the steps by how far you walked since the last fix or sign. Fixes far from the route are shown, not used. */
+const locator = new Locator(), GPS_MAX_ACC = 30;
+const gps = { used: false, acc: null, at: 0, fromId: null };
+const gpsAllowed = () => settings.gps && cfg.features?.gps !== false && !state.kiosk && !!navigator.geolocation;
+const gpsMapHere = () => state.maps.some(m => m.geo && m.building.id === state.map?.building.id);
+const gpsLive = () => gps.used && Date.now() - gps.at < 60000;   // phones report again when you move
+function gpsStart() { if (gpsAllowed() && gpsMapHere()) { locator.start(onFix, onGpsError); renderGpsBits(); } }
+function gpsStop() { locator.stop(); gps.used = false; gps.fromId = null; navMap?.setAccuracy(null); homeMap?.setAccuracy(null); renderGpsBits(); }
+function onGpsError(kind) { gps.used = false; if (kind === 'denied') toast(t('gpsDenied')); renderGpsBits(); if (nav.active) { renderMode(); showMotionCard(); } }
+function fixOn(map, f) { if (!map?.geo) return null; const p = planFromGeo(map.geo)(f.lng, f.lat); return { x: p.x, y: p.y, acc: f.acc }; }
+function onFix(f) { if (nav.active) fuseFix(f); else homeFix(f); }
+function fuseFix(f) {
+  const s = nav.steps[nav.i]; if (!s || nav.sim) return;
+  const leg = nav.legs[s.leg], q = fixOn(leg.map, f);
+  navMap.setAccuracy(q, q?.acc); gps.acc = q?.acc ?? null;
+  const wasLive = gpsLive(); gps.used = false;
+  if (q && s.kind !== 'floor' && s.kind !== 'arrive' && q.acc <= GPS_MAX_ACC) {
+    const pr = projectOnPath(leg.route.path, leg.cum, q.x, q.y);
+    if (pr.d <= q.acc * 1.5 + 4) {
+      const tracking = nav.mode === 'track' && nav.follower;
+      const v = tracking ? nav.var : Math.max(nav.var, 400), K = v / (v + q.acc * q.acc);   // no steps: GPS alone moves you
+      nav.pos = Math.max(0, Math.min(leg.L, nav.pos + K * (pr.s - nav.pos))); nav.var = (1 - K) * v;
+      if (tracking) nav.follower.nudge(nav.pos);
+      gps.used = true; gps.at = Date.now();
+      syncStepToPos(); updateNavPos(false);
+    }
+  }
+  renderMode(); if (wasLive !== gpsLive() && nav.mode === 'off') showMotionCard();
+}
+// On Home: "You are here" = the nearest place to the GPS position, unless you chose one yourself.
+function homeFix(f) {
+  const m = state.map, q = fixOn(m, f); gps.acc = q?.acc ?? null;
+  homeMap?.setAccuracy(q, q?.acc);
+  if (q && q.acc <= GPS_MAX_ACC && !state.fromManual) {
+    let best = null, bd = Infinity;
+    for (const p of m.points) { if (p.virtual) continue; const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; best = p; } }
+    if (best && bd <= q.acc + 10) { gps.fromId = best.id; gps.at = Date.now(); if (state.fromId !== best.id) { state.fromId = best.id; renderAll(); } }
+  }
+  renderGpsBits();
+}
+function renderGpsBits() {
+  const near = gps.fromId && gps.fromId === state.fromId && Date.now() - gps.at < 60000 && gps.acc != null;
+  $('#fromEyebrow').textContent = near ? t('youAreHereGps', Math.round(gps.acc)) : t('youAreHere');
+  $('#btnLocate').hidden = !(gpsAllowed() && state.map?.geo) || locator.on;
+}
 function navTag(link) {
   const li = nav.steps[nav.i].leg, leg = nav.legs[li];
   const m = link.b ? state.maps.find(x => x.building.id === link.b && (!link.f || x.floor.id === link.f)) : leg.map;
@@ -1005,7 +1058,7 @@ function navTag(link) {
     const L = nav.legs[k]; if (!L || L.map !== m) continue;
     const pr = projectOnPath(L.route.path, L.cum, p.x, p.y);
     if (pr.d >= 2.5) continue;
-    nav.pos = pr.s; if (k === li) nav.follower?.anchor(pr.s);
+    nav.pos = pr.s; nav.var = 1; if (k === li) nav.follower?.anchor(pr.s);
     const i = stepAt(k, pr.s), s = nav.steps[i];
     goStep(s.kind === 'node' && s.node === p.id ? Math.min(nav.steps.length - 1, i + 1) : i, { keepPos: true });
     toast(t('tagConfirmed', pname(p)));
@@ -1278,6 +1331,9 @@ function bind() {
   const toggle = (id, key, after) => $(id).addEventListener('change', e => { settings[key] = e.target.checked; saveSettings(); after?.(); });
   toggle('#setVoice', 'voice', () => { if (!settings.voice) try { speechSynthesis.cancel(); } catch { } });
   toggle('#setVibrate', 'vibrate');
+  toggle('#setGps', 'gps', () => settings.gps ? gpsStart() : gpsStop());
+  $('#btnLocate').onclick = () => { state.fromManual = false; gpsStart(); };
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { gps.paused = locator.on; locator.stop(); } else if (gps.paused) { gps.paused = false; gpsStart(); } });
   $('#setStepFree').addEventListener('change', e => setStepFree(e.target.checked));
   toggle('#setContrast', 'contrast', rerenderAll); toggle('#setMotion', 'motion', rerenderAll);
   $('#setBuilding').addEventListener('change', e => { const m = state.maps[+e.target.value]; if (m) { state.toKey = null; selectFloor(m); } });
@@ -1341,10 +1397,12 @@ async function init() {
   navMap = new MapView($('#navMap'), { points: 'nodes', label: pname });
   bind();
   await loadConfig();
-  return boot();
+  const r = await boot();
+  if (await locationGranted()) gpsStart();
+  return r;
 }
 
 window.DALIL_APP = { state, settings, spoken, nav, tracker, analytics, parseLink, buildSteps, routeFor, pointOf, go, page: () => pageNow, config: () => cfg,
-  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, camera: () => camGuide, ready: init() };
+  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));

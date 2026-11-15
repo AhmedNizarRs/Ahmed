@@ -105,6 +105,22 @@ on a phone.
 - **Without motion** the camera still opens, to read signs, and says there is no guide line without motion.
 - Not offered in kiosk mode.
 
+## Position on Earth (GPS), blended with the steps
+
+For maps aligned to the real world (`geo`, set in the Mapper's World position step), the app also watches the
+phone's location: the browser's Geolocation API, which on phones is the same fused GPS + Wi-Fi + cell position map
+apps use. Code: `app/locate.js` (lat/lng → plan metres) and `fuseFix` in `app/app.js`.
+- **Blend**: each fix is placed on the plan, snapped to the route, and pulls the position by how sure each side is
+  (a 1-D Kalman filter): GPS by its reported accuracy, the steps by how far you walked since the last fix or sign.
+- **Ignored**: fixes worse than ±30 m, and fixes farther from the route than 1.5 × their accuracy + 4 m (shown as
+  a circle on the map, never used). GPS never tells the floor; floor changes stay automatic (see above).
+- **No motion sensors**: GPS alone moves you along the route, and the "turn on motion" card stays away while it does.
+- **Home**: the place nearest to the fix becomes "You are here" (unless you picked one), labelled "Near you · GPS ±9 m".
+- **Privacy**: the position stays on the phone. Settings → "Use my location (GPS)" turns it off;
+  `config.features.gps: false` turns it off for a site.
+- **Expect** 3–10 m outdoors and near windows, often 10–30 m deep inside a building, varying by phone and building.
+  Good alignment of the plan (two well-spread reference points) matters as much as the GPS itself.
+
 ## Accuracy: what to expect
 
 - **Heading**: phone compasses are often 5–20° off indoors near steel and electrics. Learning from the walk removes

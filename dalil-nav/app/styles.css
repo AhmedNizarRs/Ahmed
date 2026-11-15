@@ -173,6 +173,9 @@ h1, h2, h3, p { margin: 0; }
 .holo-info strong { font-size: 1.1875rem; font-weight: 650; overflow-wrap: anywhere; text-shadow: 0 1px 12px var(--bg); }
 .holo-info .eyebrow { color: var(--you); }
 .holo-change { position: absolute; z-index: 3; inset-inline-end: .75rem; bottom: .75rem; }
+.holo-locate { position: absolute; z-index: 3; inset-inline-end: .75rem; top: .625rem; min-height: 2.75rem; font-size: .9375rem; }
+.gps-acc { fill: var(--you-glow); stroke: var(--you); stroke-width: 1.5; vector-effect: non-scaling-stroke; opacity: .7; }
+html.contrast .gps-acc { fill: none; stroke: #fff; }
 .holo-floor { position: absolute; z-index: 3; top: .875rem; inset-inline-start: 1rem; display: inline-flex; align-items: center; gap: .5rem; pointer-events: none; color: var(--ink-2); }
 .holo-floor::before { content: ""; width: .5rem; height: .5rem; border-radius: 50%; background: var(--you); box-shadow: 0 0 10px var(--you-glow); }
 .route-holo { height: 16rem; }

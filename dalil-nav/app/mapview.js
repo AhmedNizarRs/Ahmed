@@ -36,10 +36,11 @@ export class MapView {
         <rect class="plan-gridfill" x="${pad - 1}" y="${pad - 1}" width="${W - 2 * pad + 2}" height="${H - 2 * pad + 2}" fill="url(#${gid})"/>
         <path class="plan-doors" d="${doors}"/><path class="plan-walls" d="${walls}"/>
         <path class="plan-closure" d="${d((map.closures || []).map(c => [c.a, c.b]))}"/>
-        <g class="route-layer"><path class="route-done" d=""/><path class="route-glow" d=""/><path class="route-casing" d=""/><path class="route-main" d=""/><path class="route-flow" d=""/></g>
+        <circle class="gps-acc" cx="0" cy="0" r="0" visibility="hidden"/><g class="route-layer"><path class="route-done" d=""/><path class="route-glow" d=""/><path class="route-casing" d=""/><path class="route-main" d=""/><path class="route-flow" d=""/></g>
       </svg>`;
     const q = s => this.world.querySelector(s);
     this.svgRoute = { done: q('.route-done'), glow: q('.route-glow'), casing: q('.route-casing'), main: q('.route-main'), flow: q('.route-flow') };
+    this.gpsEl = q('.gps-acc');
     this.markers = []; this.you = null; this.dest = null;
     this.renderPoints();
   }
@@ -52,6 +53,13 @@ export class MapView {
     this.svgRoute.done.setAttribute('d', this.pathD(done));
   }
 
+  /** The GPS position and how sure it is (a circle of radius acc metres), or null to hide it. */
+  setAccuracy(p, acc) {
+    if (!this.gpsEl) return;
+    if (!p) { this.gpsEl.setAttribute('visibility', 'hidden'); return; }
+    this.gpsEl.setAttribute('cx', (p.x - this.b.minX).toFixed(2)); this.gpsEl.setAttribute('cy', (this.b.maxY - p.y).toFixed(2));
+    this.gpsEl.setAttribute('r', Math.max(1, acc).toFixed(1)); this.gpsEl.setAttribute('visibility', 'visible');
+  }
   addMarker(cls, html, x, y) {
     const el = document.createElement('div'); el.className = 'mk ' + cls; el.innerHTML = `<div class="mk-inner">${html}</div>`;
     this.world.appendChild(el); const m = { el, x, y }; this.markers.push(m); this.placeMarker(m); return m;

@@ -53,9 +53,10 @@
         <button id="btnHolo" class="holo-hit" type="button" data-i18n-aria="floorMap"></button>
         <span id="holoFloor" class="holo-floor eyebrow" aria-hidden="true"></span>
         <div class="holo-info">
-          <span class="eyebrow" data-i18n="youAreHere">You are here</span>
+          <span class="eyebrow" id="fromEyebrow">You are here</span>
           <strong id="fromName">—</strong>
         </div>
+        <button id="btnLocate" class="pill holo-locate" type="button" hidden><span class="ico" data-ico="gps"></span><span data-i18n="useLocation">Use my location</span></button>
         <button id="btnFrom" class="pill holo-change" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="change">Change</span></button>
       </div>
       <h2 class="sec-title" data-i18n="nearestTitle">Find the nearest</h2>
@@ -207,6 +208,7 @@
         <label class="switch-row"><span class="sw-text"><strong data-i18n="set_motion">Reduce motion</strong><small data-i18n="set_motionHint">No moving animations</small></span><input id="setMotion" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
       </fieldset>
       <fieldset class="set-group"><legend data-i18n="directions">Directions</legend>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_gps">Use my location (GPS)</strong><small data-i18n="set_gpsHint">Blends your phone’s location with your steps. It stays on your phone.</small></span><input id="setGps" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
         <label class="switch-row"><span class="sw-text"><strong data-i18n="set_voice">Speak the directions</strong><small data-i18n="set_voiceHint">Reads each step aloud</small></span><input id="setVoice" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
         <label class="switch-row"><span class="sw-text"><strong data-i18n="set_vibrate">Vibrate on turns</strong><small data-i18n="set_vibrateHint">A short buzz before each turn</small></span><input id="setVibrate" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
         <label class="switch-row"><span class="sw-text"><strong data-i18n="set_stepfree">Always avoid stairs</strong><small data-i18n="set_stepfreeHint">Start every route as step-free</small></span><input id="setStepFree" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>

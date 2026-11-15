@@ -406,6 +406,36 @@ test('Kennedy Library step-free: by lift, and the floor changes when the ride is
   await ctx.close();
 });
 
+// The phone's position on Earth (faked here) placed on the plan through map.geo, as a map app would show it.
+const geoOf = (geo, x, y) => { const [lng0, lat0] = geo.origin, b = geo.bearing * Math.PI / 180, k = geo.scale || 1;
+  const mlng = 111412.84 * Math.cos(lat0 * Math.PI / 180), mlat = 111132.92 - 559.82 * Math.cos(2 * lat0 * Math.PI / 180);
+  const e = k * (x * Math.cos(b) + y * Math.sin(b)), n = k * (-x * Math.sin(b) + y * Math.cos(b)); return { longitude: lng0 + e / mlng, latitude: lat0 + n / mlat }; };
+test('GPS: home picks the place nearest to you; during directions the position follows your location (fixes off the route are ignored)', async () => {
+  const L1 = JSON.parse(fs.readFileSync(path.join(ROOT, 'data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-1.json'), 'utf8'));
+  const near = L1.points.filter(p => !p.virtual)[12];
+  const { ctx, page, errors } = await open('#b=kennedy-library-cal-poly-test&f=level-1', { permissions: ['geolocation'], geolocation: { ...geoOf(L1.geo, near.x + 1, near.y), accuracy: 6 } });
+  await page.waitForFunction(id => window.DALIL_APP.state.fromId === id, near.id);
+  assert.match(await page.textContent('#fromEyebrow'), /Near you · GPS ±6 m/);
+  assert.ok(await page.evaluate(() => document.querySelector('#homeMap .gps-acc').getAttribute('visibility') === 'visible'), 'GPS circle on the plan');
+  // Directions without motion sensors: GPS alone moves you along the route.
+  const dest = L1.points.filter(p => !p.virtual && p.id !== near.id).map(p => ({ p, d: Math.hypot(p.x - near.x, p.y - near.y) })).sort((a, b) => b.d - a.d)[0].p;
+  await pick(page, dest.nameEn, `level-1|${dest.id}`);
+  await page.click('#btnStart');
+  const leg = await page.evaluate(() => { const n = window.DALIL_APP.nav; return { path: n.legs[0].route.path, cum: n.legs[0].cum, L: n.legs[0].L }; });
+  const s = leg.L * 0.6; let i = 1; while (leg.cum[i] < s) i++;
+  const f = (s - leg.cum[i - 1]) / (leg.cum[i] - leg.cum[i - 1]), x = leg.path[i - 1][0] + f * (leg.path[i][0] - leg.path[i - 1][0]), y = leg.path[i - 1][1] + f * (leg.path[i][1] - leg.path[i - 1][1]);
+  await ctx.setGeolocation({ ...geoOf(L1.geo, x, y), accuracy: 5 });
+  await page.waitForFunction(s => Math.abs(window.DALIL_APP.nav.pos - s) < 3, s, { timeout: 15000 });
+  await page.waitForFunction(() => /Following your location · GPS ±5 m/.test(document.querySelector('#navModeText').textContent));
+  assert.ok(await page.isHidden('#motionCard'), 'no "turn on motion" card while GPS carries you');
+  const before = await page.evaluate(() => window.DALIL_APP.nav.pos);
+  await ctx.setGeolocation({ ...geoOf(L1.geo, x + 60, y + 60), accuracy: 5 });   // 85 m away from the route
+  await page.waitForTimeout(1500);
+  assert.ok(Math.abs(await page.evaluate(() => window.DALIL_APP.nav.pos) - before) < 0.5, 'a fix far from the route is not used');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('floor map: tap anywhere for directions, and save it as My spot', async () => {
   const { ctx, page, errors } = await open(KENNEDY);
   await page.click('#btnFloorMap');
