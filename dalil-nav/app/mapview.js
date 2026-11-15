@@ -4,6 +4,7 @@ export const BASE = 10; // px per metre in world space
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
 export class MapView {
+  static uid = 0;
   // opts: interactive, points: 'all' | 'nodes' | 'none', label(p), pickKey(map, p), onTap({x,y}), onCam(cam)
   constructor(el, opts = {}) {
     this.el = el; this.opts = opts;
@@ -27,16 +28,18 @@ export class MapView {
     const P = ([x, y]) => `${(x - this.b.minX).toFixed(2)} ${(this.b.maxY - y).toFixed(2)}`;
     const d = lines => lines.filter(l => l.length > 1).map(l => 'M' + l.map(P).join('L')).join('');
     const walls = d(map.plan.walls), doors = d(map.plan.doors || []);
-    const { W, H } = this.b;
+    const { W, H } = this.b, gid = `grid${++MapView.uid}`;
     this.world.innerHTML =
       `<svg width="${W * BASE}" height="${H * BASE}" viewBox="0 0 ${W} ${H}" aria-hidden="true">
+        <defs><pattern id="${gid}" width="2" height="2" patternUnits="userSpaceOnUse"><path class="plan-grid" d="M2 0H0V2"/></pattern></defs>
         <rect class="plan-floor" x="${pad - 1}" y="${pad - 1}" width="${W - 2 * pad + 2}" height="${H - 2 * pad + 2}" rx="1"/>
+        <rect class="plan-gridfill" x="${pad - 1}" y="${pad - 1}" width="${W - 2 * pad + 2}" height="${H - 2 * pad + 2}" fill="url(#${gid})"/>
         <path class="plan-doors" d="${doors}"/><path class="plan-walls" d="${walls}"/>
         <path class="plan-closure" d="${d((map.closures || []).map(c => [c.a, c.b]))}"/>
-        <g class="route-layer"><path class="route-done" d=""/><path class="route-casing" d=""/><path class="route-main" d=""/><path class="route-flow" d=""/></g>
+        <g class="route-layer"><path class="route-done" d=""/><path class="route-glow" d=""/><path class="route-casing" d=""/><path class="route-main" d=""/><path class="route-flow" d=""/></g>
       </svg>`;
     const q = s => this.world.querySelector(s);
-    this.svgRoute = { done: q('.route-done'), casing: q('.route-casing'), main: q('.route-main'), flow: q('.route-flow') };
+    this.svgRoute = { done: q('.route-done'), glow: q('.route-glow'), casing: q('.route-casing'), main: q('.route-main'), flow: q('.route-flow') };
     this.markers = []; this.you = null; this.dest = null;
     this.renderPoints();
   }
@@ -45,7 +48,7 @@ export class MapView {
   setRoute(path, done) {
     if (!this.map) return;
     const d = this.pathD(path);
-    for (const k of ['casing', 'main', 'flow']) this.svgRoute[k].setAttribute('d', d);
+    for (const k of ['glow', 'casing', 'main', 'flow']) this.svgRoute[k].setAttribute('d', d);
     this.svgRoute.done.setAttribute('d', this.pathD(done));
   }
 
@@ -98,7 +101,8 @@ export class MapView {
     for (const [x, y] of pts) { a = Math.min(a, x); b = Math.min(b, y); c = Math.max(c, x); d = Math.max(d, y); }
     const [vw, vh] = this.size();
     const pl = target.padL ?? 32, pr = target.padR ?? 32, pt = target.padTop ?? 32, pb = target.padBot ?? 32;
-    const k = Math.max(.05, Math.min((vw - pl - pr) / Math.max(c - a, 30), (vh - pt - pb) / Math.max(d - b, 30), target.maxK ?? 4));
+    const squash = Math.max(.35, Math.cos((target.tilt ?? 0) * Math.PI / 180));   // a tilted floor looks shorter
+    const k = Math.max(.05, Math.min((vw - pl - pr) / Math.max(c - a, 30), (vh - pt - pb) / Math.max((d - b) * squash, 30), target.maxK ?? 4));
     this.setCam({ x: (a + c) / 2 - ((pl - pr) / 2) / k, y: (b + d) / 2 - ((pt - pb) / 2) / k, k, rot: 0, tilt: target.tilt ?? 0, ax: .5, ay: .5 }, animate);
   }
   setCam(c, animate) {

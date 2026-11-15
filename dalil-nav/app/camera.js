@@ -37,17 +37,22 @@ function clipNear(poly) {
 }
 
 export class CameraGuide {
-  /** root gets a <video> and a <canvas>. onHint(kind) gets 'left' | 'right' | 'behind' | 'up' | null. */
-  constructor(root, { onHint } = {}) {
+  /** root gets a <video> and a <canvas>. onHint(kind) gets 'left' | 'right' | 'behind' | 'up' | null.
+   *  insets() returns { top, bottom } in CSS px covered by the app's panels, so labels stay clear of them. */
+  constructor(root, { onHint, insets } = {}) {
     root.classList.add('cam');
     root.innerHTML = '<video class="cam-video" playsinline muted autoplay></video><canvas class="cam-draw" aria-hidden="true"></canvas>';
     this.root = root; this.video = root.querySelector('video'); this.canvas = root.querySelector('canvas'); this.ctx = this.canvas.getContext('2d');
-    this.onHint = onHint; this.hint = null; this.stream = null; this.running = false; this.frame = null; this.drawn = 0;
+    this.onHint = onHint; this.insets = insets; this.ins = { top: 0, bottom: 0, at: -1e9 }; this.hint = null; this.stream = null; this.running = false; this.frame = null; this.drawn = 0;
   }
   async start() { this.stream = await openCamera(this.video); this.running = true; this.loop(); return this; }
   stop() { this.running = false; cancelAnimationFrame(this.raf); closeCamera(this.video, this.stream); this.stream = null; this.setHint(null); }
   /** The app calls this with the latest pose and route: { R, beta, pos:{x,y}, ahead:[[x,y],…], dest:{x,y,label}|null, motion } */
   update(frame) { this.frame = frame; }
+  panelInsets(now) {
+    if (now - this.ins.at > 400) { try { this.ins = { ...(this.insets?.() || { top: 0, bottom: 0 }), at: now }; } catch { this.ins.at = now; } }
+    return this.ins;
+  }
   setHint(h) { if (h !== this.hint) { this.hint = h; this.onHint?.(h); } }
   loop() {
     if (!this.running) return;
@@ -115,12 +120,15 @@ export class CameraGuide {
       ctx.beginPath(); if (polyPath(ring2)) { ctx.fillStyle = '#111'; ctx.fill(); }
       const b = cam(fr.dest.x, fr.dest.y, 0), t = cam(fr.dest.x, fr.dest.y, 1.9);
       if (b[2] > NEAR && t[2] > NEAR) {
-        const sb = scr(b), st = scr(t);
-        ctx.beginPath(); ctx.moveTo(sb[0], sb[1]); ctx.lineTo(st[0], st[1]); ctx.lineWidth = 4; ctx.strokeStyle = '#111'; ctx.stroke();
-        if (fr.dest.label) {
+        const sb = scr(b), st = scr(t), ins = this.panelInsets(now);
+        // The name sits on top of the post, but never under the app's panels: it slides down the post instead.
+        const ly = Math.min(sb[1] - 40, Math.max(ins.top + 8, st[1] - 34)), top = Math.max(st[1], ly + 16);
+        if (sb[1] > top) { ctx.beginPath(); ctx.moveTo(sb[0], sb[1]); ctx.lineTo(st[0], top); ctx.lineWidth = 4; ctx.strokeStyle = '#111'; ctx.stroke(); }
+        if (fr.dest.label && ly + 32 < v.H - ins.bottom - 8) {
           ctx.font = '600 16px Geist, system-ui, sans-serif'; const w = ctx.measureText(fr.dest.label).width + 24;
-          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect?.(st[0] - w / 2, st[1] - 34, w, 32, 16); ctx.fill();
-          ctx.fillStyle = '#FFC700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(fr.dest.label, st[0], st[1] - 18);
+          const lx = Math.max(8 + w / 2, Math.min(v.W - 8 - w / 2, st[0]));
+          ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect?.(lx - w / 2, ly, w, 32, 16); ctx.fill();
+          ctx.fillStyle = '#FFC700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(fr.dest.label, lx, ly + 16);
         }
       }
     }

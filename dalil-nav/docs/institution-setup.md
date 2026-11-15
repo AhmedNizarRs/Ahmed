@@ -19,7 +19,7 @@ serve `app/index.html` for `/t/<building>/<floor>/<point>` (the URL written on t
 | `maps.keys.esri / maptiler / stadia / mapbox` | Turns on that provider (satellite and street styles) | The client has no account with it |
 | `maps.stadiaDomainAuth` | Stadia by registered domain instead of a key | Not using Stadia |
 | `analytics.endpoint` | Where anonymous usage counts are sent (POST JSON) | Off by default; turn on only with the client's privacy approval |
-| `features.camera`, `features.motion` | Switch the camera line or motion tracking off for a site | Keep `true` |
+| `features.camera`, `features.motion` | Switch the camera line or motion tracking off for a site. Without motion there is no moving arrow: directions move on only at DALIL signs | Keep `true` |
 
 Keys in a web app are public: in each provider's dashboard restrict the key to the client's web address.
 Terms per provider (commercial use, attribution) are in `data-providers.md`; re-check them before launch.
@@ -30,6 +30,10 @@ Terms per provider (commercial use, attribution) are in `data-providers.md`; re-
   Mapper's NFC CSV (`…/t/<building>/<floor>/<point>`). iPhones read the QR (camera); Android reads both.
 - Put signs at entrances, lift lobbies (outside the shaft), stair doors and main junctions; keep straight runs
   between signs under about 40 m so the moving arrow stays accurate.
+- Floors change on their own (lift ride felt by the phone, or about 20 stair steps per floor). A sign at every lift
+  lobby and stair door on **every floor** makes the new floor exact.
+- Step-free routes need a sign at every decision point: people pushing a wheelchair make few detectable steps, so
+  their position moves on at signs.
 - Set each node's facing in the Mapper (the direction a person faces when reading the sign).
 
 ## 4. World position (makes the arrow right from the first step)
@@ -55,7 +59,8 @@ resets after 90 s idle.
 
 - [ ] All floors load; every destination has a route; step-free gaps are listed for the site visit.
 - [ ] Signs installed and each one scanned once on site (the app says "Confirmed: you are at …").
-- [ ] Field test from `motion-and-camera.md` done on one Android and one iPhone.
+- [ ] Field test from `motion-and-camera.md` done on one Android and one iPhone, including a lift ride and a
+      staircase (check the steps per floor).
 - [ ] Arabic names checked by a native speaker.
 - [ ] Help number and privacy wording approved by the client.
 - [ ] Wording reviewed: DALIL is a supplementary aid, not for emergencies, no compliance claims.

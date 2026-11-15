@@ -73,7 +73,8 @@ export class Tracker {
   reset() {
     this.R = null; this.raw = null; this.heading = null; this.hx = 0; this.hy = 0; this.tH = null; this.rate = 0;
     this.absolute = false; this.iosOff = null; this.gotAbs = -1e9; this.motionSeen = false; this.orientSeen = false;
-    this.steps = 0; this.lastStep = -1e9; this.denied = false; this.detector.reset();
+    this.steps = 0; this.lastStep = -1e9; this.prevStep = -1e9; this.denied = false; this.detector.reset();
+    this.liftEvents = 0; this.lift = { lp: null, slow: null, t: null, since: null, last: -1e9 };
   }
   /** Call from a tap: iOS shows its permission prompt here. Resolves once it knows which sensors send data. */
   start() {
@@ -132,8 +133,18 @@ export class Tracker {
   motion(e, t = this.now()) {
     const a = e.accelerationIncludingGravity; if (!a || a.x == null || a.y == null || a.z == null) return;
     this.motionSeen = true;
-    const n = this.detector.push(Math.hypot(a.x, a.y, a.z), t);
-    for (let i = 0; i < n; i++) { this.steps++; this.lastStep = t; this.onStep?.(t); }
+    const mag = Math.hypot(a.x, a.y, a.z), n = this.detector.push(mag, t);
+    for (let i = 0; i < n; i++) { this.steps++; this.prevStep = this.lastStep; this.lastStep = t; this.onStep?.(t); }
+    // A lift ride: standing still, the phone feels a push (start) or a dip (stop) of a few tenths of g for about a second.
+    const L = this.lift;
+    if (L.lp == null) { L.lp = L.slow = mag; L.t = t; return; }
+    const dt = Math.min(200, Math.max(1, t - L.t)); L.t = t;
+    L.lp += (1 - Math.exp(-dt / 300)) * (mag - L.lp);
+    L.slow += (1 - Math.exp(-dt / 6000)) * (mag - L.slow);
+    if (t - this.lastStep > 1500 && Math.abs(L.lp - L.slow) > 0.25) {
+      L.since ??= t;
+      if (t - L.since > 500 && t - L.last > 3000) { L.last = t; this.liftEvents++; this.onLift?.(t); }
+    } else L.since = null;
   }
   walking(t = this.now()) { return t - this.lastStep < 2200; }
   steady() { return this.rate < 35; }

@@ -9,7 +9,7 @@ don't publish. Never present this table publicly as a "we beat them" claim: comp
 | **Pointr Express**: app-free maps by "QR codes", "NFC", "iMessage", "Link" | Web app opened from the NFC tag in each clip, a QR code, or a shared link; works offline after the first visit | ✓ built |
 | "Instant wayfinding to any destination selected on the map or via search" | Search in EN/AR, category chips (nearest), **tap any spot on the map** | ✓ built |
 | "Step-by-step wayfinding" | Turn-by-turn steps, clock directions, step counts, voice, vibration | ✓ built |
-| Multi-floor, "Site-Wide Wayfinding" | Floors joined by lift/stair link codes; navigation switches floors mid-route | ✓ built (one building) |
+| Multi-floor, "Site-Wide Wayfinding" | Floors joined by lift/stair link codes; navigation switches floors by itself (lift ride felt by the phone, stair steps counted) | ✓ built (one building; field test pending) |
 | "Accessibility mode to avoid stairs or enable turn-by-turn voice guidance", "Accessible Wayfinding with VoiceOver" | Step-free routes that say plainly when there is none; screen-reader live region; large text; yellow-on-black high contrast; full Arabic RTL; **tactile braille clips on the rails themselves** | ✓ built, and DALIL goes further for blind users |
 | "Mark My Car" | **My spot**: tap the map, save it, get directions back later | ✓ built |
 | "Customizable routes (e.g., temporary construction changes)" | **Temporary closures** drawn in the Mapper; the app routes around them | ✓ built (Mapper); a dashboard toggle is next |

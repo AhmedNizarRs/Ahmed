@@ -17,12 +17,13 @@ const store = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); return true; } catch { return false; } },
 };
 const mq = q => window.matchMedia && window.matchMedia(q).matches;
-const SETTINGS_V = 2;
+const SETTINGS_V = 3;
 const saved0 = store.get('dalil.settings', {});
-if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; delete saved0.theme; delete saved0.large; saved0.v = SETTINGS_V; }
+// v3: Night is the new default look, and motion is always on (there is no step-by-step mode any more).
+if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; delete saved0.theme; delete saved0.large; delete saved0.sensors; saved0.v = SETTINGS_V; }
 const settings = Object.assign({
   v: SETTINGS_V, lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
-  theme: 'light', textSize: 'normal', voice: true, vibrate: true, stepFree: false, sensors: true, pace: 'normal', mapProvider: 'auto',
+  theme: 'dark', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto',
   contrast: mq('(prefers-contrast: more)'), motion: mq('(prefers-reduced-motion: reduce)'),
 }, saved0);
 const saveSettings = () => store.set('dalil.settings', settings);
@@ -194,7 +195,8 @@ function buildSteps(route) {
   return { steps, cum, L };
 }
 const stepText = s => settings.lang === 'ar' ? (s.ar || s.en) : (s.en || s.ar);
-const stepShort = s => settings.lang === 'ar' ? (s.ar || '').split(/،\s*ثم\s*/)[0] : (s.en || '').split(/,\s*then\s*/i)[0];
+// The action alone ("Bear right"), without the walk after it or a closing full stop: the HUD shows one short line.
+const stepShort = s => (settings.lang === 'ar' ? (s.ar || '').split(/،\s*ثم\s*/)[0] : (s.en || '').split(/,\s*then\s*/i)[0]).replace(/\s*\.\s*$/, '');
 
 /* =========================================================================
    Feedback: speech, vibration, live region, toast
@@ -301,7 +303,7 @@ function leavePage(name) {
 /* =========================================================================
    Location and destination
    ========================================================================= */
-let routeMap, mainMap, navMap;
+let homeMap, routeMap, mainMap, navMap;
 const defaultFrom = map => (map.points.find(p => p.category === 'entrance' && p.dalilNode) || map.points.find(p => p.dalilNode) || map.points[0])?.id || null;
 function selectFloor(map, { keepFrom = false } = {}) {
   state.map = map; state.viewMap = map;
@@ -356,6 +358,7 @@ function renderHome() {
   $('#bldName').innerHTML = `<bdi>${esc([inst, state.map.building.name].filter(Boolean).join(' · '))}</bdi>`;
   $('#fromName').textContent = from ? `${pname(from)}${multi ? ` · ${floorName(state.map.floor)}` : ''}` : t('fromUnknown');
   $('#liGettingHere').hidden = !state.map.geo;
+  renderHolo(from);
   // Tiles: the essentials this building has, with the walk to the nearest one
   const cats = Object.keys(TILE_CATS).filter(c => TILE_CATS[c].some(k => here.has(k))).slice(0, 6);
   $('#tiles').innerHTML = cats.map(c => {
@@ -371,6 +374,16 @@ function renderHome() {
   const recent = store.get('dalil.recent', []).filter(r => r.b === bid).map(r => resolve(r.k)).filter(Boolean).filter(r => !saved.some(s => s.m === r.m && s.p.id === r.p.id)).slice(0, 4);
   $('#secRecent').hidden = !recent.length;
   $('#recentList').innerHTML = recent.map(r => rowHTML(r.m, r.p, { dist: r.m === state.map ? distFor(r.m, from, r.p) : null, floor: multi })).join('');
+}
+
+// The hologram on Home: the floor you are on, tilted in 3D, with your beacon.
+function renderHolo(from) {
+  if (!homeMap || pageNow !== 'home') return;
+  $('#holoFloor').textContent = `${floorName(state.map.floor)} · 3D`;
+  homeMap.setMap(state.map);
+  homeMap.setYou(from, from?.facingDeg ?? 90);
+  homeMap.setRoute(null); homeMap.setDest(null);
+  requestAnimationFrame(() => homeMap.fit({ pts: state.map.plan.walls.flat(), padTop: 30, padBot: 70, padL: 18, padR: 18, maxK: 2.2, tilt: 50 }, false));
 }
 
 /* ---------- Search ---------- */
@@ -467,12 +480,13 @@ function renderRoute() {
   else if (route.closures) msg.textContent = t('closureNote');
   $('#routeStats').hidden = !route;
   if (route) {
-    $('#statEta').textContent = t('walkTime', fmtMin(secsFor(route)));
-    $('#statDist').textContent = fmtM(route.distance_m);
+    $('#statEta').textContent = String(Math.max(1, Math.round(secsFor(route) / 60)));
+    $('#statDist').textContent = String(Math.max(1, Math.round(route.distance_m)));
     $('#routeVia').hidden = !route.via;
     if (route.via) $('#routeVia').innerHTML = `${svgIco(TURN_ICONS[route.via.lift ? 'lift' : 'stairs'])}<span>${esc(t(route.via.lift ? 'viaLift' : 'viaStairs', floorName(route.via.toMap.floor)))}</span>`;
   }
   $('#btnStart').disabled = !route; $('#btnStartCam').disabled = !route;
+  $('#startText').textContent = t(state.kiosk ? 'watchRoute' : 'start');
   $('#btnStartCam').hidden = !!state.kiosk || cfg.features.camera === false || !navigator.mediaDevices?.getUserMedia;
   $('#btnShare').hidden = !route;
   $('#optStepFree').checked = settings.stepFree;
@@ -501,7 +515,7 @@ function renderRouteMap(route, dest) {
   routeMap.hidePoints([m === state.map ? state.fromId : null, dest.m === m ? dest.p.id : null, route?.via?.pa?.id]);
   $('#routeMap').setAttribute('aria-label', t('routeMap', pname(dest.p)));
   const pts = leg && leg.route.distance_m > 0 ? leg.route.path : [[dest.p.x - 15, dest.p.y - 15], [dest.p.x + 15, dest.p.y + 15]];
-  requestAnimationFrame(() => routeMap.fit({ pts, padTop: 28, padBot: 28, padL: 28, padR: 28, maxK: 3 }, false));
+  requestAnimationFrame(() => routeMap.fit({ pts, padTop: 40, padBot: 40, padL: 30, padR: 30, maxK: 3, tilt: 36 }, false));
 }
 
 /* ---------- Saved ---------- */
@@ -612,7 +626,7 @@ function providerOptions() {
 function renderSettings() {
   for (const [name, val] of [['lang', settings.lang], ['theme', settings.theme], ['textSize', settings.textSize], ['pace', settings.pace]]) $$(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
   $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree;
-  $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion; $('#setSensors').checked = settings.sensors;
+  $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion;
   $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${m.building.name} · ${floorName(m.floor)}`)}</option>`).join('');
   $('#setProvider').innerHTML = providerOptions();
   $('#privacyStats').hidden = !cfg.analytics?.endpoint;
@@ -627,63 +641,77 @@ function applyDisplay() {
   $$('[data-i18n]').forEach(el => { el.textContent = t(el.dataset.i18n); });
   $$('[data-i18n-ph]').forEach(el => { el.placeholder = t(el.dataset.i18nPh); });
   $$('[data-i18n-aria]').forEach(el => { el.setAttribute('aria-label', t(el.dataset.i18nAria)); });
-  $('meta[name="theme-color"]').content = settings.contrast ? '#000000' : resolvedTheme() === 'dark' ? '#111214' : '#FFFFFF';
+  $('meta[name="theme-color"]').content = settings.contrast ? '#000000' : resolvedTheme() === 'dark' ? '#07090D' : '#EEF1F5';
 }
 function rerenderAll() {
   applyDisplay();
   if (!state.map) return;
-  for (const v of [routeMap, mainMap, navMap]) v.renderPoints();
+  for (const v of [homeMap, routeMap, mainMap, navMap]) v.renderPoints();
   renderAll();
   if (nav.active) { renderNavStep(); renderMode(); }
 }
 function setLang(l) { settings.lang = l; saveSettings(); rerenderAll(); }
 
 /* =========================================================================
-   Navigation: the sign (big arrow + step), the map or the camera, and the controls
-   Modes: 'steps' (tap Next as you walk), 'track' (compass + step counter move you along),
-   and the simulated preview (clearly labelled, never your real position).
+   Navigation: a heads-up display that moves with you. There is no "Next": the compass and the step counter
+   move you along the route (tracker.js), floor changes go on by themselves (a lift ride, or the steps of a
+   staircase) and DALIL signs re-anchor you. With motion off the app says so and offers to switch it on,
+   continue with signs only, or watch a clearly labelled preview. It never pretends to know where you are.
    ========================================================================= */
 const tracker = new Tracker();
 const nav = { active: false, plan: null, legs: [], steps: [], leg: -1, i: 0, pos: 0, sim: false, dwell: 0, raf: 0, last: 0, rot: null, toKey: null,
-  mode: 'steps', view: 'map', follower: null, arrow: 0, soonFor: -1, started: 0, loop: 0, everStepped: false, pending: false, here: null, pathDir: 0 };
+  mode: 'off', view: 'map', follower: null, arrow: 0, soonFor: -1, started: 0, loop: 0, everStepped: false, here: null, pathDir: 0, transfer: null, kiosk: false, offReason: '' };
 let camGuide = null, navScan = null;
-function startNav({ camera = false } = {}) {
+const STAIR_STEPS = 20;      // steps per floor on a staircase (risers plus landing)
+const embedded = (() => { try { return window.self !== window.top; } catch { return true; } })();
+
+function startNav({ camera = false, preview = false } = {}) {
   const plan = planTo(state.toKey); if (!plan) return;
-  // Ask for motion access inside this tap: iPhones only allow it from a user gesture.
-  const wantMotion = settings.sensors && cfg.features.motion !== false && !state.kiosk;
-  const sensors = wantMotion ? tracker.start() : null;
+  // Ask for motion inside this tap: iPhones only allow it from a user gesture.
+  const sensors = !preview && cfg.features.motion !== false ? tracker.start() : null;
   const { legs, steps } = planSteps(plan), dest = destRef();
   rememberTrip(state.toKey);
-  Object.assign(nav, { active: true, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null, mode: 'steps',
-    view: 'map', follower: null, arrow: 0, soonFor: -1, started: performance.now(), everStepped: false, pending: !!sensors });
-  $('#nav').classList.remove('tracking');
+  Object.assign(nav, { active: true, plan, legs, steps, leg: -1, i: 0, pos: 0, sim: false, dwell: 0, toKey: state.toKey, rot: null, mode: sensors ? 'starting' : 'off',
+    view: 'map', follower: null, arrow: 0, soonFor: -1, started: performance.now(), everStepped: false, transfer: null, kiosk: preview, offReason: preview ? 'preview' : 'none' });
+  $('#nav').classList.remove('tracking'); hideMotionCard();
+  setViewUI('map');
   go('nav');
   $('#navDest').textContent = t('toDest', pname(dest.p));
   goStep(0, { focus: true, intro: t('navStarted', pname(dest.p)) });
-  renderMode();
   if (camera) setView('cam');
-  analytics.add('nav_start', { to: dest.p.virtual ? 'pin' : dest.p.id, view: camera ? 'cam' : 'map' });
-  if (sensors) sensors.then(s => {
-    nav.pending = false;
-    if (!nav.active) return;
-    if (s.orientation && s.motion) enableTracking();
-    else {
-      if ((s.denied || coarse() || nav.view === 'cam') && $('#arrived').hidden) toast(t(s.denied ? 'sensorsDenied' : 'sensorsNone'));
-      if (nav.view === 'cam') setView('map');
-      renderMode();
-    }
-  });
+  analytics.add('nav_start', { to: dest.p.virtual ? 'pin' : dest.p.id, view: camera ? 'cam' : preview ? 'preview' : 'map' });
+  if (sensors) sensors.then(sensorsResult);
+  else if (preview) startSim();
+  renderMode();
   startLoop();
+}
+function sensorsResult(s) {
+  if (!nav.active) return;
+  if (s.orientation && s.motion) { enableTracking(); return; }
+  nav.mode = 'off'; nav.offReason = embedded ? 'embedded' : s.denied ? 'denied' : 'none';
+  showMotionCard(); renderMode(); renderHud();
+}
+function showMotionCard() {
+  const off = nav.active && nav.mode === 'off' && !nav.sim && !nav.kiosk && !nav.signsOnly;
+  $('#motionCard').hidden = !off; $('#nav').classList.toggle('motion-off', off);
+  if (off) $('#motionBody').textContent = t({ embedded: 'motionEmbedded', denied: 'motionDenied', none: 'motionNone' }[nav.offReason] || 'motionBody');
+}
+function hideMotionCard() { $('#motionCard').hidden = true; $('#nav').classList.remove('motion-off'); }
+function allowMotion() {
+  const p = tracker.start();          // this tap is the permission prompt on iPhone
+  nav.mode = 'starting'; nav.signsOnly = false; hideMotionCard(); renderMode();
+  p.then(sensorsResult);
 }
 function endNav({ silent = false } = {}) {
   if (!nav.active) return;
   stopSim(); saveCalibration();
   if (nav.i < nav.steps.length - 1) analytics.add('nav_stop', { step: nav.i + 1, of: nav.steps.length });
-  nav.active = false; cancelAnimationFrame(nav.loop);
+  nav.active = false; nav.signsOnly = false; cancelAnimationFrame(nav.loop);
   tracker.onStep = null; tracker.stop(); tracker.reset();
   stopCam();
   try { speechSynthesis?.cancel(); } catch { }
   $('#arrived').hidden = true; if ($('#dlgSteps').open) $('#dlgSteps').close();
+  hideMotionCard(); $('#floorCard').hidden = true;
   if (!silent && pageNow === 'nav') back();
 }
 // Prior for the compass → plan angle: what this phone learned here before, else the building's bearing.
@@ -699,25 +727,55 @@ function saveCalibration() {
 }
 function enableTracking() {
   const leg = nav.legs[nav.steps[nav.i].leg];
-  nav.mode = 'track';
+  nav.mode = 'track'; hideMotionCard();
   nav.follower = new Follower({ stride: STRIDE[settings.pace] });
   const pr = priorFor(leg.map); if (pr) nav.follower.setPrior(pr.beta, { weight: pr.weight, trusted: pr.trusted });
   nav.follower.setLeg(leg.route.path, leg.cum); nav.follower.anchor(nav.pos, { learn: false });
   tracker.onStep = onTrackerStep;
   $('#nav').classList.add('tracking');
-  renderMode(); updateNavPos(false);
+  if (nav.steps[nav.i].kind === 'floor') nav.transfer = { steps0: tracker.steps, lifts0: tracker.liftEvents };
+  renderMode(); renderNavStep();
 }
-function onTrackerStep() {
+function onTrackerStep(ts) {
   if (!nav.active || nav.mode !== 'track' || nav.sim) return;
   const s = nav.steps[nav.i];
-  if (s.kind === 'floor' || s.kind === 'arrive') return;          // in the lift or on the stairs: wait for "I'm on Level 2"
+  if (s.kind === 'arrive') return;
   nav.everStepped = true;
+  if (s.kind === 'floor') { floorStep(ts); return; }
   const wasWrong = nav.follower.wrong;
   nav.pos = nav.follower.step(tracker.heading, { steady: tracker.steady() });
   if (nav.follower.wrong && !wasWrong) { speak(t('wrongWay')); announce(t('wrongWay'), true); buzz([300, 100, 300]); }
   syncStepToPos();
   updateNavPos(false);
   renderMode();
+}
+// Floor change without a tap: a lift ride (felt by the accelerometer) then walking out, or a staircase's steps.
+function floorsApart() { const fl = bFloors(), v = nav.plan.via; return Math.max(1, Math.abs(fl.indexOf(v.toMap) - fl.indexOf(nav.legs[0].map))); }
+function floorStep(ts) {
+  const via = nav.plan.via, tr = nav.transfer ||= { steps0: tracker.steps - 1, lifts0: tracker.liftEvents };
+  const taken = tracker.steps - tr.steps0;
+  if (via.lift) {
+    const gap = ts - tracker.prevStep, rode = tracker.liftEvents > tr.lifts0;
+    if ((rode && gap > 4000) || gap > 20000 || taken > 14) advanceFloor();
+  } else {
+    renderFloorCard(taken);
+    if (taken >= STAIR_STEPS * floorsApart()) advanceFloor();
+  }
+}
+function advanceFloor() {
+  if (nav.steps[nav.i]?.kind !== 'floor') return;
+  nav.transfer = null; buzz([60, 40, 60]);
+  goStep(nav.i + 1, { intro: t('floorReached', floorName(nav.plan.via.toMap.floor)) });
+}
+function renderFloorCard(taken = 0) {
+  const s = nav.steps[nav.i], show = nav.active && s?.kind === 'floor';
+  $('#floorCard').hidden = !show; if (!show) return;
+  const via = nav.plan.via, f = floorName(via.toMap.floor), total = STAIR_STEPS * floorsApart();
+  $('#floorIco').innerHTML = svgIco(TURN_ICONS[via.lift ? 'lift' : 'stairs']);
+  $('#floorTitle').textContent = t(via.lift ? 'liftTitle' : 'stairsTitle', via.up, f);
+  $('#floorBody').textContent = via.lift ? t('liftBody', pname(via.pb)) : t('stairsBody', Math.min(taken, total), total);
+  $('#floorMeter').hidden = via.lift;
+  if (!via.lift) $('#floorMeter span').style.width = `${Math.min(100, 100 * taken / total)}%`;
 }
 // Tracking moves the position; the current step follows it.
 function syncStepToPos() {
@@ -731,10 +789,10 @@ function syncStepToPos() {
     else break;
   }
   if (i !== nav.i) goStep(i, { keepPos: true });
-  // Heads-up a few metres before the next turn.
-  const s = nav.steps[nav.i], n = nav.steps[nav.i + 1];
-  if (s?.kind === 'move' && n && nav.soonFor !== nav.i) {
-    const rem = s.d1 - nav.pos, turn = n.kind === 'move' && n.turn !== 'straight';
+  // Heads-up a few metres before the next turn, floor change or the destination.
+  const s = nav.steps[nav.i], n = nextManeuver(nav.i);
+  if (s && n && nav.soonFor !== nav.i && n.leg === s.leg && s.kind !== 'floor') {
+    const rem = n.d0 - nav.pos, turn = n.kind === 'move' && n.turn !== 'straight';
     if (rem <= 6 && rem > 1.2 && (turn || n.kind === 'floor' || n.kind === 'arrive')) {
       nav.soonFor = nav.i;
       const msg = n.kind === 'arrive' ? t('aheadDest', pname(resolve(nav.toKey)?.p), fmtM(rem)) : t('soon', fmtM(rem), stepShort(n));
@@ -743,26 +801,30 @@ function syncStepToPos() {
   }
 }
 function renderMode() {
-  const m = nav.sim ? 'preview' : nav.mode === 'steps' ? (nav.pending ? 'still' : 'steps')
-    : nav.follower?.wrong ? 'wrong' : !nav.follower?.usable ? 'align' : !nav.everStepped && performance.now() - nav.started > 6000 ? 'still' : 'follow';
+  const s = nav.steps[nav.i];
+  const m = nav.sim ? 'preview' : nav.mode === 'starting' ? 'starting' : nav.mode === 'off' ? 'off'
+    : s?.kind === 'floor' ? 'floor' : nav.follower?.wrong ? 'wrong' : !nav.follower?.usable ? 'align'
+    : !nav.everStepped && performance.now() - nav.started > 6000 ? 'still' : 'follow';
   const el = $('#navMode'); el.dataset.mode = m;
-  $('#navModeText').textContent = t({ preview: 'modePreview', steps: 'modeSteps', still: 'modeStill', wrong: 'modeWrong', align: 'modeAlign', follow: 'modeFollow' }[m]);
-  el.title = t(m === 'steps' ? 'modeStepsHint' : m === 'preview' ? 'previewNote' : 'modeFollowHint');
-  $('#camNote').textContent = nav.mode === 'track' && nav.follower?.usable ? t('camNote') : t('camAlign');
+  $('#navModeText').textContent = t({ preview: 'modePreview', starting: 'modeStarting', off: 'modeOff', floor: 'modeFloor', wrong: 'modeWrong', align: 'modeAlign', still: 'modeStill', follow: 'modeFollow' }[m]);
+  el.title = t(m === 'preview' ? 'previewNote' : 'modeFollowHint');
+  $('#hudCard').classList.toggle('wrong', m === 'wrong');
+  $('#camNote').textContent = nav.mode === 'track' && nav.follower?.usable ? t('camNote') : nav.mode === 'off' ? t('camNoMotion') : t('camAlign');
 }
 function renderStepList() {
-  $('#stepList').innerHTML = nav.steps.map((s, i) => `<li class="${i === nav.i ? 'is-current' : i < nav.i ? 'is-done' : ''}" ${i === nav.i ? 'aria-current="step"' : ''}><button class="step-btn" type="button" data-step="${i}"><span class="p-ico">${svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight)}</span><span class="s-text">${esc(stepText(s))}</span></button></li>`).join('');
+  $('#stepList').innerHTML = nav.steps.map((s, i) => `<li class="${i === nav.i ? 'is-current' : i < nav.i ? 'is-done' : ''}" ${i === nav.i ? 'aria-current="step"' : ''}><span class="p-ico">${svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight)}</span><span class="s-text">${esc(stepText(s))}</span></li>`).join('');
 }
 function goStep(i, { focus = false, speakIt = true, intro = '', keepPos = false } = {}) {
   i = Math.max(0, Math.min(nav.steps.length - 1, i));
   const prev = nav.i; nav.i = i; nav.dwell = 0;
   const s = nav.steps[i];
   if (!keepPos) { nav.pos = s.d0; if (nav.follower && nav.leg === s.leg) nav.follower.anchor(nav.pos, { learn: false }); }
+  nav.transfer = s.kind === 'floor' ? { steps0: tracker.steps, lifts0: tracker.liftEvents } : null;
   renderNavStep();
   if (speakIt) {
     const text = stepText(s);
     announce(`${intro ? intro + ' ' : ''}${t('stepOf', i + 1, nav.steps.length)}. ${text}`);
-    speak(text);
+    speak(intro && i !== prev ? `${intro} ${text}` : text);
     if (i !== prev || i === 0) {
       if (s.kind === 'move' && s.turn !== 'straight') buzz(s.turn === 'around' ? [80, 60, 80, 60, 80] : [70, 50, 70]);
       else if (s.kind === 'node') buzz([200]); else if (s.kind === 'floor') buzz([120, 80, 120]); else if (s.kind === 'arrive') buzz([100, 60, 100, 60, 260]);
@@ -775,17 +837,35 @@ function renderNavStep() {
   const s = nav.steps[nav.i];
   $('#navIco').innerHTML = svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight);
   $('#navStepNum').textContent = t('stepOf', nav.i + 1, nav.steps.length);
-  $('#navStepText').textContent = stepText(s);
-  const tag = s.kind === 'node' ? pointOf(nav.legs[s.leg].map, s.node) : null;
-  $('#btnTag').hidden = !tag; if (tag) $('#btnTag').textContent = t('atTag', pname(tag));
-  const fl = s.kind === 'floor' ? nav.plan.via.toMap.floor : null;
-  $('#btnFloorDone').hidden = !fl; if (fl) $('#btnFloorDone').textContent = t('onFloor', floorName(fl));
-  $('#btnPrev').disabled = nav.i === 0; $('#btnNext').disabled = nav.i >= nav.steps.length - 1;
-  const ahead = s.kind !== 'floor' && nav.steps.slice(nav.i + 1, nav.i + 3).find(x => x.kind === 'floor');
-  $('#navFloor').hidden = !ahead;
-  if (ahead) $('#navFloorText').textContent = t('floorAhead', floorName(nav.plan.via.toMap.floor));
   renderStepList();
+  renderFloorCard(nav.transfer ? tracker.steps - nav.transfer.steps0 : 0);
   updateNavPos(true);
+}
+// The next thing to do (a turn, a floor change or arriving), skipping DALIL-sign steps you just walk past.
+function nextManeuver(i) { for (let k = i + 1; k < nav.steps.length; k++) { const x = nav.steps[k]; if (x.kind === 'move' || x.kind === 'floor' || x.kind === 'arrive') return x; } return null; }
+const maneuverText = x => !x ? '' : x.kind === 'arrive' ? t('arriveAt', pname(resolve(nav.toKey)?.p)) : stepShort(x);
+const firstMove = () => nav.steps.find(x => x.kind === 'move');
+// The HUD: what to do and when. Right after a turn point it says the turn ("Now"); otherwise it counts down to the next one.
+function hudState() {
+  const s = nav.steps[nav.i];
+  if (s.kind === 'arrive') return { dist: null, main: stepText(s), sub: '', turn: 'arrive' };
+  if (s.kind === 'floor') return { dist: null, main: stepShort(s), sub: '', turn: s.turn };
+  const cur = s.kind === 'start' ? firstMove() || s : s;
+  const fresh = cur.kind === 'move' && cur.turn !== 'straight' && nav.pos - cur.d0 < 2;
+  if (fresh) { const n = nextManeuver(cur.i); return { dist: 'now', main: stepShort(cur), sub: n ? `${t('then')}: ${maneuverText(n)}` : '', turn: cur.turn }; }
+  const n = nextManeuver(nav.i), n2 = n && nextManeuver(n.i);
+  const rem = n && n.leg === s.leg ? Math.max(0, n.d0 - nav.pos) : Math.max(0, (s.d1 ?? nav.pos) - nav.pos);
+  return { dist: rem, main: n ? maneuverText(n) : stepShort(s), sub: n2 && n.kind !== 'arrive' ? `${t('then')}: ${maneuverText(n2)}` : '', turn: 'straight' };
+}
+function renderHud() {
+  if (!nav.active) return;
+  const h = hudState(), d = $('#hudDist');
+  if (h.dist === 'now') d.textContent = t('now');
+  else if (h.dist == null) d.textContent = '';
+  else { const [v, ...u] = fmtM(h.dist).split(' '); d.innerHTML = `<span class="v">${esc(v)}</span><span class="u">${esc(u.join(' '))}</span>`; }
+  $('#navStepText').textContent = h.main;
+  $('#navStepSub').textContent = h.sub;
+  nav.hud = h;
 }
 function legChanged(prevLeg, leg) {
   const f = nav.follower; if (!f) return;
@@ -804,11 +884,8 @@ function updateNavPos(animate) {
     legChanged(prevLeg, leg);
     animate = false;
   }
-  const p = pointAt(path, leg.cum, nav.pos), next = nav.steps[nav.i + 1];
-  let sub = '';
-  if (s.kind === 'move') sub = t('left', fmtM(Math.max(0, s.d1 - nav.pos)));
-  if (next && s.kind !== 'arrive') sub += (sub ? '  ·  ' : '') + `${t('then')}: ${stepShort(next)}`;
-  $('#navStepSub').textContent = sub;
+  renderHud();
+  const p = pointAt(path, leg.cum, nav.pos);
   const total = nav.legs.reduce((a, l) => a + l.L, 0) || 1;
   const remain = Math.max(0, leg.L - nav.pos) + nav.legs.slice(s.leg + 1).reduce((a, l) => a + l.L, 0);
   $('#navRemain').textContent = t('remain', fmtM(remain), fmtMin(secsFor(nav.plan) * remain / total));
@@ -821,16 +898,16 @@ function updateNavPos(animate) {
   let rot = -90 + (face ?? h);
   if (nav.rot != null) { while (rot - nav.rot > 180) rot -= 360; while (rot - nav.rot < -180) rot += 360; }
   nav.rot = rot;
-  const [vw] = navMap.size();
-  navMap.setCam({ x: px, y: py, k: Math.max(.6, Math.min(3.2, vw / (22 * BASE))), rot, tilt: 48, ax: .5, ay: .72 }, animate);
+  const [vw, vh] = navMap.size();
+  navMap.setCam({ x: px, y: py, k: Math.max(.6, Math.min(3.2, vw / (22 * BASE))), rot, tilt: 52, ax: .5, ay: vh > 700 ? .66 : .7 }, animate);
   navMap.setYou({ x: p.x, y: p.y }, face ?? h);
   if (face == null) drawArrow();
 }
-// The big arrow: live (where to walk, relative to where you face) when tracking, else the step's turn.
+// The big arrow: live (where to walk, relative to where you face) when tracking; otherwise the turn to make now.
 function arrowGoal() {
   const s = nav.steps[nav.i], face = facingNow();
-  if (['floor', 'arrive'].includes(s.kind) || (s.kind === 'node' && face == null)) return null;
-  if (face == null) return TURN_ANGLE[s.turn] ?? 0;
+  if (s.kind === 'floor' || s.kind === 'arrive') return null;
+  if (face == null) return nav.hud?.dist === 'now' ? (TURN_ANGLE[nav.hud.turn] ?? 0) : 0;
   const leg = nav.legs[s.leg], a = pointAt(leg.route.path, leg.cum, nav.pos), b = pointAt(leg.route.path, leg.cum, Math.min(leg.L, nav.pos + 3));
   const dir = Math.hypot(b.x - a.x, b.y - a.y) > 0.2 ? Math.atan2(b.y - a.y, b.x - a.x) * 180 / Math.PI : nav.pathDir;
   return -wrap180(dir - face);
@@ -843,7 +920,7 @@ function drawArrow(smooth = false) {
   el.querySelector('.arrow-big').style.transform = `rotate(${nav.arrow.toFixed(1)}deg)`;
   el.dataset.angle = String(Math.round(wrap180(nav.arrow)));
 }
-// One loop while navigating: live arrow, heading-up map and the camera line.
+// One loop while navigating: live arrow, heading-up map, the camera line and the status line.
 function startLoop() {
   cancelAnimationFrame(nav.loop);
   let lastMap = 0, lastMode = 0;
@@ -866,14 +943,21 @@ function camFrame() {
   const target = last ? d?.p : nav.plan.via?.pa;
   return { R: tracker.R, beta: nav.follower.beta, pos: p, ahead: [[p.x, p.y], ...leg.route.path.slice(p.i)], dest: target ? { x: target.x, y: target.y, label: last ? pname(d.p) : t('toFloor', floorName(nav.plan.via.toMap.floor)) } : null, motion: !settings.motion };
 }
+// The part of the camera picture under the top and bottom panels (the guide keeps its labels out of it).
+function camInsets() {
+  const c = $('#navCam').getBoundingClientRect(), top = $('#nav .hud-top').getBoundingClientRect(), bot = $('#nav .hud-bottom').getBoundingClientRect();
+  return { top: top.height ? Math.max(0, top.bottom - c.top) : 0, bottom: bot.height ? Math.max(0, c.bottom - bot.top) : 0 };
+}
+function setViewUI(v) {
+  $('#btnView').setAttribute('aria-pressed', String(v === 'cam'));
+  $('#navCam').hidden = v !== 'cam'; $('#navMap').hidden = v === 'cam'; $('#camNote').hidden = v !== 'cam';
+}
+// The camera works without motion too (it still reads DALIL signs); the guide line needs the sensors.
 async function setView(v) {
   if (v === 'cam' && (state.kiosk || cfg.features.camera === false)) return;
-  if (v === 'cam' && nav.mode !== 'track' && !nav.pending) { toast(t(settings.sensors ? 'sensorsNone' : 'camNeedsSensors')); return; }
-  nav.view = v;
-  $('#btnViewMap').setAttribute('aria-pressed', String(v === 'map')); $('#btnViewCam').setAttribute('aria-pressed', String(v === 'cam'));
-  $('#navCam').hidden = v !== 'cam'; $('#navMap').hidden = v === 'cam'; $('#camNote').hidden = v !== 'cam';
+  nav.view = v; setViewUI(v);
   if (v === 'map') { stopCam(); updateNavPos(false); return; }
-  camGuide ||= new CameraGuide($('#navCam'), { onHint: h => { const el = $('#camHint'); el.hidden = !h; if (h) el.textContent = t('camHint' + cap(h)); } });
+  camGuide ||= new CameraGuide($('#navCam'), { onHint: h => { const el = $('#camHint'); el.hidden = !h; if (h) el.textContent = t('camHint' + cap(h)); }, insets: camInsets });
   try {
     if (camGuide.running) return;
     await camGuide.start();
@@ -881,7 +965,7 @@ async function setView(v) {
     navScan = new QRScanner(camGuide.video, text => { useTagText(text); }).start();
   } catch (e) {
     toast(t('cam' + cap(cameraError(e))));
-    if (nav.active) setView('map');
+    if (nav.active) { nav.view = 'map'; setViewUI('map'); updateNavPos(false); }
   }
 }
 function stopCam() { navScan?.stop(); navScan = null; camGuide?.stop(); $('#camHint').hidden = true; }
@@ -901,22 +985,23 @@ function stepAt(li, s) {
   nav.steps.forEach((x, i) => { if (x.leg !== li || x.kind === 'floor' || (x.kind === 'arrive' && s < L - 0.6)) return; if (x.d0 <= s + 0.05) k = i; });
   return Math.max(0, k);
 }
-// A DALIL tag or sign during navigation: on (or next to) the route it confirms where you are; elsewhere it plans again from there.
+// A DALIL sign or tag during navigation: on (or next to) the route, here or on the floor you are heading to,
+// it confirms where you are; anywhere else it plans a new route from there.
 function navTag(link) {
   const li = nav.steps[nav.i].leg, leg = nav.legs[li];
   const m = link.b ? state.maps.find(x => x.building.id === link.b && (!link.f || x.floor.id === link.f)) : leg.map;
   const p = m && pointOf(m, link.at);
   if (!p || m.building.id !== leg.map.building.id) { toast(t('scanUnknown')); return false; }
   buzz([40]);
-  if (m === leg.map) {
-    const pr = projectOnPath(leg.route.path, leg.cum, p.x, p.y);
-    if (pr.d < 2.5) {
-      nav.pos = pr.s; nav.follower?.anchor(pr.s);
-      toast(t('tagConfirmed', pname(p)));
-      const i = stepAt(li, pr.s), s = nav.steps[i];
-      goStep(s.kind === 'node' && s.node === p.id ? Math.min(nav.steps.length - 1, i + 1) : i, { keepPos: true });
-      return true;
-    }
+  for (const k of [li, li + 1]) {
+    const L = nav.legs[k]; if (!L || L.map !== m) continue;
+    const pr = projectOnPath(L.route.path, L.cum, p.x, p.y);
+    if (pr.d >= 2.5) continue;
+    nav.pos = pr.s; if (k === li) nav.follower?.anchor(pr.s);
+    const i = stepAt(k, pr.s), s = nav.steps[i];
+    goStep(s.kind === 'node' && s.node === p.id ? Math.min(nav.steps.length - 1, i + 1) : i, { keepPos: true });
+    toast(t('tagConfirmed', pname(p)));
+    return true;
   }
   rerouteFrom(m, link.at);
   return true;
@@ -934,26 +1019,17 @@ function rerouteFrom(m, pointId) {
   goStep(0, { intro: msg });
   analytics.add('reroute', { at: pointId });
 }
-function confirmTag() {
-  const s = nav.steps[nav.i]; if (s.kind !== 'node') return;
-  const leg = nav.legs[s.leg];
-  if (leg.map === state.map) setFrom(s.node, { say: true, confirm: true });
-  else toast(t('tagConfirmed', pname(pointOf(leg.map, s.node))));
-  nav.follower?.anchor(s.d0); buzz([40]);
-  goStep(nav.i + 1, { keepPos: !!nav.follower });
-}
-function confirmFloor() { const s = nav.steps[nav.i]; if (s.kind !== 'floor') return; buzz([40]); goStep(nav.i + 1); }
 function toggleSim() { nav.sim ? stopSim() : startSim(); }
 function startSim() {
   if (nav.steps[nav.i].kind === 'arrive') goStep(0);
-  nav.sim = true; nav.last = performance.now(); renderMode();
+  nav.sim = true; nav.last = performance.now(); hideMotionCard(); renderMode();
   const b = $('#btnSim'); b.setAttribute('aria-pressed', 'true'); b.querySelector('.ctrl-txt').textContent = t('previewStop'); b.querySelector('.ico').innerHTML = ico('pause');
   const tick = now => {
     if (!nav.sim) return;
     const dt = Math.min(.1, (now - nav.last) / 1000); nav.last = now;
     const s = nav.steps[nav.i];
     if (s.kind === 'move') { nav.pos = Math.min(s.d1, nav.pos + 2.5 * dt); updateNavPos(false); if (nav.pos >= s.d1 - 1e-6) goStep(nav.i + 1); }
-    else if (s.kind !== 'arrive') { nav.dwell += dt; if (nav.dwell > 1.6) { if (s.kind === 'node' && nav.legs[s.leg].map === state.map) setFrom(s.node, { say: false }); goStep(nav.i + 1); } }
+    else if (s.kind !== 'arrive') { nav.dwell += dt; if (nav.dwell > 1.6) goStep(nav.i + 1); }
     nav.raf = requestAnimationFrame(tick);
   };
   nav.raf = requestAnimationFrame(tick);
@@ -961,7 +1037,7 @@ function startSim() {
 function stopSim() {
   const was = nav.sim; nav.sim = false; cancelAnimationFrame(nav.raf);
   const b = $('#btnSim'); b.setAttribute('aria-pressed', 'false'); b.querySelector('.ctrl-txt').textContent = t('previewWalk'); b.querySelector('.ico').innerHTML = ico('play');
-  if (nav.active) { renderMode(); if (was && nav.follower) nav.follower.anchor(nav.pos, { learn: false }); }
+  if (nav.active && was) { if (nav.follower) nav.follower.anchor(nav.pos, { learn: false }); renderMode(); showMotionCard(); }
 }
 function showArrival() {
   if (!nav.active) return;
@@ -969,7 +1045,7 @@ function showArrival() {
   $('#arrivedName').textContent = pname(to);
   $('#arrivedStats').textContent = `${fmtM(nav.plan.distance_m)} · ${fmtMin(secsFor(nav.plan))}`;
   $('#btnArrivedSave').textContent = isFav(nav.toKey) ? t('saved') : t('savePlace');
-  $('#arrived').hidden = false;
+  $('#arrived').hidden = false; hideMotionCard(); $('#floorCard').hidden = true;
   $('#arrivedTitle').focus();
   analytics.add('arrive', { to: to?.virtual ? 'pin' : to?.id, s: Math.round((performance.now() - nav.started) / 1000) });
 }
@@ -1147,8 +1223,6 @@ function bind() {
     const cat = e.target.closest('[data-cat]'); if (cat) { pickNearest(cat.dataset.cat); return; }
     const rs = e.target.closest('[data-search]');
     if (rs) { $('#search').value = rs.dataset.search; renderSearch(); $('#search').focus(); return; }
-    const sb = e.target.closest('[data-step]');
-    if (sb && nav.active) { $('#dlgSteps').close(); goStep(+sb.dataset.step, { focus: true }); return; }
     const wh = e.target.closest('[data-where]');
     if (wh) { const [f, id] = wh.dataset.where.split('|'), m = mapByFloor(f); if (m && m !== state.map) selectFloor(m); setFrom(id); back(); }
   });
@@ -1172,7 +1246,7 @@ function bind() {
   // Route page
   $('#optStepFree').addEventListener('change', e => setStepFree(e.target.checked));
   $('#btnFav').onclick = () => { if (state.toKey) { const on = toggleFav(state.toKey); announce(t(on ? 'saved' : 'unsave')); toast(t(on ? 'saved' : 'unsave')); } };
-  $('#btnStart').onclick = () => startNav();
+  $('#btnStart').onclick = () => startNav({ preview: !!state.kiosk });
   $('#btnStartCam').onclick = () => startNav({ camera: true });
   $('#btnShare').onclick = openShare;
   $('#btnShareCopy').onclick = async () => { const v = $('#shareUrl').value; try { await navigator.clipboard.writeText(v); toast(t('copied')); } catch { $('#shareUrl').select(); } };
@@ -1195,7 +1269,7 @@ function bind() {
   window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener?.('change', () => { if (settings.theme === 'system') applyDisplay(); });
   const toggle = (id, key, after) => $(id).addEventListener('change', e => { settings[key] = e.target.checked; saveSettings(); after?.(); });
   toggle('#setVoice', 'voice', () => { if (!settings.voice) try { speechSynthesis.cancel(); } catch { } });
-  toggle('#setVibrate', 'vibrate'); toggle('#setSensors', 'sensors');
+  toggle('#setVibrate', 'vibrate');
   $('#setStepFree').addEventListener('change', e => setStepFree(e.target.checked));
   toggle('#setContrast', 'contrast', rerenderAll); toggle('#setMotion', 'motion', rerenderAll);
   $('#setBuilding').addEventListener('change', e => { const m = state.maps[+e.target.value]; if (m) { state.toKey = null; selectFloor(m); } });
@@ -1205,16 +1279,18 @@ function bind() {
   // Getting here
   $('#btnMyLoc').onclick = () => outdoorCtl ? outdoorCtl.locate() : outStatus('unavailable');
   // Navigation
-  $('#btnNext').onclick = () => goStep(nav.i + 1);
-  $('#btnPrev').onclick = () => goStep(nav.i - 1);
-  $('#btnRepeat').onclick = () => { const s = nav.steps[nav.i]; announce(stepText(s)); speak(stepText(s) + (s.kind === 'move' && nav.mode === 'track' ? ' ' + t('left', fmtM(Math.max(0, s.d1 - nav.pos))) + '.' : '')); };
-  $('#btnSim').onclick = toggleSim;
-  $('#btnTag').onclick = confirmTag;
-  $('#btnFloorDone').onclick = confirmFloor;
+  $('#btnRepeat').onclick = () => {
+    const h = nav.hud || hudState(), msg = typeof h.dist === 'number' && h.dist > 1 ? t('soon', fmtM(h.dist), h.main) : h.main;
+    announce(msg); speak(msg);
+  };
+  $('#btnSim').onclick = () => { toggleSim(); $('#dlgSteps').close(); };
   $('#btnEndNav').onclick = () => endNav();
   $('#btnSteps').onclick = () => { renderStepList(); openDlg($('#dlgSteps')); };
-  $('#btnViewMap').onclick = () => setView('map');
-  $('#btnViewCam').onclick = () => setView('cam');
+  $('#btnView').onclick = () => setView(nav.view === 'cam' ? 'map' : 'cam');
+  $('#btnAllowMotion').onclick = allowMotion;
+  $('#btnPreview').onclick = startSim;
+  $('#btnSignsOnly').onclick = () => { nav.signsOnly = true; hideMotionCard(); };
+  $('#btnHolo').onclick = () => { state.viewMap = state.map; go('map'); };
   $('#btnArrivedDone').onclick = finishArrival;
   $('#btnArrivedSave').onclick = () => { toggleFav(nav.toKey, true); $('#btnArrivedSave').textContent = t('saved'); };
   // Help
@@ -1227,8 +1303,6 @@ function bind() {
       if (!$('#arrived').hidden) { finishArrival(); return; }
       if (pageNow !== 'home') { back(); return; }
     }
-    if (pageNow !== 'nav' || !$('#arrived').hidden || e.target.closest('input,select,textarea')) return;
-    if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') { const fwd = (e.key === 'ArrowRight') !== (settings.lang === 'ar'); goStep(nav.i + (fwd ? 1 : -1)); }
   });
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && nav.active && nav.view === 'cam' && !camGuide?.stream?.active) { camGuide?.stop(); setView('cam'); } });
   window.addEventListener('hashchange', () => applyLink(parseLink(location.href)));
@@ -1253,6 +1327,7 @@ async function boot() {
 }
 async function init() {
   applyDisplay(); fillIcons();
+  homeMap = new MapView($('#homeMap'), { points: 'none', label: pname });
   routeMap = new MapView($('#routeMap'), { label: pname });
   mainMap = new MapView($('#mainMap'), { interactive: true, label: pname, pickKey: keyOf, onTap: p => onMapTap(p), onCam: c => $('#mainMap').classList.toggle('show-labels', c.k * BASE >= 16) });
   navMap = new MapView($('#navMap'), { points: 'nodes', label: pname });
