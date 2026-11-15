@@ -56,7 +56,7 @@ export function loadMapLibre(base = 'vendor/maplibre/') {
 export const LAYERS = ['plan', 'places', 'outline', 'entrances', 'route', 'me'];
 const GROUPS = { plan: ['walls', 'doors'], outline: ['outline-fill', 'outline-line'], entrances: ['entr-ring', 'entr-label'], route: ['route-casing', 'route-line'], me: ['me-acc', 'me-dot'] };
 
-export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvider, attribution, providers = {}, layers = {}, opacity = 0.85 }) {
+export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvider, attribution, providers = {}, layers = {}, opacity = 0.85, pins = false, onPick = null, iconFor = null, padding = 60 }) {
   const maplibregl = await loadMapLibre();
   let order = providerOrder(providers.choice || 'auto', providers.cfg || {});
   const failed = [], vis = Object.fromEntries(LAYERS.map(k => [k, layers[k] ?? true]));
@@ -70,9 +70,11 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
   }
   const style = await nextStyle();
   let gj = floorGeoJSON(map), routeData = { type: 'FeatureCollection', features: [] }, placeMarkers = [];
-  const m = new maplibregl.Map({ container: el, style, bounds: gj.bounds, fitBoundsOptions: { padding: 60 }, attributionControl: false, maxZoom: 20.5 });
+  const m = new maplibregl.Map({ container: el, style, bounds: gj.bounds, fitBoundsOptions: { padding, maxZoom: 18.6 }, attributionControl: false, maxZoom: 20.5 });
   let attr = null;
-  const setAttribution = () => { if (attr) m.removeControl(attr); attr = new maplibregl.AttributionControl({ compact: true, customAttribution: [attribution, active.attribution].filter(Boolean).join(' · ') }); m.addControl(attr, 'bottom-right'); el.dataset.logo = active.logo || ''; };
+  const setAttribution = () => { if (attr) m.removeControl(attr); attr = new maplibregl.AttributionControl({ compact: true, customAttribution: [attribution, active.attribution].filter(Boolean).join(' · ') }); m.addControl(attr, 'bottom-right'); el.dataset.logo = active.logo || '';
+    // Start as the small (i) button: the credits open on tap, so they never cover the map.
+    const fold = () => el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'); fold(); setTimeout(fold, 0); m.once('load', fold); };
   setAttribution();
   const accent = '#FFC700', ink = dark ? '#E9E7E1' : '#2B2E33', OURS = new Set(['outline', 'walls', 'doors', 'entrances', 'me', 'route']);
   let meData = { type: 'FeatureCollection', features: [] };
@@ -104,9 +106,18 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
   // Room and place names as small HTML labels (they work on every base map, with or without fonts in its style).
   const drawPlaces = () => {
     for (const mk of placeMarkers) mk.remove();
-    placeMarkers = gj.places.map(p => { const e = document.createElement('div'); e.className = `out-place cat-${p.category}`; e.innerHTML = '<span class="op-dot"></span><span class="op-name"></span>';
-      e.querySelector('.op-name').textContent = lang === 'ar' ? p.nameAr : p.nameEn; e.hidden = !vis.places; return new maplibregl.Marker({ element: e, anchor: 'left' }).setLngLat(p.lngLat).addTo(m); });
-    const showNames = () => el.classList.toggle('out-names', m.getZoom() >= 18.5); showNames(); m.on('zoom', showNames);
+    placeMarkers = gj.places.map(p => {
+      const e = document.createElement(pins ? 'button' : 'div');
+      e.className = `${pins ? 'out-pin' : 'out-place'} cat-${p.category}`;
+      e.innerHTML = pins ? `<span class="op-pin">${iconFor ? iconFor(p.category) : ''}</span><span class="op-name"></span>` : '<span class="op-dot"></span><span class="op-name"></span>';
+      const name = lang === 'ar' ? p.nameAr : p.nameEn;
+      e.querySelector('.op-name').textContent = name; e.hidden = !vis.places;
+      if (pins) { e.type = 'button'; e.setAttribute('aria-label', name); e.dataset.place = p.id; e.addEventListener('click', ev => { ev.stopPropagation(); onPick?.(p.id); }); }
+      const mk = new maplibregl.Marker({ element: e, anchor: pins ? 'bottom-left' : 'left', offset: pins ? [-14, 0] : [0, 0] }).setLngLat(p.lngLat).addTo(m);
+      if (pins) e.setAttribute('aria-label', name); else e.setAttribute('aria-hidden', 'true');   // MapLibre names every marker "Map marker"
+      return mk;
+    });
+    const showNames = () => { el.classList.toggle('out-names', m.getZoom() >= 18.5); el.classList.toggle('out-pins', m.getZoom() >= 17.2); }; showNames(); m.on('zoom', showNames);
   };
   // Failover once the style is in: if its tiles keep failing and none arrive, move to the next map.
   // (Listening from the start: failed tiles can arrive before the map's 'load' event.)
@@ -127,7 +138,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
   drawPlaces();
   const mainEntr = gj.entrances.features.find(f => f.properties.main) || gj.entrances.features[0];
   const target = mainEntr ? mainEntr.geometry.coordinates : [(gj.bounds[0][0] + gj.bounds[1][0]) / 2, (gj.bounds[0][1] + gj.bounds[1][1]) / 2];
-  let watch = null;
+  let watch = null, youMk = null;
   ctl = {
     map: m, streets: active !== PLAIN, provider: active, failed, target, geojson: gj, vis,
     /** Show or hide a layer group: 'plan' | 'places' | 'outline' | 'entrances' | 'route' | 'me'. */
@@ -162,7 +173,18 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
         onStatus?.('pos', { dist: haversine([lng, lat], target), accuracy });
       }, err => onStatus?.(err.code === 1 ? 'denied' : 'unavailable'), { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
     },
-    destroy() { if (watch != null) navigator.geolocation.clearWatch(watch); for (const mk of placeMarkers) mk.remove(); m.remove(); },
+    /** "You are here" (a place, or a GPS position): the blue dot, with a cone when the heading is known. */
+    setYou(lngLat, heading = null) {
+      if (!lngLat) { youMk?.remove(); youMk = null; return; }
+      if (!youMk) { const e = document.createElement('div'); e.className = 'out-you'; e.innerHTML = '<span class="oy-cone"></span><span class="oy-pulse"></span><span class="oy-dot"></span>'; youMk = new maplibregl.Marker({ element: e, rotationAlignment: 'map' }).setLngLat(lngLat).addTo(m); }
+      youMk.setLngLat(lngLat); const cone = youMk.getElement().querySelector('.oy-cone');
+      cone.hidden = heading == null; if (heading != null) cone.style.transform = `rotate(${heading}deg)`;
+    },
+    /** Show the building (or a point) with room left for the panels around the map. */
+    frame(pad = padding) { m.fitBounds(gj.bounds, { padding: pad, maxZoom: 18.6, duration: 0 }); },
+    flyTo(lngLat, zoom = 19) { m.easeTo({ center: lngLat, zoom: Math.max(m.getZoom(), zoom), duration: 600 }); },
+    resize() { m.resize(); },
+    destroy() { if (watch != null) navigator.geolocation.clearWatch(watch); for (const mk of placeMarkers) mk.remove(); youMk?.remove(); m.remove(); },
   };
   return ctl;
 }

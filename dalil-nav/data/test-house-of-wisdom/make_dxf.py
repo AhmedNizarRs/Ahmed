@@ -39,11 +39,14 @@ CENTRE = {"ground": (1024.5, 605), "mezzanine": (900, 723.5)}  # façade centre 
 
 # Where the building is (plan 0,0 = the centre of the façade square) and which way it faces.
 # Location: Foster + Partners' project page gives Plus Code 8G94+9C8 (Al Juraina 1, Sharjah) -> 25.3184125, 55.5060781.
-# Bearing: the drawings' north arrow points 36.6° clockwise from "up"; the Makkah arrow agrees within 4° (251° from
-# north in the drawing vs a true Qibla bearing of about 255° from Sharjah). So plan +y ("up") points to 325° (−35°).
+# Bearing: from satellite imagery (Google Maps, north up): the roof square's edges run at 16° / 106°, and the four
+# dark roof squares sit over the four cores. Of the four ways a square can sit, Foster + Partners' "visitors enter
+# from its western edge" fixes it: the drawing's left side (the main doors) faces 286° (WNW), so plan +y points to 16°.
+# Note: the north and Makkah arrows printed on the published drawings disagree with the imagery by about 50°
+# (they suggest −35°), so they are not used.
 CENTRE_LNGLAT = (55.5060781, 25.3184125)
-BEARING = -35.0
-GEO_SOURCE = "Plus Code 8G94+9C8 (Foster + Partners) and the drawing's north arrow; about ±5 m and ±3°, not surveyed"
+BEARING = 16.0
+GEO_SOURCE = "Plus Code 8G94+9C8 (Foster + Partners); bearing from the roof edges in satellite imagery; about ±5 m and ±2°, not surveyed"
 
 
 def geo_for(floor):

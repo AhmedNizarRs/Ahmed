@@ -153,7 +153,7 @@ function planSteps(plan) {
 const fmtM = d => t('m', Math.max(1, Math.round(d)));
 const fmtMin = s => t('min', Math.max(1, Math.round(s / 60)));
 const fmtDist = d => d < 1000 ? fmtM(d) : t('km', (d / 1000).toFixed(d < 10000 ? 1 : 0));
-const floorShort = f => /^(ground|g)$/i.test(f.id) || /^ground$/i.test(f.name) ? t('floorG') : /(\d+)/.test(f.name || '') ? f.name.match(/(\d+)/)[1] : String(f.name || f.id).slice(0, 3);
+const floorShort = f => /^(ground|g)$/i.test(f.id) || /^ground\b/i.test(f.name || '') || /^ground-floor$/i.test(f.id) ? t('floorG') : /(\d+)/.test(f.name || '') ? f.name.match(/(\d+)/)[1] : /^mezz/i.test(f.name || '') ? 'M' : String(f.name || f.id).slice(0, 3);
 const floorName = f => t('floorName', f);
 
 /* ---------- Step geometry: each "walk N m" step placed along the path ---------- */
@@ -362,6 +362,7 @@ function renderHome() {
   renderHolo(from); renderGpsBits();
   // Tiles: the essentials this building has, with the walk to the nearest one
   const cats = Object.keys(TILE_CATS).filter(c => TILE_CATS[c].some(k => here.has(k))).slice(0, 6);
+  $('#homeChips').innerHTML = cats.map(c => `<button class="hm-chip" type="button" data-cat="${c}"><span class="ico">${catIco(c === 'help' ? 'help' : TILE_CATS[c][0])}</span><span>${esc(t('cat_' + c))}</span></button>`).join('');
   $('#tiles').innerHTML = cats.map(c => {
     let best = null;
     for (const p of state.map.points) if (TILE_CATS[c].includes(p.category) && p.id !== state.fromId) { const d = distFor(state.map, from, p); if (d != null && (best == null || d < best)) best = d; }
@@ -378,13 +379,67 @@ function renderHome() {
 }
 
 // The hologram on Home: the floor you are on, tilted in 3D, with your beacon.
-function renderHolo(from) {
-  if (!homeMap || pageNow !== 'home') return;
-  $('#holoFloor').textContent = `${floorName(state.map.floor)} · 3D`;
-  homeMap.setMap(state.map);
-  homeMap.setYou(from, from?.facingDeg ?? 90);
-  homeMap.setRoute(null); homeMap.setDest(null);
-  requestAnimationFrame(() => homeMap.fit({ pts: state.map.plan.walls.flat(), padTop: 30, padBot: 70, padL: 18, padR: 18, maxK: 2.2, tilt: 50 }, false));
+// Home is a map, like a phone's maps app: the real map with the floor plan on top when the building is placed on
+// Earth (geo), otherwise the floor plan itself. Floors switch on the right; "you" is the blue dot.
+let homeCtl = null, homeCtlFor = null, homeFloor = null, homeSeq = 0;
+const SHEET_PAD = { top: 150, bottom: 230, left: 24, right: 64 };
+function renderHolo(from) { renderHomeMap(from); }
+function homeFloors() { return bFloors(); }
+async function renderHomeMap(from = pt(state.fromId)) {
+  if (pageNow !== 'home' || !state.map) return;
+  const floors = homeFloors();
+  if (!homeFloor || !floors.includes(homeFloor)) homeFloor = state.map;
+  $('#homeFloors').hidden = floors.length < 2;
+  $('#homeFloors').innerHTML = floors.slice().reverse().map(m => `<button type="button" class="hm-floor${m === homeFloor ? ' is-on' : ''}" data-hfloor="${esc(m.floor.id)}" aria-pressed="${m === homeFloor}" aria-label="${esc(floorName(m.floor))}">${esc(floorShort(m.floor))}</button>`).join('');
+  const geo = !!state.map.geo;
+  $('#homeGL').hidden = !geo; $('#homeMap').hidden = geo; $('#btnLayers').hidden = !geo;
+  if (!geo) {
+    if (homeCtl) { homeCtl.destroy(); homeCtl = null; homeCtlFor = null; }
+    homeMap.setMap(homeFloor);
+    homeMap.setYou(homeFloor === state.map ? from : null, from?.facingDeg ?? 90);
+    homeMap.setRoute(null); homeMap.setDest(null);
+    requestAnimationFrame(() => homeMap.fit({ pts: homeFloor.plan.walls.flat(), padTop: 170, padBot: 250, padL: 20, padR: 70, maxK: 3, tilt: 30 }, false));
+    return;
+  }
+  const bid = state.map.building.id;
+  if (!homeCtl || homeCtlFor !== bid) {
+    const seq = ++homeSeq;
+    homeCtl?.destroy(); homeCtl = null; homeCtlFor = null;
+    try {
+      const { createOutdoorMap } = await import('./outdoor.js');
+      const choice = settings.mapProvider === 'auto' ? (cfg.maps?.homeBase || 'esri-imagery-labels') : settings.mapProvider;
+      const ctl = await createOutdoorMap($('#homeGL'), { map: homeFloor, dark: document.documentElement.dataset.theme === 'dark' || settings.contrast, lang: settings.lang,
+        attribution: t('attrPlan'), providers: { choice, cfg: cfg.maps }, layers: settings.mapLayers, opacity: settings.mapOpacity / 100,
+        pins: true, onPick: id => { const m = homeFloor; setDest(keyOf(m, pointOf(m, id))); }, iconFor: c => svgIco(CAT_ICONS[c] || CAT_ICONS.room), padding: SHEET_PAD,
+        onProvider: () => renderLayerControls('home') });
+      if (seq !== homeSeq || pageNow !== 'home') { ctl.destroy(); return; }
+      homeCtl = ctl; homeCtlFor = bid;
+    } catch { return; }
+  } else homeCtl.setFloor(homeFloor);
+  homeCtl.resize();
+  homeYou(from);
+}
+// The blue dot: GPS when it is live, otherwise the place you said you are at (on the floor shown).
+function homeYou(from = pt(state.fromId)) {
+  if (!homeCtl || !state.map?.geo) return;
+  const f = locator.fresh(60000);
+  if (f) { homeCtl.setYou([f.lng, f.lat], tracker.heading ?? null); homeCtl.setMe(f.lng, f.lat, f.acc); return; }
+  if (from && homeFloor === state.map) homeCtl.setYou(geoTransform(state.map.geo)(from.x, from.y), null); else homeCtl.setYou(null);
+}
+function setHomeFloor(m) { if (!m || m === homeFloor) return; homeFloor = m; announce(t('viewFloor', floorName(m.floor))); renderHomeMap(); }
+function setSheet(open) {
+  $('#homeSheet').classList.toggle('open', open); $('#btnSheet').setAttribute('aria-expanded', String(open));
+  if (!open) $('#homeSheetBody').scrollTop = 0;
+}
+// Base map and layer controls, shared by Home (the Layers button) and the real-map page.
+function renderLayerControls(where) {
+  if (where !== 'home') return;
+  const all = allProviders(cfg.maps).filter(p => p.available), cur = settings.mapProvider === 'auto' ? (cfg.maps?.homeBase || 'esri-imagery-labels') : settings.mapProvider;
+  const row = (type, name, val, label, on, sub = '') => `<label class="opt"><input type="${type}" name="${name}" value="${esc(val)}" ${on ? 'checked' : ''}><span>${esc(label)}${sub ? `<small>${esc(sub)}</small>` : ''}</span></label>`;
+  $('#homeBases').innerHTML = all.map(p => row('radio', 'homeBase', p.id, `${t(p.kind === 'satellite' ? 'kindSatellite' : 'kindStreets')} · ${p.name}`, p.id === (homeCtl?.provider?.id || cur), p.key ? t('provKey') : p.test ? t('provTest') : t('provFree'))).join('')
+    + row('radio', 'homeBase', 'plain', t('provider_plain'), (homeCtl?.provider?.id || cur) === 'plain');
+  $('#homeKeyNote').hidden = allProviders(cfg.maps).every(p => p.available); $('#homeKeyNote').textContent = t('keyNote');
+  $('#homeChecks').innerHTML = ['plan', 'places', 'outline', 'entrances', 'me'].map(k => row('checkbox', 'homeLayer', k, t('lyr_' + k), settings.mapLayers[k] ?? true)).join('');
 }
 
 /* ---------- Search ---------- */
@@ -651,7 +706,7 @@ function rerenderAll() {
   renderAll();
   if (nav.active) { renderNavStep(); renderMode(); }
 }
-function setLang(l) { settings.lang = l; saveSettings(); rerenderAll(); }
+function setLang(l) { settings.lang = l; saveSettings(); homeCtl?.destroy(); homeCtl = null; homeCtlFor = null; rerenderAll(); }
 
 /* =========================================================================
    Navigation: a heads-up display that moves with you. There is no "Next": the compass and the step counter
@@ -1035,7 +1090,7 @@ function fuseFix(f) {
 // On Home: "You are here" = the nearest place to the GPS position, unless you chose one yourself.
 function homeFix(f) {
   const m = state.map, q = fixOn(m, f); gps.acc = q?.acc ?? null;
-  homeMap?.setAccuracy(q, q?.acc);
+  homeMap?.setAccuracy(q, q?.acc); homeYou();
   if (q && q.acc <= GPS_MAX_ACC && !state.fromManual) {
     let best = null, bd = Infinity;
     for (const p of m.points) { if (p.virtual) continue; const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; best = p; } }
@@ -1386,7 +1441,22 @@ function bind() {
   $('#btnAllowMotion').onclick = allowMotion;
   $('#btnPreview').onclick = startSim;
   $('#btnSignsOnly').onclick = () => { nav.signsOnly = true; hideMotionCard(); };
-  $('#btnHolo').onclick = () => { state.viewMap = state.map; go('map'); };
+  // Home map controls
+  $('#btnSheet').onclick = () => setSheet(!$('#homeSheet').classList.contains('open'));
+  $('#homeFloors').addEventListener('click', e => { const b = e.target.closest('[data-hfloor]'); if (b) setHomeFloor(mapByFloor(b.dataset.hfloor)); });
+  $('#btnScanTop').onclick = () => { go('where'); startWhereScan(); };
+  $('#btnDirections').onclick = () => go('search');
+  $('#btnLocateMe').onclick = () => {
+    if (state.map?.geo) { state.fromManual = false; gpsStart(); const f = locator.fresh(60000); if (f && homeCtl) homeCtl.flyTo([f.lng, f.lat]); else if (homeCtl) { const p = pt(state.fromId); if (p) homeCtl.flyTo(geoTransform(state.map.geo)(p.x, p.y)); } }
+    else { setHomeFloor(state.map); renderHomeMap(); }
+  };
+  $('#btnLayers').onclick = () => { renderLayerControls('home'); $('#dlgLayers').showModal(); };
+  $('#homeBases').addEventListener('change', e => { settings.mapProvider = e.target.value; saveSettings(); homeCtl?.setBase(e.target.value); });
+  $('#homeChecks').addEventListener('change', e => { settings.mapLayers = { ...settings.mapLayers, [e.target.value]: e.target.checked }; saveSettings(); homeCtl?.setLayer(e.target.value, e.target.checked); });
+  $('#tabExplore').onclick = () => setSheet(false);
+  $('#tabSaved').onclick = () => { setSheet(true); requestAnimationFrame(() => ($('#secSaved').hidden ? $('#secRecent').hidden ? $('#tiles') : $('#secRecent') : $('#secSaved')).scrollIntoView({ block: 'start' })); };
+  $('#tabScan').onclick = () => { go('where'); startWhereScan(); };
+  $('#tabSettings').onclick = () => go('settings');
   $('#btnArrivedDone').onclick = finishArrival;
   $('#btnArrivedSave').onclick = () => { toggleFav(nav.toKey, true); $('#btnArrivedSave').textContent = t('saved'); };
   // Help
@@ -1435,6 +1505,6 @@ async function init() {
 }
 
 window.DALIL_APP = { state, settings, spoken, nav, tracker, analytics, parseLink, buildSteps, routeFor, pointOf, go, page: () => pageNow, config: () => cfg,
-  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
+  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, homeMap: () => homeCtl, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));

@@ -201,12 +201,12 @@
    ],
    "geo": {
     "origin": [
-     55.50600522,
-     25.31803826
+     55.50571232,
+     25.31822848
     ],
-    "bearing": -35.0,
+    "bearing": 16.0,
     "scale": 1.0,
-    "source": "Plus Code 8G94+9C8 (Foster + Partners) and the drawing's north arrow; about ±5 m and ±3°, not surveyed"
+    "source": "Plus Code 8G94+9C8 (Foster + Partners); bearing from the roof edges in satellite imagery; about ±5 m and ±2°, not surveyed"
    }
   },
   {
@@ -342,12 +342,12 @@
    ],
    "geo": {
     "origin": [
-     55.50600668,
-     25.31803965
+     55.50571443,
+     25.31822832
     ],
-    "bearing": -35.0,
+    "bearing": 16.0,
     "scale": 1.0,
-    "source": "Plus Code 8G94+9C8 (Foster + Partners) and the drawing's north arrow; about ±5 m and ±3°, not surveyed"
+    "source": "Plus Code 8G94+9C8 (Foster + Partners); bearing from the roof edges in satellite imagery; about ±5 m and ±2°, not surveyed"
    }
   }
  ]

@@ -416,7 +416,9 @@ test('GPS: home picks the place nearest to you; during directions the position f
   const { ctx, page, errors } = await open('#b=kennedy-library-cal-poly-test&f=level-1', { permissions: ['geolocation'], geolocation: { ...geoOf(L1.geo, near.x + 1, near.y), accuracy: 6 } });
   await page.waitForFunction(id => window.DALIL_APP.state.fromId === id, near.id);
   assert.match(await page.textContent('#fromEyebrow'), /Near you · GPS ±6 m/);
-  assert.ok(await page.evaluate(() => document.querySelector('#homeMap .gps-acc').getAttribute('visibility') === 'visible'), 'GPS circle on the plan');
+  // Home is the real map for buildings placed on Earth: the blue dot and the GPS accuracy circle are on it.
+  await page.waitForSelector('#homeGL .out-you');
+  await page.waitForFunction(() => window.DALIL_APP.homeMap?.()?.map.getSource('me')?._data?.features?.length === 2);
   // Directions without motion sensors: GPS alone moves you along the route.
   const dest = L1.points.filter(p => !p.virtual && p.id !== near.id).map(p => ({ p, d: Math.hypot(p.x - near.x, p.y - near.y) })).sort((a, b) => b.d - a.d)[0].p;
   await pick(page, dest.nameEn, `level-1|${dest.id}`);
@@ -432,6 +434,44 @@ test('GPS: home picks the place nearest to you; during directions the position f
   await ctx.setGeolocation({ ...geoOf(L1.geo, x + 60, y + 60), accuracy: 5 });   // 85 m away from the route
   await page.waitForTimeout(1500);
   assert.ok(Math.abs(await page.evaluate(() => window.DALIL_APP.nav.pos) - before) < 0.5, 'a fix far from the route is not used');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('home is a map: search bar, category chips, floor switcher, tappable pins, bottom sheet and tabs', async () => {
+  const { ctx, page, errors } = await open('#b=house-of-wisdom-test&f=ground-floor');
+  for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://*.tile.opentopomap.org/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 }));
+  await page.waitForFunction(() => window.DALIL_APP.homeMap?.());
+  assert.ok(await page.isVisible('#homeGL') && await page.isHidden('#homeMap'), 'a building placed on Earth gets the real map');
+  assert.match(await page.textContent('#btnSearchOpen'), /Search here/);
+  assert.ok((await page.$$eval('#homeChips [data-cat]', c => c.map(x => x.dataset.cat))).includes('toilet'));
+  assert.deepEqual(await page.$$eval('#homeFloors button', b => b.map(x => [x.textContent, x.getAttribute('aria-pressed')])), [['M', 'false'], ['G', 'true']]);
+  // Floors switch the plan shown, not where you are
+  await page.click('#homeFloors button:has-text("M")');
+  await page.waitForFunction(() => window.DALIL_APP.homeMap().geojson.places.some(p => p.nameEn === 'Meeting Pod'));
+  assert.equal(await page.evaluate(() => window.DALIL_APP.state.map.floor.id), 'ground-floor');
+  // Tapping a pin opens that place's route
+  await page.evaluate(() => [...document.querySelectorAll('#homeGL [data-place]')].find(e => e.getAttribute('aria-label') === 'Meeting Pod').click());
+  await pageIs(page, 'route');
+  assert.equal(await page.textContent('#destName'), 'Meeting Pod');
+  await page.click('#pgRoute [data-back]'); await pageIs(page, 'home');
+  // A chip goes to the nearest of its kind
+  await page.click('#homeChips [data-cat="toilet"]'); await pageIs(page, 'route');
+  assert.match(await page.textContent('#destName'), /Toilets/);
+  await page.click('#pgRoute [data-back]'); await pageIs(page, 'home');
+  // Sheet and tabs
+  assert.equal(await page.getAttribute('#btnSheet', 'aria-expanded'), 'false');
+  await page.click('#btnSheet'); assert.equal(await page.getAttribute('#btnSheet', 'aria-expanded'), 'true');
+  await page.click('#tabExplore'); assert.equal(await page.getAttribute('#btnSheet', 'aria-expanded'), 'false');
+  await page.click('#tabSettings'); await pageIs(page, 'settings'); await page.click('#pgSettings [data-back]'); await pageIs(page, 'home');
+  // Layers: base maps and layer checkboxes on the home map
+  await page.click('#btnLayers');
+  assert.ok(await page.isVisible('#dlgLayers') && (await page.$$eval('#homeBases input', i => i.map(x => x.value))).includes('esri-imagery'));
+  await page.uncheck('#homeChecks input[value="places"]');
+  assert.ok(await page.$$eval('#homeGL .out-pin', e => e.length > 5 && e.every(x => x.hidden)));
+  await page.click('#dlgLayers [data-close]');
+  // Directions button asks where to go
+  await page.click('#btnDirections'); await pageIs(page, 'search');
   assert.deepEqual(errors, []);
   await ctx.close();
 });

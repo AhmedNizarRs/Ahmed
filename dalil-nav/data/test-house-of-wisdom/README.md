@@ -34,9 +34,12 @@ The first command needs Pillow and numpy. The second drives the DALIL Mapper hea
    the four cores.
 4. **Position on Earth:**
    - Location: Foster + Partners' Plus Code 8G94+9C8 (Al Juraina 1) = 25.31841 N, 55.50608 E, used as the façade centre.
-   - Direction: the drawing's north arrow, 35° (plan "up" points to 325°). The Makkah arrow on the same drawing agrees
-     within 4°.
-   - Accuracy is about ±5 m and ±3°. It is not surveyed: check it on satellite imagery before relying on it.
+     The Google Maps pin for the building falls within a few metres of it.
+   - Direction: from satellite imagery. The roof is a square turned 16° from north, and its four dark roof squares sit
+     over the four cores. Foster's "visitors enter from its western edge" picks which way round it goes, so plan
+     "up" points to 16°.
+   - The north and Makkah arrows printed on the published drawings are about 50° off the imagery, so they are not used.
+   - Accuracy is about ±5 m and ±2°. It is not surveyed.
 5. **The Mapper** builds the walkable grid, links the floors (lifts LIFT-NW/NE; stairs STAIR-NW/NE/C/SW/SE) and
    exports. All 21 ground-floor and 14 mezzanine places are reachable.
 

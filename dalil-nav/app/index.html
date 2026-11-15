@@ -33,32 +33,45 @@
 <div id="app" class="app">
 
   <!-- ================= HOME ================= -->
-  <section id="pgHome" class="page" data-page="home">
-    <header class="bar">
-      <div class="brand" aria-label="DALIL">
-        <svg class="brand-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
-        <span class="brand-word"><span class="brand-en">DALIL</span><span class="brand-ar" lang="ar">دليل</span></span>
+  <section id="pgHome" class="page page-full home-map" data-page="home">
+    <div id="homeGL" class="home-gl" role="region" data-i18n-aria="mapLabel" hidden></div>
+    <div id="homeMap" class="map-view home-svg" aria-hidden="true"></div>
+
+    <div class="hm-top">
+      <div class="hm-search">
+        <button id="btnSearchOpen" class="hm-search-btn" type="button">
+          <svg class="hm-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
+          <span data-i18n="searchHere">Search here</span>
+        </button>
+        <button id="btnScanTop" class="hm-icon" type="button" data-i18n-aria="scanSign"><span class="ico" data-ico="qr"></span></button>
+        <button class="hm-icon hm-help" type="button" data-help data-i18n-aria="help"><span class="ico" data-ico="help"></span></button>
       </div>
-      <div class="bar-end">
-        <button class="pill help-btn" type="button" data-help><span class="ico" data-ico="help"></span><span data-i18n="help">Help</span></button>
-        <button id="btnLang" class="pill lang-btn" type="button" data-i18n-aria="switchLang"><span data-i18n="langBtn">عربي</span></button>
-      </div>
-    </header>
-    <main class="page-body">
-      <p id="bldName" class="eyebrow"></p>
-      <h1 class="home-title" data-i18n="homeTitle">Where do you want to go?</h1>
-      <button id="btnSearchOpen" class="search-btn" type="button"><span class="ico" data-ico="search"></span><span data-i18n="searchBtn">Search for a room or place</span></button>
-      <div class="holo" id="homeHolo">
-        <div id="homeMap" class="map-view holo-map" aria-hidden="true"></div>
-        <button id="btnHolo" class="holo-hit" type="button" data-i18n-aria="floorMap"></button>
-        <span id="holoFloor" class="holo-floor eyebrow" aria-hidden="true"></span>
-        <div class="holo-info">
-          <span class="eyebrow" id="fromEyebrow">You are here</span>
-          <strong id="fromName">—</strong>
+      <div id="homeChips" class="hm-chips" role="group" data-i18n-aria="nearestTitle"></div>
+    </div>
+
+    <div class="hm-right">
+      <button id="btnLayers" class="hm-fab sm" type="button" data-i18n-aria="mapLayers"><span class="ico" data-ico="layers"></span></button>
+      <div id="homeFloors" class="hm-floors" role="group" data-i18n-aria="floorLayer"></div>
+    </div>
+    <div class="hm-fabs">
+      <button id="btnLocateMe" class="hm-fab" type="button" data-i18n-aria="showMyLocation"><span class="ico" data-ico="gps"></span></button>
+      <button id="btnDirections" class="hm-fab primary" type="button" data-i18n-aria="directions"><span class="ico" data-ico="nav"></span></button>
+    </div>
+
+    <section id="homeSheet" class="hm-sheet" data-i18n-aria="homeTitle">
+      <button id="btnSheet" class="hm-handle" type="button" aria-expanded="false" aria-controls="homeSheetBody" data-i18n-aria="moreOptions"><span aria-hidden="true"></span></button>
+      <div id="homeSheetBody" class="hm-sheet-body">
+        <div class="hm-head">
+          <div class="hm-head-text">
+            <h1 id="bldName" class="hm-bld"></h1>
+            <p class="hm-here"><span class="eyebrow" id="fromEyebrow">You are here</span> <strong id="fromName">—</strong></p>
+          </div>
+          <button id="btnLang" class="pill lang-btn" type="button" data-i18n-aria="switchLang"><span data-i18n="langBtn">عربي</span></button>
         </div>
-        <button id="btnLocate" class="pill holo-locate" type="button" hidden><span class="ico" data-ico="gps"></span><span data-i18n="useLocation">Use my location</span></button>
-        <button id="btnFrom" class="pill holo-change" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="change">Change</span></button>
-      </div>
+        <div class="hm-here-actions">
+          <button id="btnFrom" class="pill" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="change">Change</span></button>
+          <button id="btnLocate" class="pill" type="button" hidden><span class="ico" data-ico="gps"></span><span data-i18n="useLocation">Use my location</span></button>
+        </div>
       <h2 class="sec-title" data-i18n="nearestTitle">Find the nearest</h2>
       <ul id="tiles" class="tiles"></ul>
       <section id="secSaved" class="sec" hidden><h2 class="sec-title" data-i18n="secSaved">Saved places</h2><ul id="savedList" class="rows"></ul></section>
@@ -70,8 +83,24 @@
         <li><button id="btnSettings" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="gear"></span></span><span class="r-main"><span class="r-name" data-i18n="settings">Settings</span><span class="r-sub" data-i18n="settingsSub">Language, text size, voice</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
       </ul>
       <p class="fine" data-i18n="aboutShort">DALIL helps you find your way inside. Building signs and staff always come first.</p>
-    </main>
+      </div>
+    </section>
+
+    <nav class="hm-tabs" data-i18n-aria="mainMenu">
+      <button class="hm-tab is-on" type="button" aria-current="page" id="tabExplore"><span class="ico" data-ico="pin"></span><span data-i18n="tabExplore">Explore</span></button>
+      <button class="hm-tab" type="button" id="tabSaved"><span class="ico" data-ico="bookmark"></span><span data-i18n="tabSaved">Saved</span></button>
+      <button class="hm-tab" type="button" id="tabScan"><span class="ico" data-ico="qr"></span><span data-i18n="tabScan">Scan</span></button>
+      <button class="hm-tab" type="button" id="tabSettings"><span class="ico" data-ico="gear"></span><span data-i18n="settings">Settings</span></button>
+    </nav>
   </section>
+
+  <dialog id="dlgLayers" class="sheet-dlg" aria-labelledby="dlgLayersTitle">
+    <div class="sheet-head"><h2 id="dlgLayersTitle" data-i18n="mapLayers">Map and layers</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div class="out-layers-body">
+      <fieldset><legend data-i18n="baseMap">Base map</legend><div id="homeBases" class="opt-list" role="radiogroup"></div><p id="homeKeyNote" class="muted small" hidden></p></fieldset>
+      <fieldset><legend data-i18n="layersTitle">Layers</legend><div id="homeChecks" class="opt-list"></div></fieldset>
+    </div>
+  </dialog>
 
   <!-- ================= SEARCH ================= -->
   <section id="pgSearch" class="page" data-page="search" hidden>
