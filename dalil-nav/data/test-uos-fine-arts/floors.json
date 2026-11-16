@@ -1,0 +1,251 @@
+{
+ "building": "UoS Fine Arts and Design (test)",
+ "buildingAr": "كلية الفنون الجميلة والتصميم - جامعة الشارقة (تجريبي)",
+ "floors": [
+  {
+   "dxf": "fine_arts_ground.dxf",
+   "floor": "Ground Floor",
+   "points": [
+    [
+     "Main Entrance",
+     "المدخل الرئيسي",
+     "entrance",
+     59.342,
+     3.641,
+     {
+      "node": true,
+      "face": 90
+     }
+    ],
+    [
+     "Entrance Hall",
+     "بهو المدخل",
+     "reception",
+     59.342,
+     12.913,
+     {
+      "node": true,
+      "face": 90
+     }
+    ],
+    [
+     "Gallery",
+     "المعرض",
+     "room",
+     59.342,
+     29.038,
+     {}
+    ],
+    [
+     "Central Lobby",
+     "البهو المركزي",
+     "room",
+     59.342,
+     45.163,
+     {}
+    ],
+    [
+     "Café",
+     "المقهى",
+     "cafe",
+     57.488,
+     58.062,
+     {}
+    ],
+    [
+     "Multipurpose Hall",
+     "القاعة متعددة الأغراض",
+     "room",
+     59.1,
+     76.606,
+     {}
+    ],
+    [
+     "Lift",
+     "المصعد",
+     "lift",
+     62.97,
+     66.125,
+     {}
+    ],
+    [
+     "Toilets (men)",
+     "دورات مياه الرجال",
+     "toilet",
+     53.295,
+     34.682,
+     {}
+    ],
+    [
+     "Toilets (women)",
+     "دورات مياه النساء",
+     "toilet",
+     65.228,
+     34.682,
+     {}
+    ],
+    [
+     "Fine Arts College",
+     "كلية الفنون الجميلة",
+     "room",
+     81.272,
+     32.666,
+     {}
+    ],
+    [
+     "Graphic Design College",
+     "كلية التصميم الجرافيكي",
+     "room",
+     81.272,
+     60.078,
+     {}
+    ],
+    [
+     "Interior Design College (north)",
+     "كلية التصميم الداخلي (الشمالية)",
+     "room",
+     37.493,
+     55.644,
+     {}
+    ],
+    [
+     "Interior Design College (south)",
+     "كلية التصميم الداخلي (الجنوبية)",
+     "room",
+     37.493,
+     32.666,
+     {}
+    ],
+    [
+     "Lecture Theatre",
+     "المسرح",
+     "room",
+     16.37,
+     42.744,
+     {}
+    ],
+    [
+     "Faculty Offices",
+     "مكاتب أعضاء هيئة التدريس",
+     "room",
+     14.918,
+     64.512,
+     {}
+    ],
+    [
+     "Dean's Office",
+     "مكتب العميد",
+     "room",
+     5.889,
+     66.125,
+     {}
+    ],
+    [
+     "Library",
+     "المكتبة",
+     "room",
+     8.307,
+     19.766,
+     {}
+    ],
+    [
+     "Computer Room",
+     "غرفة الحاسوب",
+     "room",
+     17.337,
+     29.038,
+     {}
+    ],
+    [
+     "Studio Hall",
+     "قاعة الاستوديو",
+     "room",
+     31.688,
+     79.024,
+     {}
+    ],
+    [
+     "Sculpture Studio",
+     "استوديو النحت",
+     "room",
+     88.931,
+     62.094,
+     {}
+    ],
+    [
+     "Metal Workshop",
+     "ورشة المعادن",
+     "room",
+     101.024,
+     63.706,
+     {}
+    ],
+    [
+     "Wood Workshop",
+     "ورشة الخشب",
+     "room",
+     97.961,
+     53.628,
+     {}
+    ],
+    [
+     "Printing Workshop",
+     "ورشة الطباعة",
+     "room",
+     101.024,
+     29.038,
+     {}
+    ],
+    [
+     "Print Making",
+     "استوديو الطباعة الفنية",
+     "room",
+     81.03,
+     21.782,
+     {}
+    ],
+    [
+     "Service Entrance (north-west)",
+     "مدخل الخدمة (الشمالي الغربي)",
+     "entrance",
+     23.626,
+     80.798,
+     {}
+    ],
+    [
+     "Service Entrance (north-east)",
+     "مدخل الخدمة (الشمالي الشرقي)",
+     "entrance",
+     94.897,
+     80.314,
+     {}
+    ],
+    [
+     "Service Entrance (south-west)",
+     "مدخل الخدمة (الجنوبي الغربي)",
+     "entrance",
+     23.626,
+     12.752,
+     {}
+    ],
+    [
+     "Service Entrance (south-east)",
+     "مدخل الخدمة (الجنوبي الشرقي)",
+     "entrance",
+     94.897,
+     12.752,
+     {}
+    ]
+   ],
+   "geo": {
+    "origin": [
+     55.48327603,
+     25.29661722
+    ],
+    "bearing": 124.0,
+    "scale": 1.0,
+    "source": "Google Maps place \"Arts College\" + the entrance porch and roof grid in Esri World Imagery; drawing north arrow agrees (124°); about ±5 m and ±2°, not surveyed"
+   }
+  }
+ ]
+}
