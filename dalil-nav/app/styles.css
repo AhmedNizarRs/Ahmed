@@ -861,3 +861,6 @@ html.contrast .hud-nothere { background: #000; color: #FFE600; border-color: #FF
 .arrive-ask-q { margin: 0; font-size: 1.375rem; font-weight: 700; color: #0D652D; }
 .arrive-ask .btn.primary { background: #188038; color: #fff; border-color: #188038; }
 html.contrast .arrive-ask { background: #000; border-color: #FFE600; } html.contrast .arrive-ask-q { color: #FFE600; }
+
+/* Add a missing place: the tip is the instruction */
+.map-tip.add-mode { background: #FFC700; color: #1F1F1F; font-weight: 700; border-color: #E0A800; }

@@ -822,6 +822,32 @@ test('"I am here": arriving before the app counted it all finishes the route and
   await ctx.close();
 });
 
+test('"Add a missing place" on Home: one tap on the room opens the form straight away', async () => {
+  const { ctx, page, errors } = await open(KENNEDY);
+  await page.click('#btnSheet').catch(() => {});
+  await page.click('#btnAddPlaceHome'); await pageIs(page, 'map');
+  assert.match(await page.textContent('#mapTip'), /Tap the room you want to add/);
+  await page.waitForTimeout(400);
+  const scr = await page.evaluate(async () => {
+    const { Router } = await import('./router.js');
+    const m = window.DALIL_APP.state.map, R = new Router(m), fm = window.DALIL_APP.views().floorMap;
+    const r = document.querySelector('#mainMap').getBoundingClientRect(), top = document.querySelector('#pgMap .bar').getBoundingClientRect().bottom + 20;
+    for (let y = top; y < r.bottom - 120; y += 17) for (let x = r.left + 30; x < r.right - 90; x += 17) {
+      const el = document.elementFromPoint(x, y); if (!el || !el.closest('#mainMap') || el.closest('.mk')) continue;
+      const p = fm.screenToPlan(x, y); if (R.walkable(p.x, p.y)) return { x, y };
+    }
+  });
+  await page.mouse.click(scr.x, scr.y);
+  await page.waitForSelector('#dlgPlace[open]');
+  assert.ok(await page.isHidden('#pinCard'), 'no extra card in between');
+  await page.fill('#placeEn', 'Quiet Room');
+  await page.click('#formPlace button[type=submit]');
+  assert.match(await page.textContent('#toast'), /Added Quiet Room/);
+  assert.match(await page.textContent('#mapTip'), /Tap a place for directions/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('near the end, standing still: "Are you at Prayer Room?" (Not yet asks again later; Yes arrives); the map glides between steps', async () => {
   const { ctx, page, errors } = await open('', { permissions: SENSORS });
   await search(page, 'prayer'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');

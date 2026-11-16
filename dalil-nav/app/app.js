@@ -312,7 +312,7 @@ function enterPage(name, prev) {
 function leavePage(name) {
   if (name === 'survey') svStop();
   if (name === 'where') stopWhere();
-  if (name === 'map') { pinPoint = null; $('#pinCard').hidden = true; }
+  if (name === 'map') { pinPoint = null; $('#pinCard').hidden = true; state.addMode = false; renderAddMode(); }
   if (name === 'outdoor') { outdoorSeq++; outdoorCtl?.destroy(); outdoorCtl = null; }
   if (name === 'nav' && nav.active) endNav({ silent: true });
   if (name === 'search') { $('#search').value = ''; state.filter = 'all'; }
@@ -773,11 +773,16 @@ function renderFloorMap() {
   $('#mapTip').hidden = !!pinPoint;
   requestAnimationFrame(() => mainMap.fit({ pts: planPts(vm), padTop: 110, padBot: pinPoint ? 200 : 90, padL: 12, padR: 12, maxK: 2.6 }, false));
 }
+function renderAddMode() {
+  const tip = $('#mapTip'); tip.classList.toggle('add-mode', !!state.addMode);
+  tip.textContent = t(state.addMode ? 'addModeTip' : 'mapTip');
+}
 function onMapTap({ x, y }) {
   const vm = state.viewMap, R = routerOf(vm);
   if (!R) return;
   if (!R.walkable(x, y)) { toast(t('pinOutside')); return; }
   pinPoint = { x: Math.round(x * 100) / 100, y: Math.round(y * 100) / 100, f: vm.floor.id };
+  if (state.addMode) { mainMap.setDest(pinPoint); openPlaceDlg(vm, pinPoint); return; }
   $('#pinText').textContent = t('pinAt', floorName(vm.floor));
   $('#pinCard').hidden = false; $('#mapTip').hidden = true;
   mainMap.setDest(pinPoint);
@@ -806,7 +811,7 @@ function savePlace() {
   const all = addedAll(), k = addedKey(e.m), list = all[k] || [], id = e.id || 'U' + Date.now().toString(36).toUpperCase();
   const rec = { id, nameEn: en || ar, nameAr: ar, category: $('#placeCat').value, ...(door ? { doors: door } : {}), x: e.x, y: e.y, t: Date.now() };
   all[k] = [...list.filter(a => a.id !== id), rec]; store.set('dalil.added', all);
-  $('#dlgPlace').close(); pinPoint = null; $('#pinCard').hidden = true; placeEdit = null;
+  $('#dlgPlace').close(); pinPoint = null; $('#pinCard').hidden = true; placeEdit = null; state.addMode = false; renderAddMode();
   refreshMapsAfterPlaces(e.m);
   const msg = t(e.id ? 'placeUpdated' : 'placeAdded', en || ar); toast(msg); announce(msg);
   if (pageNow === 'route') renderRoute();
@@ -1894,7 +1899,9 @@ function bind() {
   $('#btnSearchOpen').onclick = () => go('search');
   $('#btnFrom').onclick = () => go('where');
   $('#btnScanHome').onclick = () => { go('where'); startWhereScan(); };
-  $('#btnFloorMap').onclick = () => { state.viewMap = state.map; go('map'); };
+  $('#btnFloorMap').onclick = () => { state.addMode = false; state.viewMap = state.map; go('map'); };
+  // "Add a missing place": the floor map, where one tap on a room opens the Add a place form straight away.
+  $('#btnAddPlaceHome').onclick = () => { state.viewMap = state.map; go('map'); state.addMode = true; renderAddMode(); announce(t('addModeTip')); };
   $('#btnGettingHere').onclick = () => go('outdoor');
   document.addEventListener('click', e => {
     if (e.target.closest('[data-back]')) { back(); return; }
@@ -1952,7 +1959,7 @@ function bind() {
   $('#btnPinAdd').onclick = () => { if (pinPoint) { const m = state.viewMap?.floor.id === pinPoint.f ? state.viewMap : mapByFloor(pinPoint.f); if (m) openPlaceDlg(m, pinPoint); } };
   $('#formPlace').addEventListener('submit', e => { e.preventDefault(); savePlace(); });
   $('#btnPlaceDel').onclick = deletePlace;
-  $('#btnPlaceCancel').onclick = () => { $('#dlgPlace').close(); placeEdit = null; };
+  $('#btnPlaceCancel').onclick = () => { $('#dlgPlace').close(); placeEdit = null; if (state.addMode) { pinPoint = null; mainMap.setDest(null); } };
   $('#btnEditPlace').onclick = () => { const d = destRef(); if (d?.p.added) openPlaceDlg(d.m, d.p, d.p); };
   $('#btnExportPlaces').onclick = exportPlaces;
   $('#btnClosePin').onclick = () => { pinPoint = null; $('#pinCard').hidden = true; renderFloorMap(); };

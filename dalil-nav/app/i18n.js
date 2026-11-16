@@ -2,13 +2,14 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    addPlaceRow: 'Add a missing place', addPlaceRowSub: 'A room with no name? Tap it on the map and name it', addModeTip: 'Tap the room you want to add. Zoom in with two fingers to be exact.',
     askHere: n => `Are you at ${n}?`, askYes: 'Yes, I’m here', askNo: 'Not yet',
     set_clock: 'Clock directions', set_clockHint: 'Also say the turn as a clock, like “3 o’clock” for right. Some blind people find this easier.',
     pinAdd: 'Add a place here', placeAddTitle: 'Add a place', placeEditTitle: 'Edit place', placeNameEn: 'Name (English)', placeNameAr: 'Name (Arabic)', placeType: 'Type', placeDoor: 'Door or room number (optional)',
     placeNote: 'Saved on this phone. Export it from Settings to add it to the building’s official map.', placeSave: 'Save place', placeDelete: 'Remove this place', placeNeedName: 'Type a name in English or Arabic.',
     placeAdded: n => `Added ${n}. You can search for it now.`, placeUpdated: n => `Saved ${n}.`, placeRemoved: 'Place removed.', placeEditBtn: 'Edit this place (added by you)',
     exportPlaces: 'Export places you added', placesNone: 'You have not added any places yet.', placesYouAdded: n => `You added ${n} ${n === 1 ? 'place' : 'places'} on this phone. Export them for the official map.`,
-    placesHowTo: 'A room with no name? On the Floor map, tap it, then Add a place here.',
+    placesHowTo: 'A room with no name? On Home, tap Add a missing place, then tap the room.',
     imHere: 'I’m here', strideLearned: n => `Got it. Your step is about ${n} cm; the next route will count it.`,
     whereNowTitle: 'Where are you now?', whereNowHint: 'Indoors your phone’s location is only accurate to a few rooms. Tap the place you are at, so the directions start in the right spot.', whereNowNavHint: 'Tap the place you are at now. The route starts again from there.', notHere: 'Not here?', aboutM: n => `about ${n} m`,
     svHeight: 'Your height in cm (optional: sets your step length)', svQuick: 'Tap what is here', svAddNamed: 'Add a place with its name', svNearAsk: n => `Back at ${n}? Tap to straighten the map`,
@@ -140,13 +141,14 @@ export const STR = {
     cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    addPlaceRow: 'أضف مكانًا ناقصًا', addPlaceRowSub: 'غرفة بلا اسم؟ اضغط عليها في الخريطة وسمِّها', addModeTip: 'اضغط على الغرفة التي تريد إضافتها. كبّر بإصبعين لتكون دقيقًا.',
     askHere: n => `هل وصلت إلى ${n}؟`, askYes: 'نعم، وصلت', askNo: 'ليس بعد',
     set_clock: 'الاتجاهات بالساعة', set_clockHint: 'قل الاتجاه أيضًا مثل عقارب الساعة، مثل «الساعة 3» لليمين. يفضّله بعض المكفوفين.',
     pinAdd: 'أضف مكانًا هنا', placeAddTitle: 'إضافة مكان', placeEditTitle: 'تعديل المكان', placeNameEn: 'الاسم (بالإنجليزية)', placeNameAr: 'الاسم (بالعربية)', placeType: 'النوع', placeDoor: 'رقم الباب أو الغرفة (اختياري)',
     placeNote: 'محفوظ على هذا الهاتف. صدّره من الإعدادات لإضافته إلى الخريطة الرسمية للمبنى.', placeSave: 'حفظ المكان', placeDelete: 'إزالة هذا المكان', placeNeedName: 'اكتب اسمًا بالإنجليزية أو العربية.',
     placeAdded: n => `تمت إضافة ${n}. يمكنك البحث عنه الآن.`, placeUpdated: n => `تم حفظ ${n}.`, placeRemoved: 'تمت إزالة المكان.', placeEditBtn: 'تعديل هذا المكان (أضفته أنت)',
     exportPlaces: 'تصدير الأماكن التي أضفتها', placesNone: 'لم تُضف أي مكان بعد.', placesYouAdded: n => `أضفت ${n === 1 ? 'مكانًا واحدًا' : n === 2 ? 'مكانين' : n <= 10 ? `${n} أماكن` : `${n} مكانًا`} على هذا الهاتف. صدّرها للخريطة الرسمية.`,
-    placesHowTo: 'غرفة بلا اسم؟ في خريطة الطابق، اضغط عليها ثم «أضف مكانًا هنا».',
+    placesHowTo: 'غرفة بلا اسم؟ في الصفحة الرئيسية اضغط «أضف مكانًا ناقصًا» ثم اضغط على الغرفة.',
     imHere: 'وصلت', strideLearned: n => `تمام. طول خطوتك نحو ${n} سم، وسيُحتسب في المسار التالي.`,
     whereNowTitle: 'أين أنت الآن؟', whereNowHint: 'داخل المبنى، دقة موقع هاتفك في حدود عدة غرف فقط. اضغط على المكان الذي أنت فيه لتبدأ الاتجاهات من المكان الصحيح.', whereNowNavHint: 'اضغط على المكان الذي أنت فيه الآن، وسيبدأ المسار من جديد من هناك.', notHere: 'لست هنا؟', aboutM: n => `نحو ${n} م`,
     svHeight: 'طولك بالسنتيمتر (اختياري: يحدد طول خطوتك)', svQuick: 'اضغط على ما يوجد هنا', svAddNamed: 'أضف مكانًا باسمه', svNearAsk: n => `عدت إلى ${n}؟ اضغط لتصحيح الخريطة`,
