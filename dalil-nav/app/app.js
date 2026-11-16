@@ -9,7 +9,7 @@ import { Tracker, Follower, wrap180 } from './tracker.js';
 import { CameraGuide, QRScanner, openCamera, closeCamera, cameraError } from './camera.js';
 import { availableProviders, allProviders } from './providers.js';
 import { Locator, planFromGeo, locationGranted } from './locate.js';
-import { Survey } from './survey.js';
+import { Survey, strideFromHeight } from './survey.js';
 
 /* =========================================================================
    Settings, storage and the building's config (every read/write guarded: private mode may throw)
@@ -1516,24 +1516,25 @@ function setProvider(v) { settings.mapProvider = v; saveSettings(); $('#setProvi
 const SV_KEY = 'dalil.survey';
 const SV_CATS = ['entrance', 'room', 'lab', 'toilet', 'toilet_acc', 'lift', 'stairs', 'prayer', 'cafe', 'reception', 'exit'];
 const sv = { s: null, cat: 'entrance', pick: null, maps: null, wake: null, saveN: 0, view: null };
-const svLoad = () => { const d = store.get(SV_KEY, null); return d?.floors?.length ? Object.assign(new Survey({ building: d.building }), d) : null; };
-const svSave = () => { if (sv.s) store.set(SV_KEY, sv.s); };
+const svLoad = () => { const d = store.get(SV_KEY, null); return d?.v === 2 && d.floors?.length ? Object.assign(new Survey({ building: d.building }), d, { _cache: null }) : null; };   // v1 walks can't be continued
+const svSave = () => { if (sv.s) { const { _cache, ...rest } = sv.s; store.set(SV_KEY, rest); } };
+const SV_QUICK = ['room', 'toilet', 'lift', 'stairs', 'entrance'];
 function renderSurvey() {
-  const live = !!sv.s && !sv.maps;
-  $('#svSetup').hidden = live || !!sv.maps; $('#svLive').hidden = !live; $('#svDone').hidden = !sv.maps;
+  const live = !!sv.s && !sv.maps && !sv.review;
+  $('#svSetup').hidden = live || !!sv.maps || !!sv.review; $('#svLive').hidden = !live; $('#svDone').hidden = !sv.maps; $('#svReview').hidden = !sv.review || !!sv.maps;
   if (!live && !sv.maps) {
     $('#svFloor').value ||= t('svFloorDefault');
     const old = svLoad(); $('#btnSvResume').hidden = !old;
     if (old) $('#btnSvResume').lastElementChild.textContent = `${t('svResume')}: ${old.building}`;
   }
-  if (live) svDraw();
+  if (live) { svDraw(); $('#svQuick').innerHTML = SV_QUICK.map(c => `<button type="button" class="sv-qbtn" data-svq="${c}"><span class="ico">${catIco(c)}</span><span>${esc(catName(c))}</span></button>`).join(''); }
 }
 async function svStart(resume = false) {
   let s = null;
   if (resume) s = svLoad();
   else {
     const name = $('#svBuilding').value.trim(); if (!name) { toast(t('svNeedName')); $('#svBuilding').focus(); return; }
-    s = new Survey({ building: name, stride: STRIDE[settings.pace] });
+    const cm = +$('#svHeight').value; s = new Survey({ building: name, stride: cm >= 120 && cm <= 220 ? strideFromHeight(cm) : STRIDE[settings.pace] });
   }
   if (!s) return;
   const sensors = tracker.start();          // inside the tap: the iPhone asks for motion here
@@ -1553,7 +1554,7 @@ async function svStart(resume = false) {
 }
 function svStep() {
   const s = sv.s; if (!s || s.paused || pageNow !== 'survey') return;
-  s.step(tracker.heading);
+  if (!s.step(tracker.heading, { turning: tracker.rate > 110 })) return;   // turning on the spot is not a step forward
   // No GPS at the door yet? Take the first good fix in the first few steps, moved back to where you started.
   if (!s.origin && s.steps < 12) {
     const f = locator.fresh(8000);
@@ -1561,6 +1562,7 @@ function svStep() {
       s.origin = { lng: f.lng - s.pos.x / mlng, lat: f.lat - s.pos.y / mlat, acc: f.acc }; }
   }
   if (++sv.saveN % 10 === 0) svSave();
+  svNearCheck();
   svDraw(); if (s.steps % 5 === 0 || s.floor.places.length) $('#svStats').textContent = t('svStats', Math.round(s.dist), svPlaces().length);
 }
 function svStop() {
@@ -1576,15 +1578,27 @@ function svDraw() {
   const s = sv.s, el = $('#svMap'); if (!s?.floor) return;
   $('#svFloorNow').textContent = s.floor.name;
   $('#svStats').textContent = t('svStats', Math.round(s.dist), svPlaces().length);
-  const lines = s.trail(), pts = lines.flat().concat(s.floor.places.map(p => [p.x, p.y]), [[s.pos.x, s.pos.y]]);
+  const here = s.pos, pl = s.floor.places.map(p => ({ ...p, ...s.placeXY(p) })), lines = s.trail(), pts = lines.flat().concat(pl.map(p => [p.x, p.y]), [[here.x, here.y]]);
   let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
   for (const [x, y] of pts) { a = Math.min(a, x); b = Math.min(b, y); c = Math.max(c, x); d = Math.max(d, y); }
   const pad = 4, span = Math.max(16, c - a + 2 * pad, d - b + 2 * pad), cx = (a + c) / 2, cy = (b + d) / 2;
   el.setAttribute('viewBox', `${cx - span / 2} ${-cy - span / 2} ${span} ${span}`);
   const P = ([x, y]) => `${x.toFixed(2)},${(-y).toFixed(2)}`, w = (span / 60).toFixed(2);
   el.innerHTML = lines.map(L => `<polyline class="sv-trail" points="${L.map(P).join(' ')}" stroke-width="${(1.8).toFixed(2)}"/><polyline class="sv-line" points="${L.map(P).join(' ')}" stroke-width="${w}"/>`).join('')
-    + s.floor.places.map(p => `<g class="sv-pl sv-${esc(p.category)}"><circle cx="${p.x.toFixed(2)}" cy="${(-p.y).toFixed(2)}" r="${(span / 45).toFixed(2)}"/><text x="${p.x.toFixed(2)}" y="${(-p.y - span / 28).toFixed(2)}" font-size="${(span / 26).toFixed(2)}">${esc(p.nameEn)}</text></g>`).join('')
-    + `<g class="sv-you" transform="translate(${P([s.pos.x, s.pos.y])}) rotate(${tracker.heading ?? 0})"><circle r="${(span / 30).toFixed(2)}"/><path d="M0 ${(-span / 14).toFixed(2)} L${(span / 40).toFixed(2)} ${(-span / 28).toFixed(2)} L${(-span / 40).toFixed(2)} ${(-span / 28).toFixed(2)}z"/></g>`;
+    + pl.map(p => `<g class="sv-pl sv-${esc(p.category)}"><circle cx="${p.x.toFixed(2)}" cy="${(-p.y).toFixed(2)}" r="${(span / 45).toFixed(2)}"/><text x="${p.x.toFixed(2)}" y="${(-p.y - span / 28).toFixed(2)}" font-size="${(span / 26).toFixed(2)}">${esc(p.nameEn)}</text></g>`).join('')
+    + `<g class="sv-you" transform="translate(${P([here.x, here.y])}) rotate(${tracker.heading ?? 0})"><circle r="${(span / 30).toFixed(2)}"/><path d="M0 ${(-span / 14).toFixed(2)} L${(span / 40).toFixed(2)} ${(-span / 28).toFixed(2)} L${(-span / 40).toFixed(2)} ${(-span / 28).toFixed(2)}z"/></g>`;
+}
+function svQuickAdd(cat) {
+  const s = sv.s; if (!s) return;
+  const n = svPlaces().filter(p => p.category === cat).length + 1, label = STR.en.cats[cat] || cat;
+  const p = s.addPlace({ nameEn: `${label} ${n}`, nameAr: `${STR.ar.cats[cat] || ''} ${n}`.trim(), category: cat });
+  svSave(); svDraw(); buzz(30);
+  const msg = t('svAdded', settings.lang === 'ar' ? p.nameAr : p.nameEn); svStatus(msg); announce(msg);
+}
+function svNearCheck() {
+  const p = sv.s.nearbyPlace(), b = $('#btnSvNear');
+  if (!p) { b.hidden = true; sv.nearId = null; return; }
+  if (sv.nearId !== p.id) { sv.nearId = p.id; $('#svNearText').textContent = t('svNearAsk', p.nameEn); b.hidden = false; buzz([20, 60, 20]); announce(t('svNearAsk', p.nameEn)); }
 }
 function svOpenPlace() {
   sv.cat = sv.s.floor.places.length ? 'room' : 'entrance';
@@ -1622,6 +1636,36 @@ function svPicked(id) {
 }
 function svFinish() {
   const s = sv.s; if (!svPlaces().length) { toast(t('svNoPlaces')); return; }
+  sv.review = true; svSave(); renderSurvey(); svRenderReview(); announce(t('svReviewTitle'));
+  $('#pgSurvey .page-body').scrollTop = 0;
+}
+// Review: how good each floor is, the names, and (with GPS) a line-up with the satellite photo.
+function svRenderReview() {
+  const s = sv.s, pct = d => `${(d * 100).toFixed(1)} %`;
+  $('#svQuality').innerHTML = s.floors.map((fl, i) => {
+    const q = s.quality(i), msg = q.rating === 'unchecked' ? t('svQ_unchecked') : t('svQ_' + q.rating, pct(q.drift));
+    return `<div class="svq svq-${q.rating}"><strong>${esc(t('svQLine', fl.name, Math.round(q.dist), q.loops))}</strong><span>${esc(msg)}</span></div>`;
+  }).join('');
+  $('#svNameList').innerHTML = s.floors.flatMap((fl, fi) => fl.places.map((p, pi) => `<li><span class="sv-nm-ico">${catIco(p.category)}</span><input type="text" value="${esc(p.nameEn)}" data-fi="${fi}" data-pi="${pi}" aria-label="${esc(catName(p.category))}"><small>${esc(fl.name)}</small></li>`)).join('');
+  $('#svAlignSec').hidden = !s.origin;
+  if (s.origin) svAlignMap();
+}
+async function svAlignMap() {
+  const m = sv.s.toMaps()[0];
+  if (sv.alignCtl) { sv.alignCtl.setFloor(m); return; }
+  try {
+    const { createOutdoorMap } = await import('./outdoor.js');
+    sv.alignCtl = await createOutdoorMap($('#svAlignMap'), { map: m, lang: settings.lang, attribution: t('attrPlan'), providers: { choice: cfg.maps?.homeBase || 'esri-imagery-labels', cfg: cfg.maps }, padding: 30 });
+  } catch { $('#svAlignSec').hidden = true; }
+}
+function svAlignBy(k, v) {
+  const a = sv.s.align; if (k === 'scale') a.scale = Math.max(0.8, Math.min(1.2, (a.scale || 1) + v)); else a[k] = (a[k] || 0) + v;
+  svSave(); svAlignMap();
+}
+function svSaveMaps() {
+  const s = sv.s;
+  for (const inp of $$('#svNameList input')) { const p = s.floors[+inp.dataset.fi].places[+inp.dataset.pi], v = inp.value.trim(); if (v && v !== p.nameEn) { p.nameEn = v; p.nameAr = ''; } }
+  try { sv.alignCtl?.destroy(); } catch { } sv.alignCtl = null; sv.review = false;
   const maps = s.toMaps();
   const user = store.get('dalil.userMaps', []).filter(o => o.building.id !== maps[0].building.id);
   for (const m of maps) { state.maps = state.maps.filter(o => !(o.building.id === m.building.id && o.floor.id === m.floor.id)); addMap(m); user.push(m); }
@@ -1652,6 +1696,11 @@ function bindSurvey() {
   $('#btnSvStart').onclick = () => svStart(false);
   $('#btnSvResume').onclick = () => svStart(true);
   $('#btnSvPlace').onclick = svOpenPlace;
+  $('#svQuick').addEventListener('click', e => { const b = e.target.closest('[data-svq]'); if (b) svQuickAdd(b.dataset.svq); });
+  $('#btnSvNear').onclick = () => { if (!sv.nearId) return; const err = sv.s.backAt(sv.nearId); $('#btnSvNear').hidden = true; sv.nearId = null; svSave(); svDraw(); const msg = t('svFixed', fmtM(err)); svStatus(msg); announce(msg); buzz(40); };
+  $('#btnSvSaveMap').onclick = svSaveMaps;
+  $('#btnSvKeepWalking').onclick = () => { sv.review = false; try { sv.alignCtl?.destroy(); } catch { } sv.alignCtl = null; renderSurvey(); };
+  $('#svReview').addEventListener('click', e => { const b = e.target.closest('[data-al]'); if (!b) return; const [k, v] = b.dataset.al.split(':'); svAlignBy(k, +v); });
   $('#btnSvSave').onclick = svSavePlace;
   $('#svName').addEventListener('keydown', e => { if (e.key === 'Enter') svSavePlace(); });
   $('#btnSvBack').onclick = () => svOpenPick('back');

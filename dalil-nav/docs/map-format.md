@@ -68,3 +68,4 @@ Visitor-friendly extras (optional, v2)
 - `points[].doors`: the door numbers printed next to the place on the drawing, space-separated (e.g. `"024 024A"`). The app searches them and shows the first as "Door 024".
 - Category `lab` (labs, shown as "Lab" / "مختبر" with a flask icon); the Mapper's "Find places" picks it from "lab", "laboratory", مختبر, معمل.
 - First-turn wording: "Turn left (9 o'clock)", i.e. plain words with the clock direction in brackets (was "Turn to your 9 o'clock"). Older files with stored routes keep their wording.
+- Survey v2 maps add `source.version: 2` and `source.quality: { rating: "good"|"ok"|"rough"|"unchecked", drift (fraction), loops, distance_m }`. A manual satellite line-up shows in `geo.bearing`/`geo.scale` and in `geo.source`.

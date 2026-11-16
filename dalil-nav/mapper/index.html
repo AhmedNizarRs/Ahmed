@@ -78,10 +78,12 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
       <button class="pri" id="btnDxf">Open DXF</button>
       <button id="btnImg">Image / PDF</button>
       <button id="btnSample">Sample hospital</button>
+      <button id="btnScan" title="A LiDAR scan from an iPhone/iPad Pro: OBJ or PLY">3D scan</button>
     </div>
     <input type="file" id="fDxf" accept=".dxf" class="hidden">
+    <input type="file" id="fScan" accept=".obj,.ply" class="hidden">
     <input type="file" id="fImg" accept="image/*,.pdf" class="hidden">
-    <p class="hint">AutoCAD: <b>Save As → DXF</b> (any version). Scanned plans or PDFs: open as image, calibrate, then trace walls.</p>
+    <p class="hint">AutoCAD: <b>Save As → DXF</b> (any version). Scanned plans or PDFs: open as image, calibrate, then trace walls. <b>No plan?</b> Scan the floor with a LiDAR iPhone/iPad (e.g. Scaniverse or 3D Scanner App), export <b>OBJ</b> or <b>PLY</b>, then <b>3D scan</b>: the walls are cut at 1.3 m and 1.7 m above the floor.</p>
     <div class="row"><label>Building</label><input type="text" id="inBuilding" placeholder="e.g. University Block A"></div>
     <div class="row"><label>Floor</label><input type="text" id="inFloor" value="Ground"></div>
     <div class="row" id="unitRow"><label>Drawing units</label>
@@ -361,16 +363,101 @@ function loadDXFText(text, name){
   let dx; try { dx=parseDXF(text); } catch(err){ setStatus('planStatus','Could not read this DXF: '+err.message,'err'); return; }
   const fl=flattenDXF(dx);
   if (!fl.polys.length){ setStatus('planStatus','No drawable geometry found. If this is a binary DXF, re-save as ASCII DXF.','err'); return; }
+  loadFlat(dx, fl, name);
+}
+function loadFlat(dx, fl, name, note=''){
   S.geoSuggested=false; S.rot=0; S.rotApplied=0; $('inRot').value=0; S.mode='dxf'; S.rawPolys=fl.polys; S.rawTexts=fl.texts; S.rawInserts=fl.inserts; S.fileUnits=INSUNITS[dx.units]||null; S.guess=S.fileUnits?null:guessUnits(); S.guessU=S.guess?S.guess.u:null;
   S.image=null; S.traced=[]; S.openings=[]; S.closures=[]; S.geo=null; S.geoCtl=null; S.points=[]; S.selId=null; S.route=null; S.nextId=1;
   S.layers={};
   const names=Object.keys(fl.used).sort();
   for (const nm of names){ const L=dx.layers[nm]||{color:7,off:false}; S.layers[nm]={color:L.color, count:fl.used[nm], role: L.off?'hidden':suggestRole(nm)}; }
   if (names.every(n=>suggestRole(n)==='context'||suggestRole(n)==='hidden')) geoSuggest(fl);
-  if (!$('inBuilding').value) $('inBuilding').value=(name||'').replace(/\.dxf$/i,'');
+  if (!$('inBuilding').value) $('inBuilding').value=(name||'').replace(/\.(dxf|obj|ply)$/i,'');
   applyUnits(true);
-  setStatus('planStatus', `${name||'DXF'}: ${fl.polys.length.toLocaleString()} shapes, ${names.length} layers.${S.geoSuggested?' Layer names are not descriptive, so roles were guessed from geometry — check step 2.':''} Units: ${S.fileUnits?S.fileUnits+' (from file)':`not set in file → guessed ${S.guessU} (${S.guess.why}). Change below if wrong`}.${sizeNote()}`, 'ok');
+  setStatus('planStatus', `${note}${name||'DXF'}: ${fl.polys.length.toLocaleString()} shapes, ${names.length} layers.${S.geoSuggested?' Layer names are not descriptive, so roles were guessed from geometry — check step 2.':''} Units: ${S.fileUnits?S.fileUnits+' (from file)':`not set in file → guessed ${S.guessU} (${S.guess.why}). Change below if wrong`}.${sizeNote()}`, 'ok');
   uiMode(); renderLayers(); refreshPoints(); fit(); markDirty();
+}
+
+// ---------- 3D scan import: a LiDAR scan (iPhone/iPad Pro) instead of a floor plan ----------
+// A scan is a mesh (OBJ, or PLY with faces) or a point cloud (PLY). We find the floor (the lowest busy height),
+// cut the scan with two horizontal planes at 1.3 m and 1.7 m above it — above desks and counters, below door
+// heads, so doorways stay open — and turn the cut into wall lines (metres). Then it is a normal plan: layer roles,
+// walkable grid, places, world position. Glass walls are invisible to LiDAR: draw them with the Wall tool.
+function parseOBJ(text){
+  const V=[], F=[]; let i=0;
+  for (const line of text.split('\n')){
+    const c=line.charCodeAt(0);
+    if (c===118 && line.charCodeAt(1)===32){ const a=line.trim().split(/\s+/); V.push(+a[1],+a[2],+a[3]); }
+    else if (c===102 && line.charCodeAt(1)===32){ const a=line.trim().split(/\s+/).slice(1).map(t=>{ const k=parseInt(t,10); return k<0? V.length/3+k : k-1; });
+      for (let j=1;j<a.length-1;j++) F.push(a[0],a[j],a[j+1]); }
+    if (++i%200000===0 && V.length>3e7) break;
+  }
+  return {V:new Float64Array(V), F:F.length?new Uint32Array(F):null};
+}
+function parsePLY(buf){
+  const u8=new Uint8Array(buf); let end=0; const hdrMax=Math.min(u8.length,65536);
+  const head=new TextDecoder('latin1').decode(u8.subarray(0,hdrMax)); const hi=head.indexOf('end_header'); if (hi<0) throw new Error('not a PLY file');
+  end=head.indexOf('\n',hi)+1; const lines=head.slice(0,hi).split(/\r?\n/);
+  const fmt=(lines.find(l=>l.startsWith('format'))||'').split(/\s+/)[1];
+  const els=[]; for (const l of lines){ const a=l.trim().split(/\s+/); if (a[0]==='element') els.push({name:a[1], n:+a[2], props:[]}); else if (a[0]==='property' && els.length) els[els.length-1].props.push(a[1]==='list'?{list:true, ct:a[2], it:a[3], name:a[4]}:{t:a[1], name:a[2]}); }
+  const SZ={char:1,uchar:1,int8:1,uint8:1,short:2,ushort:2,int16:2,uint16:2,int:4,uint:4,int32:4,uint32:4,float:4,float32:4,double:8,float64:8};
+  const V=[], F=[];
+  if (fmt==='ascii'){
+    const rows=new TextDecoder('latin1').decode(u8.subarray(end)).split(/\r?\n/); let r=0;
+    for (const el of els){ const ix=el.props.findIndex(p=>p.name==='x'), iy=el.props.findIndex(p=>p.name==='y'), iz=el.props.findIndex(p=>p.name==='z');
+      for (let k=0;k<el.n;k++){ const a=(rows[r++]||'').trim().split(/\s+/).map(Number);
+        if (el.name==='vertex') V.push(a[ix],a[iy],a[iz]); else if (el.name==='face'){ const n=a[0]; for (let j=2;j<n;j++) F.push(a[1],a[j],a[j+1]); } } }
+  } else {
+    const le=fmt==='binary_little_endian', dv=new DataView(buf); let o=end;
+    const rd=(t)=>{ let v; switch(t){ case 'char': case 'int8': v=dv.getInt8(o); break; case 'uchar': case 'uint8': v=dv.getUint8(o); break; case 'short': case 'int16': v=dv.getInt16(o,le); break; case 'ushort': case 'uint16': v=dv.getUint16(o,le); break;
+      case 'int': case 'int32': v=dv.getInt32(o,le); break; case 'uint': case 'uint32': v=dv.getUint32(o,le); break; case 'float': case 'float32': v=dv.getFloat32(o,le); break; default: v=dv.getFloat64(o,le); } o+=SZ[t]; return v; };
+    for (const el of els) for (let k=0;k<el.n;k++){
+      let x=0,y=0,z=0;
+      for (const p of el.props){ if (p.list){ const n=rd(p.ct), ids=[]; for (let j=0;j<n;j++) ids.push(rd(p.it)); if (el.name==='face') for (let j=1;j<n-1;j++) F.push(ids[0],ids[j],ids[j+1]); }
+        else { const v=rd(p.t); if (p.name==='x') x=v; else if (p.name==='y') y=v; else if (p.name==='z') z=v; } }
+      if (el.name==='vertex') V.push(x,y,z);
+    }
+  }
+  return {V:new Float64Array(V), F:F.length?new Uint32Array(F):null};
+}
+/** Scan → wall polylines in plan metres. opts.up: 'auto' | 'y' | 'z'; opts.cuts: heights above the floor (m). */
+function scanToPolys(scan, opts={}){
+  const {V,F}=scan, n=V.length/3; if (n<3) throw new Error('the scan has no points');
+  const ext=[0,1,2].map(a=>{ let lo=Infinity, hi=-Infinity; for (let i=a;i<V.length;i+=3){ const v=V[i]; if (v<lo) lo=v; if (v>hi) hi=v; } return [lo,hi,hi-lo]; });
+  // Up axis: iPhone scanning apps export Y-up; a single floor is also the thinnest direction. 'auto' takes Y unless Z is clearly thinner.
+  let up=opts.up&&opts.up!=='auto' ? (opts.up==='z'?2:1) : (ext[2][2] < ext[1][2]*0.6 ? 2 : 1);
+  const hA=0, hB=up===1?2:1, sgnB=up===1?-1:1;          // plan x = X, plan y = −Z (Y-up) or Y (Z-up)
+  // Floor: the busiest 5 cm band in the lower 40 % of the height range (the floor has the most surface).
+  const [lo,,span]=ext[up], bins=new Float64Array(Math.max(1,Math.ceil(span/0.05)+1));
+  for (let i=up;i<V.length;i+=3) bins[Math.floor((V[i]-lo)/0.05)]++;
+  let fb=0; for (let b=0;b<bins.length*0.4;b++) if (bins[b]>bins[fb]) fb=b;
+  const floor=lo+(fb+0.5)*0.05, cuts=(opts.cuts||[1.3,1.7]).map(h=>floor+h);
+  const polys=[], P=i=>[V[3*i+hA], sgnB*V[3*i+hB]];
+  if (F){
+    for (const c of cuts) for (let t=0;t<F.length;t+=3){
+      const ids=[F[t],F[t+1],F[t+2]], h=ids.map(i=>V[3*i+up]), pts=[];
+      for (let e=0;e<3;e++){ const a=e, b=(e+1)%3; if ((h[a]-c)*(h[b]-c)<0){ const f=(c-h[a])/(h[b]-h[a]), A=P(ids[a]), B=P(ids[b]); pts.push([A[0]+(B[0]-A[0])*f, A[1]+(B[1]-A[1])*f]); } }
+      if (pts.length===2 && Math.hypot(pts[0][0]-pts[1][0], pts[0][1]-pts[1][1])>0.005) polys.push({layer:'SCAN-WALLS', closed:false, pts});
+    }
+  } else {
+    // A point cloud: 5 cm cells holding enough points in the wall band become wall; runs of cells become lines.
+    const cell=0.05, ax=ext[hA], bx=ext[hB], W=Math.ceil(ax[2]/cell)+1, H=Math.ceil(bx[2]/cell)+1, cnt=new Uint16Array(W*H);
+    for (let i=0;i<n;i++){ const z=V[3*i+up]; if (z<cuts[0]-0.15 || z>cuts[cuts.length-1]+0.15) continue; const gx=Math.floor((V[3*i+hA]-ax[0])/cell), gy=Math.floor((V[3*i+hB]-bx[0])/cell); if (cnt[gy*W+gx]<65535) cnt[gy*W+gx]++; }
+    let tot=0, occ=0; for (const c of cnt) if (c){ tot+=c; occ++; } const need=Math.max(2, Math.round(0.3*tot/Math.max(1,occ)));
+    const on=(x,y)=>x>=0&&y>=0&&x<W&&y<H&&cnt[y*W+x]>=need, toP=(gx,gy)=>[ax[0]+(gx+.5)*cell, sgnB*(bx[0]+(gy+.5)*cell)];
+    for (let y=0;y<H;y++){ let x=0; while (x<W){ if (!on(x,y)){ x++; continue; } let e=x; while (on(e+1,y)) e++; if (e-x>=2) polys.push({layer:'SCAN-WALLS', closed:false, pts:[toP(x,y),toP(e,y)]}); x=e+1; } }
+    for (let x=0;x<W;x++){ let y=0; while (y<H){ if (!on(x,y)){ y++; continue; } let e=y; while (on(x,e+1)) e++; if (e-y>=2) polys.push({layer:'SCAN-WALLS', closed:false, pts:[toP(x,y),toP(x,e)]}); y=e+1; } }
+  }
+  if (!polys.length) throw new Error('no walls found at 1.3–1.7 m above the floor');
+  return {polys, floor, up:up===1?'Y':'Z', height:span};
+}
+function loadScan(buf, name){
+  let scan; const isPly=/\.ply$/i.test(name) || new TextDecoder('latin1').decode(new Uint8Array(buf.slice(0,3)))==='ply';
+  try { scan=isPly?parsePLY(buf):parseOBJ(new TextDecoder('utf-8').decode(buf)); } catch(err){ setStatus('planStatus','Could not read this scan: '+err.message,'err'); return; }
+  let r; try { r=scanToPolys(scan,{up:$('selScanUp')?.value||'auto'}); } catch(err){ setStatus('planStatus','Scan: '+err.message+'. Try the other up axis, or a scan that includes the walls.','err'); return; }
+  loadFlat({units:6, layers:{'SCAN-WALLS':{color:7,off:false}}}, {polys:r.polys, texts:[], inserts:[], used:{'SCAN-WALLS':r.polys.length}}, name,
+    `3D scan (${(scan.F?scan.F.length/3:scan.V.length/3).toLocaleString()} ${scan.F?'triangles':'points'}, ${r.up} up, floor found, walls cut at 1.3 and 1.7 m). `);
+  S.layers['SCAN-WALLS'].role='wall'; renderLayers(); markDirty();
 }
 function guessUnits(){
   const txt=S.rawTexts.map(t=>t.s).join(' | ');
@@ -821,6 +908,8 @@ window.addEventListener('keydown',e=>{
 
 /* ---------------- ACTIONS ---------------- */
 $('btnDxf').onclick=()=>$('fDxf').click();
+$('btnScan').onclick=()=>$('fScan').click();
+$('fScan').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; setStatus('planStatus','Reading the scan '+f.name+'…'); const buf=await f.arrayBuffer(); setTimeout(()=>loadScan(buf,f.name),10); e.target.value=''; };
 $('btnImg').onclick=()=>$('fImg').click();
 $('fDxf').onchange=async e=>{ const f=e.target.files[0]; if(!f) return; setStatus('planStatus','Reading '+f.name+'…'); const buf=await f.arrayBuffer(); const head=new Uint8Array(buf.slice(0,22)); const sig=String.fromCharCode(...head);
   if (sig.startsWith('AutoCAD Binary DXF')){ setStatus('planStatus','This is a binary DXF. In AutoCAD use Save As → DXF and keep the default ASCII format.','err'); return; }

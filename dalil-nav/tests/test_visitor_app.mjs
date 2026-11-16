@@ -738,6 +738,7 @@ test('a lost visitor on campus: Arabic search finds the right places; opening th
 
 test('no floor plan: walk the building to map it (survey); places, back-at-a-place, a lift to a new floor; then directions work', async () => {
   const { ctx, page, errors } = await open('', { permissions: [...SENSORS, 'geolocation'], geolocation: { latitude: 25.2900, longitude: 55.4100, accuracy: 6 } });
+  for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 }));   // the line-up map: no real tiles in tests
   await page.click('#btnSheet').catch(() => {});
   await page.evaluate(() => document.querySelector('#btnSurveyHome').click());
   await pageIs(page, 'survey');
@@ -772,8 +773,17 @@ test('no floor plan: walk the building to map it (survey); places, back-at-a-pla
   // Saved as it goes: a reload would offer to continue
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.survey')).floors.length), 2);
   await page.click('#btnSvFinish');
+  // Review before saving: quality per floor, names to edit, the line-up map (GPS at the door)
+  await page.waitForSelector('#svReview:not([hidden])');
+  assert.match(await page.textContent('#svQuality'), /Ground floor: \d+ m walked · 1 loops.*(Good|OK): the loops were off by/s);
+  assert.equal(await page.$$eval('#svNameList input', i => i.length), 5);
+  assert.ok(await page.isVisible('#svAlignSec'));
+  await page.click('[data-al="rot:1"]');
+  assert.equal(await page.evaluate(() => window.DALIL_APP.survey().s.align.rot), 1);
+  await page.click('#btnSvSaveMap');
   await page.waitForSelector('#svDone:not([hidden])');
   assert.match(await page.textContent('#svDoneText'), /Test Hall: 2 floors, 4 places/);
+  assert.equal(await page.evaluate(() => window.DALIL_APP.state.maps.find(x => x.building.id === 'test-hall').geo.bearing), 1, 'the line-up is kept');
   const m = await page.evaluate(() => window.DALIL_APP.state.maps.filter(x => x.building.id === 'test-hall').map(x => ({ f: x.floor.name, n: x.points.length, geo: !!x.geo, src: x.source.type, corr: x.plan.corridors.length })));
   assert.deepEqual(m.map(x => [x.f, x.n, x.geo, x.src]), [['Ground floor', 3, true, 'survey'], ['First floor', 2, true, 'survey']]);
   assert.equal(await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.userMaps')).filter(x => x.building.id === 'test-hall').length), 2, 'kept on the phone');
@@ -789,6 +799,39 @@ test('no floor plan: walk the building to map it (survey); places, back-at-a-pla
   const st = (await steps(page)).join(' | ');
   assert.match(st, /Take the lift up to First floor/, st);
   assert.match(st, /Room 201/, st);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('survey v2: a drifting compass still gives a square building; one-tap places; the app asks "back at?" and the loop closes (Good)', async () => {
+  const { ctx, page, errors } = await open('', { permissions: [...SENSORS, 'geolocation'], geolocation: { latitude: 25.2900, longitude: 55.4100, accuracy: 6 } });
+  await page.evaluate(() => window.DALIL_APP.go('survey'));
+  await page.fill('#svBuilding', 'Drift Hall'); await page.fill('#svHeight', '175');
+  await page.evaluate(() => { window.__sv = setInterval(() => { window.dispatchEvent(new DeviceOrientationEvent('deviceorientationabsolute', { alpha: 0, beta: 60, gamma: 0, absolute: true })); window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.81, z: 0.3 }, interval: 20 })); }, 20); });
+  await page.click('#btnSvStart'); await page.waitForSelector('#svLive:not([hidden])'); await page.evaluate(() => clearInterval(window.__sv));
+  assert.ok(Math.abs(await page.evaluate(() => window.DALIL_APP.survey().s.stride) - 0.726) < 0.01, 'step length from height');
+  // Walk a 30 m × 15 m rectangle; the compass is off by up to 14° and wobbles (steel, wiring)
+  const stroll = (H, seconds) => page.evaluate(({ H, seconds }) => {
+    const tr = window.DALIL_APP.tracker, t0 = (window.__simT ||= performance.now() + 5000), s = window.DALIL_APP.survey().s;
+    let k = 0; for (; k < seconds * 50; k++) { const t = t0 + k * 20, bias = Math.min(14, s.steps / 6) + 4 * Math.sin(s.steps * 1.3), h = (H + bias + 360) % 360;
+      tr.orient({ alpha: (360 - h) % 360, beta: 60, gamma: 0, absolute: true }, true, t); tr.motion({ accelerationIncludingGravity: { x: 0, y: 9.81 + 2.6 * Math.sin(2 * Math.PI * 1.8 * t / 1000), z: 0.3 } }, t); }
+    window.__simT = t0 + k * 20; return s.pos;
+  }, { H, seconds });
+  await page.click('[data-svq="entrance"]');
+  assert.match(await page.textContent('#svStatus'), /Added: Entrance 1/);
+  await stroll(0, 23); await page.click('[data-svq="toilet"]');
+  await stroll(90, 11.5); await stroll(180, 23); await stroll(270, 10.5);
+  // Close to the entrance again: the app asks
+  await page.waitForSelector('#btnSvNear:not([hidden])');
+  assert.match(await page.textContent('#btnSvNear'), /Back at Entrance 1\? Tap to straighten the map/);
+  const before = await page.evaluate(() => window.DALIL_APP.survey().s.quality().rating);
+  assert.equal(before, 'unchecked');
+  await page.click('#btnSvNear');
+  const q = await page.evaluate(() => window.DALIL_APP.survey().s.quality());
+  assert.equal(q.rating, 'good', JSON.stringify(q));
+  // The corridor walked "north" is straight and square despite the drifting compass
+  const sq = await page.evaluate(() => { const s = window.DALIL_APP.survey().s, t = s.placeXY(s.floor.places[1]); return { x: t.x, y: t.y, axis: s.solve().axis }; });
+  assert.ok(Math.abs(Math.hypot(sq.x, sq.y) - 30) < 1.5, `toilet ~30 m from the door (41 steps of 0.73 m): ${JSON.stringify(sq)}`);
   assert.deepEqual(errors, []);
   await ctx.close();
 });
