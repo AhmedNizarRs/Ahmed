@@ -837,3 +837,6 @@ html.reduce-motion #results li, html.reduce-motion #tiles li, html.reduce-motion
 .hud-nothere { pointer-events: auto; min-height: 2.75rem; padding: .375rem .875rem; border-radius: 999px; border: 1px solid var(--line-2); background: #fff; color: #1A73E8; font-weight: 700; font-size: .9375rem; box-shadow: 0 1px 4px rgba(0, 0, 0, .15); }
 .hud-nothere:active { transform: scale(.96); }
 html.contrast .hud-nothere { background: #000; color: #FFE600; border-color: #FFE600; }
+.hud-here { display: inline-flex; align-items: center; gap: .375rem; background: #188038; color: #fff; border-color: #188038; }
+.hud-here[hidden] { display: none; }
+.hud-here .ico { width: 1.125rem; height: 1.125rem; }

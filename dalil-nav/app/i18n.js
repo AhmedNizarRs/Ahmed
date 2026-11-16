@@ -2,6 +2,7 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    imHere: 'I’m here', strideLearned: n => `Got it. Your step is about ${n} cm; the next route will count it.`,
     whereNowTitle: 'Where are you now?', whereNowHint: 'Indoors your phone’s location is only accurate to a few rooms. Tap the place you are at, so the directions start in the right spot.', whereNowNavHint: 'Tap the place you are at now. The route starts again from there.', notHere: 'Not here?', aboutM: n => `about ${n} m`,
     svHeight: 'Your height in cm (optional: sets your step length)', svQuick: 'Tap what is here', svAddNamed: 'Add a place with its name', svNearAsk: n => `Back at ${n}? Tap to straighten the map`,
     svReviewTitle: 'Check your map', svAlign: 'Line it up with the satellite photo', svAlignHint: 'Turn and move the map until the corridors sit inside the building.', svNames: 'Places: give them their sign names', svSaveMap: 'Save the map', svKeepWalking: 'Keep walking',
@@ -132,6 +133,7 @@ export const STR = {
     cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    imHere: 'وصلت', strideLearned: n => `تمام. طول خطوتك نحو ${n} سم، وسيُحتسب في المسار التالي.`,
     whereNowTitle: 'أين أنت الآن؟', whereNowHint: 'داخل المبنى، دقة موقع هاتفك في حدود عدة غرف فقط. اضغط على المكان الذي أنت فيه لتبدأ الاتجاهات من المكان الصحيح.', whereNowNavHint: 'اضغط على المكان الذي أنت فيه الآن، وسيبدأ المسار من جديد من هناك.', notHere: 'لست هنا؟', aboutM: n => `نحو ${n} م`,
     svHeight: 'طولك بالسنتيمتر (اختياري: يحدد طول خطوتك)', svQuick: 'اضغط على ما يوجد هنا', svAddNamed: 'أضف مكانًا باسمه', svNearAsk: n => `عدت إلى ${n}؟ اضغط لتصحيح الخريطة`,
     svReviewTitle: 'تحقق من خريطتك', svAlign: 'طابقها مع صورة القمر الصناعي', svAlignHint: 'أدر الخريطة وحرّكها حتى تقع الممرات داخل المبنى.', svNames: 'الأماكن: سمّها كما في اللافتات', svSaveMap: 'احفظ الخريطة', svKeepWalking: 'تابع المشي',

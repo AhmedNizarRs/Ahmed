@@ -940,6 +940,24 @@ function priorFor(map) {
   if (map.geo && tracker.absolute) return { beta: map.geo.bearing - (map.geo.declination || 0), trusted: true, weight: 3 };
   return null;
 }
+// Your step length: learned each time you tap "I'm here" before the app thought you had arrived (or after), kept on
+// this phone; until then the pace setting. A 30-day-old value still counts: step length barely changes.
+const myStride = () => { const s = store.get('dalil.stride', null); return s && s.pace === settings.pace ? s.v : STRIDE[settings.pace]; };
+function learnStride(walkedEst, real) {
+  const f = nav.follower; if (!f || nav.mode !== 'track' || walkedEst < 10 || real < 10) return null;
+  const v = Math.max(0.45, Math.min(0.95, f.stride * real / walkedEst));
+  store.set('dalil.stride', { v: Math.round(v * 1000) / 1000, pace: settings.pace, t: Date.now() });
+  return v;
+}
+// "I'm here": you reached the destination before the app counted all the way. Finish, and learn your step length.
+function imHere() {
+  if (!nav.active) return;
+  const total = nav.legs.reduce((a, l) => a + l.L, 0), remain = nav.remain ?? 0, lastLeg = nav.legs[nav.legs.length - 1];
+  const walkedOnLast = Math.max(0, lastLeg.L - remain);
+  const v = learnStride(walkedOnLast, lastLeg.L);
+  if (v) announce(t('strideLearned', Math.round(v * 100)));
+  goStep(nav.steps.length - 1, { focus: true });
+}
 function saveCalibration() {
   const f = nav.follower, leg = nav.legs[nav.leg]; if (!f || !leg || f.samples < 6 || f.beta == null) return;
   const all = store.get('dalil.cal', {}); all[`${leg.map.building.id}|${leg.map.floor.id}`] = { beta: Math.round(f.beta * 10) / 10, abs: tracker.absolute, t: Date.now() }; store.set('dalil.cal', all);
@@ -947,7 +965,7 @@ function saveCalibration() {
 function enableTracking() {
   const leg = nav.legs[nav.steps[nav.i].leg];
   nav.mode = 'track'; hideMotionCard();
-  nav.follower = new Follower({ stride: STRIDE[settings.pace] });
+  nav.follower = new Follower({ stride: myStride() });
   const pr = priorFor(leg.map); if (pr) nav.follower.setPrior(pr.beta, { weight: pr.weight, trusted: pr.trusted });
   nav.follower.setLeg(leg.route.path, leg.cum); nav.follower.anchor(nav.pos, { learn: false });
   tracker.onStep = onTrackerStep;
@@ -1119,6 +1137,7 @@ function updateNavPos(animate) {
   const total = nav.legs.reduce((a, l) => a + l.L, 0) || 1;
   const remain = Math.max(0, leg.L - nav.pos) + nav.legs.slice(s.leg + 1).reduce((a, l) => a + l.L, 0);
   $('#navRemain').textContent = t('remain', fmtM(remain), fmtMin(secsFor(nav.plan) * remain / total));
+  nav.remain = remain; $('#btnImHere').hidden = !(remain <= 30 && s.leg === nav.legs.length - 1 && s.kind !== 'arrive' && !nav.sim);
   const pct = Math.round(100 * (1 - remain / total));
   $('#navProgress span').style.width = `${pct}%`; $('#navProgress').setAttribute('aria-valuenow', String(pct));
   navMap.setRoute([[p.x, p.y]].concat(path.slice(p.i)), path.slice(0, p.i).concat([[p.x, p.y]]));
@@ -1789,6 +1808,7 @@ function bind() {
   $('#btnFav').onclick = () => { if (state.toKey) { const on = toggleFav(state.toKey); announce(t(on ? 'saved' : 'unsave')); toast(t(on ? 'saved' : 'unsave')); } };
   $('#btnStart').onclick = () => { if (outsideNow() && !state.kiosk) { openOutsideStart(); return; } if (needWhereNow()) { openWhereNow('start'); return; } startNav({ preview: !!state.kiosk }); };
   $('#btnNotHere').onclick = () => openWhereNow('nav');
+  $('#btnImHere').onclick = imHere;
   $('#whereNowList').addEventListener('click', e => { const b = e.target.closest('[data-here]'); if (b) whereNowPick(b.dataset.here); });
   $('#btnWhereNowScan').onclick = () => { $('#dlgWhereNow').close(); if (nav.active) endNav({ silent: true }); go('where'); startWhereScan(); };
   $('#btnOutAtDoor').onclick = () => { $('#dlgOutside').close(); setFrom(state.fromId, { say: false }); startNav(); };

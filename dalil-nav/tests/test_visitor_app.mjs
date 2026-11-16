@@ -695,6 +695,28 @@ test('inside with rough GPS (±14 m): Start asks "Where are you now?", rough GPS
   await ctx.close();
 });
 
+test('"I am here": arriving before the app counted it all finishes the route and learns your step length for next time', async () => {
+  const { ctx, page, errors } = await open('', { permissions: SENSORS });
+  await search(page, 'prayer'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  await page.click('#btnStart'); await page.waitForSelector('#nav:not([hidden])');
+  await wakeSensors(page);
+  assert.ok(await page.isHidden('#btnImHere'), 'not offered far from the destination');
+  await walk(page, { seconds: 60, until: 'nav.remain != null && nav.remain <= 20' });
+  await page.waitForSelector('#btnImHere:not([hidden])');
+  const before = await page.evaluate(() => window.DALIL_APP.nav.follower.stride);
+  await page.click('#btnImHere');
+  await page.waitForSelector('#arrived:not([hidden])');
+  const learned = await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.stride')));
+  assert.ok(learned && learned.v > before, `a longer step learned: ${before} → ${learned?.v}`);
+  await page.click('#btnArrivedDone');
+  // The next route starts with the learned step
+  await search(page, 'Clinic 1'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  await page.click('#btnStart'); await page.waitForSelector('#nav:not([hidden])'); await wakeSensors(page);
+  assert.equal(await page.evaluate(() => window.DALIL_APP.nav.follower.stride), learned.v);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('Arabic: building names are Arabic too', async () => {
   const { ctx, page, errors } = await open('#b=uos-central-labs-b3-test&f=ground-floor');
   await page.click('#btnSheet').catch(() => {}); await page.click('#btnLang');
