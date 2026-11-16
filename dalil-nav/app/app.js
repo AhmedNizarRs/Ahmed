@@ -1,7 +1,7 @@
 // DALIL visitor app. No build step. Pages: Home, Search, Route, Where am I, Floor map, Settings, Getting here, Navigation.
 // Modules: i18n.js (strings, icons) · mapview.js (floor plan) · router.js (on-device routing) · tracker.js (compass and
 // steps) · camera.js (camera guide line, QR) · outdoor.js + providers.js (street maps). QR codes: vendor/qrcode.js (MIT).
-import { Router } from './router.js';
+import { Router, plainStep } from './router.js';
 import { STR, TILE_CATS, CAT_WORDS, CAT_ICONS, TURN_ICONS, TURN_ANGLE, UI, svgIco } from './i18n.js';
 import { MapView, BASE } from './mapview.js';
 import { geoTransform, haversine } from './outdoor.js';
@@ -25,7 +25,7 @@ const saved0 = store.get('dalil.settings', {});
 if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; if ((saved0.v ?? 0) < 4) delete saved0.theme; delete saved0.large; delete saved0.sensors; saved0.v = SETTINGS_V; }   // v4: Day becomes the default look
 const settings = Object.assign({
   v: SETTINGS_V, lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
-  theme: 'light', textSize: 'normal', voice: true, vibrate: true, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true, mapLayers: {}, mapOpacity: 85,
+  theme: 'light', textSize: 'normal', voice: true, vibrate: true, clock: false, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true, mapLayers: {}, mapOpacity: 85,
   contrast: mq('(prefers-contrast: more)'), motion: mq('(prefers-reduced-motion: reduce)'),
 }, saved0);
 const saveSettings = () => store.set('dalil.settings', settings);
@@ -176,20 +176,20 @@ function headingAt(path, cum, d) {
 function turnOf(en) {
   const s = (en || '').toLowerCase();
   if (/arrived/.test(s)) return 'arrive';
-  if (/dalil node|tap it/.test(s)) return 'node';
+  if (/dalil node|dalil sign|tap it/.test(s)) return 'node';
   if (/^start/.test(s)) return 'start';
   const clk = s.match(/(\d+)\s*o'clock/);
   if (clk) { const h = +clk[1] % 12; return h === 0 ? 'straight' : h <= 2 ? 'bear-right' : h <= 4 ? 'right' : h <= 7 ? 'around' : h <= 9 ? 'left' : 'bear-left'; }
   if (/turn around/.test(s)) return 'around';
-  if (/bear right|slight(ly)? right/.test(s)) return 'bear-right';
-  if (/bear left|slight(ly)? left/.test(s)) return 'bear-left';
+  if (/bear right|slight(ly)? right|a little right/.test(s)) return 'bear-right';
+  if (/bear left|slight(ly)? left|a little left/.test(s)) return 'bear-left';
   if (/turn right/.test(s)) return 'right';
   if (/turn left/.test(s)) return 'left';
   return 'straight';
 }
 function buildSteps(route) {
   const cum = cumulative(route.path), L = cum[cum.length - 1], n = route.steps.length;
-  const steps = route.steps.map((s, i) => {
+  const steps = route.steps.map(plainStep).map((s, i) => {
     const m = (s.en || '').match(/(\d+(?:\.\d+)?)\s*m\b/);
     const kind = i === 0 ? 'start' : i === n - 1 ? 'arrive' : s.node ? 'node' : m ? 'move' : 'info';
     return { ...s, i, kind, turn: kind === 'move' ? turnOf(s.en) : kind, dist: m ? +m[1] : 0 };
@@ -199,9 +199,11 @@ function buildSteps(route) {
   for (const s of steps) { s.d0 = c; if (s.kind === 'move') c += s.dist * f; if (s.kind === 'arrive') c = L; s.d1 = c; }
   return { steps, cum, L };
 }
-const stepText = s => settings.lang === 'ar' ? (s.ar || s.en) : (s.en || s.ar);
+const clockTxt = s => settings.clock && s.clock ? (settings.lang === 'ar' ? ` (اتجاه الساعة ${s.clock})` : ` (${s.clock} o'clock)`) : '';
+const withClock = (txt, s) => { const c = clockTxt(s); if (!c) return txt; const m = settings.lang === 'ar' ? txt.match(/^(.*?)(،\s*ثم.*)$/) : txt.match(/^(.*?)(,\s*then.*)$/i); return m ? m[1] + c + m[2] : txt.replace(/\.?$/, c + '.'); };
+const stepText = s => withClock(settings.lang === 'ar' ? (s.ar || s.en) : (s.en || s.ar), s);
 // The action alone ("Bear right"), without the walk after it or a closing full stop: the HUD shows one short line.
-const stepShort = s => (settings.lang === 'ar' ? (s.ar || '').split(/،\s*ثم\s*/)[0] : (s.en || '').split(/,\s*then\s*/i)[0]).replace(/\s*\.\s*$/, '');
+const stepShort = s => (settings.lang === 'ar' ? (s.ar || '').split(/،\s*ثم\s*/)[0] : (s.en || '').split(/,\s*then\s*/i)[0]).replace(/\s*\.\s*$/, '') + clockTxt(s);
 
 /* =========================================================================
    Feedback: speech, vibration, live region, toast
@@ -889,7 +891,7 @@ function providerOptions() {
 }
 function renderSettings() {
   for (const [name, val] of [['lang', settings.lang], ['theme', settings.theme], ['textSize', settings.textSize], ['pace', settings.pace]]) $$(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
-  $('#setGps').checked = settings.gps; $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree;
+  $('#setGps').checked = settings.gps; $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree; $('#setClock').checked = settings.clock;
   $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion;
   $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${bname(m.building)} · ${floorName(m.floor)}`)}</option>`).join('');
   $('#setProvider').innerHTML = providerOptions();
@@ -1925,6 +1927,7 @@ function bind() {
   const toggle = (id, key, after) => $(id).addEventListener('change', e => { settings[key] = e.target.checked; saveSettings(); after?.(); });
   toggle('#setVoice', 'voice', () => { if (!settings.voice) try { speechSynthesis.cancel(); } catch { } });
   toggle('#setVibrate', 'vibrate');
+  toggle('#setClock', 'clock');
   toggle('#setGps', 'gps', () => settings.gps ? gpsStart() : gpsStop());
   $('#btnLocate').onclick = () => { state.fromManual = false; gps.userAsked = true; gpsStart(); };
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { gps.paused = locator.on; locator.stop(); } else if (gps.paused) { gps.paused = false; gpsStart(); } });

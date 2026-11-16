@@ -9,6 +9,7 @@
 // directions move with the person, so every walk here is simulated through the phone's sensors
 // (DeviceOrientation/DeviceMotion), including floor changes by stairs and by lift. The camera is Chromium's
 // fake camera (and a generated video of a DALIL sign's QR code); map providers are stubbed to test failover.
+import { plainStep } from '../app/router.js';
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
@@ -120,7 +121,7 @@ test('sample hospital: search "prayer", start, and the directions move with you 
   await page.click('#btnStart');
   await page.waitForSelector('#nav:not([hidden])');
   assert.equal(await page.$('#btnNext'), null, 'there is no Next button');
-  assert.deepEqual(await steps(page), r.steps.map(s => s.en));
+  assert.deepEqual(await steps(page), r.steps.map(s => plainStep(s).en));
   await wakeSensors(page);
   await walk(page, { seconds: 60 });
   await page.waitForSelector('#arrived:not([hidden])');
@@ -128,10 +129,36 @@ test('sample hospital: search "prayer", start, and the directions move with you 
   // Every step was announced as the walker reached it, in order.
   const spoken = await page.evaluate(() => window.DALIL_APP.spoken);
   let at = -1;
-  for (const s of r.steps) { const j = spoken.findIndex((x, i) => i > at && x.includes(s.en)); assert.ok(j > at, `spoken in order: ${s.en}`); at = j; }
+  for (const s of r.steps.map(plainStep)) { const j = spoken.findIndex((x, i) => i > at && x.includes(s.en)); assert.ok(j > at, `spoken in order: ${s.en}`); at = j; }
   await page.click('#btnArrivedDone');
   await pageIs(page, 'home');
   assert.equal(await page.textContent('#fromName'), 'Prayer Room');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('plain words: no clock faces, "bear" or "sharp" in any direction (EN and AR); clock only if switched on in Settings', async () => {
+  const { ctx, page, errors } = await open('#at-P001&to-P007');
+  const all = await page.evaluate(() => {
+    const A = window.DALIL_APP, out = [];
+    for (const m of A.state.maps) { const pts = m.points.filter(p => !p.virtual).slice(0, 8);
+      for (const a of pts) for (const b of pts) if (a !== b) { const r = A.routeFor(m, a, b); if (r) out.push(...A.buildSteps(r).steps.map(s => [s.en, s.ar, s.clock || 0])); } }
+    return out;
+  });
+  assert.ok(all.length > 50, `checked ${all.length} steps`);
+  const bad = all.filter(([en, ar]) => /o'clock|\bbear\b|sharp|DALIL node|Tap it/i.test(en) || /الساعة|بحدة|نقطة دليل|المسها/.test(ar));
+  assert.deepEqual(bad.slice(0, 3), [], 'plain words only');
+  assert.ok(all.some(([en]) => /^(Turn (left|right)|Go straight|Go a little (left|right)|Turn around), then walk/.test(en)), 'simple first step');
+  // Clock directions, for those who want them
+  const withClock = all.find(x => x[2]);
+  if (withClock) {
+    await page.evaluate(() => window.DALIL_APP.go('settings')); await pageIs(page, 'settings');
+    await page.click('label:has(#setClock)');
+    assert.equal(await page.evaluate(() => window.DALIL_APP.settings.clock), true);
+    await page.evaluate(() => window.DALIL_APP.go('route')); await pageIs(page, 'route');
+    await page.click('#btnStart');
+    assert.ok((await steps(page)).some(x => /\(\d+ o'clock\), then walk|\(\d+ o'clock\)\./.test(x)), 'clock shown when switched on');
+  }
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -149,9 +176,9 @@ test('moving arrow: learns the compass from your walk, counts down to the next t
   await page.waitForFunction(() => document.querySelector('#navMode').dataset.mode === 'follow');
   assert.match(await page.textContent('#navModeText'), /Following your steps/);
   await page.waitForFunction(() => Math.abs(+document.querySelector('#navArrow').dataset.angle) < 15);
-  // The display counts down to the next turn: "N m · Bear right".
+  // The display counts down to the next turn: "N m · Go a little right".
   assert.match(await page.textContent('#hudDist'), /^\d+m$/);
-  assert.equal(await page.textContent('#navStepText'), 'Bear right');
+  assert.equal(await page.textContent('#navStepText'), 'Go a little right');
   const d1 = parseInt(await page.textContent('#hudDist'), 10);
   await walk(page, { seconds: 1.5 });
   assert.ok(parseInt(await page.textContent('#hudDist'), 10) < d1, 'distance counts down as you walk');
@@ -166,7 +193,7 @@ test('moving arrow: learns the compass from your walk, counts down to the next t
   s = await walk(page, { seconds: 40 });
   await page.waitForSelector('#arrived:not([hidden])');
   const spoken = await page.evaluate(() => window.DALIL_APP.spoken);
-  assert.ok(spoken.some(x => /^In \d+ m: Bear right/.test(x)), 'heads-up before the bend');
+  assert.ok(spoken.some(x => /^In \d+ m: Go a little right/.test(x)), 'heads-up before the bend');
   await page.click('#btnArrivedDone');
   const cal = await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.cal')));
   assert.ok(Math.abs(cal['sample-hospital|ground'].beta - 25) < 3, 'what was learned is kept for next time');
@@ -199,7 +226,7 @@ test('motion off: the app says so (never "tap Next"), offers Allow motion, signs
 
 test('walking past a DALIL sign on the route needs no tap; scanning one confirms the position', async () => {
   const { ctx, page, errors } = await open('#at-P001&to-P008', { permissions: SENSORS });
-  const r = SAMPLE.routes.walk['P001>P008'], node = r.steps.find(s => s.node);
+  const r = SAMPLE.routes.walk['P001>P008'], node = plainStep(r.steps.find(s => s.node));
   await page.click('#btnStart');
   await wakeSensors(page);
   await walk(page, { seconds: 60 });
@@ -338,13 +365,13 @@ test('Arabic UI is fully RTL and the Arabic steps read correctly', async () => {
   assert.equal(await page.textContent('#destName'), 'المصلى');
   await page.click('#btnStart');
   const r = SAMPLE.routes.walk['P001>P007'];
-  assert.deepEqual(await steps(page), r.steps.map(s => s.ar));
+  assert.deepEqual(await steps(page), r.steps.map(s => plainStep(s).ar));
   assert.equal(await page.$eval('#navStepText', e => getComputedStyle(e).direction), 'rtl');
-  assert.equal(await page.textContent('#navStepText'), r.steps[1].ar.split('، ثم')[0]);
+  assert.equal(await page.textContent('#navStepText'), plainStep(r.steps[1]).ar.split('، ثم')[0]);
   await wakeSensors(page);
   await walk(page, { seconds: 8 });
   const spoken = await page.evaluate(() => window.DALIL_APP.spoken);
-  assert.ok(spoken.includes(r.steps[0].ar) && spoken.some(x => x.includes(r.steps[1].ar)), 'Arabic steps spoken');
+  assert.ok(spoken.includes(plainStep(r.steps[0]).ar) && spoken.some(x => x.includes(plainStep(r.steps[1]).ar)), 'Arabic steps spoken');
   assert.deepEqual(errors, []);
   await ctx.close();
 });
@@ -861,7 +888,7 @@ test('a lost visitor on campus: Arabic search finds the right places; opening th
   await pageIs(page, 'nav');
   const st = await steps(page);
   assert.ok(!st.some(x => /Turn to your/.test(x)), 'plain words first: ' + st[1]);
-  assert.ok(!st.some((x, i) => i && /^Bear (left|right), then walk [12] m/.test(x) && /^Bear/.test(st[i + 1] || '')), 'no 1–2 m zigzags');
+  assert.ok(!st.some((x, i) => i && /^Go a little (left|right), then walk [12] m/.test(x) && /^Go a little/.test(st[i + 1] || '')), 'no 1–2 m zigzags');
   assert.deepEqual(errors, []);
   await ctx.close();
 });

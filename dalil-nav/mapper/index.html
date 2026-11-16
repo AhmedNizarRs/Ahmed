@@ -713,6 +713,35 @@ function routeBetween(mode, A, B){
 /* ---------------- INSTRUCTIONS (EN + AR) ---------------- */
 const ang = (a,b)=>Math.atan2(b[1]-a[1], b[0]-a[0])*180/Math.PI;
 const norm = d=>{ while(d>180)d-=360; while(d<=-180)d+=360; return d; };
+// Plain words for directions (founder, Nov 2026: "an old man can use it, a child can use it"). No clock faces, no
+// "bear", no "sharp": Go straight · Turn right · Go a little right · Turn around · Keep going. Also rewrites the
+// wording stored in older map files. The clock number is kept in `clock` (Settings → Clock directions shows it).
+const PLAIN_EN = [
+  [/\s*\((\d{1,2}) o'clock\)/i, ''], [/\bGo straight ahead\b/g, 'Go straight'], [/\bTurn sharp (left|right)\b/g, 'Turn $1'],
+  [/\bBear (left|right)\b/g, 'Go a little $1'], [/^Continue /, 'Keep going straight '], [/\bthen continue /, 'then keep going straight '],
+  [/ \(DALIL node\)/, ' (DALIL sign)'], [/You are at DALIL node “([^”]*)”\. Tap it to confirm\./, 'You are at the DALIL sign “$1”.'],
+];
+const PLAIN_AR = [
+  [/\s*\(اتجاه الساعة \d{1,2}\)/, ''], [/اتجه إلى الأمام/g, 'امشِ إلى الأمام'], [/انعطف بحدة إلى (اليمين|اليسار)/g, 'انعطف إلى $1'],
+  [/انعطف إلى اليمين/g, 'اتجه يمينًا'], [/انعطف إلى اليسار/g, 'اتجه يسارًا'], [/اتجه قليلاً إلى (اليمين|اليسار)/g, 'مِل قليلًا إلى $1'],
+  [/استدر إلى الخلف/g, 'استدر للخلف'], [/^تابع المشي /, 'استمر في المشي '], [/ \(نقطة دليل\)/, ' (علامة دليل)'],
+  [/أنت الآن عند نقطة دليل «([^»]*)»\. المسها للتأكيد\./, 'أنت الآن عند علامة دليل «$1».'],
+];
+const CLOCK_PLAIN = h => { h = ((h % 12) + 12) % 12;
+  return h === 0 ? ['Go straight', 'امشِ إلى الأمام'] : h <= 2 ? ['Go a little right', 'مِل قليلًا إلى اليمين'] : h <= 5 ? ['Turn right', 'اتجه يمينًا']
+    : h === 6 ? ['Turn around', 'استدر للخلف'] : h <= 9 ? ['Turn left', 'اتجه يسارًا'] : ['Go a little left', 'مِل قليلًا إلى اليسار']; };
+function plainStep(s) {
+  if (!s || s.plain) return s;
+  const ck = (s.en || '').match(/\((\d{1,2}) o'clock\)/i);
+  let en = s.en || '', ar = s.ar || '', ck2 = null;
+  // Older files: "Turn to your 11 o'clock" / "استدر نحو اتجاه الساعة 11" → words.
+  en = en.replace(/^Turn to your (\d{1,2}) o'clock/i, (_, h) => { ck2 = +h; return CLOCK_PLAIN(+h)[0]; });
+  ar = ar.replace(/^استدر نحو اتجاه الساعة (\d{1,2})/, (_, h) => CLOCK_PLAIN(+h)[1]);
+  for (const [a, b] of PLAIN_EN) en = en.replace(a, b);
+  for (const [a, b] of PLAIN_AR) ar = ar.replace(a, b);
+  const clock = ck ? +ck[1] : ck2;
+  return { ...s, en, ar, plain: true, ...(clock ? { clock } : {}) };
+}
 const CLOCK_WORDS={1:['Bear right','اتجه قليلاً إلى اليمين'],2:['Bear right','اتجه قليلاً إلى اليمين'],3:['Turn right','انعطف إلى اليمين'],4:['Turn sharp right','انعطف بحدة إلى اليمين'],5:['Turn sharp right','انعطف بحدة إلى اليمين'],6:['Turn around','استدر إلى الخلف'],7:['Turn sharp left','انعطف بحدة إلى اليسار'],8:['Turn sharp left','انعطف بحدة إلى اليسار'],9:['Turn left','انعطف إلى اليسار'],10:['Bear left','اتجه قليلاً إلى اليسار'],11:['Bear left','اتجه قليلاً إلى اليسار']};
 function instructions(path, A, B, mode){
   // merge into legs
@@ -762,7 +791,7 @@ function instructions(path, A, B, mode){
   });
   steps.push({en:`You have arrived at ${nameB}.`, ar:`لقد وصلت إلى ${B.nameAr||B.nameEn}.`});
   const speed = mode==='chair'?0.8:1.1;
-  return {distance:total, seconds:total/speed, steps};
+  return {distance:total, seconds:total/speed, steps:steps.map(s=>{ const {plain, ...q}=plainStep(s); return q; })};
 }
 
 /* ---------------- POINTS ---------------- */
