@@ -95,7 +95,7 @@ function routeFor(map, A, B, m = mode(), opts = {}) {
   if (!map || !A || !B || A === B || (A.id === B.id && !A.virtual)) return null;
   if (!A.virtual && !B.virtual && !(map.closures || []).length && hasStored(map, m)) return map.routes[m][`${A.id}>${B.id}`] || null;
   const R = routerOf(map); if (!R) return null;
-  const k = `${map.building.id}|${map.floor.id}|${m}|${A.x},${A.y}>${B.x},${B.y}`;
+  const k = `${map.building.id}|${map.floor.id}|${m}|${A.x},${A.y},${A.facingDeg ?? ''}>${B.x},${B.y}`;
   if (!memo.has(k)) { memo.set(k, R.route(m, A, B, opts)); if (memo.size > 300) memo.delete(memo.keys().next().value); }
   return memo.get(k);
 }
@@ -120,7 +120,9 @@ const stay = P => ({ distance_m: 0, seconds: 0, path: [[P.x, P.y], [P.x, P.y]], 
 // One leg on the same floor, or two legs joined by a lift or stairs (points sharing a "link" code).
 function planRoute(fm, fromId, tm, toId, m = mode()) {
   if (!fm || !tm) return null;
-  const A = pointOf(fm, fromId), B = pointOf(tm, toId); if (!A || !B) return null;
+  let A = pointOf(fm, fromId); const B = pointOf(tm, toId); if (!A || !B) return null;
+  // Just arrived here: you face the way you walked in, so the first turn is said from that (not the place's stored facing).
+  const ff = state.fromFacing; if (ff && ff.key === keyOf(fm, A) && Date.now() - ff.t < 15 * 60e3) A = { ...A, facingDeg: ff.deg };
   if (fm === tm) { if (fromId === toId) return null; const r = routeFor(fm, A, B, m); return r ? { legs: [{ map: fm, route: r }], distance_m: r.distance_m, seconds: r.seconds, via: null, closures: !!(fm.closures || []).length } : null; }
   const fl = bFloors(), up = fl.indexOf(tm) > fl.indexOf(fm), n = Math.max(1, Math.abs(fl.indexOf(tm) - fl.indexOf(fm)));
   let best = null;
@@ -335,7 +337,7 @@ function selectFloor(map, { keepFrom = false } = {}) {
 }
 function setFrom(id, { say = true, confirm = false } = {}) {
   const p = pt(id); if (!p) return false;
-  state.fromId = id; state.viewMap = state.map; state.fromManual = true; state.outside = null;
+  state.fromId = id; state.viewMap = state.map; state.fromManual = true; state.fromAt = Date.now(); state.outside = null; state.fromFacing = null;
   if (state.toKey === keyOf(state.map, p)) state.toKey = null;
   renderAll();
   if (say) { const msg = confirm ? t('confirmed', pname(p)) : t('locSet', pname(p)); announce(msg); toast(msg); }
@@ -638,7 +640,8 @@ const roomNo = p => { if (['lift', 'stairs', 'pin', 'corridor'].includes(p.categ
 // "Where are you now?": the start is only a rough GPS guess (indoors GPS is ±10–30 m, several rooms), so ask.
 // Also from navigation ("Not here?"): pick the place you are at and the route starts again from there.
 function needWhereNow() {
-  if (state.kiosk || state.fromManual) return false;
+  if (state.kiosk) return false;
+  if (state.fromManual && !(state.fromAt && Date.now() - state.fromAt > 15 * 60e3)) return false;
   const f = locator.fresh(120000); if (!f || !state.map.geo) return false;
   return f.acc > 8;
 }
@@ -951,6 +954,7 @@ function startNav({ camera = false, preview = false } = {}) {
   go('nav');
   $('#navDest').textContent = t('toDest', pname(dest.p));
   goStep(0, { focus: true, intro: t('navStarted', pname(dest.p)) });
+  if (state.fromManual) nav.var = 1;   // you confirmed the start (arrived, scanned, picked): trust it over rough GPS
   if (camera) setView('cam');
   analytics.add('nav_start', { to: dest.p.virtual ? 'pin' : dest.p.id, view: camera ? 'cam' : preview ? 'preview' : 'map' });
   if (locator.fresh(60000)) fuseFix(locator.fix);   // the latest fix (it may have come in on Home)
@@ -986,6 +990,8 @@ function allowMotion() {
 }
 function endNav({ silent = false } = {}) {
   if (!nav.active) return;
+  const arrivedAt = !nav.sim && (nav.steps[nav.i]?.kind === 'arrive' || !$('#arrived').hidden) ? resolve(nav.toKey) : null;
+  if (arrivedAt) { const lp = nav.legs[nav.legs.length - 1]?.route.path, n = lp?.length || 0; if (n >= 2) state.fromFacing = { key: arrivedAt.key, deg: Math.round(Math.atan2(lp[n - 1][1] - lp[n - 2][1], lp[n - 1][0] - lp[n - 2][0]) * 180 / Math.PI), t: Date.now() }; }
   stopSim(); saveCalibration();
   if (nav.i < nav.steps.length - 1) analytics.add('nav_stop', { step: nav.i + 1, of: nav.steps.length });
   nav.active = false; nav.signsOnly = false; cancelAnimationFrame(nav.loop);
@@ -994,6 +1000,7 @@ function endNav({ silent = false } = {}) {
   try { speechSynthesis?.cancel(); } catch { }
   $('#arrived').hidden = true; if ($('#dlgSteps').open) $('#dlgSteps').close();
   hideMotionCard(); $('#floorCard').hidden = true;
+  if (arrivedAt) startHereAfterArrival(arrivedAt);
   if (!silent && pageNow === 'nav') back();
 }
 // Prior for the compass → plan angle: what this phone learned here before, else the building's bearing.
@@ -1426,7 +1433,7 @@ function homeFix(f) {
     renderGpsBits(); return;
   }
   if (state.outside) { state.outside = null; if (!state.fromManual) renderAll(); }
-  if (q && q.acc <= GPS_MAX_ACC && !state.fromManual) {
+  if (q && q.acc <= GPS_IN_MAX && !state.fromManual) {
     let best = null, bd = Infinity;
     for (const p of m.points) { if (p.virtual) continue; const d = Math.hypot(p.x - q.x, p.y - q.y); if (d < bd) { bd = d; best = p; } }
     if (best && bd <= q.acc + 10) { gps.fromId = best.id; gps.at = Date.now(); if (state.fromId !== best.id) { state.fromId = best.id; renderAll(); } }
@@ -1500,10 +1507,18 @@ function showArrival() {
   $('#arrivedTitle').focus();
   analytics.add('arrive', { to: to?.virtual ? 'pin' : to?.id, s: Math.round((performance.now() - nav.started) / 1000) });
 }
+// You arrived: the next route starts here (founder: "from that place, if I choose another place it becomes inaccurate";
+// rough indoor GPS used to swap the arrival place for the room nearest its fix). Marked as confirmed, so GPS can't move it.
+function startHereAfterArrival(d) {
+  if (!d || d.p.virtual) return;
+  if (d.m !== state.map) selectFloor(d.m, { keepFrom: true });
+  state.fromId = d.p.id; state.fromManual = true; state.fromAt = Date.now(); state.outside = null; state.viewMap = state.map;
+  renderAll();
+}
 function finishArrival() {
   const d = resolve(nav.toKey);
   endNav({ silent: true });
-  if (d && !d.p.virtual) { if (d.m !== state.map) selectFloor(d.m); state.fromId = d.p.id; }
+  startHereAfterArrival(d);
   state.toKey = null; state.chip = null;
   goHome(); renderAll();
 }

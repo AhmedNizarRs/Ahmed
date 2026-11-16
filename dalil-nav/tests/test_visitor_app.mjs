@@ -848,6 +848,26 @@ test('"Add a missing place" on Home: one tap on the room opens the form straight
   await ctx.close();
 });
 
+test('chained routes: after arriving, the next route starts at the place you reached (rough GPS cannot move it)', async () => {
+  const { ctx, page, errors } = await open('', { permissions: SENSORS });
+  await search(page, 'prayer'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  await page.click('#btnStart'); await page.waitForSelector('#nav:not([hidden])');
+  await wakeSensors(page);
+  await walk(page, { seconds: 60 });
+  await page.waitForSelector('#arrived:not([hidden])');
+  // Leave with End instead of Done: still counts as arrived
+  await page.evaluate(() => document.querySelector('#btnEndNav').click());
+  const st = await page.evaluate(() => ({ from: window.DALIL_APP.state.fromId, manual: window.DALIL_APP.state.fromManual }));
+  assert.deepEqual(st, { from: 'P007', manual: true }, 'the prayer room is the new start, confirmed');
+  await page.evaluate(() => window.DALIL_APP.go('home')); await pageIs(page, 'home');
+  await search(page, 'pharmacy'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  await page.click('#btnStart'); await page.waitForSelector('#nav:not([hidden])');
+  assert.match((await steps(page))[0], /^Start at Prayer Room/);
+  assert.equal(await page.evaluate(() => window.DALIL_APP.nav.var), 1, 'a confirmed start: GPS barely moves it');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('near the end, standing still: "Are you at Prayer Room?" (Not yet asks again later; Yes arrives); the map glides between steps', async () => {
   const { ctx, page, errors } = await open('', { permissions: SENSORS });
   await search(page, 'prayer'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
