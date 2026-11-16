@@ -443,6 +443,10 @@
     </div>
 
     <div class="hud-bottom">
+      <div id="arriveAsk" class="arrive-ask" role="alertdialog" aria-labelledby="arriveAskText" hidden>
+        <p id="arriveAskText" class="arrive-ask-q"></p>
+        <div class="pair"><button id="btnAskYes" class="btn primary" type="button"><span class="ico" data-ico="check"></span><span data-i18n="askYes">Yes, I’m here</span></button><button id="btnAskNo" class="btn secondary" type="button" data-i18n="askNo">Not yet</button></div>
+      </div>
       <div class="hud-route">
         <p class="nav-dest"><span id="navDest"></span><span id="navRemain" class="nav-remain num"></span></p>
         <div id="navProgress" class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="progressLabel"><span></span></div>

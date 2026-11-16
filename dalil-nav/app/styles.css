@@ -854,3 +854,10 @@ html.contrast .hud-nothere { background: #000; color: #FFE600; border-color: #FF
 .place-form .route-msg:empty { display: none; }
 .pin-card #btnPinAdd { width: 100%; margin-top: .5rem; }
 .btn.danger { color: var(--warn); }
+
+/* "Are you at <place>?" near the end of the route */
+.arrive-ask { display: grid; gap: .75rem; padding: .875rem; border-radius: 1.125rem; background: #E6F4EA; border: 2px solid #188038; animation: rowIn .3s var(--ease) both; }
+.arrive-ask[hidden] { display: none; }
+.arrive-ask-q { margin: 0; font-size: 1.375rem; font-weight: 700; color: #0D652D; }
+.arrive-ask .btn.primary { background: #188038; color: #fff; border-color: #188038; }
+html.contrast .arrive-ask { background: #000; border-color: #FFE600; } html.contrast .arrive-ask-q { color: #FFE600; }

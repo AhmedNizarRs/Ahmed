@@ -1023,7 +1023,7 @@ function saveCalibration() {
 function enableTracking() {
   const leg = nav.legs[nav.steps[nav.i].leg];
   nav.mode = 'track'; hideMotionCard();
-  nav.follower = new Follower({ stride: myStride() }); nav.camBeta = null; nav.camN = 0;
+  nav.follower = new Follower({ stride: myStride() }); nav.camBeta = null; nav.camN = 0; nav.shown = null; nav.routeAt = null; nav.askNo = null; nav.askPos = 0; $('#arriveAsk').hidden = true;
   const pr = priorFor(leg.map); if (pr) nav.follower.setPrior(pr.beta, { weight: pr.weight, trusted: pr.trusted });
   nav.follower.setLeg(leg.route.path, leg.cum); nav.follower.anchor(nav.pos, { learn: false });
   tracker.onStep = onTrackerStep;
@@ -1198,25 +1198,62 @@ function updateNavPos(animate) {
     animate = false;
   }
   renderHud();
-  const p = pointAt(path, leg.cum, nav.pos);
   const total = nav.legs.reduce((a, l) => a + l.L, 0) || 1;
   const remain = Math.max(0, leg.L - nav.pos) + nav.legs.slice(s.leg + 1).reduce((a, l) => a + l.L, 0);
   $('#navRemain').textContent = t('remain', fmtM(remain), fmtMin(secsFor(nav.plan) * remain / total));
   nav.remain = remain; $('#btnImHere').hidden = !(remain <= 30 && s.leg === nav.legs.length - 1 && s.kind !== 'arrive' && !nav.sim);
   const pct = Math.round(100 * (1 - remain / total));
   $('#navProgress span').style.width = `${pct}%`; $('#navProgress').setAttribute('aria-valuenow', String(pct));
-  navMap.setRoute([[p.x, p.y]].concat(path.slice(p.i)), path.slice(0, p.i).concat([[p.x, p.y]]));
-  const h = headingAt(path, leg.cum, nav.pos + (s.kind === 'move' ? 0 : 0.01)), face = facingNow();
+  navDraw(animate, true);
+  arriveCheck();
+}
+// Smooth movement (founder's on-site test, Nov 2026: "when I move it's not smooth"). Steps move nav.pos in 0.7 m jumps;
+// the map draws nav.shown, which glides toward it every frame, and the map's turn eases the same way.
+function navGlide(dt) {
+  const s = nav.steps[nav.i]; if (!s) return false;
+  const target = nav.pos;
+  if (nav.sim || settings.motion || nav.shownLeg !== s.leg || nav.shown == null || Math.abs(target - nav.shown) > 8) { const moved = nav.shown !== target; nav.shown = target; nav.shownLeg = s.leg; return moved; }
+  if (Math.abs(target - nav.shown) < 0.005) return false;
+  nav.shown += (target - nav.shown) * (1 - Math.exp(-dt / 320));
+  return true;
+}
+function navDraw(animate = false, full = false) {
+  const s = nav.steps[nav.i], leg = nav.legs[s?.leg]; if (!leg) return;
+  if (nav.shownLeg !== s.leg || nav.shown == null) { nav.shown = nav.pos; nav.shownLeg = s.leg; }
+  const path = leg.route.path, at = nav.shown, p = pointAt(path, leg.cum, at);
+  if (full || nav.routeAt == null || Math.abs(at - nav.routeAt) > 0.25) { navMap.setRoute([[p.x, p.y]].concat(path.slice(p.i)), path.slice(0, p.i).concat([[p.x, p.y]])); nav.routeAt = at; }
+  const h = headingAt(path, leg.cum, at + (s.kind === 'move' ? 0 : 0.01)), face = facingNow();
   nav.here = p; nav.pathDir = h;
   const [px, py] = navMap.px(p.x, p.y);
   let rot = -90 + (face ?? h);
-  if (nav.rot != null) { while (rot - nav.rot > 180) rot -= 360; while (rot - nav.rot < -180) rot += 360; }
+  if (nav.rot != null) {
+    while (rot - nav.rot > 180) rot -= 360; while (rot - nav.rot < -180) rot += 360;
+    if (!animate && !settings.motion && Math.abs(rot - nav.rot) < 60) rot = nav.rot + (rot - nav.rot) * 0.18;   // ease the turn of the map
+  }
   nav.rot = rot;
   const [vw, vh] = navMap.size();
   navMap.setCam({ x: px, y: py, k: Math.max(.6, Math.min(3.2, vw / (22 * BASE))), rot, tilt: 52, ax: .5, ay: vh > 700 ? .66 : .7 }, animate);
   navMap.setYou({ x: p.x, y: p.y }, face ?? h);
-  navMap.markTurnsDone(k => nav.steps[k] && nav.steps[k].leg === s.leg && nav.steps[k].d0 < nav.pos - 0.5);
+  if (full) navMap.markTurnsDone(k => nav.steps[k] && nav.steps[k].leg === s.leg && nav.steps[k].d0 < nav.pos - 0.5);
   if (face == null) drawArrow();
+}
+// "Are you at <place>?" (founder's on-site tests: arrived with 17 m and 19 m still showing; step counts run short).
+// Near the end of the route (20 m or less left) and standing still for 2.5 s, the app asks; Yes = arrived (and it
+// learns your step length), Not yet = asks again after a few more metres.
+const ASK_M = 20;
+function arriveCheck() {
+  const el = $('#arriveAsk'); if (!el) return;
+  const s = nav.steps[nav.i], last = s && s.leg === nav.legs.length - 1;
+  const ok = nav.active && !nav.sim && nav.mode === 'track' && last && s.kind !== 'arrive' && nav.everStepped && (nav.remain ?? 1e9) <= ASK_M;
+  if (!ok) { if (!el.hidden) el.hidden = true; return; }
+  if (!el.hidden) { if (nav.pos - nav.askPos > 4) el.hidden = true; return; }      // walked on: they were not there yet
+  if (nav.askNo != null && nav.pos - nav.askNo < 5) return;
+  if (tracker.walking()) return;
+  if (tracker.now() - tracker.lastStep < 2500) return;
+  const name = pname(resolve(nav.toKey)?.p) || '';
+  $('#arriveAskText').textContent = t('askHere', name); nav.askPos = nav.pos;
+  el.hidden = false; $('#btnImHere').hidden = true;
+  speak(t('askHere', name)); buzz([60, 60, 60]);
 }
 // The big arrow: live (where to walk, relative to where you face) when tracking; otherwise the turn to make now.
 function arrowGoal() {
@@ -1241,10 +1278,12 @@ function startLoop() {
   let lastMap = 0, lastMode = 0;
   const tick = now => {
     if (!nav.active) return;
-    if (nav.mode === 'track' && !nav.sim && nav.follower?.usable) {
-      drawArrow(!settings.motion);
-      if (now - lastMap > 120 && nav.view === 'map') { lastMap = now; updateNavPos(false); }
+    const dt = Math.min(100, now - (nav.lastFrame ?? now)); nav.lastFrame = now;
+    if ((nav.mode === 'track' || gpsLive()) && !nav.sim && nav.view === 'map') {
+      if (navGlide(dt) || (nav.follower?.usable && now - lastMap > 50)) { lastMap = now; navDraw(false); }
     }
+    if (nav.mode === 'track' && !nav.sim && nav.follower?.usable) drawArrow(!settings.motion);
+    if (now - (nav.lastAsk ?? 0) > 500) { nav.lastAsk = now; arriveCheck(); }
     if (nav.view === 'cam' && camGuide) camGuide.update(camFrame());
     if (now - lastMode > 1000) { lastMode = now; renderMode(); }
     nav.loop = requestAnimationFrame(tick);
@@ -1892,6 +1931,8 @@ function bind() {
   $('#btnStart').onclick = () => { if (outsideNow() && !state.kiosk) { openOutsideStart(); return; } if (needWhereNow()) { openWhereNow('start'); return; } startNav({ preview: !!state.kiosk }); };
   $('#btnNotHere').onclick = () => openWhereNow('nav');
   $('#btnImHere').onclick = imHere;
+  $('#btnAskYes').onclick = () => { $('#arriveAsk').hidden = true; imHere(); };
+  $('#btnAskNo').onclick = () => { $('#arriveAsk').hidden = true; nav.askNo = nav.pos; };
   $('#whereNowList').addEventListener('click', e => { const b = e.target.closest('[data-here]'); if (b) whereNowPick(b.dataset.here); });
   $('#btnWhereNowScan').onclick = () => { $('#dlgWhereNow').close(); if (nav.active) endNav({ silent: true }); go('where'); startWhereScan(); };
   $('#btnOutAtDoor').onclick = () => { $('#dlgOutside').close(); setFrom(state.fromId, { say: false }); startNav(); };

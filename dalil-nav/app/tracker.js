@@ -46,7 +46,10 @@ export function facing(R, angle = 0) {
  *  A lone bump (tapping the screen) is ignored until a second step follows within maxGap. */
 export class StepDetector {
   constructor({ high = 1.15, low = 0.25, minGap = 280, maxGap = 1800 } = {}) { Object.assign(this, { high, low, minGap, maxGap }); this.reset(); }
-  reset() { this.fast = null; this.base = null; this.t = null; this.armed = true; this.last = -1e9; this.pending = false; }
+  reset() { this.fast = null; this.base = null; this.t = null; this.armed = true; this.last = -1e9; this.pending = false; this.peak = 0; this.amp = null; }
+  // Gentle steps (phone held still in front, slow walking) bounce less: the threshold follows your own recent steps,
+  // between 0.75 and the default 1.15 m/s² (founder's on-site tests counted short).
+  get thr() { return this.amp == null ? this.high : Math.max(0.75, Math.min(this.high, this.amp * 0.5)); }
   /** mag: |acceleration including gravity| in m/s², t: ms. Returns how many steps to count (0, 1 or 2). */
   push(mag, t) {
     if (this.fast == null) { this.fast = this.base = mag; this.t = t; return 0; }
@@ -54,8 +57,9 @@ export class StepDetector {
     this.fast += (1 - Math.exp(-dt / 40)) * (mag - this.fast);
     this.base += (1 - Math.exp(-dt / 900)) * (mag - this.base);
     const d = this.fast - this.base;
-    if (!this.armed) { if (d < this.low) this.armed = true; return 0; }
-    if (d < this.high || t - this.last < this.minGap) return 0;
+    if (!this.armed) { if (d > this.peak) this.peak = d; if (d < this.low) { this.armed = true; if (this.peak > 0) this.amp = this.amp == null ? this.peak : this.amp * 0.75 + this.peak * 0.25; this.peak = 0; } return 0; }
+    if (t - this.last > 4000) this.amp = null;                      // a new walk: start from the default again
+    if (d < this.thr || t - this.last < this.minGap) return 0;
     this.armed = false;
     const gap = t - this.last; this.last = t;
     if (gap > this.maxGap) { this.pending = true; return 0; }

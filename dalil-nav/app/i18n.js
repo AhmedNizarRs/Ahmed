@@ -2,6 +2,7 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    askHere: n => `Are you at ${n}?`, askYes: 'Yes, I’m here', askNo: 'Not yet',
     set_clock: 'Clock directions', set_clockHint: 'Also say the turn as a clock, like “3 o’clock” for right. Some blind people find this easier.',
     pinAdd: 'Add a place here', placeAddTitle: 'Add a place', placeEditTitle: 'Edit place', placeNameEn: 'Name (English)', placeNameAr: 'Name (Arabic)', placeType: 'Type', placeDoor: 'Door or room number (optional)',
     placeNote: 'Saved on this phone. Export it from Settings to add it to the building’s official map.', placeSave: 'Save place', placeDelete: 'Remove this place', placeNeedName: 'Type a name in English or Arabic.',
@@ -139,6 +140,7 @@ export const STR = {
     cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    askHere: n => `هل وصلت إلى ${n}؟`, askYes: 'نعم، وصلت', askNo: 'ليس بعد',
     set_clock: 'الاتجاهات بالساعة', set_clockHint: 'قل الاتجاه أيضًا مثل عقارب الساعة، مثل «الساعة 3» لليمين. يفضّله بعض المكفوفين.',
     pinAdd: 'أضف مكانًا هنا', placeAddTitle: 'إضافة مكان', placeEditTitle: 'تعديل المكان', placeNameEn: 'الاسم (بالإنجليزية)', placeNameAr: 'الاسم (بالعربية)', placeType: 'النوع', placeDoor: 'رقم الباب أو الغرفة (اختياري)',
     placeNote: 'محفوظ على هذا الهاتف. صدّره من الإعدادات لإضافته إلى الخريطة الرسمية للمبنى.', placeSave: 'حفظ المكان', placeDelete: 'إزالة هذا المكان', placeNeedName: 'اكتب اسمًا بالإنجليزية أو العربية.',

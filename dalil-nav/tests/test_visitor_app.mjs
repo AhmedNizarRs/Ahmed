@@ -822,6 +822,33 @@ test('"I am here": arriving before the app counted it all finishes the route and
   await ctx.close();
 });
 
+test('near the end, standing still: "Are you at Prayer Room?" (Not yet asks again later; Yes arrives); the map glides between steps', async () => {
+  const { ctx, page, errors } = await open('', { permissions: SENSORS });
+  await search(page, 'prayer'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  await page.click('#btnStart'); await page.waitForSelector('#nav:not([hidden])');
+  await wakeSensors(page);
+  await walk(page, { seconds: 60, until: 'nav.remain != null && nav.remain <= 18' });
+  // The drawn position glides to the counted one (no jumps)
+  await page.waitForFunction(() => { const n = window.DALIL_APP.nav; return n.shown != null && Math.abs(n.shown - n.pos) < 0.05; });
+  assert.ok(await page.isHidden('#arriveAsk'), 'not asked while walking');
+  const still = () => page.evaluate(() => { window.DALIL_APP.tracker.lastStep = performance.now() - 5000; });
+  await still();
+  await page.waitForSelector('#arriveAsk:not([hidden])');
+  assert.equal(await page.textContent('#arriveAskText'), 'Are you at Prayer Room?');
+  assert.ok((await page.evaluate(() => window.DALIL_APP.spoken)).includes('Are you at Prayer Room?'), 'asked out loud');
+  await page.click('#btnAskNo');
+  await page.waitForTimeout(1200);
+  assert.ok(await page.isHidden('#arriveAsk'), 'Not yet: not asked again straight away');
+  await walk(page, { seconds: 20, until: 'nav.pos - nav.askNo >= 5.5' });
+  await still();
+  await page.waitForSelector('#arriveAsk:not([hidden])');
+  await page.click('#btnAskYes');
+  await page.waitForSelector('#arrived:not([hidden])');
+  assert.equal(await page.textContent('#arrivedName'), 'Prayer Room');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('Arabic: building names are Arabic too', async () => {
   const { ctx, page, errors } = await open('#b=uos-central-labs-b3-test&f=ground-floor');
   await page.click('#btnSheet').catch(() => {}); await page.click('#btnLang');
