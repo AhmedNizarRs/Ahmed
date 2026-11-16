@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="ar">
+<head>
+<meta charset="utf-8">
+<title>Rimal reel: Burj Khalifa iftar</title>
+<style>
+@font-face { font-family: "PlexAr"; src: url(fonts/plex-arabic-500.woff2) format("woff2"); font-weight: 500; }
+@font-face { font-family: "PlexAr"; src: url(fonts/plex-arabic-600.woff2) format("woff2"); font-weight: 600; }
+@font-face { font-family: "Kufi"; src: url(fonts/reem-kufi-arabic.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Jost"; src: url(fonts/jost.woff2) format("woff2"); font-weight: 100 900; }
+html, body { margin: 0; background: #000; }
+canvas { display: block; position: absolute; left: 0; top: 0; }
+#gl { visibility: hidden; }
+</style>
+</head>
+<body>
+<canvas id="gl" width="1080" height="1920"></canvas>
+<canvas id="out" width="1080" height="1920"></canvas>
+<script src="vendor/three.min.js"></script>
+<script src="timeline.js"></script>
+<script src="film.js"></script>
+</body>
+</html>
