@@ -142,6 +142,14 @@ async def main():
             check(r["onTable"] == 0, f"scan {kind}: the 0.75 m table is not a wall")
             check("All 4 points connected" in r["grid"], f"scan {kind}: rooms reachable through the doorways ({r['grid'][-70:]})")
 
+        # 7. Places added on site in the visitor app (dalil-places file) land at the same plan metres; a second import skips them
+        r = await pg.evaluate("""()=>{ const b=slug(document.getElementById('inBuilding').value), f=slug(document.getElementById('inFloor').value), n0=S.points.length;
+            const file=JSON.stringify({format:'dalil-places', version:1, floors:[{building:{id:b}, floor:{id:f}, places:[{id:'UABC', nameEn:'Study Room', nameAr:'غرفة دراسة', category:'room', doors:'1.42', x:6, y:-9.5}]}]});
+            const a=importPlaces(file), b2=importPlaces(file), p=S.points[S.points.length-1];
+            return {a, b2, n:S.points.length-n0, x:p.x, y:p.y, name:p.nameEn, ar:p.nameAr, doors:p.doors, bad:importPlaces('{}')}; }""")
+        check(r["a"]["added"] == 1 and r["b2"]["added"] == 0 and r["n"] == 1, f"import places: added once ({r})")
+        check(r["x"] == 6 and r["y"] == -9.5 and r["name"] == "Study Room" and r["doors"] == "1.42", "import places: position, names and door kept")
+
         # 5. World position from two control points: plan +x 100 m due east -> plan up = north, scale 1
         g = await pg.evaluate("""()=>DALIL.geoFromTwo({x:0,y:0},{lat:25.3,lng:55.4},{x:100,y:0},{lat:25.3,lng:55.4+100/(111412.84*Math.cos(25.3*Math.PI/180))})""")
         check(abs(g["bearing"]) < 0.01 and abs(g["scale"] - 1) < 1e-4 and abs(g["origin"][1] - 25.3) < 1e-7, f"geo: two control points {g}")

@@ -229,7 +229,16 @@ function toast(text, ms = 3600) { const el = $('#toast'); el.textContent = text;
    Loading maps
    ========================================================================= */
 const isMap = m => m && m.format === 'dalil-map' && Array.isArray(m.points) && (m.routes || m.nav) && m.plan && m.building && m.floor;
-function addMap(m) { const i = state.maps.findIndex(o => o.building.id === m.building.id && o.floor.id === m.floor.id); if (i >= 0) state.maps[i] = m; else state.maps.push(m); }
+// Places you added to a floor plan (rooms the drawing has no label for). Kept on this phone per building and floor in
+// dalil.added { "<building>|<floor>": [{ id, nameEn, nameAr, category, doors, x, y, t }] }; Export gives a file the
+// DALIL Mapper imports (Import places), so they can go into the official map.
+const addedKey = m => `${m.building.id}|${m.floor.id}`;
+const addedAll = () => store.get('dalil.added', {}) || {};
+function applyAdded(m) {
+  m.points = m.points.filter(p => !p.added);
+  for (const a of addedAll()[addedKey(m)] || []) m.points.push({ id: a.id, nameEn: a.nameEn || a.nameAr, nameAr: a.nameAr || '', category: a.category || 'room', ...(a.doors ? { doors: a.doors } : {}), dalilNode: false, facingDeg: 90, x: a.x, y: a.y, added: true });
+}
+function addMap(m) { applyAdded(m); const i = state.maps.findIndex(o => o.building.id === m.building.id && o.floor.id === m.floor.id); if (i >= 0) state.maps[i] = m; else state.maps.push(m); }
 async function loadBundled() {
   const res = await fetch('maps.json'); if (!res.ok) throw new Error('maps.json ' + res.status);
   const list = await res.json();
@@ -670,6 +679,7 @@ function renderRoute() {
   $('#destName').textContent = pname(to);
   $('#destMeta').innerHTML = [`<span>${esc(catName(to.category))}</span>`, multi || dest.m !== state.map ? `<span class="badge">${esc(floorName(dest.m.floor))}</span>` : '', `<bdi>${esc(bname(dest.m.building))}</bdi>`].join('');
   const isSaved = isFav(state.toKey);
+  $('#btnEditPlace').hidden = !to.added || !!state.kiosk;
   $('#btnFav').setAttribute('aria-pressed', String(isSaved)); $('#favText').textContent = t(isSaved ? 'saved' : 'save');
   const msg = $('#routeMsg'); msg.className = 'route-msg'; msg.innerHTML = '';
   const out = outsideNow(), outMsg = () => {
@@ -771,6 +781,51 @@ function onMapTap({ x, y }) {
   mainMap.setDest(pinPoint);
   announce(t('pinAt', floorName(vm.floor)));
 }
+// Add a place where the pin is, or edit / remove one you added.
+let placeEdit = null;   // { m, x, y, id? }
+const PLACE_CATS = ['room', 'lab', 'toilet', 'toilet_acc', 'prayer', 'wudu', 'cafe', 'reception', 'entrance', 'exit', 'lift', 'stairs', 'ramp', 'baby', 'parking'];
+function openPlaceDlg(m, at, p = null) {
+  placeEdit = { m, x: at.x, y: at.y, id: p?.id || null };
+  $('#placeDlgTitle').textContent = t(p ? 'placeEditTitle' : 'placeAddTitle');
+  $('#placeFloor').textContent = `${bname(m.building)} · ${floorName(m.floor)}`;
+  $('#placeEn').value = p?.nameEn || ''; $('#placeAr').value = p?.nameAr || ''; $('#placeDoor').value = p?.doors || '';
+  $('#placeCat').innerHTML = PLACE_CATS.map(c => `<option value="${c}" ${c === (p?.category || 'room') ? 'selected' : ''}>${esc(catName(c))}</option>`).join('');
+  $('#btnPlaceDel').hidden = !p; $('#placeMsg').textContent = '';
+  openDlg($('#dlgPlace')); setTimeout(() => $('#placeEn').focus(), 50);
+}
+function refreshMapsAfterPlaces(m) {
+  applyAdded(m); memo.clear(); for (const v of [mainMap, homeMap, routeMap]) if (v?.map === m) { v.map = null; }
+  if (pageNow === 'map') renderFloorMap(); renderHome(); renderSettings();
+}
+function savePlace() {
+  const e = placeEdit; if (!e) return;
+  const en = $('#placeEn').value.trim().slice(0, 60), ar = $('#placeAr').value.trim().slice(0, 60), door = $('#placeDoor').value.trim().slice(0, 20);
+  if (!en && !ar) { $('#placeMsg').textContent = t('placeNeedName'); $('#placeEn').focus(); return; }
+  const all = addedAll(), k = addedKey(e.m), list = all[k] || [], id = e.id || 'U' + Date.now().toString(36).toUpperCase();
+  const rec = { id, nameEn: en || ar, nameAr: ar, category: $('#placeCat').value, ...(door ? { doors: door } : {}), x: e.x, y: e.y, t: Date.now() };
+  all[k] = [...list.filter(a => a.id !== id), rec]; store.set('dalil.added', all);
+  $('#dlgPlace').close(); pinPoint = null; $('#pinCard').hidden = true; placeEdit = null;
+  refreshMapsAfterPlaces(e.m);
+  const msg = t(e.id ? 'placeUpdated' : 'placeAdded', en || ar); toast(msg); announce(msg);
+  if (pageNow === 'route') renderRoute();
+}
+function deletePlace() {
+  const e = placeEdit; if (!e?.id) return;
+  const all = addedAll(), k = addedKey(e.m); all[k] = (all[k] || []).filter(a => a.id !== e.id); if (!all[k].length) delete all[k]; store.set('dalil.added', all);
+  $('#dlgPlace').close(); placeEdit = null;
+  refreshMapsAfterPlaces(e.m); toast(t('placeRemoved')); announce(t('placeRemoved'));
+  if (pageNow === 'route') back();
+}
+function addedCount() { return Object.values(addedAll()).reduce((a, l) => a + l.length, 0); }
+function exportPlaces() {
+  const all = addedAll(), floors = Object.entries(all).filter(([, l]) => l.length).map(([k, places]) => { const [b, f] = k.split('|'); return { building: { id: b }, floor: { id: f }, places: places.map(({ t: _, ...p }) => p) }; });
+  if (!floors.length) { toast(t('placesNone')); return; }
+  const body = JSON.stringify({ format: 'dalil-places', version: 1, created: new Date().toISOString().slice(0, 10), floors }, null, 1);
+  const name = `dalil-places_${floors[0].building.id}.json`, file = new File([body], name, { type: 'application/json' });
+  if (navigator.canShare?.({ files: [file] })) { navigator.share({ files: [file], title: name }).catch(() => {}); return; }
+  const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
 const pinKey = () => pinPoint ? `${pinPoint.f}|@${pinPoint.x},${pinPoint.y}` : null;
 
 /* ---------- Where am I (QR sign, NFC tag, or a list) ---------- */
@@ -839,6 +894,7 @@ function renderSettings() {
   $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${bname(m.building)} · ${floorName(m.floor)}`)}</option>`).join('');
   $('#setProvider').innerHTML = providerOptions();
   $('#privacyStats').hidden = !cfg.analytics?.endpoint;
+  const n = addedCount(); $('#addedInfo').textContent = n ? t('placesYouAdded', n) : t('placesHowTo'); $('#btnExportPlaces').hidden = !n;
 }
 function resolvedTheme() { return settings.theme === 'system' ? (mq('(prefers-color-scheme: dark)') ? 'dark' : 'light') : settings.theme; }
 function applyDisplay() {
@@ -1850,6 +1906,12 @@ function bind() {
   // Floor map
   $('#btnPinGo').onclick = () => { const k = pinKey(); if (k) { pinPoint = null; $('#pinCard').hidden = true; setDest(k); } };
   $('#btnPinSave').onclick = () => { if (!pinPoint) return; store.set('dalil.spot', { b: state.map.building.id, f: pinPoint.f, x: pinPoint.x, y: pinPoint.y }); pinPoint = null; $('#pinCard').hidden = true; renderFloorMap(); renderHome(); toast(t('spotSaved')); announce(t('spotSaved')); };
+  $('#btnPinAdd').onclick = () => { if (pinPoint) { const m = state.viewMap?.floor.id === pinPoint.f ? state.viewMap : mapByFloor(pinPoint.f); if (m) openPlaceDlg(m, pinPoint); } };
+  $('#formPlace').addEventListener('submit', e => { e.preventDefault(); savePlace(); });
+  $('#btnPlaceDel').onclick = deletePlace;
+  $('#btnPlaceCancel').onclick = () => { $('#dlgPlace').close(); placeEdit = null; };
+  $('#btnEditPlace').onclick = () => { const d = destRef(); if (d?.p.added) openPlaceDlg(d.m, d.p, d.p); };
+  $('#btnExportPlaces').onclick = exportPlaces;
   $('#btnClosePin').onclick = () => { pinPoint = null; $('#pinCard').hidden = true; renderFloorMap(); };
   $('#btnRecenter').onclick = () => { state.viewMap = state.map; renderFloorMap(); };
   $('#btnZoomIn').onclick = () => mainMap.zoom(1.3); $('#btnZoomOut').onclick = () => mainMap.zoom(1 / 1.3);

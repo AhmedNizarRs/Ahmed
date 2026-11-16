@@ -157,7 +157,9 @@ canvas{display:block;width:100%;height:100%;touch-action:none}
     <div class="row"><label style="min-width:0"><input type="checkbox" id="chkRoutes"> Also store every route (old format: files grow with places²)</label></div>
     <div class="row"><button class="pri" id="btnExport">Export map JSON</button><button id="btnCsv">NFC tag list</button></div>
     <div class="row"><button id="btnSave">Save project</button><button id="btnOpen">Open project</button></div>
+    <div class="row"><button id="btnPlaces" title="A dalil-places file from the visitor app (rooms named on site with Add a place here)">Import places</button><span class="mini" id="placesStatus"></span></div>
     <input type="file" id="fProj" accept=".json" class="hidden">
+    <input type="file" id="fPlaces" accept=".json" class="hidden">
     <p class="hint">Map JSON holds every point, the plan outline and precomputed routes between all points (walking + wheelchair, EN + AR steps) — ready for the DALIL app.</p>
     <div class="status" id="expStatus">—</div>
   </section>
@@ -995,7 +997,7 @@ async function exportMap(){
   const out={format:'dalil-map', version:1, generated:new Date().toISOString(), building:{id:bId, name:$('inBuilding').value||'Building'}, floor:{id:fId, name:$('inFloor').value||'Floor'},
     units:'m', source:S.mode==='dxf'?{type:'dxf', drawingUnits:$('selUnits').value==='auto'?(S.fileUnits||'cm'):$('selUnits').value}:{type:'image', metresPerPixel:S.mpp},
     clearance:{walk:S.grids.walk.r, wheelchair:S.grids.chair.r}, grid:{cell:S.grids.walk.cell},
-    points:S.points.map(p=>({id:p.id, nameEn:p.nameEn, nameAr:p.nameAr, category:p.cat, dalilNode:p.node, facingDeg:p.face, x:r2(p.x), y:r2(p.y), ...(p.link?{link:p.link}:{}), ...(p.node?{nfcUrl:`${base}/${bId}/${fId}/${p.id}`}:{})})),
+    points:S.points.map(p=>({id:p.id, nameEn:p.nameEn, nameAr:p.nameAr, category:p.cat, dalilNode:p.node, facingDeg:p.face, x:r2(p.x), y:r2(p.y), ...(p.link?{link:p.link}:{}), ...(p.doors?{doors:p.doors}:{}), ...(p.node?{nfcUrl:`${base}/${bId}/${fId}/${p.id}`}:{})})),
     plan:{walls, doors, openings:S.openings.map(o=>({a:o.a.map(r2),b:o.b.map(r2),width_m:o.w||0.9}))},
     ...(S.geo?{geo:S.geo}:{}),
     closures:S.closures.map(c=>({id:c.id, nameEn:c.nameEn, nameAr:c.nameAr, a:c.a.map(r2), b:c.b.map(r2), width_m:c.w||0.6})),
@@ -1134,6 +1136,25 @@ function openProject(text){
   if (p.mode==='image' && p.image){ const img=new Image(); img.onload=()=>{ S.image=img; S.imgW=img.naturalWidth; S.imgH=img.naturalHeight; finish(); }; img.src=p.image; } else { S.image=null; finish(); }
 }
 $('btnExport').onclick=exportMap; $('btnAuto').onclick=autoPlaces; $('btnCsv').onclick=exportCsv; $('btnSave').onclick=saveProject;
+// Places added on site in the visitor app ("Add a place here"): same plan metres as this floor's export.
+function importPlaces(text){
+  let d; try{ d=JSON.parse(text); }catch{ d=null; }
+  if (!d || d.format!=='dalil-places' || !Array.isArray(d.floors)) return toast('Not a dalil-places file.');
+  const bId=slug($('inBuilding').value), fId=slug($('inFloor').value);
+  let fl=d.floors.find(f=>f.building?.id===bId && f.floor?.id===fId), note='';
+  if (!fl && d.floors.length===1){ fl=d.floors[0]; note=` (file is for ${fl.building.id} / ${fl.floor.id}; this project is ${bId} / ${fId}: check it is the same floor)`; }
+  if (!fl) return toast(`No places for ${bId} / ${fId} in this file. It has: `+d.floors.map(f=>f.building.id+' / '+f.floor.id).join(', '));
+  let added=0, skipped=0;
+  for (const q of fl.places||[]){
+    if (!isFinite(q.x)||!isFinite(q.y)) { skipped++; continue; }
+    if (S.points.some(p=>Math.hypot(p.x-q.x,p.y-q.y)<0.3 && p.nameEn===q.nameEn)) { skipped++; continue; }   // already imported
+    const p=addPoint(+q.x,+q.y,{nameEn:q.nameEn||q.nameAr, nameAr:q.nameAr||'', cat:CAT[q.category]?q.category:'room'}); if (q.doors) p.doors=String(q.doors); added++;
+  }
+  S.route=null; refreshPoints(); draw();
+  const msg=`Imported ${added} place${added===1?'':'s'}${skipped?`, ${skipped} skipped (already here or no position)`:''}${note}.`;
+  setStatus('placesStatus', msg); toast(msg); return {added, skipped};
+}
+$('btnPlaces').onclick=()=>$('fPlaces').click(); $('fPlaces').onchange=async e=>{ const f=e.target.files[0]; if(f) importPlaces(await f.text()); e.target.value=''; };
 $('btnOpen').onclick=()=>$('fProj').click(); $('fProj').onchange=async e=>{ const f=e.target.files[0]; if(f) openProject(await f.text()); e.target.value=''; };
 
 /* ---------------- SAMPLE HOSPITAL (generated DXF, cm) ---------------- */

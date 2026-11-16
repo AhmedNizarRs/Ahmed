@@ -558,6 +558,79 @@ test('floor map: tap anywhere for directions, and save it as My spot', async () 
   await ctx.close();
 });
 
+test('add a place to the floor plan (a room with no label): searchable, routable, editable, exported for the Mapper', async () => {
+  const { ctx, page, errors } = await open(KENNEDY);
+  await page.click('#btnFloorMap');
+  await pageIs(page, 'map');
+  await page.waitForTimeout(400);
+  const scr = await page.evaluate(async () => {
+    const { Router } = await import('./router.js');
+    const m = window.DALIL_APP.state.map, R = new Router(m), fm = window.DALIL_APP.views().floorMap;
+    const r = document.querySelector('#mainMap').getBoundingClientRect(), top = document.querySelector('#pgMap .bar').getBoundingClientRect().bottom + 20;
+    const bottom = document.querySelector('#pgMap .map-foot').getBoundingClientRect().top - 20;
+    for (let y = top; y < bottom; y += 23) for (let x = r.left + 30; x < r.right - 90; x += 23) {
+      const el = document.elementFromPoint(x, y); if (!el || !el.closest('#mainMap') || el.closest('.mk')) continue;
+      const p = fm.screenToPlan(x, y); if (R.walkable(p.x, p.y) && R.distance('walk', m.points[0], p) != null) return { x, y };
+    }
+  });
+  assert.ok(scr, 'found an open spot');
+  await page.mouse.click(scr.x, scr.y);
+  await page.waitForSelector('#pinCard:not([hidden])');
+  await page.click('#btnPinAdd');
+  await page.waitForSelector('#dlgPlace[open]');
+  await page.click('#formPlace button[type=submit]');
+  assert.match(await page.textContent('#placeMsg'), /Type a name/);
+  await page.fill('#placeEn', 'Study Room Zeta');
+  await page.fill('#placeAr', 'غرفة الدراسة زيتا');
+  await page.selectOption('#placeCat', 'room');
+  await page.fill('#placeDoor', '1.42');
+  await page.click('#formPlace button[type=submit]');
+  assert.match(await page.textContent('#toast'), /Added Study Room Zeta/);
+  assert.ok(await page.isHidden('#pinCard'));
+  const stored = await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.added')));
+  const [k] = Object.keys(stored), id = stored[k][0].id;
+  // Searchable by name and by door number, and a route to it starts
+  await page.click('#pgMap [data-back]'); await pageIs(page, 'home');
+  const key = `${k.split('|')[1]}|${id}`;
+  await search(page, '1.42');
+  assert.ok(await page.$(`#results button[data-pick="${key}"]`), 'found by door number');
+  await pick(page, 'zeta', key);
+  assert.equal(await page.textContent('#destName'), 'Study Room Zeta');
+  assert.ok(await page.isVisible('#btnEditPlace'));
+  assert.ok(await page.isEnabled('#btnStart'));
+  await page.click('#btnStart');
+  assert.equal((await steps(page)).at(-1), 'You have arrived at Study Room Zeta.');
+  await page.click('#btnEndNav'); await pageIs(page, 'route');
+  // Still there after a reload (kept on the phone)
+  await page.reload(); await page.waitForFunction(() => window.DALIL_APP?.state?.map);
+  await pick(page, 'zeta', key);
+  // Edit the name
+  await page.click('#btnEditPlace'); await page.waitForSelector('#dlgPlace[open]');
+  assert.equal(await page.inputValue('#placeDoor'), '1.42');
+  await page.fill('#placeEn', 'Study Room Eta');
+  await page.click('#formPlace button[type=submit]');
+  assert.equal(await page.textContent('#destName'), 'Study Room Eta');
+  // Export for the Mapper
+  await page.evaluate(() => window.DALIL_APP.go('home')); await pageIs(page, 'home');
+  await page.evaluate(() => window.DALIL_APP.go('settings')); await pageIs(page, 'settings');
+  assert.match(await page.textContent('#addedInfo'), /You added 1 place/);
+  const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#btnExportPlaces')]);
+  const file = JSON.parse(await (await import('node:fs')).promises.readFile(await dl.path(), 'utf8'));
+  assert.equal(file.format, 'dalil-places');
+  assert.equal(file.floors[0].places[0].nameEn, 'Study Room Eta');
+  assert.equal(file.floors[0].places[0].doors, '1.42');
+  // Remove it
+  await page.evaluate(() => window.DALIL_APP.go('home')); await pageIs(page, 'home');
+  await pick(page, 'eta', key);
+  await page.click('#btnEditPlace'); await page.waitForSelector('#dlgPlace[open]');
+  await page.click('#btnPlaceDel');
+  assert.match(await page.textContent('#toast'), /Place removed/);
+  await search(page, 'study room eta');
+  assert.equal(await page.$(`#results button[data-pick="${key}"]`), null);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('a temporary closure makes the route go around it', async () => {
   const { ctx, page, errors } = await open();
   const r = await page.evaluate(async () => {

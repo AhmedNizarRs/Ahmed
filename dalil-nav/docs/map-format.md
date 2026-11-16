@@ -69,3 +69,15 @@ Visitor-friendly extras (optional, v2)
 - Category `lab` (labs, shown as "Lab" / "مختبر" with a flask icon); the Mapper's "Find places" picks it from "lab", "laboratory", مختبر, معمل.
 - First-turn wording: "Turn left (9 o'clock)", i.e. plain words with the clock direction in brackets (was "Turn to your 9 o'clock"). Older files with stored routes keep their wording.
 - Survey v2 maps add `source.version: 2` and `source.quality: { rating: "good"|"ok"|"rough"|"unchecked", drift (fraction), loops, distance_m }`. A manual satellite line-up shows in `geo.bearing`/`geo.scale` and in `geo.source`.
+
+## Places added on site (`dalil-places`)
+
+The visitor app's "Add a place here" exports:
+
+```json
+{ "format": "dalil-places", "version": 1, "created": "2026-11-16",
+  "floors": [{ "building": { "id": "uos-fine-arts-test" }, "floor": { "id": "ground" },
+    "places": [{ "id": "UMHZ3K1", "nameEn": "Drawing Studio 3", "nameAr": "", "category": "room", "doors": "G-14", "x": 41.2, "y": 18.7 }] }] }
+```
+
+`x`, `y` are the floor's plan metres (same as `points`). The Mapper's **Import places** adds them as points; a second import of the same file skips them.

@@ -250,6 +250,7 @@
         <button id="btnFav" class="btn tertiary" type="button" aria-pressed="false"><span class="ico" data-ico="heart"></span><span id="favText" data-i18n="save">Save</span></button>
         <button id="btnShare" class="btn tertiary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="share">Share</span></button>
       </div>
+      <button id="btnEditPlace" class="btn tertiary" type="button" hidden><span class="ico" data-ico="edit"></span><span data-i18n="placeEditBtn">Edit this place (added by you)</span></button>
       <details id="secPreview" class="steps-box" hidden><summary id="stepsSummary"></summary><ol id="previewSteps" class="step-rows"></ol></details>
       <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
     </main>
@@ -299,6 +300,7 @@
       <div id="pinCard" class="pin-card" hidden>
         <div class="pin-head"><span class="ico" data-ico="pin"></span><strong id="pinText"></strong><button id="btnClosePin" class="icon-btn sm" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
         <div class="pair"><button id="btnPinGo" class="btn primary" type="button" data-i18n="pinGo">Directions here</button><button id="btnPinSave" class="btn secondary" type="button" data-i18n="pinSave">Save as my spot</button></div>
+        <button id="btnPinAdd" class="btn tertiary" type="button"><span class="ico" data-ico="plus"></span><span data-i18n="pinAdd">Add a place here</span></button>
       </div>
       <p id="mapTip" class="map-tip" data-i18n="mapTip">Tap a place for directions, or tap the floor to drop a pin.</p>
     </div>
@@ -351,6 +353,8 @@
         <button id="btnSurvey" class="btn secondary" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="surveyBtn">Map a building by walking it</span></button>
         <label class="btn secondary file-btn"><span class="ico" data-ico="map"></span><span data-i18n="loadMap">Load a map file</span><input id="fileMap" type="file" accept=".json,application/json"></label>
         <p id="loadMsg" class="muted" role="status"></p>
+        <p id="addedInfo" class="muted"></p>
+        <button id="btnExportPlaces" class="btn secondary" type="button" hidden><span class="ico" data-ico="share"></span><span data-i18n="exportPlaces">Export places you added</span></button>
       </fieldset>
       <section class="set-group about"><h2 class="legend" data-i18n="about">About</h2>
         <p data-i18n="aboutText">DALIL is a supplementary wayfinding aid.</p>
@@ -465,6 +469,20 @@
   </div>
 
   <!-- All steps (an overview; the steps move on by themselves) -->
+  <dialog id="dlgPlace" class="sheet-dlg" aria-labelledby="placeDlgTitle">
+    <div class="dlg-head"><h2 id="placeDlgTitle">Add a place</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="placeFloor" class="muted"></p>
+    <form id="formPlace" class="sv-form place-form">
+      <label class="field"><span data-i18n="placeNameEn">Name (English)</span><input id="placeEn" type="text" maxlength="60" autocomplete="off" dir="ltr"></label>
+      <label class="field"><span data-i18n="placeNameAr">Name (Arabic)</span><input id="placeAr" type="text" maxlength="60" autocomplete="off" dir="rtl" lang="ar"></label>
+      <label class="field"><span data-i18n="placeType">Type</span><select id="placeCat"></select></label>
+      <label class="field"><span data-i18n="placeDoor">Door or room number (optional)</span><input id="placeDoor" type="text" maxlength="20" autocomplete="off" dir="ltr"></label>
+      <p id="placeMsg" class="route-msg" role="status"></p>
+      <p class="muted small" data-i18n="placeNote">Saved on this phone. Export it from Settings to add it to the building’s official map.</p>
+      <div class="pair"><button class="btn primary" type="submit" data-i18n="placeSave">Save place</button><button id="btnPlaceCancel" class="btn secondary" type="button" data-i18n="cancel">Cancel</button></div>
+      <button id="btnPlaceDel" class="btn tertiary danger" type="button" hidden><span class="ico" data-ico="close"></span><span data-i18n="placeDelete">Remove this place</span></button>
+    </form>
+  </dialog>
   <dialog id="dlgWhereNow" class="sheet-dlg" aria-labelledby="whereNowTitle">
     <div class="dlg-head"><h2 id="whereNowTitle" data-i18n="whereNowTitle">Where are you now?</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
     <p id="whereNowHint" class="muted"></p>

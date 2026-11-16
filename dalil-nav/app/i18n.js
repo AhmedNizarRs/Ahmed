@@ -2,6 +2,11 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    pinAdd: 'Add a place here', placeAddTitle: 'Add a place', placeEditTitle: 'Edit place', placeNameEn: 'Name (English)', placeNameAr: 'Name (Arabic)', placeType: 'Type', placeDoor: 'Door or room number (optional)',
+    placeNote: 'Saved on this phone. Export it from Settings to add it to the building’s official map.', placeSave: 'Save place', placeDelete: 'Remove this place', placeNeedName: 'Type a name in English or Arabic.',
+    placeAdded: n => `Added ${n}. You can search for it now.`, placeUpdated: n => `Saved ${n}.`, placeRemoved: 'Place removed.', placeEditBtn: 'Edit this place (added by you)',
+    exportPlaces: 'Export places you added', placesNone: 'You have not added any places yet.', placesYouAdded: n => `You added ${n} ${n === 1 ? 'place' : 'places'} on this phone. Export them for the official map.`,
+    placesHowTo: 'A room with no name? On the Floor map, tap it, then Add a place here.',
     imHere: 'I’m here', strideLearned: n => `Got it. Your step is about ${n} cm; the next route will count it.`,
     whereNowTitle: 'Where are you now?', whereNowHint: 'Indoors your phone’s location is only accurate to a few rooms. Tap the place you are at, so the directions start in the right spot.', whereNowNavHint: 'Tap the place you are at now. The route starts again from there.', notHere: 'Not here?', aboutM: n => `about ${n} m`,
     svHeight: 'Your height in cm (optional: sets your step length)', svQuick: 'Tap what is here', svAddNamed: 'Add a place with its name', svNearAsk: n => `Back at ${n}? Tap to straighten the map`,
@@ -133,6 +138,11 @@ export const STR = {
     cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    pinAdd: 'أضف مكانًا هنا', placeAddTitle: 'إضافة مكان', placeEditTitle: 'تعديل المكان', placeNameEn: 'الاسم (بالإنجليزية)', placeNameAr: 'الاسم (بالعربية)', placeType: 'النوع', placeDoor: 'رقم الباب أو الغرفة (اختياري)',
+    placeNote: 'محفوظ على هذا الهاتف. صدّره من الإعدادات لإضافته إلى الخريطة الرسمية للمبنى.', placeSave: 'حفظ المكان', placeDelete: 'إزالة هذا المكان', placeNeedName: 'اكتب اسمًا بالإنجليزية أو العربية.',
+    placeAdded: n => `تمت إضافة ${n}. يمكنك البحث عنه الآن.`, placeUpdated: n => `تم حفظ ${n}.`, placeRemoved: 'تمت إزالة المكان.', placeEditBtn: 'تعديل هذا المكان (أضفته أنت)',
+    exportPlaces: 'تصدير الأماكن التي أضفتها', placesNone: 'لم تُضف أي مكان بعد.', placesYouAdded: n => `أضفت ${n === 1 ? 'مكانًا واحدًا' : n === 2 ? 'مكانين' : n <= 10 ? `${n} أماكن` : `${n} مكانًا`} على هذا الهاتف. صدّرها للخريطة الرسمية.`,
+    placesHowTo: 'غرفة بلا اسم؟ في خريطة الطابق، اضغط عليها ثم «أضف مكانًا هنا».',
     imHere: 'وصلت', strideLearned: n => `تمام. طول خطوتك نحو ${n} سم، وسيُحتسب في المسار التالي.`,
     whereNowTitle: 'أين أنت الآن؟', whereNowHint: 'داخل المبنى، دقة موقع هاتفك في حدود عدة غرف فقط. اضغط على المكان الذي أنت فيه لتبدأ الاتجاهات من المكان الصحيح.', whereNowNavHint: 'اضغط على المكان الذي أنت فيه الآن، وسيبدأ المسار من جديد من هناك.', notHere: 'لست هنا؟', aboutM: n => `نحو ${n} م`,
     svHeight: 'طولك بالسنتيمتر (اختياري: يحدد طول خطوتك)', svQuick: 'اضغط على ما يوجد هنا', svAddNamed: 'أضف مكانًا باسمه', svNearAsk: n => `عدت إلى ${n}؟ اضغط لتصحيح الخريطة`,
@@ -304,6 +314,7 @@ export const UI = {
   back: '<path d="m15 5-7 7 7 7"/>', fwd: '<path d="m9 5 7 7-7 7"/>', close: '<path d="M6 6l12 12M18 6 6 18"/>', chevDown: '<path d="m6 9 6 6 6-6"/>',
   heart: '<path d="M12 20.5 4.3 13a4.8 4.8 0 0 1 6.8-6.8l.9.9.9-.9a4.8 4.8 0 0 1 6.8 6.8z"/>',
   share: '<path d="M12 15V4M8 8l4-4 4 4M5 13v5.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V13"/>',
+  edit: '<path d="M4 20h4L19.5 8.5a2.1 2.1 0 0 0-3-3L5 17z"/><path d="m14.5 7.5 3 3"/>',
   layers: '<path d="M12 3 2.5 8 12 13l9.5-5z"/><path d="m2.5 12 9.5 5 9.5-5"/><path d="m2.5 16 9.5 5 9.5-5"/>', gps: '<path d="M12 21s-6.5-5.8-6.5-11a6.5 6.5 0 0 1 13 0c0 5.2-6.5 11-6.5 11z"/><circle cx="12" cy="10" r="2.4"/>', locate: '<circle cx="12" cy="12" r="3.5"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3"/>', plus: '<path d="M12 5v14M5 12h14"/>', minus: '<path d="M5 12h14"/>',
   check: '<path d="m5 12.5 4.5 4.5L19 7.5"/>', alert: '<path d="M12 4 2.8 19.5h18.4zM12 10v4.5M12 17.3v.2"/>', info: '<circle cx="12" cy="12" r="8.5"/><path d="M12 11v5M12 8v.2"/>',
   walk: '<circle cx="13" cy="4.5" r="1.8"/><path d="m10.5 21 2-6.5L15 17v4M8 12l2.5-4.5 3 1.5 2 3.5M10.5 7.5 8 9l-1 3.5"/>',
