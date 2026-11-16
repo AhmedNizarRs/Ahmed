@@ -161,17 +161,41 @@ export function plainStep(s) {
 }
 // The first turn: words, then the clock direction in brackets (plainStep moves it into `clock`).
 const CLOCK_WORDS = { 1: ['Bear right', 'اتجه قليلاً إلى اليمين'], 2: ['Bear right', 'اتجه قليلاً إلى اليمين'], 3: ['Turn right', 'انعطف إلى اليمين'], 4: ['Turn sharp right', 'انعطف بحدة إلى اليمين'], 5: ['Turn sharp right', 'انعطف بحدة إلى اليمين'], 6: ['Turn around', 'استدر إلى الخلف'], 7: ['Turn sharp left', 'انعطف بحدة إلى اليسار'], 8: ['Turn sharp left', 'انعطف بحدة إلى اليسار'], 9: ['Turn left', 'انعطف إلى اليسار'], 10: ['Bear left', 'اتجه قليلاً إلى اليسار'], 11: ['Bear left', 'اتجه قليلاً إلى اليسار'] };
-function instructions(path, A, B, mode, points, speed = {}) {
+// Douglas–Peucker: the route's small kinks (a traced plan's jagged walls, string-pulling around a door frame) are not
+// turns a person makes. Instructions are read from the path simplified to ~1 m; the drawn route keeps every point.
+export function simplify(pts, tol) {
+  if (pts.length < 3) return pts.slice();
+  const keep = new Uint8Array(pts.length); keep[0] = keep[pts.length - 1] = 1;
+  const st = [[0, pts.length - 1]];
+  while (st.length) {
+    const [a, b] = st.pop(); let md = 0, mi = -1;
+    const [ax, ay] = pts[a], [bx, by] = pts[b], dx = bx - ax, dy = by - ay, L = Math.hypot(dx, dy) || 1e-9;
+    for (let i = a + 1; i < b; i++) { const d = Math.abs((pts[i][0] - ax) * dy - (pts[i][1] - ay) * dx) / L; if (d > md) { md = d; mi = i; } }
+    if (md > tol) { keep[mi] = 1; st.push([a, mi], [mi, b]); }
+  }
+  return pts.filter((_, i) => keep[i]);
+}
+function instructions(fullPath, A, B, mode, points, speed = {}) {
+  const path = simplify(fullPath, 1.0);
   const legs = [];
   for (let i = 0; i < path.length - 1; i++) {
     const len = Math.hypot(path[i + 1][0] - path[i][0], path[i + 1][1] - path[i][1]); if (len < 1e-6) continue; const h = ang(path[i], path[i + 1]);
     const last = legs[legs.length - 1];
-    if (last && (Math.abs(norm(h - last.h)) < 20 || len < 0.6)) { last.len += len; last.end = path[i + 1]; }
+    if (last && (Math.abs(norm(h - last.h)) < 30 || len < 0.6)) { last.len += len; last.end = path[i + 1]; }
     else legs.push({ h, len, start: path[i], end: path[i + 1] });
   }
   for (let i = legs.length - 1; i > 0; i--) if (legs[i].len < 0.8) { legs[i - 1].len += legs[i].len; legs[i - 1].end = legs[i].end; legs.splice(i, 1); }
   // A short jog between two slight turns ("bear right 2 m, bear left 2 m") is one leg, not two steps.
   for (let i = legs.length - 2; i > 0; i--) if (legs[i].len < 3 && Math.abs(norm(legs[i].h - legs[i - 1].h)) <= 55 && Math.abs(norm(legs[i + 1].h - legs[i].h)) <= 55) { legs[i - 1].len += legs[i].len; legs[i - 1].end = legs[i].end; legs.splice(i, 1); }
+  // Small bends one after another ("Go a little right", then "Go a little right" again) are one walk: a bend of 40° or
+  // less (or up to 55° next to a piece under 4 m) is folded in: you just follow the corridor (founder's on-site test: "Now Go a little right / Then: Go a little right").
+  for (let i = legs.length - 1; i > 0; i--) {
+    const a = legs[i - 1], b = legs[i];
+    const bend = Math.abs(norm(b.h - (a.hOut ?? a.h)));
+    if (bend <= 40 || (bend <= 55 && Math.min(a.len, b.len) < 4)) {
+      a.len += b.len; a.end = b.end; a.hOut = b.hOut ?? b.h; legs.splice(i, 1);   // the next turn is measured from where you walk at the end
+    }
+  }
   const total = legs.reduce((a, l) => a + l.len, 0);
   const m = d => Math.max(1, Math.round(d)), st = d => Math.max(1, Math.round(d / 0.7));
   const arM = n => n === 1 ? 'متراً واحداً' : n === 2 ? 'مترين' : (n <= 10 ? `${n} أمتار` : `${n} متراً`);
@@ -195,7 +219,7 @@ function instructions(path, A, B, mode, points, speed = {}) {
       if (ck === 12) { turnEn = 'Go straight ahead'; turnAr = 'اتجه إلى الأمام'; }
       else { const w = CLOCK_WORDS[ck]; turnEn = `${w[0]} (${ck} o'clock)`; turnAr = `${w[1]} (اتجاه الساعة ${ck})`; }
     } else {
-      const d = norm(l.h - legs[i - 1].h), side = d > 0 ? 'left' : 'right', sideAr = d > 0 ? 'اليسار' : 'اليمين';
+      const d = norm(l.h - (legs[i - 1].hOut ?? legs[i - 1].h)), side = d > 0 ? 'left' : 'right', sideAr = d > 0 ? 'اليسار' : 'اليمين';
       if (Math.abs(d) > 145) { turnEn = 'Turn around'; turnAr = 'استدر إلى الخلف'; }
       else if (Math.abs(d) > 55) { turnEn = `Turn ${side}`; turnAr = `انعطف إلى ${sideAr}`; }
       else { turnEn = `Bear ${side}`; turnAr = `اتجه قليلاً إلى ${sideAr}`; }

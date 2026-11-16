@@ -1,7 +1,7 @@
 // DALIL visitor app. No build step. Pages: Home, Search, Route, Where am I, Floor map, Settings, Getting here, Navigation.
 // Modules: i18n.js (strings, icons) · mapview.js (floor plan) · router.js (on-device routing) · tracker.js (compass and
 // steps) · camera.js (camera guide line, QR) · outdoor.js + providers.js (street maps). QR codes: vendor/qrcode.js (MIT).
-import { Router, plainStep } from './router.js';
+import { Router, plainStep, simplify } from './router.js';
 import { STR, TILE_CATS, CAT_WORDS, CAT_ICONS, TURN_ICONS, TURN_ANGLE, UI, svgIco } from './i18n.js';
 import { MapView, BASE } from './mapview.js';
 import { geoTransform, haversine } from './outdoor.js';
@@ -1320,12 +1320,29 @@ function camYaw() {
   const cur = nav.camBeta ?? f.beta;
   nav.camBeta = wrap180(cur + 0.2 * wrap180(walk - cur)); nav.camN++;
 }
+// The camera line runs to the next real turn and 3 m round it, no further: past a corner it would be drawn across the
+// walls in front of you (founder's on-site test, Lecture Theatre route, Nov 2026).
+function camAhead(raw) {
+  const pts = simplify(raw, 0.6), out = [pts[0]];   // small kinks are not turns
+  for (let i = 1; i < pts.length; i++) {
+    out.push(pts[i]);
+    if (i < pts.length - 1) {
+      const a = Math.atan2(pts[i][1] - pts[i - 1][1], pts[i][0] - pts[i - 1][0]), b = Math.atan2(pts[i + 1][1] - pts[i][1], pts[i + 1][0] - pts[i][0]);
+      if (Math.abs(wrap180((b - a) * 180 / Math.PI)) > 40 && Math.hypot(pts[i][0] - pts[0][0], pts[i][1] - pts[0][1]) > 1) {
+        const L = Math.hypot(pts[i + 1][0] - pts[i][0], pts[i + 1][1] - pts[i][1]), k = Math.min(1, 3 / (L || 1));
+        out.push([pts[i][0] + (pts[i + 1][0] - pts[i][0]) * k, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * k]);
+        return out;
+      }
+    }
+  }
+  return out;
+}
 function camFrame() {
   const s = nav.steps[nav.i], leg = nav.legs[s.leg];
   if (!leg || !tracker.R || !(nav.mode === 'track' && nav.follower?.usable) || nav.sim) return null;
   const p = pointAt(leg.route.path, leg.cum, nav.pos), last = nav.legs.length - 1 === s.leg, d = resolve(nav.toKey);
   const target = last ? d?.p : nav.plan.via?.pa;
-  return { R: tracker.R, beta: nav.camN >= 3 ? nav.camBeta : nav.follower.beta, pos: p, ahead: [[p.x, p.y], ...leg.route.path.slice(p.i)], dest: target ? { x: target.x, y: target.y, label: last ? pname(d.p) : t('toFloor', floorName(nav.plan.via.toMap.floor)) } : null, motion: !settings.motion };
+  return { R: tracker.R, beta: nav.camN >= 3 ? nav.camBeta : nav.follower.beta, pos: p, ahead: camAhead([[p.x, p.y], ...leg.route.path.slice(p.i)]), dest: target ? { x: target.x, y: target.y, label: last ? pname(d.p) : t('toFloor', floorName(nav.plan.via.toMap.floor)) } : null, motion: !settings.motion };
 }
 // The part of the camera picture under the top and bottom panels (the guide keeps its labels out of it).
 function camInsets() {
@@ -1392,10 +1409,16 @@ function fuseFix(f) {
   const wasLive = gpsLive(); gps.used = false;
   if (q && s.kind !== 'floor' && s.kind !== 'arrive' && q.acc <= (outsideOf(leg.map, q) ? GPS_MAX_ACC : GPS_IN_MAX)) {
     const pr = projectOnPath(leg.route.path, leg.cum, q.x, q.y);
-    if (pr.d <= q.acc * 1.5 + 4) {
+    // Inside the building, while your steps are being followed, GPS only shows its circle: it bounces off walls and
+    // once pulled the founder 12 m back along the route (Fine Arts, Nov 2026). Outside, or with no motion, it helps.
+    const stepping = nav.mode === 'track' && nav.follower?.usable && nav.everStepped;
+    const inside = !outsideOf(leg.map, q);
+    if (stepping && inside) { /* shown, not used */ }
+    else if (pr.d <= q.acc * 1.5 + 4) {
       const tracking = nav.mode === 'track' && nav.follower;
       const v = tracking ? nav.var : Math.max(nav.var, 400), K = v / (v + q.acc * q.acc);   // no steps: GPS alone moves you
-      nav.pos = Math.max(0, Math.min(leg.L, nav.pos + K * (pr.s - nav.pos))); nav.var = (1 - K) * v;
+      let np = nav.pos + K * (pr.s - nav.pos); if (tracking && np < nav.pos - 2) np = nav.pos - 2;   // never yanked far back
+      nav.pos = Math.max(0, Math.min(leg.L, np)); nav.var = (1 - K) * v;
       if (tracking) nav.follower.nudge(nav.pos);
       gps.used = true; gps.at = Date.now();
       syncStepToPos(); updateNavPos(false);
