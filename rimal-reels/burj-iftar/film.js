@@ -381,12 +381,12 @@
       ui.diagram = prog(t, A.horizon - 0.1, A.horizon + 0.25);
     } else if (s.id === "watch") {
       const sk = prog(t, s.from, A.below + 0.4);
-      setSun(LV(V(-30, -7, -350), V(-30, -19, -350), eIO(sk)));
-      pose(t, { at: [2.3, 4.2], rotY: Math.PI + 0.3, talk: false, lookUp: 0.05 });
-      cubePose(t, [3.3, 4.6], Math.PI - 0.1, 0, 1);
-      look(V(1.6, 1.5, 15.5), V(-2.5, 2.4, -60), 36);
+      setSun(LV(V(35, -7, -350), V(35, -19, -350), eIO(sk)));
+      pose(t, { at: [0.6, 4.2], rotY: Math.PI - 0.2, talk: false, lookUp: 0.05 });
+      cubePose(t, [-0.4, 4.6], Math.PI + 0.1, 0, 1);
+      look(V(1.6, 1.5, 15.5), V(0, 2.4, -60), 36);
     } else if (s.id === "lift") {
-      setSun(V(-30, -19, -350));
+      setSun(V(35, -19, -350));
       cab.visible = true;
       const ride = eIO(prog(t, s.from + 0.1, A.again - 0.15));
       const y = lerp(0, 8.4, ride);
@@ -394,7 +394,7 @@
       const cheer = spring(t - A.again, 2.2, 0.55);
       pose(t, { at: [cabPos.x, cabPos.z], y: y + 0.05, rotY: Math.PI - 0.5 + 0.0, talk: false, armR: 0.08 + 2.4 * cheer, lookUp: -0.05 });
       cubePose(t, [3, 3], 0, 0, 0);
-      look(V(cabPos.x + 1.8, y + 2.5, cabPos.z + 9.5), V(cabPos.x - 3.5, y + 0.2, cabPos.z - 45), 44);
+      look(V(cabPos.x + 1.8, y + 2.5, cabPos.z + 9.5), V(cabPos.x - 1.0, y + 0.2, cabPos.z - 45), 44);
       ui.counter = { k: ride, t };
     } else {
       setSun(SUN_CLOSE);
