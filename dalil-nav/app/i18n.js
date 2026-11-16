@@ -2,6 +2,7 @@
 // Plain words, short sentences: the app is for every age and every level of reading.
 export const STR = {
   en: {
+    whereNowTitle: 'Where are you now?', whereNowHint: 'Indoors your phone’s location is only accurate to a few rooms. Tap the place you are at, so the directions start in the right spot.', whereNowNavHint: 'Tap the place you are at now. The route starts again from there.', notHere: 'Not here?', aboutM: n => `about ${n} m`,
     svHeight: 'Your height in cm (optional: sets your step length)', svQuick: 'Tap what is here', svAddNamed: 'Add a place with its name', svNearAsk: n => `Back at ${n}? Tap to straighten the map`,
     svReviewTitle: 'Check your map', svAlign: 'Line it up with the satellite photo', svAlignHint: 'Turn and move the map until the corridors sit inside the building.', svNames: 'Places: give them their sign names', svSaveMap: 'Save the map', svKeepWalking: 'Keep walking',
     svQ_good: d => `Good: the loops you closed were off by only ${d}. Ready to navigate.`, svQ_ok: d => `OK: the loops were off by ${d}. Walk one more loop back to a place for a better map.`, svQ_rough: d => `Rough: the loops were off by ${d}. Walk the corridors again, closer to the middle, and close more loops.`, svQ_unchecked: 'Not checked yet: walk back to a place you added so the app can measure and fix the drift.',
@@ -131,6 +132,7 @@ export const STR = {
     cats: { lab: 'Lab', entrance: 'Entrance', exit: 'Exit', reception: 'Reception', lift: 'Elevator', stairs: 'Stairs', ramp: 'Ramp', toilet: 'Restroom', toilet_acc: 'Accessible restroom', prayer: 'Prayer room', wudu: 'Wudu area', baby: 'Baby care', cafe: 'Café', room: 'Room', corridor: 'Corridor', parking: 'Parking', pin: 'Pin' },
   },
   ar: {
+    whereNowTitle: 'أين أنت الآن؟', whereNowHint: 'داخل المبنى، دقة موقع هاتفك في حدود عدة غرف فقط. اضغط على المكان الذي أنت فيه لتبدأ الاتجاهات من المكان الصحيح.', whereNowNavHint: 'اضغط على المكان الذي أنت فيه الآن، وسيبدأ المسار من جديد من هناك.', notHere: 'لست هنا؟', aboutM: n => `نحو ${n} م`,
     svHeight: 'طولك بالسنتيمتر (اختياري: يحدد طول خطوتك)', svQuick: 'اضغط على ما يوجد هنا', svAddNamed: 'أضف مكانًا باسمه', svNearAsk: n => `عدت إلى ${n}؟ اضغط لتصحيح الخريطة`,
     svReviewTitle: 'تحقق من خريطتك', svAlign: 'طابقها مع صورة القمر الصناعي', svAlignHint: 'أدر الخريطة وحرّكها حتى تقع الممرات داخل المبنى.', svNames: 'الأماكن: سمّها كما في اللافتات', svSaveMap: 'احفظ الخريطة', svKeepWalking: 'تابع المشي',
     svQ_good: d => `جيدة: كان انحراف الحلقات التي أغلقتها ${d} فقط. جاهزة للتنقل.`, svQ_ok: d => `مقبولة: كان انحراف الحلقات ${d}. امشِ حلقة أخرى عائدًا إلى مكان لتحسين الخريطة.`, svQ_rough: d => `تقريبية: كان انحراف الحلقات ${d}. امشِ في الممرات مرة أخرى قرب منتصفها وأغلق حلقات أكثر.`, svQ_unchecked: 'لم يتم التحقق بعد: عد إلى مكان أضفته ليقيس التطبيق الانحراف ويصححه.',

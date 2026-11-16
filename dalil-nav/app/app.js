@@ -624,6 +624,36 @@ function setStepFree(on) {
 
 /* ---------- Route ready ---------- */
 const roomNo = p => { if (['lift', 'stairs', 'pin', 'corridor'].includes(p.category)) return null; const m = (p.nameEn || '').match(/\(?\b([A-Z]?\d{2,4}[A-Z]?)\b\)?\s*$/); return m ? m[1] : null; };
+// "Where are you now?": the start is only a rough GPS guess (indoors GPS is ±10–30 m, several rooms), so ask.
+// Also from navigation ("Not here?"): pick the place you are at and the route starts again from there.
+function needWhereNow() {
+  if (state.kiosk || state.fromManual) return false;
+  const f = locator.fresh(120000); if (!f || !state.map.geo) return false;
+  return f.acc > 8;
+}
+function whereNowCands(mode) {
+  let m = state.map, at = null, r = 25;
+  if (mode === 'nav' && nav.active) { const s = nav.steps[nav.i], leg = nav.legs[s.leg]; m = leg.map; const p = pointAt(leg.route.path, leg.cum, nav.pos); at = { x: p.x, y: p.y }; r = 20; }
+  else { const f = locator.fresh(120000), q = f && fixOn(m, f); if (q) { at = q; r = Math.max(15, q.acc + 10); } }
+  if (!at) { const p = pt(state.fromId); at = p ? { x: p.x, y: p.y } : null; }
+  const list = m.points.filter(p => !p.virtual).map(p => ({ p, d: at ? Math.hypot(p.x - at.x, p.y - at.y) : 0 })).sort((a, b) => a.d - b.d);
+  const near = list.filter(o => o.d <= r);
+  return { m, list: (near.length >= 3 ? near : list).slice(0, 7) };
+}
+function openWhereNow(mode) {
+  sv.whereMode = mode; const { m, list } = whereNowCands(mode); sv.whereMap = m;
+  $('#whereNowHint').textContent = t(mode === 'nav' ? 'whereNowNavHint' : 'whereNowHint');
+  $('#whereNowList').innerHTML = list.map(({ p, d }) => `<li><button class="row-btn" type="button" data-here="${esc(p.id)}"><span class="r-ico${isService(p.category) ? ' svc' : ''}">${catIco(p.category)}</span><span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(catName(p.category))}${p.doors ? ' · ' + esc(t('doorN', p.doors.split(' ')[0])) : ''}</span></span><span class="r-end"><span>${d >= 1 ? esc(t('aboutM', Math.round(d))) : ''}</span></span></button></li>`).join('');
+  openDlg($('#dlgWhereNow'));
+}
+function whereNowPick(id) {
+  $('#dlgWhereNow').close();
+  const key = state.toKey, m = sv.whereMap || state.map;
+  if (nav.active) endNav({ silent: true });
+  if (m !== state.map) selectFloor(m, { keepFrom: true });
+  setFrom(id, { say: false }); state.toKey = key;
+  if (state.toKey) startNav({ preview: !!state.kiosk });
+}
 function openOutsideStart() {
   const out = outsideNow(), e = pt(out.id), ll = state.map.geo ? geoTransform(state.map.geo)(e.x, e.y) : null;
   $('#outDlgTitle').textContent = t('outTitle', fmtDist(out.d));
@@ -1192,7 +1222,7 @@ function stepAt(li, s) {
    The browser's position (GPS + Wi-Fi + cell, as map apps use) is placed on the plan through map.geo.
    It pulls the position along the route by how sure each side is (a 1-D Kalman blend): GPS by its reported
    accuracy, the steps by how far you walked since the last fix or sign. Fixes far from the route are shown, not used. */
-const locator = new Locator(), GPS_MAX_ACC = 30;
+const locator = new Locator(), GPS_MAX_ACC = 30, GPS_IN_MAX = 10;   // inside a building GPS must be ±10 m or better to move you (founder's on-site test, Nov 2026)
 const gps = { used: false, acc: null, at: 0, fromId: null };
 const gpsAllowed = () => settings.gps && cfg.features?.gps !== false && !state.kiosk && !!navigator.geolocation;
 const gpsMapHere = () => state.maps.some(m => m.geo);   // any DALIL building on Earth: needed to notice you are near one
@@ -1207,7 +1237,7 @@ function fuseFix(f) {
   const leg = nav.legs[s.leg], q = fixOn(leg.map, f);
   navMap.setAccuracy(q, q?.acc); gps.acc = q?.acc ?? null;
   const wasLive = gpsLive(); gps.used = false;
-  if (q && s.kind !== 'floor' && s.kind !== 'arrive' && q.acc <= GPS_MAX_ACC) {
+  if (q && s.kind !== 'floor' && s.kind !== 'arrive' && q.acc <= (outsideOf(leg.map, q) ? GPS_MAX_ACC : GPS_IN_MAX)) {
     const pr = projectOnPath(leg.route.path, leg.cum, q.x, q.y);
     if (pr.d <= q.acc * 1.5 + 4) {
       const tracking = nav.mode === 'track' && nav.follower;
@@ -1757,7 +1787,10 @@ function bind() {
   // Route page
   $('#optStepFree').addEventListener('change', e => setStepFree(e.target.checked));
   $('#btnFav').onclick = () => { if (state.toKey) { const on = toggleFav(state.toKey); announce(t(on ? 'saved' : 'unsave')); toast(t(on ? 'saved' : 'unsave')); } };
-  $('#btnStart').onclick = () => { if (outsideNow() && !state.kiosk) { openOutsideStart(); return; } startNav({ preview: !!state.kiosk }); };
+  $('#btnStart').onclick = () => { if (outsideNow() && !state.kiosk) { openOutsideStart(); return; } if (needWhereNow()) { openWhereNow('start'); return; } startNav({ preview: !!state.kiosk }); };
+  $('#btnNotHere').onclick = () => openWhereNow('nav');
+  $('#whereNowList').addEventListener('click', e => { const b = e.target.closest('[data-here]'); if (b) whereNowPick(b.dataset.here); });
+  $('#btnWhereNowScan').onclick = () => { $('#dlgWhereNow').close(); if (nav.active) endNav({ silent: true }); go('where'); startWhereScan(); };
   $('#btnOutAtDoor').onclick = () => { $('#dlgOutside').close(); setFrom(state.fromId, { say: false }); startNav(); };
   $('#btnOutMap').onclick = () => { $('#dlgOutside').close(); go('outdoor'); };
   $('#btnNoResHelp').onclick = () => openHelp();

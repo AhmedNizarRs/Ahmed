@@ -412,7 +412,7 @@
           <p id="navStepSub" class="hud-sub"></p>
         </div>
       </div>
-      <p id="navMode" class="hud-status"><span class="status-dot" aria-hidden="true"></span><span id="navModeText"></span></p>
+      <div class="hud-status-row"><p id="navMode" class="hud-status"><span class="status-dot" aria-hidden="true"></span><span id="navModeText"></span></p><button id="btnNotHere" class="hud-nothere" type="button" data-i18n="notHere">Not here?</button></div>
     </div>
 
     <p id="camHint" class="cam-hint" role="status" hidden></p>
@@ -465,6 +465,12 @@
   </div>
 
   <!-- All steps (an overview; the steps move on by themselves) -->
+  <dialog id="dlgWhereNow" class="sheet-dlg" aria-labelledby="whereNowTitle">
+    <div class="dlg-head"><h2 id="whereNowTitle" data-i18n="whereNowTitle">Where are you now?</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="whereNowHint" class="muted"></p>
+    <ul id="whereNowList" class="rows"></ul>
+    <button id="btnWhereNowScan" class="btn secondary" type="button"><span class="ico" data-ico="qr"></span><span data-i18n="scanSign">Scan a DALIL sign</span></button>
+  </dialog>
   <dialog id="dlgOutside" class="sheet-dlg" aria-labelledby="outDlgTitle">
     <div class="dlg-head"><h2 id="outDlgTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
     <p id="outDlgBody"></p>

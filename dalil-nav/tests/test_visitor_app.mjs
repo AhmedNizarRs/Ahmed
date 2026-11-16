@@ -665,6 +665,36 @@ test('Home sheet: drag it up and down like a maps app; a tap on its handle or ti
   await ctx.close();
 });
 
+test('inside with rough GPS (±14 m): Start asks "Where are you now?", rough GPS never moves you, and "Not here?" re-plans from the place you pick', async () => {
+  const stub = async page => { for (const h of ['https://server.arcgisonline.com/**', 'https://tile.openstreetmap.org/**', 'https://*.basemaps.cartocdn.com/**', 'https://tiles.openfreemap.org/**', 'https://tiles.versatiles.org/**']) await page.route(h, r => r.fulfill({ status: 503 })); };
+  const { ctx, page, errors } = await open('#b=uos-central-labs-b3-test&f=ground-floor', { permissions: [...SENSORS, 'geolocation'], geolocation: { latitude: 25.28701, longitude: 55.47791, accuracy: 14 } });
+  await stub(page);
+  await page.waitForFunction(() => window.DALIL_APP.gps().acc != null);
+  await search(page, 'Geotechnical'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
+  await page.click('#btnStart');
+  await page.waitForSelector('#dlgWhereNow[open]');
+  assert.match(await page.textContent('#whereNowHint'), /accurate to a few rooms/);
+  const opts = await page.$$eval('#whereNowList [data-here]', b => b.map(x => x.dataset.here));
+  assert.ok(opts.length >= 3, 'nearby places to choose from');
+  await page.click(`#whereNowList [data-here="${opts[0]}"]`);      // "I'm here"
+  await pageIs(page, 'nav');
+  assert.equal(await page.evaluate(() => window.DALIL_APP.state.fromId), opts[0]);
+  // A ±14 m fix indoors is shown but does not move you
+  const before = await page.evaluate(() => window.DALIL_APP.nav.pos);
+  await ctx.setGeolocation({ latitude: 25.28712, longitude: 55.47800, accuracy: 14 }); await page.waitForTimeout(600);
+  assert.equal(await page.evaluate(() => window.DALIL_APP.nav.pos), before, 'rough indoor GPS ignored');
+  // "Not here?" → pick another place → the route starts again from there
+  await page.click('#btnNotHere');
+  await page.waitForSelector('#dlgWhereNow[open]');
+  const pick = await page.$$eval('#whereNowList [data-here]', (b, first) => b.map(x => x.dataset.here).find(id => id !== first), opts[0]);
+  await page.click(`#whereNowList [data-here="${pick}"]`);
+  await pageIs(page, 'nav');
+  assert.equal(await page.evaluate(() => window.DALIL_APP.state.fromId), pick);
+  assert.match(await page.textContent('#navDest'), /Geotechnical/);
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('Arabic: building names are Arabic too', async () => {
   const { ctx, page, errors } = await open('#b=uos-central-labs-b3-test&f=ground-floor');
   await page.click('#btnSheet').catch(() => {}); await page.click('#btnLang');
