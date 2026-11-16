@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Rimal reel: two squares</title>
+<style>
+@font-face { font-family: "Jost"; src: url(fonts/jost.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Marcellus"; src: url(fonts/marcellus.woff2) format("woff2"); }
+@font-face { font-family: "Mono"; src: url(fonts/jetbrains-mono.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "Kufi"; src: url(fonts/reem-kufi-arabic.woff2) format("woff2"); font-weight: 100 900; }
+@font-face { font-family: "PlexAr"; src: url(fonts/plex-arabic-500.woff2) format("woff2"); font-weight: 500; }
+@font-face { font-family: "PlexAr"; src: url(fonts/plex-arabic-600.woff2) format("woff2"); font-weight: 600; }
+html, body { margin: 0; background: #120c09; }
+canvas { display: block; }
+</style>
+</head>
+<body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+  const lang = new URLSearchParams(location.search).get("lang") || "en";
+  document.write(`<script src="timeline.${lang}.js"><\/script><script src="film.js"><\/script>`);
+</script>
+</body>
+</html>

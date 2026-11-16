@@ -1,0 +1,512 @@
+{
+ "meta": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 30,
+  "dur": 32.5,
+  "lang": "en",
+  "clock": "music",
+  "register": "editorial",
+  "loop": false,
+  "bpm": 96,
+  "meter": "4/4",
+  "bars": 13,
+  "t0": 0.0,
+  "grid": "designed",
+  "hookWaiver": "CTA (Pattern Lab, link in bio) closes the film; handle footnote is visible from frame 0",
+  "vo": {
+   "status": "NONE",
+   "file": null,
+   "rateWps": null
+  }
+ },
+ "objects": [
+  {
+   "id": "lattice",
+   "role": "constant",
+   "what": "the star lattice: wall, grid, screen, floor shadow"
+  },
+  {
+   "id": "star",
+   "role": "hero",
+   "what": "one 8-point star made of two squares"
+  }
+ ],
+ "beats": {
+  "hook.start": 0.0,
+  "hook.slam": 2.5,
+  "star.start": 3.75,
+  "star.zoomEnd": 4.625,
+  "star.dropB": 4.625,
+  "star.copy": 5.0,
+  "star.turn": 6.5,
+  "star.turnEnd": 7.3125,
+  "star.tips": 7.5,
+  "star.name": 8.75,
+  "grid.start": 10.0,
+  "grid.stampsEnd": 12.0,
+  "grid.cross": 12.5,
+  "grid.term": 13.75,
+  "angle.start": 15.0,
+  "angle.morph": 15.9375,
+  "angle.morphEnd": 18.4375,
+  "angle.new": 18.75,
+  "room.start": 20.0,
+  "room.inEnd": 21.25,
+  "room.silence": 21.9375,
+  "hero": 22.5,
+  "room.push": 25.625,
+  "cta.start": 27.5,
+  "cta.free": 28.75,
+  "cta.link": 30.0
+ },
+ "scenes": [
+  {
+   "id": "hook",
+   "start": 0.0,
+   "end": 3.75,
+   "beats": {
+    "start": 0.0,
+    "slam": 2.5
+   },
+   "transitionOut": {
+    "type": "push-in",
+    "dur": 0.8,
+    "why": "zoom into one star of the wall: the subject of the next beat"
+   }
+  },
+  {
+   "id": "star",
+   "start": 3.75,
+   "end": 10.0,
+   "beats": {
+    "start": 3.75,
+    "zoomEnd": 4.625,
+    "dropB": 4.625,
+    "copy": 5.0,
+    "turn": 6.5,
+    "turnEnd": 7.3125,
+    "tips": 7.5,
+    "name": 8.75
+   },
+   "transitionOut": {
+    "type": "pull-out",
+    "dur": 0.8,
+    "why": "the single star is stamped into the grid: next step"
+   }
+  },
+  {
+   "id": "grid",
+   "start": 10.0,
+   "end": 15.0,
+   "beats": {
+    "start": 10.0,
+    "stampsEnd": 12.0,
+    "cross": 12.5,
+    "term": 13.75
+   },
+   "transitionOut": {
+    "type": "line-morph",
+    "dur": 0.8,
+    "why": "same lattice, interior lines dissolve into Hankin lines"
+   }
+  },
+  {
+   "id": "angle",
+   "start": 15.0,
+   "end": 20.0,
+   "beats": {
+    "start": 15.0,
+    "morph": 15.9375,
+    "morphEnd": 18.4375,
+    "new": 18.75
+   },
+   "transitionOut": {
+    "type": "shrink-into-window",
+    "dur": 0.8,
+    "why": "the pattern becomes the mashrabiya screen: object changes role"
+   }
+  },
+  {
+   "id": "room",
+   "start": 20.0,
+   "end": 27.5,
+   "beats": {
+    "start": 20.0,
+    "inEnd": 21.25,
+    "silence": 21.9375,
+    "push": 25.625,
+    "hero": 22.5
+   },
+   "transitionOut": {
+    "type": "hard cut on bar 11",
+    "dur": 0.8,
+    "why": "chapter slam to the CTA; bookends the opening wall"
+   }
+  },
+  {
+   "id": "cta",
+   "start": 27.5,
+   "end": 32.5,
+   "beats": {
+    "start": 27.5,
+    "free": 28.75,
+    "link": 30.0
+   }
+  }
+ ],
+ "captions": [
+  {
+   "from": 0.0,
+   "to": 1.875,
+   "text": "Every star on this wall",
+   "role": null
+  },
+  {
+   "from": 1.875,
+   "to": 3.75,
+   "text": "is just two squares.",
+   "role": "hook"
+  },
+  {
+   "from": 3.75,
+   "to": 5.0,
+   "text": "Take one square.",
+   "role": null
+  },
+  {
+   "from": 5.0,
+   "to": 6.25,
+   "text": "Copy it.",
+   "role": null
+  },
+  {
+   "from": 6.25,
+   "to": 7.5,
+   "text": "Turn it 45°.",
+   "role": null
+  },
+  {
+   "from": 7.5,
+   "to": 8.44,
+   "text": "Eight points.",
+   "role": null
+  },
+  {
+   "from": 8.44,
+   "to": 10.0,
+   "text": "Rub el Hizb.",
+   "role": "term"
+  },
+  {
+   "from": 10.0,
+   "to": 10.94,
+   "text": "Repeat it",
+   "role": null
+  },
+  {
+   "from": 10.94,
+   "to": 12.5,
+   "text": "on a grid…",
+   "role": null
+  },
+  {
+   "from": 12.5,
+   "to": 13.75,
+   "text": "the gaps become crosses.",
+   "role": null
+  },
+  {
+   "from": 13.75,
+   "to": 15.0,
+   "text": "Star-and-cross.",
+   "role": "term"
+  },
+  {
+   "from": 15.0,
+   "to": 15.94,
+   "text": "Now change",
+   "role": null
+  },
+  {
+   "from": 15.94,
+   "to": 17.5,
+   "text": "one angle.",
+   "role": null
+  },
+  {
+   "from": 17.5,
+   "to": 18.75,
+   "text": "Same grid.",
+   "role": null
+  },
+  {
+   "from": 18.75,
+   "to": 20.0,
+   "text": "New pattern.",
+   "role": null
+  },
+  {
+   "from": 20.0,
+   "to": 20.94,
+   "text": "Cut it into",
+   "role": null
+  },
+  {
+   "from": 20.94,
+   "to": 22.4,
+   "text": "a mashrabiya…",
+   "role": "term"
+  },
+  {
+   "from": 22.6,
+   "to": 24.06,
+   "text": "and the sun draws it",
+   "role": null
+  },
+  {
+   "from": 24.06,
+   "to": 25.6,
+   "text": "on your floor.",
+   "role": null
+  },
+  {
+   "from": 27.6,
+   "to": 28.75,
+   "text": "Make your own,",
+   "role": null
+  },
+  {
+   "from": 28.75,
+   "to": 29.7,
+   "text": "free.",
+   "role": null
+  },
+  {
+   "from": 29.7,
+   "to": 32.5,
+   "text": "Pattern Lab · link in bio",
+   "role": "cta"
+  }
+ ],
+ "texts": [
+  {
+   "id": "hook_0",
+   "text": "is just two squares.",
+   "from": 1.875,
+   "to": 3.75,
+   "role": "hook",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "term_1",
+   "text": "Rub el Hizb.",
+   "from": 8.44,
+   "to": 10.0,
+   "role": "term",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "term_2",
+   "text": "Star-and-cross.",
+   "from": 13.75,
+   "to": 15.0,
+   "role": "term",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "term_3",
+   "text": "a mashrabiya…",
+   "from": 20.94,
+   "to": 22.4,
+   "role": "term",
+   "px": 84,
+   "box": [
+    100,
+    318,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "cta_4",
+   "text": "Pattern Lab · link in bio",
+   "from": 29.7,
+   "to": 32.5,
+   "role": "cta",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  }
+ ],
+ "terms": [
+  "Rub el Hizb",
+  "star-and-cross",
+  "mashrabiya"
+ ],
+ "labels": {
+  "ch": [
+   "TWO SQUARES",
+   "THE GRID",
+   "ONE ANGLE",
+   "MASHRABIYA",
+   "PATTERN LAB"
+  ],
+  "name": "RUB EL HIZB",
+  "term": "STAR-AND-CROSS",
+  "source": "Tile panel · Iran, probably Kashan, 1260–70 · The Met",
+  "angle": "CONTACT ANGLE",
+  "foot": "Illustration · Rimal Interiors",
+  "cardKick": "FREE TOOL",
+  "cardTitle": "Pattern Lab",
+  "cardSub": "by Rimal Interiors",
+  "handle": "@rimalinterior"
+ },
+ "cuts": [
+  27.5
+ ],
+ "hero": {
+  "t": 22.5,
+  "what": "sunlight switches on through the mashrabiya and draws the pattern on the floor"
+ },
+ "silences": [
+  {
+   "from": 21.9375,
+   "to": 22.5
+  }
+ ],
+ "reads": [
+  {
+   "what": "Every star on this wall",
+   "from": 0.0,
+   "to": 1.875
+  },
+  {
+   "what": "is just two squares.",
+   "from": 1.875,
+   "to": 3.75
+  },
+  {
+   "what": "Take one square.",
+   "from": 3.75,
+   "to": 5.0
+  },
+  {
+   "what": "Copy it.",
+   "from": 5.0,
+   "to": 6.25
+  },
+  {
+   "what": "Turn it 45°.",
+   "from": 6.25,
+   "to": 7.5
+  },
+  {
+   "what": "Eight points.",
+   "from": 7.5,
+   "to": 8.44
+  },
+  {
+   "what": "Rub el Hizb.",
+   "from": 8.44,
+   "to": 10.0
+  },
+  {
+   "what": "Repeat it",
+   "from": 10.0,
+   "to": 10.94
+  },
+  {
+   "what": "on a grid…",
+   "from": 10.94,
+   "to": 12.5
+  },
+  {
+   "what": "the gaps become crosses.",
+   "from": 12.5,
+   "to": 13.75
+  },
+  {
+   "what": "Star-and-cross.",
+   "from": 13.75,
+   "to": 15.0
+  },
+  {
+   "what": "Now change",
+   "from": 15.0,
+   "to": 15.94
+  },
+  {
+   "what": "one angle.",
+   "from": 15.94,
+   "to": 17.5
+  },
+  {
+   "what": "Same grid.",
+   "from": 17.5,
+   "to": 18.75
+  },
+  {
+   "what": "New pattern.",
+   "from": 18.75,
+   "to": 20.0
+  },
+  {
+   "what": "Cut it into",
+   "from": 20.0,
+   "to": 20.94
+  },
+  {
+   "what": "a mashrabiya…",
+   "from": 20.94,
+   "to": 22.4
+  },
+  {
+   "what": "and the sun draws it",
+   "from": 22.6,
+   "to": 24.06
+  },
+  {
+   "what": "on your floor.",
+   "from": 24.06,
+   "to": 25.6
+  },
+  {
+   "what": "Make your own,",
+   "from": 27.6,
+   "to": 28.75
+  },
+  {
+   "what": "free.",
+   "from": 28.75,
+   "to": 29.7
+  },
+  {
+   "what": "Pattern Lab · link in bio",
+   "from": 29.7,
+   "to": 32.5
+  }
+ ]
+}

@@ -1,0 +1,512 @@
+{
+ "meta": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 30,
+  "dur": 32.5,
+  "lang": "ar",
+  "clock": "music",
+  "register": "editorial",
+  "loop": false,
+  "bpm": 96,
+  "meter": "4/4",
+  "bars": 13,
+  "t0": 0.0,
+  "grid": "designed",
+  "hookWaiver": "CTA (Pattern Lab, link in bio) closes the film; handle footnote is visible from frame 0",
+  "vo": {
+   "status": "NONE",
+   "file": null,
+   "rateWps": null
+  }
+ },
+ "objects": [
+  {
+   "id": "lattice",
+   "role": "constant",
+   "what": "the star lattice: wall, grid, screen, floor shadow"
+  },
+  {
+   "id": "star",
+   "role": "hero",
+   "what": "one 8-point star made of two squares"
+  }
+ ],
+ "beats": {
+  "hook.start": 0.0,
+  "hook.slam": 2.5,
+  "star.start": 3.75,
+  "star.zoomEnd": 4.625,
+  "star.dropB": 4.625,
+  "star.copy": 5.0,
+  "star.turn": 6.5,
+  "star.turnEnd": 7.3125,
+  "star.tips": 7.5,
+  "star.name": 8.75,
+  "grid.start": 10.0,
+  "grid.stampsEnd": 12.0,
+  "grid.cross": 12.5,
+  "grid.term": 13.75,
+  "angle.start": 15.0,
+  "angle.morph": 15.9375,
+  "angle.morphEnd": 18.4375,
+  "angle.new": 18.75,
+  "room.start": 20.0,
+  "room.inEnd": 21.25,
+  "room.silence": 21.9375,
+  "hero": 22.5,
+  "room.push": 25.625,
+  "cta.start": 27.5,
+  "cta.free": 28.75,
+  "cta.link": 30.0
+ },
+ "scenes": [
+  {
+   "id": "hook",
+   "start": 0.0,
+   "end": 3.75,
+   "beats": {
+    "start": 0.0,
+    "slam": 2.5
+   },
+   "transitionOut": {
+    "type": "push-in",
+    "dur": 0.8,
+    "why": "zoom into one star of the wall: the subject of the next beat"
+   }
+  },
+  {
+   "id": "star",
+   "start": 3.75,
+   "end": 10.0,
+   "beats": {
+    "start": 3.75,
+    "zoomEnd": 4.625,
+    "dropB": 4.625,
+    "copy": 5.0,
+    "turn": 6.5,
+    "turnEnd": 7.3125,
+    "tips": 7.5,
+    "name": 8.75
+   },
+   "transitionOut": {
+    "type": "pull-out",
+    "dur": 0.8,
+    "why": "the single star is stamped into the grid: next step"
+   }
+  },
+  {
+   "id": "grid",
+   "start": 10.0,
+   "end": 15.0,
+   "beats": {
+    "start": 10.0,
+    "stampsEnd": 12.0,
+    "cross": 12.5,
+    "term": 13.75
+   },
+   "transitionOut": {
+    "type": "line-morph",
+    "dur": 0.8,
+    "why": "same lattice, interior lines dissolve into Hankin lines"
+   }
+  },
+  {
+   "id": "angle",
+   "start": 15.0,
+   "end": 20.0,
+   "beats": {
+    "start": 15.0,
+    "morph": 15.9375,
+    "morphEnd": 18.4375,
+    "new": 18.75
+   },
+   "transitionOut": {
+    "type": "shrink-into-window",
+    "dur": 0.8,
+    "why": "the pattern becomes the mashrabiya screen: object changes role"
+   }
+  },
+  {
+   "id": "room",
+   "start": 20.0,
+   "end": 27.5,
+   "beats": {
+    "start": 20.0,
+    "inEnd": 21.25,
+    "silence": 21.9375,
+    "push": 25.625,
+    "hero": 22.5
+   },
+   "transitionOut": {
+    "type": "hard cut on bar 11",
+    "dur": 0.8,
+    "why": "chapter slam to the CTA; bookends the opening wall"
+   }
+  },
+  {
+   "id": "cta",
+   "start": 27.5,
+   "end": 32.5,
+   "beats": {
+    "start": 27.5,
+    "free": 28.75,
+    "link": 30.0
+   }
+  }
+ ],
+ "captions": [
+  {
+   "from": 0.0,
+   "to": 1.875,
+   "text": "كل نجمة في هذا الجدار",
+   "role": null
+  },
+  {
+   "from": 1.875,
+   "to": 3.75,
+   "text": "ما هي إلا مربّعان.",
+   "role": "hook"
+  },
+  {
+   "from": 3.75,
+   "to": 5.0,
+   "text": "خذ مربّعاً واحداً.",
+   "role": null
+  },
+  {
+   "from": 5.0,
+   "to": 6.25,
+   "text": "انسخه.",
+   "role": null
+  },
+  {
+   "from": 6.25,
+   "to": 7.5,
+   "text": "أدِره ٤٥ درجة.",
+   "role": null
+  },
+  {
+   "from": 7.5,
+   "to": 8.44,
+   "text": "ثماني رؤوس.",
+   "role": null
+  },
+  {
+   "from": 8.44,
+   "to": 10.0,
+   "text": "اسمها: ربع الحزب",
+   "role": "term"
+  },
+  {
+   "from": 10.0,
+   "to": 10.94,
+   "text": "كرّرها",
+   "role": null
+  },
+  {
+   "from": 10.94,
+   "to": 12.5,
+   "text": "على شبكة…",
+   "role": null
+  },
+  {
+   "from": 12.5,
+   "to": 13.75,
+   "text": "فتصير الفراغات صلباناً.",
+   "role": null
+  },
+  {
+   "from": 13.75,
+   "to": 15.0,
+   "text": "نجمة وصليب.",
+   "role": "term"
+  },
+  {
+   "from": 15.0,
+   "to": 15.94,
+   "text": "والآن غيّر",
+   "role": null
+  },
+  {
+   "from": 15.94,
+   "to": 17.5,
+   "text": "زاوية واحدة.",
+   "role": null
+  },
+  {
+   "from": 17.5,
+   "to": 18.75,
+   "text": "الشبكة نفسها.",
+   "role": null
+  },
+  {
+   "from": 18.75,
+   "to": 20.0,
+   "text": "نقشة جديدة.",
+   "role": null
+  },
+  {
+   "from": 20.0,
+   "to": 20.94,
+   "text": "اقطعها",
+   "role": null
+  },
+  {
+   "from": 20.94,
+   "to": 22.4,
+   "text": "مشربيةً…",
+   "role": "term"
+  },
+  {
+   "from": 22.6,
+   "to": 24.06,
+   "text": "فترسمها الشمس",
+   "role": null
+  },
+  {
+   "from": 24.06,
+   "to": 25.6,
+   "text": "على أرضيّتك.",
+   "role": null
+  },
+  {
+   "from": 27.6,
+   "to": 28.75,
+   "text": "صمّم نقشتك،",
+   "role": null
+  },
+  {
+   "from": 28.75,
+   "to": 29.7,
+   "text": "مجاناً.",
+   "role": null
+  },
+  {
+   "from": 29.7,
+   "to": 32.5,
+   "text": "مختبر الزخارف · الرابط في البايو",
+   "role": "cta"
+  }
+ ],
+ "texts": [
+  {
+   "id": "hook_0",
+   "text": "ما هي إلا مربّعان.",
+   "from": 1.875,
+   "to": 3.75,
+   "role": "hook",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "term_1",
+   "text": "اسمها: ربع الحزب",
+   "from": 8.44,
+   "to": 10.0,
+   "role": "term",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "term_2",
+   "text": "نجمة وصليب.",
+   "from": 13.75,
+   "to": 15.0,
+   "role": "term",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "term_3",
+   "text": "مشربيةً…",
+   "from": 20.94,
+   "to": 22.4,
+   "role": "term",
+   "px": 84,
+   "box": [
+    100,
+    318,
+    880,
+    110
+   ]
+  },
+  {
+   "id": "cta_4",
+   "text": "مختبر الزخارف · الرابط في البايو",
+   "from": 29.7,
+   "to": 32.5,
+   "role": "cta",
+   "px": 84,
+   "box": [
+    100,
+    1236,
+    880,
+    110
+   ]
+  }
+ ],
+ "terms": [
+  "ربع الحزب",
+  "نجمة وصليب",
+  "مشربية"
+ ],
+ "labels": {
+  "ch": [
+   "مربّعان",
+   "الشبكة",
+   "زاوية واحدة",
+   "المشربية",
+   "مختبر الزخارف"
+  ],
+  "name": "ربع الحزب",
+  "term": "نجمة وصليب",
+  "source": "لوح بلاط · إيران، ١٢٦٠–١٢٧٠ · متحف المتروبوليتان",
+  "angle": "زاوية التلاقي",
+  "foot": "رسم توضيحي · رمال للتصميم الداخلي",
+  "cardKick": "أداة مجانية",
+  "cardTitle": "مختبر الزخارف",
+  "cardSub": "من رمال للتصميم الداخلي",
+  "handle": "@rimalinterior"
+ },
+ "cuts": [
+  27.5
+ ],
+ "hero": {
+  "t": 22.5,
+  "what": "sunlight switches on through the mashrabiya and draws the pattern on the floor"
+ },
+ "silences": [
+  {
+   "from": 21.9375,
+   "to": 22.5
+  }
+ ],
+ "reads": [
+  {
+   "what": "كل نجمة في هذا الجدار",
+   "from": 0.0,
+   "to": 1.875
+  },
+  {
+   "what": "ما هي إلا مربّعان.",
+   "from": 1.875,
+   "to": 3.75
+  },
+  {
+   "what": "خذ مربّعاً واحداً.",
+   "from": 3.75,
+   "to": 5.0
+  },
+  {
+   "what": "انسخه.",
+   "from": 5.0,
+   "to": 6.25
+  },
+  {
+   "what": "أدِره ٤٥ درجة.",
+   "from": 6.25,
+   "to": 7.5
+  },
+  {
+   "what": "ثماني رؤوس.",
+   "from": 7.5,
+   "to": 8.44
+  },
+  {
+   "what": "اسمها: ربع الحزب",
+   "from": 8.44,
+   "to": 10.0
+  },
+  {
+   "what": "كرّرها",
+   "from": 10.0,
+   "to": 10.94
+  },
+  {
+   "what": "على شبكة…",
+   "from": 10.94,
+   "to": 12.5
+  },
+  {
+   "what": "فتصير الفراغات صلباناً.",
+   "from": 12.5,
+   "to": 13.75
+  },
+  {
+   "what": "نجمة وصليب.",
+   "from": 13.75,
+   "to": 15.0
+  },
+  {
+   "what": "والآن غيّر",
+   "from": 15.0,
+   "to": 15.94
+  },
+  {
+   "what": "زاوية واحدة.",
+   "from": 15.94,
+   "to": 17.5
+  },
+  {
+   "what": "الشبكة نفسها.",
+   "from": 17.5,
+   "to": 18.75
+  },
+  {
+   "what": "نقشة جديدة.",
+   "from": 18.75,
+   "to": 20.0
+  },
+  {
+   "what": "اقطعها",
+   "from": 20.0,
+   "to": 20.94
+  },
+  {
+   "what": "مشربيةً…",
+   "from": 20.94,
+   "to": 22.4
+  },
+  {
+   "what": "فترسمها الشمس",
+   "from": 22.6,
+   "to": 24.06
+  },
+  {
+   "what": "على أرضيّتك.",
+   "from": 24.06,
+   "to": 25.6
+  },
+  {
+   "what": "صمّم نقشتك،",
+   "from": 27.6,
+   "to": 28.75
+  },
+  {
+   "what": "مجاناً.",
+   "from": 28.75,
+   "to": 29.7
+  },
+  {
+   "what": "مختبر الزخارف · الرابط في البايو",
+   "from": 29.7,
+   "to": 32.5
+  }
+ ]
+}

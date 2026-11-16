@@ -1,0 +1,7 @@
+out/*.parts/
+out/video_*.mp4
+stills/
+stills_ar/
+qa/
+qa_ar/
+score_raw.wav
