@@ -6,7 +6,7 @@ import { planToSensor, screenAxes, screenAngle } from './tracker.js';
 
 export const CAM_HEIGHT = 1.35;   // metres: a phone held in front of the chest
 export const CAM_FOV = 66;        // degrees across the long side of the picture (typical main camera)
-const NEAR = 0.3, RIBBON = 0.3, AHEAD = 28;
+const NEAR = 0.3, RIBBON = 0.3, AHEAD = 14, DEST_NEAR = 15;   // far ahead, a few degrees of compass error put the line in a wall
 
 /** Camera errors → a reason the app can explain. */
 export function cameraError(e) {
@@ -112,23 +112,22 @@ export class CameraGuide {
       polyPath([cam(x + ux * 0.22, y + uy * 0.22), cam(x - uy * n - ux * 0.12, y + ux * n - uy * 0.12), cam(x - ux * 0.02, y - uy * 0.02), cam(x + uy * n - ux * 0.12, y - ux * n - uy * 0.12)]);
     }
     ctx.fillStyle = 'rgba(255,255,255,0.92)'; ctx.fill();
-    // Destination: a ring on the floor and a post with its name.
-    if (fr.dest && acc <= AHEAD + 0.5) {
+    // Destination: a ring on the floor and, once it is close, a short post with its name.
+    if (fr.dest && acc <= DEST_NEAR) {
       const ring = [], ring2 = [];
       for (let k = 0; k < 28; k++) { const t = k / 28 * Math.PI * 2; ring.push(cam(fr.dest.x + Math.cos(t) * 0.75, fr.dest.y + Math.sin(t) * 0.75)); ring2.push(cam(fr.dest.x + Math.cos(t) * 0.35, fr.dest.y + Math.sin(t) * 0.35)); }
       ctx.beginPath(); if (polyPath(ring)) { ctx.lineWidth = 6; ctx.strokeStyle = '#FFC700'; ctx.stroke(); ctx.lineWidth = 2; ctx.strokeStyle = '#111'; ctx.stroke(); }
       ctx.beginPath(); if (polyPath(ring2)) { ctx.fillStyle = '#111'; ctx.fill(); }
-      const b = cam(fr.dest.x, fr.dest.y, 0), t = cam(fr.dest.x, fr.dest.y, 1.9);
+      const b = cam(fr.dest.x, fr.dest.y, 0), t = cam(fr.dest.x, fr.dest.y, 1.1);
       if (b[2] > NEAR && t[2] > NEAR) {
         const sb = scr(b), st = scr(t), ins = this.panelInsets(now);
-        // The name sits on top of the post, but never under the app's panels: it slides down the post instead.
-        const ly = Math.min(sb[1] - 40, Math.max(ins.top + 8, st[1] - 34)), top = Math.max(st[1], ly + 16);
-        if (sb[1] > top) { ctx.beginPath(); ctx.moveTo(sb[0], sb[1]); ctx.lineTo(st[0], top); ctx.lineWidth = 4; ctx.strokeStyle = '#111'; ctx.stroke(); }
-        if (fr.dest.label && ly + 32 < v.H - ins.bottom - 8) {
-          ctx.font = '600 16px Geist, system-ui, sans-serif'; const w = ctx.measureText(fr.dest.label).width + 24;
-          const lx = Math.max(8 + w / 2, Math.min(v.W - 8 - w / 2, st[0]));
+        // The label sits on the post top and is drawn only where it is clear of the panels and on screen; never floats.
+        if (fr.dest.label && sb[0] > 0 && sb[0] < v.W && st[1] - 40 > ins.top + 8 && st[1] < v.H - ins.bottom - 8) {
+          ctx.beginPath(); ctx.moveTo(sb[0], sb[1]); ctx.lineTo(st[0], st[1]); ctx.lineWidth = 4; ctx.strokeStyle = '#111'; ctx.stroke();
+          ctx.font = '600 16px Geist, system-ui, sans-serif'; const w = Math.min(v.W - 16, ctx.measureText(fr.dest.label).width + 24);
+          const lx = Math.max(8 + w / 2, Math.min(v.W - 8 - w / 2, st[0])), ly = st[1] - 36;
           ctx.fillStyle = '#111'; ctx.beginPath(); ctx.roundRect?.(lx - w / 2, ly, w, 32, 16); ctx.fill();
-          ctx.fillStyle = '#FFC700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(fr.dest.label, lx, ly + 16);
+          ctx.fillStyle = '#FFC700'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(fr.dest.label, lx, ly + 16, w - 16);
         }
       }
     }

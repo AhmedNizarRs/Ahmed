@@ -229,7 +229,12 @@ test('camera mode: a blue guide line on the floor ahead; it says where to look w
     return y;
   });
   assert.ok(px > 2000, `blue ribbon pixels: ${px}`);
-  assert.match(await page.textContent('#camNote'), /Guide line/);
+  assert.ok(await page.isHidden('#camNote'), 'no standing note over the picture while the line shows');
+  assert.ok(await page.isHidden('#navMode'), 'status pill hidden in camera view');
+  // Indoor compass off by 12 deg: walking straight down the corridor pulls the camera line back onto it.
+  const yaw = await walk(page, { seconds: 4, pitch: 80, beta: 37 });
+  const cb = await page.evaluate(() => ({ b: window.DALIL_APP.nav.camBeta, n: window.DALIL_APP.nav.camN }));
+  assert.ok(cb.n >= 3 && Math.abs(((cb.b - 37 + 540) % 360) - 180) < 4, `camera angle follows the walk: ${JSON.stringify(cb)} (follower ${yaw.beta})`);
   await walk(page, { seconds: 0.6, pitch: 80, face: 'back', live: true });
   await page.waitForFunction(() => /Turn around/.test(document.querySelector('#camHint').textContent) && !document.querySelector('#camHint').hidden);
   await page.click('#btnView');

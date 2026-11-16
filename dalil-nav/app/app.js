@@ -965,7 +965,7 @@ function saveCalibration() {
 function enableTracking() {
   const leg = nav.legs[nav.steps[nav.i].leg];
   nav.mode = 'track'; hideMotionCard();
-  nav.follower = new Follower({ stride: myStride() });
+  nav.follower = new Follower({ stride: myStride() }); nav.camBeta = null; nav.camN = 0;
   const pr = priorFor(leg.map); if (pr) nav.follower.setPrior(pr.beta, { weight: pr.weight, trusted: pr.trusted });
   nav.follower.setLeg(leg.route.path, leg.cum); nav.follower.anchor(nav.pos, { learn: false });
   tracker.onStep = onTrackerStep;
@@ -982,6 +982,7 @@ function onTrackerStep(ts) {
   const wasWrong = nav.follower.wrong;
   nav.pos = nav.follower.step(tracker.heading, { steady: tracker.steady() });
   if (nav.follower.wrong && !wasWrong) { speak(t('wrongWay')); announce(t('wrongWay'), true); buzz([300, 100, 300]); }
+  camYaw();
   syncStepToPos();
   updateNavPos(false);
   renderMode();
@@ -1048,7 +1049,13 @@ function renderMode() {
     + (g && mm !== 'floor' ? ` · ${t('gpsAcc', Math.round(gps.acc))}` : '');
   el.title = t(m === 'preview' ? 'previewNote' : 'modeFollowHint');
   $('#hudCard').classList.toggle('wrong', m === 'wrong');
-  $('#camNote').textContent = nav.mode === 'track' && nav.follower?.usable ? t('camNote') : nav.mode === 'off' ? t('camNoMotion') : t('camAlign');
+  renderCamNote();
+}
+// Camera view: a note only when the line can't show (no motion, still lining up); no standing disclaimer over the picture.
+function renderCamNote() {
+  const ok = nav.mode === 'track' && nav.follower?.usable, el = $('#camNote');
+  el.textContent = ok ? '' : nav.mode === 'off' ? t('camNoMotion') : t('camAlign');
+  el.hidden = nav.view !== 'cam' || ok;
 }
 function renderStepList() {
   $('#stepList').innerHTML = nav.steps.map((s, i) => `<li class="${i === nav.i ? 'is-current' : i < nav.i ? 'is-done' : ''}" ${i === nav.i ? 'aria-current="step"' : ''}><span class="p-ico">${svgIco(TURN_ICONS[s.turn] || TURN_ICONS.straight)}</span><span class="s-text">${esc(stepText(s))}</span></li>`).join('');
@@ -1186,12 +1193,30 @@ function startLoop() {
   };
   nav.loop = requestAnimationFrame(tick);
 }
+// Camera line direction (founder's on-site test, Nov 2026: the line ran to the right, through a pillar). Indoors the
+// compass is 10-20 deg off, and the camera shows that error as a line off the corridor. While you walk straight along
+// a leg, at least 3 m from any turn, you are walking the corridor's way, so the camera's compass-to-plan angle is
+// pulled toward "your heading = this leg's direction". The map arrow keeps the Follower's own angle.
+function camYaw() {
+  const f = nav.follower, s = nav.steps[nav.i], leg = nav.legs[s?.leg];
+  if (!f?.usable || !leg || f.wrong || !tracker.steady() || tracker.heading == null) return;
+  const path = leg.route.path, cum = leg.cum, d = nav.pos;
+  for (let i = 1; i < path.length - 1; i++) {
+    const a = Math.atan2(path[i][1] - path[i - 1][1], path[i][0] - path[i - 1][0]), b = Math.atan2(path[i + 1][1] - path[i][1], path[i + 1][0] - path[i][0]);
+    if (Math.abs(wrap180((b - a) * 180 / Math.PI)) > 25 && Math.abs(cum[i] - d) < 3) return;
+  }
+  if (cum[cum.length - 1] - d < 1.5) return;
+  const walk = wrap180(headingAt(path, cum, d) + tracker.heading - 90);
+  if (Math.abs(wrap180(walk - f.beta)) > 35) return;                       // not walking the corridor's way: ignore
+  const cur = nav.camBeta ?? f.beta;
+  nav.camBeta = wrap180(cur + 0.2 * wrap180(walk - cur)); nav.camN++;
+}
 function camFrame() {
   const s = nav.steps[nav.i], leg = nav.legs[s.leg];
   if (!leg || !tracker.R || !(nav.mode === 'track' && nav.follower?.usable) || nav.sim) return null;
   const p = pointAt(leg.route.path, leg.cum, nav.pos), last = nav.legs.length - 1 === s.leg, d = resolve(nav.toKey);
   const target = last ? d?.p : nav.plan.via?.pa;
-  return { R: tracker.R, beta: nav.follower.beta, pos: p, ahead: [[p.x, p.y], ...leg.route.path.slice(p.i)], dest: target ? { x: target.x, y: target.y, label: last ? pname(d.p) : t('toFloor', floorName(nav.plan.via.toMap.floor)) } : null, motion: !settings.motion };
+  return { R: tracker.R, beta: nav.camN >= 3 ? nav.camBeta : nav.follower.beta, pos: p, ahead: [[p.x, p.y], ...leg.route.path.slice(p.i)], dest: target ? { x: target.x, y: target.y, label: last ? pname(d.p) : t('toFloor', floorName(nav.plan.via.toMap.floor)) } : null, motion: !settings.motion };
 }
 // The part of the camera picture under the top and bottom panels (the guide keeps its labels out of it).
 function camInsets() {
@@ -1200,7 +1225,7 @@ function camInsets() {
 }
 function setViewUI(v) {
   $('#btnView').setAttribute('aria-pressed', String(v === 'cam'));
-  $('#navCam').hidden = v !== 'cam'; $('#navMap').hidden = v === 'cam'; $('#camNote').hidden = v !== 'cam';
+  $('#navCam').hidden = v !== 'cam'; $('#navMap').hidden = v === 'cam'; $('#nav').classList.toggle('cam-view', v === 'cam'); renderCamNote();
 }
 // The camera works without motion too (it still reads DALIL signs); the guide line needs the sensors.
 async function setView(v) {
