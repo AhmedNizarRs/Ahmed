@@ -896,3 +896,21 @@ html.contrast .nearest-card { background: #000; border-color: #FFE600; } html.co
 .qibla-arrow { flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: #188038; display: grid; place-items: center; transition: transform .25s linear; }
 .qibla-arrow svg { width: 1.75rem; height: 1.75rem; fill: #fff; }
 html.reduce-motion .qibla-arrow { transition: none; }
+
+/* High contrast on the Home sheet (founder's screenshot, Nov 2026: light grey cards with white or faint text).
+   Black surfaces, white 2 px edges, white text, yellow icons and numbers; nothing grey. */
+html.contrast .home-map .hm-sheet .tile, html.contrast .home-map .hm-sheet .row-btn, html.contrast .home-map .hm-sheet .pill,
+html.contrast .tile, html.contrast .row-btn, html.contrast .pill { background: #000; border: 2px solid #fff; color: #fff; box-shadow: none; }
+html.contrast .tile::before { display: none; }
+html.contrast .home-map .hm-sheet .tile-ico, html.contrast .tile-ico { color: #000; background: #FFE600; border-color: #FFE600; box-shadow: none; }
+html.contrast .home-map .hm-sheet .r-ico, html.contrast .r-ico { color: #FFE600; background: #000; border: 2px solid #FFE600; }
+html.contrast .tile-name, html.contrast .r-name { color: #fff; }
+html.contrast .tile-sub, html.contrast .r-sub, html.contrast .r-end, html.contrast .r-chev { color: #FFE600; }
+html.contrast .home-map .hm-sheet .eyebrow, html.contrast .home-map .hm-sheet .fine, html.contrast .home-map .hm-sheet .sec-title, html.contrast .eyebrow, html.contrast .sec-title, html.contrast .muted { color: #fff; }
+html.contrast .pill .ico, html.contrast .hm-sheet .pill .ico { color: #FFE600; }
+html.contrast .tile:focus-visible, html.contrast .row-btn:focus-visible, html.contrast .pill:focus-visible { outline: 3px solid #FFE600; outline-offset: 2px; }
+html.contrast .hm-handle::before, html.contrast .hm-handle span { background: #fff; }
+/* the nearest-place card in search */
+html.contrast .nc-go { background: #000; border: 2px solid #fff; color: #fff; }
+html.contrast .nc-go .r-sub { color: #FFE600; }
+html.contrast .nc-btn { background: #FFE600; color: #000; }
