@@ -9,6 +9,9 @@ Nothing here is confirmed until the "Confirmed source" column is filled. DALIL i
 | Photoluminescent | Glow performance (only if claimed as a safety product) | `[lab]` | ISO 16069 / DIN 67510 `[VERIFY]` | | | | To research | |
 | Accessibility code | Whether DALIL counts toward code compliance | `[municipality]` | Dubai Universal Design Code; Sharjah rules `[VERIFY]` | | | | To research | |
 
+## Note, 2026-11-17: scope may change
+If DALIL moves from a moulded clip to a thin sticker (see `sticker-concept-research.md`), the item to test becomes a laminate: film, raised dots and adhesive. Ask the lab and Civil Defence what a laminate needs, and whether labels are allowed on fire-rated door leaves. Nothing is confirmed.
+
 ## Next actions
 1. Ask Sheraa, SRTIP or University of Sharjah engineering for a contact at Sharjah Civil Defence and an accredited test lab.
 2. Ask one community partner which braille approval buyers trust.

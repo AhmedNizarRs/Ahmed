@@ -46,3 +46,4 @@ Printer `[model]`, settings `[layer, infill, temperature]`, time per clip `[min]
 | Version | Date | Change | By |
 |---|---|---|---|
 | v0 | 2026-11-05 | Spec file created from the website description | Claude (dalil-product) |
+| v0 (no spec change) | 2026-11-17 | Direction under review after the University of Sharjah specialist meeting: top part only, as a thin sticker, no side ribs. Research in `sticker-concept-research.md`. Spec stays v0 until the founders decide | Claude (dalil-product) |
