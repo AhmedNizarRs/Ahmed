@@ -868,6 +868,76 @@ test('chained routes: after arriving, the next route starts at the place you rea
   await ctx.close();
 });
 
+test('search "prayer room" / "toilet": the nearest one by walking distance, men\'s or women\'s as you choose', async () => {
+  const { ctx, page, errors } = await open('#at-P001');
+  await search(page, 'prayer room');
+  assert.match(await page.textContent('.nearest-card'), /Nearest prayer room\s*Prayer Room/);
+  await search(page, 'مصلى');
+  assert.match(await page.textContent('.nearest-card'), /Prayer Room/);
+  await search(page, 'ladies toilet');
+  assert.match(await page.textContent('.nearest-card .r-name'), /Toilets \(Ladies\)/);
+  await search(page, 'toilet');
+  await page.click('.nc-gender [data-gender="m"]');
+  assert.equal(await page.evaluate(() => window.DALIL_APP.settings.gender), 'm');
+  assert.match(await page.textContent('.nearest-card .r-name'), /Toilets \(Men\)/);
+  await page.click('.nc-gender [data-gender="f"]');
+  assert.match(await page.textContent('.nearest-card .r-name'), /Toilets \(Ladies\)/);
+  await page.click('.nc-go'); await pageIs(page, 'route');
+  assert.equal(await page.textContent('#destName'), 'Toilets (Ladies)');
+  await page.evaluate(() => window.DALIL_APP.go('home')); await pageIs(page, 'home');
+  await search(page, 'clinic');
+  assert.equal(await page.$('.nearest-card'), null, 'a normal search lists places');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
+test('map from a photo of the wall plan: walls found (text and arrows dropped), size, places, saved; then directions work', async () => {
+  const { ctx, page, errors } = await open('');
+  const png = await page.evaluate(() => {
+    const s = document.createElement('canvas'); s.width = 1000; s.height = 700; const x = s.getContext('2d');
+    x.fillStyle = '#f4f1ea'; x.fillRect(0, 0, 1000, 700); x.strokeStyle = '#222'; x.lineWidth = 5;
+    const L = (a, b, c, d) => { x.beginPath(); x.moveTo(a, b); x.lineTo(c, d); x.stroke(); }, X = m => 100 + m * 20, Y = m => 110 + m * 20;
+    L(X(0), Y(0), X(40), Y(0)); L(X(40), Y(0), X(40), Y(24)); L(X(0), Y(24), X(18.5), Y(24)); L(X(20), Y(24), X(40), Y(24)); L(X(0), Y(0), X(0), Y(24));
+    L(X(0), Y(10), X(4), Y(10)); L(X(5), Y(10), X(16), Y(10)); L(X(17), Y(10), X(30), Y(10)); L(X(31), Y(10), X(40), Y(10)); L(X(13), Y(0), X(13), Y(10)); L(X(27), Y(0), X(27), Y(10));
+    L(X(0), Y(14), X(8), Y(14)); L(X(9), Y(14), X(17), Y(14)); L(X(22), Y(14), X(33), Y(14)); L(X(34), Y(14), X(40), Y(14)); L(X(17), Y(14), X(17), Y(24)); L(X(22), Y(14), X(22), Y(24));
+    x.fillStyle = '#111'; x.font = '22px sans-serif'; x.fillText('LAB 1', X(4), Y(5)); x.fillText('PRAYER', X(31), Y(5)); x.font = 'bold 34px sans-serif'; x.fillText('EVACUATION PLAN', 330, 60);
+    x.strokeStyle = '#0a0'; x.lineWidth = 8; L(X(5), Y(12), X(18), Y(12));
+    return s.toDataURL('image/png');
+  });
+  await page.evaluate(() => document.querySelector('#btnSnapHome').click());
+  await pageIs(page, 'snap');
+  await page.setInputFiles('#snFile2', { name: 'plan.png', mimeType: 'image/png', buffer: Buffer.from(png.split(',')[1], 'base64') });
+  await page.waitForSelector('#snWork:not([hidden])');
+  await page.click('#snWhole'); await page.click('#snNext');
+  const W = await page.evaluate(() => document.querySelector('#snCanvas').width);
+  assert.equal(W, 1000, 'straightened to 1000 px');
+  const at = (sx, sy) => page.evaluate(([sx, sy]) => { const c = document.querySelector('#snCanvas'), r = c.getBoundingClientRect(); return [r.left + sx * r.width / c.width, r.top + sy * r.height / c.height]; }, [sx, sy]);
+  const X = m => 100 + m * 20, Y = m => 110 + m * 20;
+  await page.click('#snNext');                                                      // walls → size
+  assert.match(await page.textContent('#snTitle'), /Step 3 of 5/);
+  await page.click('#snNext'); assert.match(await page.textContent('#toast'), /Set the size first/);
+  await page.mouse.click(...await at(X(0), Y(12))); await page.mouse.click(...await at(X(40), Y(12)));
+  await page.fill('#snLen', '40'); await page.click('#snLenGo');
+  assert.match(await page.textContent('.sn-scale'), /about 50 × 35 m/);   // 800 px = 40 m, so the 1000 × 700 px sheet is 50 × 35 m
+  await page.click('#snNext');
+  const add = async (mx, my, name, cat) => { await page.mouse.click(...await at(X(mx), Y(my))); await page.waitForSelector('#dlgPlace[open]'); await page.fill('#placeEn', name); await page.selectOption('#placeCat', cat); await page.click('#formPlace button[type=submit]'); };
+  await add(19.2, 23, 'Main entrance', 'entrance'); await add(6, 5, 'Lab 1', 'lab'); await add(33, 5, 'Prayer room', 'prayer'); await add(8, 19, 'Toilets (men)', 'toilet');
+  assert.equal(await page.$('#snCtl .warn'), null, 'every place reachable through its doorway');
+  await page.click('#snNext'); await page.fill('#snBld', 'Plan Photo Hall'); await page.click('#snNext');
+  await pageIs(page, 'home');
+  const m = await page.evaluate(() => { const m = window.DALIL_APP.state.map; return { name: m.building.name, src: m.source.type, n: m.points.length, walls: m.plan.walls.length }; });
+  assert.deepEqual([m.name, m.src, m.n], ['Plan Photo Hall', 'plan-photo', 4]);
+  assert.ok(m.walls > 20, `walls drawn: ${m.walls}`);
+  await search(page, 'prayer');
+  await page.click('.nc-go'); await pageIs(page, 'route');
+  const d = +(await page.textContent('#statDist'));
+  assert.ok(d > 15 && d < 40, `a real route through the corridor: ${d} m`);
+  // kept on the phone
+  assert.ok(await page.evaluate(() => JSON.parse(localStorage.getItem('dalil.userMaps')).some(x => x.building.name === 'Plan Photo Hall')));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('near the end, standing still: "Are you at Prayer Room?" (Not yet asks again later; Yes arrives); the map glides between steps', async () => {
   const { ctx, page, errors } = await open('', { permissions: SENSORS });
   await search(page, 'prayer'); await page.click('#results button[data-pick]'); await pageIs(page, 'route');
@@ -938,11 +1008,12 @@ test('a lost visitor on campus: Arabic search finds the right places; opening th
   await page.waitForFunction(() => window.DALIL_APP.state.map.building.id === 'uos-central-labs-b3-test');   // opened by itself: the nearest indoor map
   await page.waitForFunction(() => document.querySelector('#fromEyebrow').textContent.includes('Not in this building'));
   await page.click('#btnSearchOpen');
-  const names = async q => { await page.fill('#search', q); await page.waitForTimeout(150); return page.$$eval('#results button[data-pick]', b => b.map(x => x.innerText)); };
+  const names = async q => { await page.fill('#search', q); await page.waitForTimeout(150); return page.$$eval('#results .row-btn[data-pick]', b => b.map(x => x.innerText)); };
   const labs = await names('مختبر');
   assert.ok(labs.length >= 10 && labs.every(n => /Lab/.test(n)), `Arabic "lab" finds only labs: ${labs.length}`);
   const wc = await names('حمام');
   assert.deepEqual(wc.map(n => n.split('\n')[0]).sort(), ['Toilets (east)', 'Toilets (west)']);
+  assert.ok(await page.$('.nearest-card'), 'and the nearest one on top');
   assert.equal((await names('مُختَبر الكيمياء')).length, 4, 'harakat ignored; two words narrow it');
   // Door numbers from the drawing, labs labelled as labs, honest distances while outside
   assert.match((await names('034'))[0], /Analytical Chemistry Lab\nLab · Door 034/);

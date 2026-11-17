@@ -89,6 +89,7 @@
         <li id="liGettingHere" hidden><button id="btnGettingHere" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="building"></span></span><span class="r-main"><span class="r-name" data-i18n="gettingHere">Getting here</span><span id="ghSub" class="r-sub" data-i18n="gettingHereSub">Street map and directions to the entrance</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li><button id="btnScanHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="qr"></span></span><span class="r-main"><span class="r-name" data-i18n="scanSign">Scan a DALIL sign</span><span class="r-sub" data-i18n="scanSignSub">Tells the app exactly where you are</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li><button id="btnSurveyHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="walk"></span></span><span class="r-main"><span class="r-name" data-i18n="surveyBtn">Map a building by walking it</span><span class="r-sub" data-i18n="surveyRowSub">No floor plan needed</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnSnapHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="camera"></span></span><span class="r-main"><span class="r-name" data-i18n="snRow">Map from a photo of the wall plan</span><span class="r-sub" data-i18n="snRowSub">The fire evacuation plan near the lifts is enough</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li><button id="btnSettings" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="gear"></span></span><span class="r-main"><span class="r-name" data-i18n="settings">Settings</span><span class="r-sub" data-i18n="settingsSub">Language, text size, voice</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
       </ul>
       <p class="fine" data-i18n="aboutShort">DALIL helps you find your way inside. Building signs and staff always come first.</p>
@@ -112,6 +113,33 @@
   </dialog>
 
   <!-- ================= SURVEY: map a building by walking it (no floor plan) ================= -->
+  <section id="pgSnap" class="page" data-page="snap" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="snTitle">Map from the wall plan</h1>
+    </header>
+    <main class="page-body snap">
+      <div id="snPick">
+        <p class="sv-lead" data-i18n="snLead">No floor plan? Almost every building has one on the wall: the fire evacuation plan near the lifts and stairs. Take a photo of it and DALIL turns it into a navigation map.</p>
+        <ol class="sv-how">
+          <li data-i18n="snHow1">Stand straight in front of the plan and take the photo.</li>
+          <li data-i18n="snHow2">Drag the 4 yellow corners to the plan's corners.</li>
+          <li data-i18n="snHow3">DALIL finds the walls. Open any doorway it closed with your finger.</li>
+          <li data-i18n="snHow4">Walk a few metres to set the size, then tap the rooms to name them.</li>
+        </ol>
+        <label class="btn primary xl file-btn"><span class="ico" data-ico="camera"></span><span data-i18n="snTake">Take a photo of the plan</span><input id="snFile" type="file" accept="image/*" capture="environment"></label>
+        <label class="btn secondary file-btn"><span class="ico" data-ico="map"></span><span data-i18n="snChoose">Choose a photo</span><input id="snFile2" type="file" accept="image/*"></label>
+      </div>
+      <div id="snWork" hidden>
+        <p id="snTitle" class="sn-title"></p>
+        <p id="snHint" class="muted"></p>
+        <div class="sn-wrap"><canvas id="snCanvas" class="sn-canvas" aria-label="Plan"></canvas></div>
+        <div id="snCtl" class="sn-ctl"></div>
+      </div>
+    </main>
+    <div id="snBar" class="cta-bar sn-bar"><button id="snBackStep" class="btn secondary" type="button" data-i18n="snPrev">Back</button><button id="snNext" class="btn primary" type="button">Next</button></div>
+  </section>
+
   <section id="pgSurvey" class="page" data-page="survey" hidden>
     <header class="bar">
       <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
@@ -342,6 +370,12 @@
         <label class="switch-row"><span class="sw-text"><strong data-i18n="set_vibrate">Vibrate on turns</strong><small data-i18n="set_vibrateHint">A short buzz before each turn</small></span><input id="setVibrate" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
         <label class="switch-row"><span class="sw-text"><strong data-i18n="set_stepfree">Always avoid stairs</strong><small data-i18n="set_stepfreeHint">Start every route as step-free</small></span><input id="setStepFree" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
         <label class="switch-row"><span class="sw-text"><strong data-i18n="set_clock">Clock directions</strong><small data-i18n="set_clockHint">Also say the turn as a clock, like “3 o’clock” for right. Some blind people find this easier.</small></span><input id="setClock" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <p class="set-label" id="genderLabel" data-i18n="genderFor">Restrooms and prayer rooms</p>
+        <div class="choice three" role="radiogroup" aria-labelledby="genderLabel">
+          <label><input type="radio" name="gender" value="m"><span data-i18n="gender_m">Men</span></label>
+          <label><input type="radio" name="gender" value="f"><span data-i18n="gender_f">Women</span></label>
+          <label><input type="radio" name="gender" value="any"><span data-i18n="gender_any">Everyone</span></label>
+        </div>
         <p class="set-label" id="paceLabel" data-i18n="pace">Walking pace</p>
         <div class="choice three" role="radiogroup" aria-labelledby="paceLabel">
           <label><input type="radio" name="pace" value="slow"><span data-i18n="pace_slow">Slow</span></label>
@@ -352,6 +386,7 @@
       <fieldset class="set-group" id="setMapSec"><legend data-i18n="mapData">Building map</legend>
         <label class="field"><span data-i18n="building">Building</span><select id="setBuilding"></select></label>
         <label class="field"><span data-i18n="mapStyle">Street map</span><select id="setProvider"></select></label>
+        <button id="btnSnap" class="btn secondary" type="button"><span class="ico" data-ico="camera"></span><span data-i18n="snRow">Map from a photo of the wall plan</span></button>
         <button id="btnSurvey" class="btn secondary" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="surveyBtn">Map a building by walking it</span></button>
         <label class="btn secondary file-btn"><span class="ico" data-ico="map"></span><span data-i18n="loadMap">Load a map file</span><input id="fileMap" type="file" accept=".json,application/json"></label>
         <p id="loadMsg" class="muted" role="status"></p>
@@ -468,6 +503,7 @@
       <h2 id="arrivedTitle" tabindex="-1" data-i18n="arrived">You have arrived</h2>
       <p id="arrivedName" class="arrived-name"></p>
       <p id="arrivedStats" class="muted num"></p>
+      <div id="qibla" class="qibla" hidden><span id="qiblaArrow" class="qibla-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 18 14h-4v8h-4v-8H6z"/></svg></span><span><strong data-i18n="qiblaTitle">Qibla</strong><small id="qiblaText"></small></span></div>
       <p class="muted" data-i18n="arrivedHint">Look for the sign to make sure.</p>
       <button id="btnArrivedDone" class="btn primary xl" type="button" data-i18n="done">Done</button>
       <button id="btnArrivedSave" class="btn secondary" type="button" data-i18n="savePlace">Save this place</button>
@@ -482,6 +518,7 @@
       <label class="field"><span data-i18n="placeNameEn">Name (English)</span><input id="placeEn" type="text" maxlength="60" autocomplete="off" dir="ltr"></label>
       <label class="field"><span data-i18n="placeNameAr">Name (Arabic)</span><input id="placeAr" type="text" maxlength="60" autocomplete="off" dir="rtl" lang="ar"></label>
       <label class="field"><span data-i18n="placeType">Type</span><select id="placeCat"></select></label>
+      <label id="placeGenderRow" class="field" hidden><span data-i18n="placeFor">For</span><select id="placeGender"><option value="" data-i18n="gender_any">Everyone</option><option value="m" data-i18n="gender_m">Men</option><option value="f" data-i18n="gender_f">Women</option></select></label>
       <label class="field"><span data-i18n="placeDoor">Door or room number (optional)</span><input id="placeDoor" type="text" maxlength="20" autocomplete="off" dir="ltr"></label>
       <p id="placeMsg" class="route-msg" role="status"></p>
       <p class="muted small" data-i18n="placeNote">Saved on this phone. Export it from Settings to add it to the building’s official map.</p>

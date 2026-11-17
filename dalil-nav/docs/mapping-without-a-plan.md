@@ -35,3 +35,16 @@ In the visitor app: **Home sheet → Map a building by walking it**.
 - **Loops are solved together** (least squares on the step vectors with every loop as an exact constraint), so overlapping loops share the correction instead of undoing each other.
 - **Turning on the spot** no longer counts as walking forward.
 - What it can't know: walls and room shapes (it maps where you walked), and the building's true north (fixed by the satellite line-up or the GPS at the door).
+
+
+## C. Photo of the wall plan (Nov 2026, easiest)
+
+Almost every building has a fire evacuation plan on the wall near the lifts and stairs. Home → *Map from a photo of the wall plan*:
+1. Take the photo.
+2. Drag the 4 corners.
+3. Check the walls DALIL found; rub open any doorway it closed.
+4. Walk a few metres to set the size, or type one known length.
+5. Tap the rooms to name them.
+6. Save.
+
+The whole flow runs on the phone (`app/snapplan.js`); see `docs/what-makes-dalil-different.md` for limits.

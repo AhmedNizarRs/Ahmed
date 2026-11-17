@@ -864,3 +864,35 @@ html.contrast .arrive-ask { background: #000; border-color: #FFE600; } html.cont
 
 /* Add a missing place: the tip is the instruction */
 .map-tip.add-mode { background: #FFC700; color: #1F1F1F; font-weight: 700; border-color: #E0A800; }
+
+/* Nearest place of a kind, at the top of search ("prayer room" → the nearest one) */
+.nearest-card { list-style: none; display: grid; gap: .625rem; padding: .875rem; margin-bottom: .75rem; border-radius: var(--r-lg); background: #FFF8D6; border: 2px solid var(--brand); }
+.nc-eyebrow { margin: 0; font-weight: 700; color: #5F4B00; }
+.nc-go { display: flex; align-items: center; gap: .875rem; width: 100%; min-height: 4.25rem; padding: .5rem; border: 0; border-radius: var(--r); background: #fff; text-align: start; }
+.nc-go .r-main { flex: 1; min-width: 0; display: grid; } .nc-go .r-name { font-weight: 700; font-size: 1.1875rem; } .nc-go .r-sub { color: var(--ink-3); }
+.nc-btn { padding: .625rem 1.25rem; border-radius: 999px; background: var(--brand); color: #1F1F1F; font-weight: 700; }
+.nc-gender { display: flex; gap: .5rem; flex-wrap: wrap; }
+html.contrast .nearest-card { background: #000; border-color: #FFE600; } html.contrast .nc-eyebrow { color: #FFE600; }
+
+/* Map from the wall plan */
+.snap { display: grid; gap: 1rem; padding-bottom: 7rem; }
+.snap #snPick { display: grid; gap: 1rem; } .snap #snWork { display: grid; gap: .75rem; } .snap #snWork[hidden], .snap #snPick[hidden] { display: none; }
+.sn-title { margin: 0; font-weight: 700; font-size: 1.25rem; }
+.sn-wrap { border-radius: var(--r-lg); overflow: hidden; border: 1px solid var(--line); background: #fff; }
+.sn-canvas { display: block; width: 100%; height: auto; max-height: 62vh; object-fit: contain; touch-action: none; }
+.sn-ctl { display: grid; gap: .75rem; }
+.sn-tools { display: flex; gap: .5rem; flex-wrap: wrap; }
+.sn-card { display: grid; gap: .5rem; padding: .875rem; border-radius: var(--r-lg); background: var(--bg-1); border: 1px solid var(--line); }
+.sn-card p { margin: 0; } .sn-steps { font-size: 1.75rem; font-weight: 700; margin: 0; }
+.sn-scale { margin: 0; padding: .625rem .875rem; border-radius: var(--r); background: #E6F4EA; color: #0D652D; font-weight: 700; }
+.sn-range input { width: 100%; } .sn-places { margin: 0; }
+.route-msg.warn { background: #FCE8E6; color: #A50E0E; padding: .625rem .875rem; border-radius: var(--r); }
+#pgSnap .sn-bar { display: flex; gap: .75rem; } #pgSnap .sn-bar .btn { flex: 1; }
+.snap .field input { min-height: var(--tap); padding: .625rem .875rem; border-radius: var(--r); border: 1px solid var(--line); background: var(--bg-1); font-size: 1.0625rem; }
+
+/* Qibla on arrival at a prayer room */
+.qibla { display: flex; align-items: center; gap: .875rem; padding: .75rem 1rem; border-radius: var(--r-lg); background: #E6F4EA; color: #0D652D; text-align: start; }
+.qibla[hidden] { display: none; } .qibla small { display: block; color: #3C4043; }
+.qibla-arrow { flex: none; width: 3.25rem; height: 3.25rem; border-radius: 50%; background: #188038; display: grid; place-items: center; transition: transform .25s linear; }
+.qibla-arrow svg { width: 1.75rem; height: 1.75rem; fill: #fff; }
+html.reduce-motion .qibla-arrow { transition: none; }

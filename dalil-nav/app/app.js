@@ -10,6 +10,7 @@ import { CameraGuide, QRScanner, openCamera, closeCamera, cameraError } from './
 import { availableProviders, allProviders } from './providers.js';
 import { Locator, planFromGeo, locationGranted } from './locate.js';
 import { Survey, strideFromHeight } from './survey.js';
+import { warp, warpSize, traceWalls, combine, maskToMap } from './snapplan.js';
 
 /* =========================================================================
    Settings, storage and the building's config (every read/write guarded: private mode may throw)
@@ -25,7 +26,7 @@ const saved0 = store.get('dalil.settings', {});
 if (saved0.v !== SETTINGS_V) { if (saved0.large) saved0.textSize = 'large'; if ((saved0.v ?? 0) < 4) delete saved0.theme; delete saved0.large; delete saved0.sensors; saved0.v = SETTINGS_V; }   // v4: Day becomes the default look
 const settings = Object.assign({
   v: SETTINGS_V, lang: (navigator.language || 'en').toLowerCase().startsWith('ar') ? 'ar' : 'en',
-  theme: 'light', textSize: 'normal', voice: true, vibrate: true, clock: false, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true, mapLayers: {}, mapOpacity: 85,
+  theme: 'light', textSize: 'normal', voice: true, vibrate: true, clock: false, gender: null, stepFree: false, pace: 'normal', mapProvider: 'auto', gps: true, mapLayers: {}, mapOpacity: 85,
   contrast: mq('(prefers-contrast: more)'), motion: mq('(prefers-reduced-motion: reduce)'),
 }, saved0);
 const saveSettings = () => store.set('dalil.settings', settings);
@@ -240,7 +241,7 @@ const addedKey = m => `${m.building.id}|${m.floor.id}`;
 const addedAll = () => store.get('dalil.added', {}) || {};
 function applyAdded(m) {
   m.points = m.points.filter(p => !p.added);
-  for (const a of addedAll()[addedKey(m)] || []) m.points.push({ id: a.id, nameEn: a.nameEn || a.nameAr, nameAr: a.nameAr || '', category: a.category || 'room', ...(a.doors ? { doors: a.doors } : {}), dalilNode: false, facingDeg: 90, x: a.x, y: a.y, added: true });
+  for (const a of addedAll()[addedKey(m)] || []) m.points.push({ id: a.id, nameEn: a.nameEn || a.nameAr, nameAr: a.nameAr || '', category: a.category || 'room', ...(a.doors ? { doors: a.doors } : {}), ...(a.gender ? { gender: a.gender } : {}), dalilNode: false, facingDeg: 90, x: a.x, y: a.y, added: true });
 }
 function addMap(m) { applyAdded(m); const i = state.maps.findIndex(o => o.building.id === m.building.id && o.floor.id === m.floor.id); if (i >= 0) state.maps[i] = m; else state.maps.push(m); }
 async function loadBundled() {
@@ -263,7 +264,7 @@ async function loadFile(file) {
 /* =========================================================================
    Pages: one at a time, each with a Back button; the phone's back button works too
    ========================================================================= */
-const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav', survey: '#pgSurvey' };
+const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav', survey: '#pgSurvey', snap: '#pgSnap' };
 const stack = ['home'];
 let pageNow = 'home', histOK = true, skipPop = 0;
 function display(name) {
@@ -557,18 +558,29 @@ function renderLayerControls(where) {
   $('#homeChecks').innerHTML = ['plan', 'places', 'outline', 'entrances', 'me'].map(k => row('checkbox', 'homeLayer', k, t('lyr_' + k), settings.mapLayers[k] ?? true)).join('');
 }
 
+/* ---------- Men's / women's places ---------- */
+// Restrooms, prayer rooms and wudu areas are often separate for men and women (UAE). A place's gender comes from its
+// `gender` field ('m' | 'f') or its name ("Toilets (men)", "Ladies prayer room", "مصلى النساء"); none = for everyone.
+const GENDER_F = /\b(women|woman|ladies|lady|female|females|girls)\b|نساء|النساء|للنساء|سيدات|السيدات|إناث/i;
+const GENDER_M = /\b(men|man|male|males|gents|gentlemen|boys)\b|رجال|الرجال|للرجال|ذكور/i;
+const GENDERED = ['toilet', 'prayer', 'wudu'];
+function genderOf(p) { if (p.gender) return p.gender; const s = `${p.nameEn || ''} ${p.nameAr || ''}`; return GENDER_F.test(s) ? 'f' : GENDER_M.test(s) ? 'm' : null; }
+const genderOK = (p, g) => !g || g === 'any' || !GENDERED.includes(p.category) || !genderOf(p) || genderOf(p) === g;
+
 /* ---------- Search ---------- */
 const norm = s => String(s || '').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f\u064b-\u065f\u0670\u0640]/g, '')
   .replace(/[إأآٱ]/g, 'ا').replace(/ى/g, 'ي').replace(/ة/g, 'ه').replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d)).trim();
 const FILTERS = { rooms: ['room', 'lab'], toilets: ['toilet', 'toilet_acc', 'baby'], lifts: ['lift', 'stairs', 'ramp'], food: ['cafe'], prayer: ['prayer', 'wudu'], services: ['reception', 'entrance', 'exit'] };
 const FILTER_LABEL = { rooms: 'filterRooms', toilets: 'filterToilets', lifts: 'filterLifts', food: 'filterFood', prayer: 'filterPrayer', services: 'filterServices' };
 function searchPoints(q) {
-  const nq = norm(q), words = nq ? nq.split(/\s+/) : [], from = pt(state.fromId), scored = [];
+  const nq = norm(q), intentQ = catIntent(q), from = pt(state.fromId), scored = [];
+  const words = intentQ ? [] : nq ? nq.split(/\s+/) : [], icats = intentQ ? TILE_CATS[intentQ.cat] : null;
   const f = state.filter, cats = FILTERS[f];
   for (const m of bFloors()) {
     if (f === 'floor' && m !== state.map) continue;
     for (const p of m.points) {
       if (cats && !cats.includes(p.category)) continue;
+      if (icats && !icats.includes(p.category)) continue;
       if (m === state.map && p.id === state.fromId) continue;
       const names = norm(`${p.nameEn} ${p.nameAr} ${p.doors || ''}`), catText = norm(`${catName(p.category)} ${STR.en.cats[p.category] || ''} ${STR.ar.cats[p.category] || ''} ${CAT_WORDS[p.category] || ''}`);
       if (words.length && !words.every(w => names.includes(w) || catText.includes(w))) continue;
@@ -579,6 +591,36 @@ function searchPoints(q) {
   }
   if (nq && /spot|car|park|مكان|سيار|موقف/.test(nq)) { const sp = store.get('dalil.spot', null), m = sp && mapByFloor(sp.f); const p = m && pointOf(m, '@spot'); if (p && sp.b === state.map.building.id) scored.unshift({ p, m, d: null, score: -1 }); }
   return scored.sort((a, b) => a.score - b.score);
+}
+// "prayer room", "nearest toilet", "men's toilet", "مصلى": the visitor wants the nearest one of a kind, not a list.
+const FILLER = new Set(['the', 'a', 'an', 'nearest', 'closest', 'near', 'where', 'is', 'are', 'find', 'me', 'my', 'to', 'go', 'room', 'rooms', 'area', 'for', 'please', 'اقرب', 'أقرب', 'وين', 'اين', 'أين', 'الى', 'إلى', 'غرفه', 'غرفة', 'مكان', 'ال', 's']);
+function catIntent(q) {
+  const nq = norm(q).replace(/['’]/g, ' '), words = nq.split(/\s+/).filter(Boolean); if (!words.length || words.length > 5) return null;
+  let gender = null; const rest = [];
+  for (const w of words) { if (GENDER_F.test(w)) gender = 'f'; else if (GENDER_M.test(w)) gender = 'm'; else if (!FILLER.has(w)) rest.push(w); }
+  if (!rest.length) return null;
+  for (const [cat, members] of Object.entries(TILE_CATS)) {
+    const vocab = norm(members.map(c => `${CAT_WORDS[c] || ''} ${STR.en.cats[c] || ''} ${STR.ar.cats[c] || ''}`).join(' ') + ` ${STR.en['cat_' + cat] || ''} ${STR.ar['cat_' + cat] || ''}`).split(/\s+/);
+    if (rest.every(w => vocab.some(v => v === w || (w.length >= 4 && v.startsWith(w)) || (v.length >= 4 && w.startsWith(v))))) return { cat, gender };
+  }
+  return null;
+}
+// The nearest place of a kind by walking distance (this floor first, then other floors by time), honouring men's/women's.
+function nearestOf(cat, gender) {
+  const from = pt(state.fromId), cands = [];
+  for (const m of bFloors()) for (const p of m.points) if (TILE_CATS[cat].includes(p.category) && !p.virtual && !(m === state.map && p.id === state.fromId)) cands.push({ m, p });
+  const g = gender || settings.gender, ok = cands.filter(c => genderOK(c.p, g)), list = ok.length ? ok : cands;
+  let best = null;
+  for (const { m, p } of list.filter(c => c.m === state.map)) { const d = distFor(m, from, p); if (d != null && (!best || d < best.d)) best = { m, p, d }; }
+  if (!best) for (const { m, p } of list.filter(c => c.m !== state.map)) { const r = planRoute(state.map, state.fromId, m, p.id); if (r && (!best || r.seconds < best.r.seconds)) best = { m, p, d: r.distance_m, r }; }
+  return { best, gendered: cands.some(c => GENDERED.includes(c.p.category) && genderOf(c.p)), count: cands.length, g };
+}
+function nearestCardHTML(intent) {
+  const { best, gendered, g } = nearestOf(intent.cat, intent.gender); if (!best) return '';
+  const label = t('one_' + intent.cat), gs = gendered ? `<div class="nc-gender" role="group" aria-label="${esc(t('genderFor'))}">${['m', 'f', 'any'].map(v => `<button class="chip" type="button" data-gender="${v}" aria-pressed="${(g || 'any') === v}">${esc(t('gender_' + v))}</button>`).join('')}</div>` : '';
+  return `<li class="nearest-card" role="presentation"><p class="nc-eyebrow">${esc(t('nearestOf', label))}</p>
+    <button class="nc-go" type="button" data-pick="${esc(keyOf(best.m, best.p))}"><span class="r-ico${isService(best.p.category) ? ' svc' : ''}">${catIco(best.p.category)}</span>
+    <span class="r-main"><span class="r-name">${esc(pname(best.p))}</span><span class="r-sub">${esc(fmtM(best.d))}${best.m !== state.map ? ' · ' + esc(floorName(best.m.floor)) : ''}</span></span><span class="nc-btn">${esc(t('goNow'))}</span></button>${gs}</li>`;
 }
 function renderFilters() {
   const here = presentCats(), multi = bFloors().length > 1;
@@ -602,6 +644,8 @@ function renderSearch() {
   $('#noResultsTitle').textContent = q ? t('noResultsFor', q) : t('noResults');
   $('#btnNoResHelpDesk').hidden = !bFloors().some(m => m.points.some(p => p.category === 'reception'));
   let html = '', group = null;
+  const intent = q ? catIntent(q) : null;
+  if (intent) { html += nearestCardHTML(intent); const g = intent.gender || settings.gender; res.sort((a, b) => (genderOK(a.p, g) ? 0 : 1) - (genderOK(b.p, g) ? 0 : 1) || (a.m === state.map ? 0 : 1) - (b.m === state.map ? 0 : 1) || (a.d ?? 1e9) - (b.d ?? 1e9)); }
   const out = outsideNow(); if (out && res.length) html += `<li class="group-title res-note" role="presentation">${esc(t('distFromStart', pname(pt(out.id))))}</li>`;
   for (const r of res.slice(0, 80)) {
     const g = r.m === state.map ? 'here' : r.m.floor.id;
@@ -619,6 +663,7 @@ function rememberSearch(q) { q = (q || '').trim(); if (!q) return; const s = sto
 function pickNearest(cat) {
   const label = t('cat_' + cat), cands = [];
   for (const m of bFloors()) for (const p of m.points) if (TILE_CATS[cat].includes(p.category) && !(m === state.map && p.id === state.fromId)) cands.push({ m, p });
+  { const ok = cands.filter(c => genderOK(c.p, settings.gender)); if (ok.length) cands.splice(0, cands.length, ...ok); }
   if (!cands.length) { const msg = t('noneOfCat', label); toast(msg); announce(msg); return; }
   let best = null; const from = pt(state.fromId);
   for (const { m, p } of cands.filter(c => c.m === state.map)) { const d = distFor(m, from, p); if (d != null && (!best || d < best.d)) best = { m, p, d }; }
@@ -794,12 +839,13 @@ function onMapTap({ x, y }) {
 // Add a place where the pin is, or edit / remove one you added.
 let placeEdit = null;   // { m, x, y, id? }
 const PLACE_CATS = ['room', 'lab', 'toilet', 'toilet_acc', 'prayer', 'wudu', 'cafe', 'reception', 'entrance', 'exit', 'lift', 'stairs', 'ramp', 'baby', 'parking'];
-function openPlaceDlg(m, at, p = null) {
-  placeEdit = { m, x: at.x, y: at.y, id: p?.id || null };
+function openPlaceDlg(m, at, p = null, { onSave = null, onDelete = null, where = '' } = {}) {
+  placeEdit = { m, x: at.x, y: at.y, id: p?.id || null, onSave, onDelete };
   $('#placeDlgTitle').textContent = t(p ? 'placeEditTitle' : 'placeAddTitle');
-  $('#placeFloor').textContent = `${bname(m.building)} · ${floorName(m.floor)}`;
+  $('#placeFloor').textContent = m ? `${bname(m.building)} · ${floorName(m.floor)}` : where;
   $('#placeEn').value = p?.nameEn || ''; $('#placeAr').value = p?.nameAr || ''; $('#placeDoor').value = p?.doors || '';
   $('#placeCat').innerHTML = PLACE_CATS.map(c => `<option value="${c}" ${c === (p?.category || 'room') ? 'selected' : ''}>${esc(catName(c))}</option>`).join('');
+  $('#placeGender').value = p?.gender || (p ? genderOf(p) : '') || ''; placeGenderVis();
   $('#btnPlaceDel').hidden = !p; $('#placeMsg').textContent = '';
   openDlg($('#dlgPlace')); setTimeout(() => $('#placeEn').focus(), 50);
 }
@@ -807,12 +853,15 @@ function refreshMapsAfterPlaces(m) {
   applyAdded(m); memo.clear(); for (const v of [mainMap, homeMap, routeMap]) if (v?.map === m) { v.map = null; }
   if (pageNow === 'map') renderFloorMap(); renderHome(); renderSettings();
 }
+function placeGenderVis() { $('#placeGenderRow').hidden = !GENDERED.includes($('#placeCat').value); }
 function savePlace() {
   const e = placeEdit; if (!e) return;
   const en = $('#placeEn').value.trim().slice(0, 60), ar = $('#placeAr').value.trim().slice(0, 60), door = $('#placeDoor').value.trim().slice(0, 20);
   if (!en && !ar) { $('#placeMsg').textContent = t('placeNeedName'); $('#placeEn').focus(); return; }
-  const all = addedAll(), k = addedKey(e.m), list = all[k] || [], id = e.id || 'U' + Date.now().toString(36).toUpperCase();
-  const rec = { id, nameEn: en || ar, nameAr: ar, category: $('#placeCat').value, ...(door ? { doors: door } : {}), x: e.x, y: e.y, t: Date.now() };
+  const all = addedAll(), k = e.m ? addedKey(e.m) : '', list = all[k] || [], id = e.id || 'U' + Date.now().toString(36).toUpperCase();
+  const cat = $('#placeCat').value, gen = GENDERED.includes(cat) ? $('#placeGender').value : '';
+  const rec = { id, nameEn: en || ar, nameAr: ar, category: cat, ...(gen ? { gender: gen } : {}), ...(door ? { doors: door } : {}), x: e.x, y: e.y, t: Date.now() };
+  if (e.onSave) { $('#dlgPlace').close(); placeEdit = null; e.onSave(rec); return; }
   all[k] = [...list.filter(a => a.id !== id), rec]; store.set('dalil.added', all);
   $('#dlgPlace').close(); pinPoint = null; $('#pinCard').hidden = true; placeEdit = null; state.addMode = false; renderAddMode();
   refreshMapsAfterPlaces(e.m);
@@ -821,6 +870,7 @@ function savePlace() {
 }
 function deletePlace() {
   const e = placeEdit; if (!e?.id) return;
+  if (e.onDelete) { $('#dlgPlace').close(); placeEdit = null; e.onDelete(e.id); return; }
   const all = addedAll(), k = addedKey(e.m); all[k] = (all[k] || []).filter(a => a.id !== e.id); if (!all[k].length) delete all[k]; store.set('dalil.added', all);
   $('#dlgPlace').close(); placeEdit = null;
   refreshMapsAfterPlaces(e.m); toast(t('placeRemoved')); announce(t('placeRemoved'));
@@ -898,7 +948,7 @@ function providerOptions() {
   return opts.map(([v, l]) => `<option value="${esc(v)}" ${settings.mapProvider === v ? 'selected' : ''}>${esc(l)}</option>`).join('');
 }
 function renderSettings() {
-  for (const [name, val] of [['lang', settings.lang], ['theme', settings.theme], ['textSize', settings.textSize], ['pace', settings.pace]]) $$(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
+  for (const [name, val] of [['lang', settings.lang], ['theme', settings.theme], ['textSize', settings.textSize], ['pace', settings.pace], ['gender', settings.gender || 'any']]) $$(`input[name="${name}"]`).forEach(r => { r.checked = r.value === val; });
   $('#setGps').checked = settings.gps; $('#setVoice').checked = settings.voice; $('#setVibrate').checked = settings.vibrate; $('#setStepFree').checked = settings.stepFree; $('#setClock').checked = settings.clock;
   $('#setContrast').checked = settings.contrast; $('#setMotion').checked = settings.motion;
   $('#setBuilding').innerHTML = state.maps.map((m, i) => `<option value="${i}" ${m === state.map ? 'selected' : ''}>${esc(`${bname(m.building)} · ${floorName(m.floor)}`)}</option>`).join('');
@@ -1296,6 +1346,7 @@ function startLoop() {
     }
     if (nav.mode === 'track' && !nav.sim && nav.follower?.usable) drawArrow(!settings.motion);
     if (now - (nav.lastAsk ?? 0) > 500) { nav.lastAsk = now; arriveCheck(); }
+    if (nav.qibla != null && !$('#arrived').hidden && tracker.heading != null && tracker.absolute) $('#qiblaArrow').style.transform = `rotate(${nav.qibla - tracker.heading}deg)`;
     if (nav.view === 'cam' && camGuide) camGuide.update(camFrame());
     if (now - lastMode > 1000) { lastMode = now; renderMode(); }
     nav.loop = requestAnimationFrame(tick);
@@ -1527,6 +1578,10 @@ function showArrival() {
   $('#arrivedStats').textContent = `${fmtM(nav.plan.distance_m)} · ${fmtMin(secsFor(nav.plan))}`;
   $('#btnArrivedSave').textContent = isFav(nav.toKey) ? t('saved') : t('savePlace');
   $('#arrived').hidden = false; hideMotionCard(); $('#floorCard').hidden = true;
+  // Arrived at a prayer room: the Qibla direction (from the building's position; the phone's compass turns the arrow).
+  const dm = resolve(nav.toKey)?.m, geo = dm?.geo; nav.qibla = null;
+  if (to && ['prayer', 'wudu'].includes(to.category) && geo?.origin) { nav.qibla = qiblaBearing(geo.origin[1], geo.origin[0]); $('#qiblaText').textContent = t('qiblaText', Math.round(nav.qibla)); }
+  $('#qibla').hidden = nav.qibla == null;
   $('#arrivedTitle').focus();
   analytics.add('arrive', { to: to?.virtual ? 'pin' : to?.id, s: Math.round((performance.now() - nav.started) / 1000) });
 }
@@ -1537,6 +1592,11 @@ function startHereAfterArrival(d) {
   if (d.m !== state.map) selectFloor(d.m, { keepFrom: true });
   state.fromId = d.p.id; state.fromManual = true; state.fromAt = Date.now(); state.outside = null; state.viewMap = state.map;
   renderAll();
+}
+// Great-circle bearing from a place to the Kaaba (21.4225° N, 39.8262° E), degrees from true north.
+function qiblaBearing(lat, lng) {
+  const r = Math.PI / 180, f1 = lat * r, f2 = 21.4225 * r, dl = (39.8262 - lng) * r;
+  return (Math.atan2(Math.sin(dl) * Math.cos(f2), Math.cos(f1) * Math.sin(f2) - Math.sin(f1) * Math.cos(f2) * Math.cos(dl)) / r + 360) % 360;
 }
 function finishArrival() {
   const d = resolve(nav.toKey);
@@ -1876,6 +1936,174 @@ function svAlignBy(k, v) {
   const a = sv.s.align; if (k === 'scale') a.scale = Math.max(0.8, Math.min(1.2, (a.scale || 1) + v)); else a[k] = (a[k] || 0) + v;
   svSave(); svAlignMap();
 }
+/* =========================================================================
+   Snap the wall plan (snapplan.js): photo of the evacuation plan → a navigation map, on the phone
+   ========================================================================= */
+const sn = { step: 'pick' };
+const SN_STEPS = ['corners', 'walls', 'size', 'places', 'save'];
+async function snLoad(file) {
+  let bmp; try { bmp = await createImageBitmap(file); } catch { toast(t('snBadPhoto')); return; }
+  const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height)), w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
+  const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(bmp, 0, 0, w, h);
+  Object.assign(sn, { photo: x.getImageData(0, 0, w, h), photoCanvas: c, pw: w, ph: h, corners: [[w * .06, h * .06], [w * .94, h * .06], [w * .94, h * .94], [w * .06, h * .94]], img: null, traced: null, edit: null, undo: [], strength: 0.5, tool: 'erase', a: null, b: null, mpp: null, how: null, beta: null, places: [], walk: null });
+  snGo('corners');
+}
+function snGo(step) {
+  sn.step = step;
+  if (step === 'walls' && (!sn.img || sn.cornersDirty)) {
+    const { W, H } = warpSize(sn.corners, 1000); sn.W = W; sn.H = H; sn.img = warp(sn.photo, sn.corners, W, H);
+    sn.edit = new Uint8Array(W * H); sn.undo = []; sn.cornersDirty = false; sn.a = sn.b = null; sn.mpp = null; sn.places = []; snTrace();
+  }
+  $('#snPick').hidden = step !== 'pick'; $('#snWork').hidden = step === 'pick'; $('#snBar').hidden = step === 'pick';
+  const i = SN_STEPS.indexOf(step);
+  $('#snTitle').textContent = i >= 0 ? `${t('snStepN', i + 1, SN_STEPS.length)} · ${t('snT_' + step)}` : '';
+  $('#snHint').textContent = i >= 0 ? t('snH_' + step) : '';
+  $('#snNext').textContent = t(step === 'save' ? 'snSave' : 'snNext');
+  snControls(); snDraw();
+}
+function snTrace() { sn.traced = traceWalls(sn.img, { strength: sn.strength }); sn.mask = combine(sn.traced, sn.edit); sn.overlay = null; sn.draft = null; }
+function snMask() { if (!sn.mask) sn.mask = combine(sn.traced, sn.edit); return sn.mask; }
+function snControls() {
+  const c = $('#snCtl'), s = sn.step;
+  if (s === 'corners') c.innerHTML = `<button id="snWhole" class="btn tertiary" type="button">${esc(t('snWhole'))}</button>`;
+  else if (s === 'walls') c.innerHTML = `<label class="field sn-range"><span>${esc(t('snStrength'))}</span><input id="snStrength" type="range" min="0" max="1" step="0.05" value="${sn.strength}"></label>
+    <div class="sn-tools" role="group"><button class="chip" type="button" data-tool="erase" aria-pressed="${sn.tool === 'erase'}">${esc(t('snErase'))}</button><button class="chip" type="button" data-tool="draw" aria-pressed="${sn.tool === 'draw'}">${esc(t('snDraw'))}</button><button id="snUndo" class="chip" type="button" ${sn.undo.length ? '' : 'disabled'}>${esc(t('snUndo'))}</button></div>`;
+  else if (s === 'size') {
+    const scale = sn.mpp ? `<p class="sn-scale">${esc(t('snScaleIs', Math.round(sn.W * sn.mpp), Math.round(sn.H * sn.mpp)))}</p>` : '';
+    const walking = sn.walk && sn.walk.on;
+    c.innerHTML = `${scale}<div class="sn-card"><strong>${esc(t('snWalkTitle'))}</strong><p class="muted">${esc(t(!sn.a ? 'snWalk1' : walking ? 'snWalk3' : 'snWalk2'))}</p>
+      ${walking ? `<p class="sn-steps num">${esc(t('snStepsN', sn.walk.n))}</p><button id="snWalkDone" class="btn primary" type="button" ${sn.b ? '' : 'disabled'}>${esc(t('snWalkDone'))}</button>` : `<button id="snWalkGo" class="btn secondary" type="button" ${sn.a ? '' : 'disabled'}>${esc(t('snWalkGo'))}</button>`}</div>
+      <div class="sn-card"><strong>${esc(t('snTypeTitle'))}</strong><p class="muted">${esc(t('snTypeHint'))}</p><label class="field"><span>${esc(t('snMetres'))}</span><input id="snLen" type="number" inputmode="decimal" min="0.3" step="0.1" placeholder="0.9"></label><button id="snLenGo" class="btn secondary" type="button" ${sn.a && sn.b ? '' : 'disabled'}>${esc(t('snUseLen'))}</button></div>`;
+  } else if (s === 'places') {
+    const bad = snUnreachable();
+    c.innerHTML = (bad.length ? `<p class="route-msg warn" role="status">${esc(t('snUnreach', bad.join(', ')))}</p>` : '')
+      + `<ul class="rows sn-places">${sn.places.map((p, i) => `<li><button class="row-btn" type="button" data-sp="${i}"><span class="r-ico">${catIco(p.category)}</span><span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(catName(p.category))}${p.gender ? ' · ' + esc(t('gender_' + p.gender)) : ''}</span></span></button></li>`).join('')}</ul>`;
+  } else if (s === 'save') c.innerHTML = `<label class="field"><span>${esc(t('svBuildingName'))}</span><input id="snBld" type="text" maxlength="60" value="${esc(sn.bname || '')}"></label><label class="field"><span>${esc(t('snFloorName'))}</span><input id="snFloor" type="text" maxlength="40" value="${esc(sn.fname || t('snGround'))}"></label><p class="muted">${esc(t('snSaveNote', sn.places.length))}</p>`;
+}
+function snDraw() {
+  const cv = $('#snCanvas'); if (!cv || sn.step === 'pick') return;
+  const x = cv.getContext('2d');
+  if (sn.step === 'corners') {
+    cv.width = sn.pw; cv.height = sn.ph; x.drawImage(sn.photoCanvas, 0, 0);
+    const r = Math.max(sn.pw, sn.ph) * 0.025, C = sn.corners;
+    x.fillStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.rect(0, 0, sn.pw, sn.ph); x.moveTo(...C[0]); for (const p of [C[3], C[2], C[1], C[0]]) x.lineTo(...p); x.fill('evenodd');
+    x.strokeStyle = '#FFC700'; x.lineWidth = r * 0.25; x.beginPath(); x.moveTo(...C[0]); for (const p of C.slice(1)) x.lineTo(...p); x.closePath(); x.stroke();
+    for (const p of C) { x.beginPath(); x.arc(p[0], p[1], r, 0, 7); x.fillStyle = '#FFC700'; x.fill(); x.lineWidth = r * 0.2; x.strokeStyle = '#1F1F1F'; x.stroke(); }
+    return;
+  }
+  cv.width = sn.W; cv.height = sn.H;
+  if (!sn.overlay) {   // the photo, faded, with the walls the app found in blue
+    const o = new ImageData(sn.W, sn.H), d = sn.img.data, m = snMask(), od = o.data;
+    for (let k = 0; k < m.length; k++) { const q = k * 4; if (m[k]) { od[q] = 26; od[q + 1] = 115; od[q + 2] = 232; } else { od[q] = 255 - (255 - d[q]) * 0.35; od[q + 1] = 255 - (255 - d[q + 1]) * 0.35; od[q + 2] = 255 - (255 - d[q + 2]) * 0.35; } od[q + 3] = 255; }
+    sn.overlay = o;
+  }
+  x.putImageData(sn.overlay, 0, 0);
+  const u = Math.max(sn.W, sn.H) / 100;
+  if (sn.step === 'size' || sn.step === 'walls') {
+    for (const [p, lab] of [[sn.a, 'A'], [sn.b, 'B']]) if (p && sn.step === 'size') { x.beginPath(); x.arc(p[0], p[1], u * 1.6, 0, 7); x.fillStyle = '#FFC700'; x.fill(); x.lineWidth = u * .3; x.strokeStyle = '#1F1F1F'; x.stroke(); x.fillStyle = '#1F1F1F'; x.font = `700 ${u * 1.8}px sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(lab, p[0], p[1]); }
+    if (sn.a && sn.b && sn.step === 'size') { x.setLineDash([u, u * .6]); x.strokeStyle = '#1F1F1F'; x.lineWidth = u * .35; x.beginPath(); x.moveTo(...sn.a); x.lineTo(...sn.b); x.stroke(); x.setLineDash([]); }
+  }
+  if (sn.step === 'places' || sn.step === 'save') for (const p of sn.places) {
+    x.beginPath(); x.arc(p.px, p.py, u * 1.3, 0, 7); x.fillStyle = '#FFC700'; x.fill(); x.lineWidth = u * .3; x.strokeStyle = '#1F1F1F'; x.stroke();
+    x.font = `600 ${u * 1.9}px sans-serif`; x.textAlign = 'center'; x.textBaseline = 'top'; x.lineWidth = u * .5; x.strokeStyle = '#fff'; x.strokeText(pname(p), p.px, p.py + u * 1.6); x.fillStyle = '#1F1F1F'; x.fillText(pname(p), p.px, p.py + u * 1.6);
+  }
+}
+function snPos(e) { const cv = $('#snCanvas'), r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; }
+function snBrush([px, py]) {
+  const R = Math.max(4, Math.round(Math.max(sn.W, sn.H) * 0.012)), v = sn.tool === 'erase' ? 2 : 1;
+  for (let j = Math.max(0, Math.floor(py - R)); j <= Math.min(sn.H - 1, py + R); j++) for (let i = Math.max(0, Math.floor(px - R)); i <= Math.min(sn.W - 1, px + R); i++) if ((i - px) ** 2 + (j - py) ** 2 <= R * R) sn.edit[j * sn.W + i] = v;
+  sn.mask = null; sn.overlay = null; sn.draft = null;
+}
+function snBind() {
+  const cv = $('#snCanvas'); let drag = null;
+  cv.addEventListener('pointerdown', e => {
+    const p = snPos(e);
+    if (sn.step === 'corners') { const r = Math.max(sn.pw, sn.ph) * 0.07; let bi = -1, bd = r; sn.corners.forEach((c, i) => { const d = Math.hypot(c[0] - p[0], c[1] - p[1]); if (d < bd) { bd = d; bi = i; } }); if (bi >= 0) { drag = { corner: bi }; cv.setPointerCapture(e.pointerId); } }
+    else if (sn.step === 'walls' && sn.tool) { sn.undo.push(sn.edit.slice()); if (sn.undo.length > 12) sn.undo.shift(); drag = { brush: true }; cv.setPointerCapture(e.pointerId); snBrush(p); snDraw(); }
+    else if (sn.step === 'size') { if (!sn.a || (sn.a && sn.b && Math.hypot(sn.a[0] - p[0], sn.a[1] - p[1]) < Math.hypot(sn.b[0] - p[0], sn.b[1] - p[1]))) sn.a = p; else sn.b = p; snControls(); snDraw(); }
+    else if (sn.step === 'places') {
+      const hit = sn.places.findIndex(q => Math.hypot(q.px - p[0], q.py - p[1]) < Math.max(sn.W, sn.H) * 0.025);
+      if (hit >= 0) snEditPlace(hit); else openPlaceDlg(null, { x: 0, y: 0 }, null, { where: t('snT_places'), onSave: rec => { sn.places.push({ ...rec, px: Math.round(p[0]), py: Math.round(p[1]) }); sn.draft = null; snControls(); snDraw(); announce(t('placeAdded', pname(rec))); } });
+    }
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!drag) return; const p = snPos(e);
+    if (drag.corner != null) { sn.corners[drag.corner] = [Math.max(0, Math.min(sn.pw, p[0])), Math.max(0, Math.min(sn.ph, p[1]))]; sn.cornersDirty = true; snDraw(); }
+    else if (drag.brush) { snBrush(p); if (!drag.raf) drag.raf = requestAnimationFrame(() => { drag && (drag.raf = 0); snDraw(); }); }
+  });
+  const up = () => { if (drag?.brush) snControls(); drag = null; };
+  cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  $('#snCtl').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.id === 'snWhole') { sn.corners = [[0, 0], [sn.pw, 0], [sn.pw, sn.ph], [0, sn.ph]]; sn.cornersDirty = true; snDraw(); }
+    else if (b.dataset.tool) { sn.tool = b.dataset.tool; snControls(); }
+    else if (b.id === 'snUndo' && sn.undo.length) { sn.edit = sn.undo.pop(); sn.mask = null; sn.overlay = null; sn.draft = null; snControls(); snDraw(); }
+    else if (b.id === 'snLenGo') { const L = parseFloat($('#snLen').value); if (!(L > 0.2) || !sn.a || !sn.b) { toast(t('snNeedLen')); return; } snSetScale(L / Math.hypot(sn.b[0] - sn.a[0], sn.b[1] - sn.a[1]), 'a known length'); }
+    else if (b.id === 'snWalkGo') snWalkStart();
+    else if (b.id === 'snWalkDone') snWalkDone();
+    else if (b.dataset.sp != null) snEditPlace(+b.dataset.sp);
+  });
+  $('#snCtl').addEventListener('input', e => { if (e.target.id === 'snStrength') { sn.strength = +e.target.value; clearTimeout(sn.tt); sn.tt = setTimeout(() => { snTrace(); snDraw(); }, 120); } });
+  $('#snNext').onclick = snNextStep;
+  $('#snBackStep').onclick = () => { const i = SN_STEPS.indexOf(sn.step); if (i > 0) snGo(SN_STEPS[i - 1]); else { sn.step = 'pick'; snGo('pick'); } };
+  for (const id of ['#snFile', '#snFile2']) $(id).addEventListener('change', e => { const f = e.target.files[0]; if (f) snLoad(f); e.target.value = ''; });
+}
+function snEditPlace(i) {
+  const p = sn.places[i];
+  openPlaceDlg(null, { x: 0, y: 0 }, p, { where: t('snT_places'), onSave: rec => { sn.places[i] = { ...rec, px: p.px, py: p.py }; sn.draft = null; snControls(); snDraw(); }, onDelete: () => { sn.places.splice(i, 1); sn.draft = null; snControls(); snDraw(); } });
+}
+function snSetScale(mpp, how, beta = null) {
+  if (!(mpp > 0.005 && mpp < 2)) { toast(t('snBadScale')); return; }
+  sn.mpp = mpp; sn.how = how; if (beta != null) sn.beta = beta; sn.draft = null;
+  const msg = t('snScaleIs', Math.round(sn.W * mpp), Math.round(sn.H * mpp)); announce(msg); snControls(); snDraw();
+}
+// Walk it: tap where you stand (A), walk straight to another spot you can see on the plan, tap it (B). Steps × your step
+// length give the size, and the compass while you walked gives the plan's direction (so directions point the right way).
+async function snWalkStart() {
+  const res = await tracker.start();
+  if (!(res.motion)) { toast(t('svNeedSensors'), 6000); return; }
+  sn.walk = { on: true, n: 0, hx: 0, hy: 0, prev: tracker.onStep };
+  tracker.onStep = () => { sn.walk.n++; const H = tracker.heading; if (H != null) { sn.walk.hx += Math.cos(H * Math.PI / 180); sn.walk.hy += Math.sin(H * Math.PI / 180); } const el = $('.sn-steps'); if (el) el.textContent = t('snStepsN', sn.walk.n); };
+  sn.b = null; snControls(); snDraw();
+}
+function snWalkDone() {
+  const w = sn.walk; if (!w || !sn.a || !sn.b) return;
+  tracker.onStep = w.prev || null; if (!nav.active) tracker.stop(); w.on = false;
+  if (w.n < 8) { toast(t('snWalkShort')); snControls(); return; }
+  const px = Math.hypot(sn.b[0] - sn.a[0], sn.b[1] - sn.a[1]), metres = w.n * myStride();
+  const theta = Math.atan2(-(sn.b[1] - sn.a[1]), sn.b[0] - sn.a[0]) * 180 / Math.PI;      // plan direction A→B (y up)
+  const H = (w.hx || w.hy) ? Math.atan2(w.hy, w.hx) * 180 / Math.PI : null;
+  snSetScale(metres / px, `walked ${w.n} steps`, H == null ? null : wrap180(theta + H - 90));
+}
+function snDraft() {
+  if (sn.draft) return sn.draft;
+  sn.draft = maskToMap({ mask: snMask(), W: sn.W, H: sn.H, mpp: sn.mpp || 0.05, places: sn.places, building: { id: 'draft', name: 'draft' }, floor: { id: 'draft', name: 'draft' } });
+  return sn.draft;
+}
+function snUnreachable() {
+  if (sn.places.length < 2 || !sn.mpp) return [];
+  const m = snDraft(), R = new Router(m), P = m.points, bad = [];
+  for (let i = 1; i < P.length; i++) if (R.distance('walk', P[0], P[i]) == null) bad.push(pname(P[i]));
+  return bad;
+}
+function snNextStep() {
+  const s = sn.step;
+  if (s === 'size' && !sn.mpp) { toast(t('snNeedScale')); return; }
+  if (s === 'places' && sn.places.length < 2) { toast(t('snNeedPlaces')); return; }
+  if (s !== 'save') { snGo(SN_STEPS[SN_STEPS.indexOf(s) + 1]); return; }
+  const name = $('#snBld').value.trim(), fl = $('#snFloor').value.trim() || t('snGround');
+  if (!name) { toast(t('svNeedName')); $('#snBld').focus(); return; }
+  const slug = v => (String(v).toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'plan');
+  const bid = `${slug(name)}-${Date.now().toString(36)}`, fid = slug(fl) === 'plan' ? 'floor-1' : slug(fl);
+  const m = maskToMap({ mask: snMask(), W: sn.W, H: sn.H, mpp: sn.mpp, places: sn.places, building: { id: bid, name }, floor: { id: fid, name: fl }, calibration: { how: sn.how } });
+  delete m._slug;
+  addMap(m);
+  const user = store.get('dalil.userMaps', []); user.push(m); const kept = store.set('dalil.userMaps', user);
+  if (sn.beta != null) { const all = store.get('dalil.cal', {}); all[`${bid}|${fid}`] = { beta: Math.round(sn.beta * 10) / 10, abs: tracker.absolute, t: Date.now() }; store.set('dalil.cal', all); }
+  analytics.add('snap_done', { places: sn.places.length });
+  sn.step = 'pick'; selectFloor(m); go('home');
+  const msg = t('snSaved', name, sn.places.length) + (kept ? '' : ' ' + t('mapSessionOnly')); toast(msg, 6000); announce(msg);
+}
 function svSaveMaps() {
   const s = sv.s;
   for (const inp of $$('#svNameList input')) { const p = s.floors[+inp.dataset.fi].places[+inp.dataset.pi], v = inp.value.trim(); if (v && v !== p.nameEn) { p.nameEn = v; p.nameAr = ''; } }
@@ -1907,6 +2135,8 @@ function svOpenMap() {
 }
 function bindSurvey() {
   $('#btnSurvey').onclick = $('#btnSurveyHome').onclick = () => { sv.maps = null; go('survey'); };
+  $('#btnSnap').onclick = $('#btnSnapHome').onclick = () => { sn.step = 'pick'; go('snap'); snGo('pick'); };
+  snBind();
   $('#btnSvStart').onclick = () => svStart(false);
   $('#btnSvResume').onclick = () => svStart(true);
   $('#btnSvPlace').onclick = svOpenPlace;
@@ -2000,6 +2230,9 @@ function bind() {
   $('#btnPlaceCancel').onclick = () => { $('#dlgPlace').close(); placeEdit = null; if (state.addMode) { pinPoint = null; mainMap.setDest(null); } };
   $('#btnEditPlace').onclick = () => { const d = destRef(); if (d?.p.added) openPlaceDlg(d.m, d.p, d.p); };
   $('#btnExportPlaces').onclick = exportPlaces;
+  $('#results').addEventListener('click', e => { const b = e.target.closest('[data-gender]'); if (!b) return; e.stopPropagation(); settings.gender = b.dataset.gender; saveSettings(); renderSearch(); renderSettings(); announce(t('genderSet', t('gender_' + b.dataset.gender))); });
+  $$('input[name="gender"]').forEach(r => r.addEventListener('change', () => { settings.gender = r.value; saveSettings(); }));
+  $('#placeCat').addEventListener('change', placeGenderVis);
   $('#btnClosePin').onclick = () => { pinPoint = null; $('#pinCard').hidden = true; renderFloorMap(); };
   $('#btnRecenter').onclick = () => { state.viewMap = state.map; renderFloorMap(); };
   $('#btnZoomIn').onclick = () => mainMap.zoom(1.3); $('#btnZoomOut').onclick = () => mainMap.zoom(1 / 1.3);
