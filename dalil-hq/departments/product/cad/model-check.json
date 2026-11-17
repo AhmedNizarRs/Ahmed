@@ -1,0 +1,101 @@
+{
+  "A_flat": {
+    "file": "dalil-sticker-A-braille-number_flat.stl",
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_mm3": 890.99,
+    "bounds_mm": [
+      83.022,
+      23.0,
+      1.0
+    ],
+    "dot_peak_above_rail_mm": [
+      1.0,
+      1.0
+    ],
+    "dot_height_above_base_mm": 0.5,
+    "dot_count": 23,
+    "row_spacing_mm": [
+      2.5
+    ],
+    "column_x_positions_first_cells": [
+      -35.761,
+      -29.561,
+      -23.361,
+      -20.861
+    ],
+    "flat_total_thickness_mm": 0.5,
+    "strip_size_mm": [
+      83.02,
+      23.0
+    ],
+    "max_height_mm": 1.0
+  },
+  "A_rail32": {
+    "file": "dalil-sticker-A-braille-number_on-rail-d32.stl",
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_mm3": 906.51,
+    "bounds_mm": [
+      83.022,
+      21.202,
+      4.958
+    ],
+    "vertices_on_rail_surface": 9710,
+    "max_radial_height_mm": 1.0
+  },
+  "B_flat": {
+    "file": "dalil-sticker-B-braille-only_flat.stl",
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_mm3": 364.61,
+    "bounds_mm": [
+      63.6,
+      14.0,
+      1.0
+    ],
+    "dot_peak_above_rail_mm": [
+      1.0,
+      1.0
+    ],
+    "dot_height_above_base_mm": 0.5,
+    "dot_count": 23,
+    "row_spacing_mm": [
+      2.5
+    ],
+    "column_x_positions_first_cells": [
+      -26.05,
+      -19.85,
+      -13.65,
+      -11.15
+    ],
+    "flat_total_thickness_mm": 0.5,
+    "strip_size_mm": [
+      63.6,
+      14.0
+    ],
+    "max_height_mm": 1.0
+  },
+  "B_rail32": {
+    "file": "dalil-sticker-B-braille-only_on-rail-d32.stl",
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_mm3": 370.25,
+    "bounds_mm": [
+      63.6,
+      13.642,
+      2.507
+    ]
+  },
+  "C_calibration": {
+    "file": "dalil-calibration-dot-heights_0.4-0.5-0.6_flat.stl",
+    "watertight": true,
+    "winding_consistent": true,
+    "volume_mm3": 538.03,
+    "bounds_mm": [
+      32.6,
+      50.0,
+      1.1
+    ]
+  }
+}

@@ -144,7 +144,7 @@ The measure: **while sliding a hand along the rail at walking pace, what share o
 
 - Keep **one raised number** and an arrow where it applies. This serves people who do not read braille (section 3).
 - ADA characters: at least 16 mm tall, at least 0.8 mm raised, stroke 10–30% of the height, non-glare finish. This is the US rule. The UAE rule is `[VERIFY]`.
-- A 16 mm figure means a strip at least 16 mm wide. A braille-only strip can be 12 mm.
+- With a 3 mm tapered edge on each side, a 16 mm figure needs a strip about **23 mm** wide (variant A in the CAD files). A braille-only strip can be **14 mm** (variant B). A 23 mm strip wraps 82° on a Ø32 mm rail, so it needs a flexible base. (Corrected 2026-11-17 after modelling; the first draft said 16 mm.)
 - A 0.8 mm raised number is taller than our braille dots. We test a lower relief (0.5 mm) with **wide strokes** to keep the strip thin.
 - Large letters are optional. Words belong in braille.
 
@@ -152,7 +152,7 @@ The measure: **while sliding a hand along the rail at walking pace, what share o
 
 ### Round rails (Ø30–50 mm, vertical poles Ø32 mm)
 
-Height the strip edge stands off a round rail (calculated):
+Height the edge of a **stiff strip that stays flat** stands off a round rail (calculated). A flexible strip follows the rail instead; see `cad/previews/06_fit-on-rails.png`:
 
 | Rail Ø | 12 mm strip | 16 mm strip | 20 mm strip | 25 mm strip |
 |---|---|---|---|---|
@@ -274,7 +274,24 @@ These are not changed yet. Founders decide first.
 - A forum comment that UV braille needs 58–64 ink layers. I did not use it.
 - Whether hollow embossed dots collapse (my engineering judgement, from how a dome behaves under load).
 
-## 17. Sources (read 2026-11-17)
+## 17. CAD model and pictures (added 2026-11-17)
+
+Folder: `cad/`. Everything is generated from numbers in this memo by `cad/generate_sticker.py`, and checked by slicing the mesh (`cad/model-check.json`).
+
+| File | What |
+|---|---|
+| `dalil-sticker-A-braille-number_flat.stl` | Variant A: braille line plus raised number, 83.0 × 23.0 mm, flat as printed |
+| `dalil-sticker-B-braille-only_flat.stl` | Variant B: braille only, 63.6 × 14.0 mm |
+| `dalil-calibration-dot-heights_0.4-0.5-0.6_flat.stl` | Three strips with dot heights 0.4, 0.5, 0.6 mm for the round-1 reading test |
+| `dalil-sticker-A-…_on-rail-d32.stl`, `dalil-sticker-B-…_on-rail-d32.stl` | The same strips wrapped on a Ø32 mm rail. For fit checks and pictures, not for printing |
+| `preview-only_rail-d32.stl` | Dummy rail for pictures |
+| `previews/01…07` | Renders and drawings |
+
+Measured from the mesh: all files watertight; dot height 0.500 mm above the base; dot base ⌀1.50 mm; in-cell spacing 2.5 mm; cell pitch 6.2 mm; flat top 16.0 mm wide; number 16.00 mm tall; edge taper 3.0 mm over 0.4 mm (7.6°); wrapped strip sits exactly on the rail surface.
+
+Limits: demo braille text is Arabic "الطابق" + number sign + 2 and **must be checked by a braille reader**. The adhesive layer is not modelled. Colours in the pictures are illustrative. The lever picture uses an assumed ⌀19 mm bar. The wrap band (format W) and door patch (format D) are not modelled yet.
+
+## 18. Sources (read 2026-11-17)
 
 - ISO 17049:2013 sample, via iTeh: https://cdn.standards.iteh.ai/samples/58086/fb6f17bed4ff425fa03583afabdafb97/ISO-17049-2013.pdf
 - ADA Chapter 7, braille and raised characters: https://www.access-board.gov/ada/chapter/ch07/
