@@ -67,3 +67,16 @@ Replace KEY, BASE_URL, and MODEL_NAME with values from the provider's setup guid
 - Free tiers, model lists, and limits change often. The reference files are generated from `data.json`; check the provider's own docs before relying on a limit.
 - "Limits undocumented" = the provider doesn't publish rate limits.
 - Don't hardcode API keys. Use environment variables or a secrets manager.
+
+## Bundled fallback client (this workspace)
+
+`scripts/freellm.py` (stdlib only) calls whichever free providers have a key set and falls through to the next on rate limits or errors:
+
+```bash
+python3 .claude/skills/free-llm-apis/scripts/freellm.py list            # providers, key status, sign-up links
+python3 .claude/skills/free-llm-apis/scripts/freellm.py check           # test every usable provider
+python3 .claude/skills/free-llm-apis/scripts/freellm.py ask "prompt"    # first provider that answers
+python3 .claude/skills/free-llm-apis/scripts/freellm.py ask "prompt" -p groq
+```
+
+Keys go in a git-ignored `.env` (copy `.env.example`) or the environment, never in the repo. Kilo Code, LLM7.io and OVHcloud work with no key. `scripts/providers.json` holds the OpenAI-compatible base URLs and model ids; refresh it when the reference files are regenerated. Never send DALIL private data (investor, customer, personal details) to free tiers that may log or train on prompts; see "Privacy-sensitive prompts" above.
