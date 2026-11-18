@@ -161,7 +161,46 @@ def fit_sheet():
     plt.close(fig)
 
 
+def scale_sheet():
+    """How strip length follows message length, and what changes when the system moves from rails to walls."""
+    pitch, dotw = g.CELL_PITCH, g.DOT_SPACING + g.DOT_D
+    plate = lambda n: (n - 1) * pitch + dotw + 2 * (g.RAMP + g.MARGIN)
+    ex = [("2", 2), ("exit", 4), ("room 15", 8), ("prayer room", 11), ("rooms 201 to 215", 18)]
+    fig = plt.figure(figsize=(16, 8.6), dpi=150, facecolor=BONE)
+    fig.text(0.04, 0.945, "Scale: the strip grows with the message", fontsize=20, weight="bold")
+    fig.text(0.04, 0.91, "Same dots, same spacing, same 0.5 mm base. Only the length changes. Lengths are calculated from the model.", fontsize=11, color=MID)
+    ax = fig.add_axes([0.07, 0.14, 0.50, 0.70], facecolor=BONE)
+    n = np.arange(1, 43)
+    ax.plot(n, [plate(k) for k in n], color=BLACK, lw=2)
+    ax.axvspan(40, 42, color="#e0ded6")
+    ax.axvline(40, color=MID, lw=1, ls="--")
+    ax.text(40.2, 20, "ISO 17049: at most\n40 cells in a line", fontsize=9, color=MID, va="bottom")
+    for name, k in ex:
+        ax.plot([k], [plate(k)], "o", color=YELLOW, mec=BLACK, ms=9)
+        ax.annotate(f"'{name}'\n{k} cells, {plate(k):.0f} mm", (k, plate(k)), xytext=(k + 1.0, plate(k) - 34), fontsize=9)
+    ax.set_xlabel("Braille cells in one line", fontsize=11); ax.set_ylabel("Strip length, mm (braille line plus tapered ends)", fontsize=11)
+    ax.set_xlim(0, 42); ax.set_ylim(0, 290); ax.grid(color="#d9d7d0", lw=0.6)
+    for sp in ("top", "right"): ax.spines[sp].set_visible(False)
+    txt = [
+        ("Length", "About 6.2 mm per braille cell, plus about 8 mm for the tapered ends. A full 40-cell line is about %.0f mm." % plate(40)),
+        ("Longer messages", "Add a second line. ISO 17049 line pitch is 10–15 mm, so two lines need about 16.5 mm of width, three about 26.5 mm."),
+        ("On a rail", "One line only, along the rail. 14 mm wide for braille alone, 23 mm with a 16 mm number."),
+        ("On a wall", "Raised 16 mm letters on top, braille below with 9.5 mm clear. 42 mm tall for one line of each. The width follows the longer line."),
+        ("Where on the wall", "US rule used as a guide: tactile characters 1220–1525 mm above the floor, at the latch side of the door. UAE rule [VERIFY]."),
+        ("Making them", "Any message, no tooling: the generator and a print-on-demand route (memo section 7). Moulds only make sense for fixed messages in volume."),
+    ]
+    y = 0.84
+    for k, v in txt:
+        fig.text(0.62, y, k, fontsize=11, weight="bold", va="top")
+        fig.text(0.62, y - 0.03, "\n".join(__import__("textwrap").wrap(v, 62)), fontsize=10, va="top", color=BLACK)
+        y -= 0.135
+    fig.text(0.04, 0.02, "Source: cad/generate_sticker.py and cad/generate_wall_plates.py. The 40-cell limit is from the public sample of ISO 17049:2013. Wall rules: US ADA 703.3.2 and 703.4, used as a layout guide only.", fontsize=8, color=MID)
+    fig.savefig(os.path.join(OUT, "13_scale-and-message-length.png"), facecolor=BONE)
+    plt.close(fig)
+
+
 if __name__ == "__main__":
     spec_sheet()
     fit_sheet()
+    scale_sheet()
     print("sheets written to", OUT)

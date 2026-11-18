@@ -83,7 +83,7 @@ def numeral_polygon(char, height):
 
 def poly_to_manifold(poly, z0, z1):
     poly = orient(poly, 1.0)
-    rings = [np.array(poly.exterior.coords)[:-1]] + [np.array(r.coords)[:-1][::-1] for r in poly.interiors]
+    rings = [np.array(poly.exterior.coords)[:-1]] + [np.array(r.coords)[:-1] for r in poly.interiors]   # orient() already made holes clockwise
     ext = Manifold.extrude(CrossSection(rings), z1 - z0)
     return ext.translate((0, 0, z0))
 

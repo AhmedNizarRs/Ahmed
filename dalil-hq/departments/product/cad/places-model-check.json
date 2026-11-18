@@ -1,0 +1,65 @@
+{
+  "wall-plate-W1_room-15_flat.stl": {
+    "watertight": true,
+    "size_mm": [
+      120.7,
+      42.0
+    ],
+    "extents_mm": [
+      120.683,
+      42.0,
+      1.0
+    ],
+    "cells": 8,
+    "dots": 20,
+    "braille_len_mm": 47.4,
+    "volume_mm3": 2764.8
+  },
+  "wall-plate-W2_exit-left_flat.stl": {
+    "watertight": true,
+    "size_mm": [
+      86.9,
+      42.0
+    ],
+    "extents_mm": [
+      86.91,
+      42.0,
+      1.0
+    ],
+    "cells": 4,
+    "dots": 12,
+    "braille_len_mm": 22.6,
+    "volume_mm3": 1948.9
+  },
+  "wall-plate-W3_prayer-room_flat.stl": {
+    "watertight": true,
+    "size_mm": [
+      185.3,
+      42.0
+    ],
+    "extents_mm": [
+      185.3,
+      42.0,
+      1.0
+    ],
+    "cells": 11,
+    "dots": 33,
+    "braille_len_mm": 66.0,
+    "volume_mm3": 4334.7
+  },
+  "strip-C_rooms-201-to-215_flat.stl": {
+    "watertight": true,
+    "size_mm": [
+      119.4,
+      14.0
+    ],
+    "extents_mm": [
+      119.4,
+      14.0,
+      1.0
+    ],
+    "cells": 18,
+    "dots": 42,
+    "braille_len_mm": 109.4
+  }
+}

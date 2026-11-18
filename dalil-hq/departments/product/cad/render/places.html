@@ -1,0 +1,140 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#F2F1EC;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import {STLLoader} from 'three/addons/loaders/STLLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {RoundedBoxGeometry} from 'three/addons/geometries/RoundedBoxGeometry.js';
+import {mergeVertices, toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
+
+const q = new URLSearchParams(location.search);
+const name = q.get('scene'), view = q.get('view') || 'wide';
+const W = +q.get('w') || 1800, H = +q.get('h') || 1200;
+const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.NeutralToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.8;
+
+const loader = new STLLoader();
+const load = url => new Promise(res => loader.load(url, g0 => res(toCreasedNormals(mergeVertices(g0, 1e-4), Math.PI/6))));
+const YELLOW = 0xFFC700;
+const matte = (c, r=0.85) => new THREE.MeshStandardMaterial({color:c, metalness:0, roughness:r});
+const steel = (c=0xc9cdd1, r=0.32) => new THREE.MeshStandardMaterial({color:c, metalness:1, roughness:r});
+// sticker material: yellow base, near-black raised features, coloured per pixel by height above the base
+const hmat = (o) => { const m = new THREE.MeshStandardMaterial({roughness:0.5, metalness:0});
+  m.onBeforeCompile = sh => { sh.uniforms.uBase={value:new THREE.Color(YELLOW)}; sh.uniforms.uTop={value:new THREE.Color(0x14161a)};
+    const hexpr = o.R ? `length(vec2(position.y, position.z + ${o.R.toFixed(3)})) - ${o.R.toFixed(3)}` : 'position.z';
+    sh.vertexShader = 'varying float vH;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n vH = ' + hexpr + ';');
+    sh.fragmentShader = 'varying float vH; uniform vec3 uBase; uniform vec3 uTop;\n' + sh.fragmentShader.replace('#include <color_fragment>', '#include <color_fragment>\n diffuseColor.rgb = mix(uBase, uTop, smoothstep(0.505, 0.52, vH));'); };
+  return m; };
+const put = (o, pos, rot) => { o.position.set(...pos); if (rot) o.rotation.set(...rot); o.castShadow = true; o.receiveShadow = true; scene.add(o); return o; };
+const box = (w,d,h,pos,mat) => put(new THREE.Mesh(new THREE.BoxGeometry(w,d,h), mat), pos);
+const cyl = (r,len,pos,rot,mat,seg=64) => put(new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,seg), mat), pos, rot);
+const sph = (r,pos,mat) => put(new THREE.Mesh(new THREE.SphereGeometry(r,40,28), mat), pos);
+function tube(p0, p1, r, mat) { const a = new THREE.Vector3(...p0), b = new THREE.Vector3(...p1), d = b.clone().sub(a);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 64), mat); m.position.copy(a.clone().add(b).multiplyScalar(0.5));
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize()); m.castShadow = m.receiveShadow = true; scene.add(m); return m; }
+function sun(pos, i, size) { const l = new THREE.DirectionalLight(0xffffff, i); l.position.set(...pos); l.castShadow = true; l.shadow.mapSize.set(4096,4096);
+  const c = l.shadow.camera; c.left=-size; c.right=size; c.top=size; c.bottom=-size; c.near=10; c.far=20000; l.shadow.bias=-0.0003; l.shadow.normalBias=0.5; scene.add(l); l.target.position.set(...(pos.map(v=>0))); return l; }
+const cam = (fov, pos, look) => { const c = new THREE.PerspectiveCamera(fov, W/H, 2, 40000); c.up.set(0,0,1); c.position.set(...pos); c.lookAt(...look); return c; };
+const marks = {};
+const person = (x, y) => { const m = matte(0x8f918f, 0.9); put(new THREE.Mesh(new THREE.CapsuleGeometry(170, 1100, 8, 24), m), [x,y,720], [Math.PI/2,0,0]); sph(105,[x,y,1540],m); };
+const X90 = [Math.PI/2, 0, 0];     // wall plate: local (x,y,z) -> (x, -z, y), plate faces -y
+
+let camera, bg = 0xE9E7E0;
+
+if (name === 'stairs') {
+  scene.background = new THREE.Color(0xE9E7E0);
+  const wallM = matte(0xE9E7DF), stepM = matte(0x9C9A94, 0.9);
+  box(6400,100,3300,[2200,-700,1650],wallM);
+  box(6400,1300,50,[2200,0,-25],matte(0x8A8882));
+  for (let i=0;i<9;i++) box(280,1300,170*(i+1),[280*i+140,0,85*(i+1)],stepM);
+  box(1500,1300,1530,[2520+750,0,765],stepM);
+  const rail = steel(0xc9cdd1, 0.3);
+  tube([0,-580,900],[2520,-580,2430],20,rail); tube([2520,-580,2430],[3900,-580,2430],20,rail); sph(20,[2520,-580,2430],rail); sph(20,[0,-580,900],rail); sph(20,[3900,-580,2430],rail);
+  for (const x of [500,1500,2300]) tube([x,-650,900+0.607*x],[x,-580,900+0.607*x],8,rail);
+  for (const x of [3000,3700]) tube([x,-650,2430],[x,-580,2430],8,rail);
+  const strip = await load('stl/dalil-sticker-A-braille-number_on-rail-d40.stl');
+  put(new THREE.Mesh(strip, hmat({R:20})), [3100,-580,2450]); marks.sticker = new THREE.Vector3(3100,-580,2455);
+  sun([-2500,4000,5000], 2.4, 5000);
+  camera = view==='wide' ? cam(40,[2300,4300,2100],[2300,-600,1650]) : cam(26,[2980,-330,2670],[3100,-580,2452]);
+}
+else if (name === 'corridor') {
+  scene.background = new THREE.Color(0xDADBDB);
+  box(7400,2600,50,[3200,0,-25],matte(0xC3C8CB,0.6));
+  box(7400,100,2800,[3200,-1350,1400],matte(0xEEECE7));
+  box(7400,100,2800,[3200,1350,1400],matte(0xEEECE7));
+  box(7400,2600,50,[3200,0,2825],matte(0xF4F4F2));
+  box(100,2700,2800,[6800,0,1400],matte(0xE6E4DE)); box(100,2700,2800,[-300,0,1400],matte(0xE6E4DE));
+  for (const x of [800,2300,3800,5300]) put(new THREE.Mesh(new THREE.BoxGeometry(1200,320,12), new THREE.MeshBasicMaterial({color:0xffffff})), [x,0,2790]);
+  const doorM = matte(0xCDB48C,0.7), frameM = matte(0x7C8085);
+  for (const x of [2000,3900,5800]) { box(1040,20,2160,[x,-1296,1080],frameM); box(900,40,2100,[x,-1290,1050],doorM); }
+  box(6600,10,10,[3200,-1295,0],matte(0x9a9d9f));
+  const railM = matte(0xA8794A,0.55);
+  put(new THREE.Mesh(new RoundedBoxGeometry(6400,50,38,5,9), railM), [3300,-1235,900]);
+  for (let x=500;x<6200;x+=1200) box(30,40,28,[x,-1280,885],steel(0x9ea2a6,0.4));
+  const strip = await load('stl/strip-C_rooms-201-to-215_flat.stl');
+  put(new THREE.Mesh(strip, hmat({})), [2950,-1235,919]); marks.sticker = new THREE.Vector3(2950,-1235,921);
+  sun([1500,-1200,2600], 0.9, 6000);
+  camera = view==='wide' ? cam(52,[0,600,1550],[3600,-1250,1000]) : cam(26,[2830,-1000,1180],[2950,-1235,922]);
+}
+else if (name === 'pole') {
+  scene.background = new THREE.Color(0xD9DDE0);
+  box(4600,4600,50,[0,0,-25],matte(0x2B2D31,0.7));
+  box(4600,4600,50,[0,0,2225],matte(0xD7D7D2));
+  box(4600,60,900,[0,1000,450],matte(0x6f7479));
+  box(4600,40,1300,[0,1000,1550],new THREE.MeshStandardMaterial({color:0xC9D3D8, metalness:0.1, roughness:0.2, emissive:0xdfe8ec, emissiveIntensity:0.25}));
+  for (const mx of [-1700,-600,600,1700]) box(60,60,1300,[mx,985,1550],matte(0x3b3f44,0.6));
+  box(4600,60,60,[0,985,900],matte(0x3b3f44,0.6)); box(4600,60,60,[0,985,2200],matte(0x3b3f44,0.6));
+  box(1800,450,70,[-900,700,440],matte(0x2F4C7A,0.8)); box(1800,70,520,[-900,960,750],matte(0x2F4C7A,0.8));
+  box(1800,450,70,[900,700,440],matte(0x2F4C7A,0.8)); box(1800,70,520,[900,960,750],matte(0x2F4C7A,0.8));
+  const pole = steel(0xd2d5d8, 0.28);
+  cyl(16,2200,[0,0,1100],X90,pole);
+  const strip = await load('stl/dalil-sticker-B-braille-only_on-rail-d32.stl');
+  const mesh = new THREE.Mesh(strip, hmat({R:16}));
+  mesh.matrixAutoUpdate = false;
+  mesh.matrix.set(0,-1,0,0,  0,0,-1,-16,  1,0,0,1300,  0,0,0,1);   // (x,y,z) -> (-y, -z-16, x+1300): rail axis becomes vertical, strip faces -y
+  mesh.castShadow = mesh.receiveShadow = true; scene.add(mesh); marks.sticker = new THREE.Vector3(0,-17,1300);
+  sun([-2500,-3000,4500], 2.0, 5000);
+  camera = view==='wide' ? cam(36,[-1000,-2100,1550],[0,150,1250]) : cam(22,[0,-360,1300],[0,-16,1300]);
+}
+else if (name === 'door') {
+  scene.background = new THREE.Color(0xE6E4DF);
+  box(5200,4000,50,[0,-1700,-25],matte(0xCBCCC9,0.6));
+  box(4200,100,2800,[0,50,1400],matte(0xE8E6DF));
+  box(1040,10,2160,[0,1,1080],matte(0x7C8085)); box(900,40,2100,[0,6,1050],matte(0xCDB38B,0.65));
+  const s = steel(0xcfd2d6, 0.3);
+  cyl(26,7,[330,-17.5,1000],X90,s,96); cyl(9.5,35,[330,-38.5,1000],X90,s);
+  cyl(9.5,150,[255,-56,1000],[0,0,Math.PI/2],s,96); sph(9.5,[180,-56,1000],s); sph(9.5,[330,-56,1000],s);
+  const lev = await load('stl/B_on-lever-d19.stl');
+  put(new THREE.Mesh(lev, hmat({R:9.5})), [255,-56,1009.5]); marks.lever = new THREE.Vector3(255,-56,1012);
+  const plate = await load('stl/wall-plate-W1_room-15_flat.stl');
+  put(new THREE.Mesh(plate, hmat({})), [740,0,1400], X90); marks.plate = new THREE.Vector3(740,-1,1400);
+  person(-1500,-900);
+  sun([-2500,-4000,4500], 2.2, 5000);
+  const views = {wide: cam(36,[500,-3700,1350],[150,0,1100]), lever: cam(24,[255,-380,1190],[255,-56,1008]), plate: cam(28,[740,-520,1430],[740,0,1400])};
+  camera = views[view];
+}
+else if (name === 'family') {
+  scene.background = new THREE.Color(0xE4E2DA);
+  box(2400,100,1400,[0,50,0],matte(0xE2E0D8,0.95));
+  const items = [['wall-plate-W3_prayer-room',-127.35,60],['wall-plate-W1_room-15',37.65,60],['wall-plate-W2_exit-left',153.5,60],
+                 ['dalil-sticker-A-braille-number',-160,-15],['strip-C_rooms-201-to-215',-30,-15],['dalil-sticker-B-braille-only',90,-15]];
+  for (const [n,x,z] of items) { const g = await load(`stl/${n}_flat.stl`); put(new THREE.Mesh(g, hmat({})), [x,0,z], X90); }
+  sun([-300,-700,500], 2.0, 400);
+  const c = new THREE.OrthographicCamera(-240,240,160,-160,1,5000); c.up.set(0,0,1); c.position.set(0,-1000,0); c.lookAt(0,0,0); camera = c;
+}
+else throw new Error('unknown scene');
+
+renderer.render(scene, camera);
+const proj = v => { const p = v.clone().project(camera); return [(p.x*0.5+0.5)*W, (1-(p.y*0.5+0.5))*H]; };
+window.__px = Object.fromEntries(Object.entries(marks).map(([k,v]) => [k, proj(v)]));
+window.__done = true;
+</script></body></html>

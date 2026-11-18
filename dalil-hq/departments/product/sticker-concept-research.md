@@ -291,7 +291,51 @@ Measured from the mesh: all files watertight; dot height 0.500 mm above the base
 
 Limits: demo braille text is Arabic "الطابق" + number sign + 2 and **must be checked by a braille reader**. The adhesive layer is not modelled. Colours in the pictures are illustrative. The lever picture uses an assumed ⌀19 mm bar. The wrap band (format W) and door patch (format D) are not modelled yet.
 
-## 18. Sources (read 2026-11-17)
+## 18. Places and walls (added 2026-11-18)
+
+The specialist also raised **scalability** and using the same product on **walls** to show messages. Pictures: `cad/previews/08`–`13`. New STL files: wall plates W1 (ROOM 15), W2 (EXIT with arrow), W3 (PRAYER ROOM), and strip C (rooms 201 to 215).
+
+### Placements shown
+
+| Place | What is shown | What we do not know yet |
+|---|---|---|
+| Stairs | Strip A on the level stretch of a Ø40 mm rail, where ISO 17049 puts handrail braille | The real rail sizes and the extension length in a customer's building |
+| Hospital corridor | Long strip C on a flat timber rail: 18 cells, 119 mm | Whether people read a long line at walking pace. Test it |
+| Bus or metro | Strip B along a vertical Ø32 mm pole | Where a hand lands on a pole in a moving vehicle. Interior is a stand-in |
+| Classroom door | A strip on the lever and a plate on the wall at the latch side | Lever shape and size. Ø19 mm is assumed |
+| Walls | Three plate sizes with 16 mm raised letters and braille below | UAE and Sharjah sign rules. User testing |
+
+### What scales, and what does not
+
+- **Length follows the message:** about 6.2 mm per braille cell plus about 8 mm for the tapered ends. 9 cells is 64 mm, 18 cells is 119 mm, a full 40-cell line is about 256 mm (ISO 17049 caps a line at 40 cells). Longer messages take a second line at 10 mm pitch.
+- **Any message, no tooling:** `generate_sticker.py` and `generate_wall_plates.py` build any text. A print-on-demand route (section 7) fits many different messages. Moulds only fit fixed messages in volume.
+- **Same dots and base on rail and wall.** Only the plate size and a printed line change.
+- **Does not scale for free:** every new message needs a braille check, and each wall needs its own site survey.
+
+### Wall rules used as a layout guide (US ADA 703, read 2026-11-18; UAE rule `[VERIFY]`)
+
+- Braille below the text, at least **9.5 mm** clear of other tactile characters and raised borders (703.3.2).
+- Tactile characters **1220–1525 mm** above the floor, measured from the baseline of the lowest and the highest character (703.4.1).
+- At a door, the sign goes **alongside the door at the latch side**, with a clear floor space of 455 × 455 mm beyond the door swing (703.4.2).
+- Raised characters at least 16 mm tall and **0.8 mm** raised (703.2). Our round-1 plates use 0.5 mm. A plate meant to meet this rule needs 0.8 mm letters and 0.6–0.9 mm dots, and is therefore thicker (about 1.4–1.7 mm at a dot). Change `relief` and `dot_h` in the generator.
+- Dubai uses its own Universal Design Code, not the ADA (Sun Studio). Sharjah rules `[VERIFY]` with the municipality.
+
+### What walls change for DALIL
+
+1. **It is a different contest.** On a rail, the hand is already there and there is no wall sign to compare. On a wall, DALIL competes head-on with wall tactile signs (AED 180–400 each, `DALIL-facts.md` §4), made by established sign makers to a signage code.
+2. **What DALIL could bring to walls (to test, not claims):** a faster install (`DALIL-facts.md` says 1 week against about 6 weeks for wall signs), the same site visit, a glow option, and one tactile grammar across rails, doors and walls, which fits the accessibility map already in the package. Cost per plate: `[TO CONFIRM]`.
+3. **Adhesion on walls is a new problem.** Painted plaster is porous and dusty, and removal can take paint with it. Tile and glass are easier. Fire-rated walls and doors may limit labels. `[VERIFY]`
+4. **Compliance.** A wall sign that is bought to meet a code must meet that code. The round-1 plates are test geometry, not compliant signs.
+
+**My view:** keep round 1 on rails and levers, which is the specialist's main idea and DALIL's edge. Include **one wall plate** in the same user test to learn whether people read it as well, and decide on walls after that.
+
+### Questions for founders
+
+1. Do walls go into round 1, or stay a second step after the rail test?
+2. Which wall messages come first: room numbers, exits, lifts, prayer rooms?
+3. Price and positioning against AED 180–400 wall signs: `[TO CONFIRM]`.
+
+## 19. Sources (read 2026-11-17 and 2026-11-18)
 
 - ISO 17049:2013 sample, via iTeh: https://cdn.standards.iteh.ai/samples/58086/fb6f17bed4ff425fa03583afabdafb97/ISO-17049-2013.pdf
 - ADA Chapter 7, braille and raised characters: https://www.access-board.gov/ada/chapter/ch07/
@@ -312,4 +356,5 @@ Limits: demo braille text is Arabic "الطابق" + number sign + 2 and **must 
 - Photoluminescent film: https://www.t2siberica.com/wp-content/uploads/2020/07/VIzLite-DT-PSA-Ficha-tecnica.pdf ; https://everglow.de/wp-content/uploads/2020/03/Katalog_EverGlow_2020_v4_Engl_Final.pdf
 - 3M adhesives: https://multimedia.3m.com/mws/media/1868856O/3m-thin-bonding-selection-guide-en.pdf ; https://www.strouse.com/hubfs/3M%20VHB%20LSE-110WF%20TDS.pdf
 - Labels lifting on curved surfaces (flagging): https://www.beontag.com/blog/self-adhesive-labels/
+- US ADA 703.2–703.4, wall sign layout and mounting: https://www.access-board.gov/ada/chapter/ch07/
 - Chemical resistance: https://www.buitink-technology.com/pdf/tpu-chemical-resistance.pdf ; https://psiurethanes.com/urethane-and-polyurethane-chemical-compatibility/ ; https://www.cdc.gov/infection-control/hcp/disinfection-sterilization/chemical-disinfectants.html
