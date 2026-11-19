@@ -1,6 +1,6 @@
 # DALIL clip: product spec
 
-Owner: Ahmed Nazar (`dalil-product`). Current version: **v0.1 (draft)**. Change only with a new version and a line in the history.
+Owner: Ahmed Nazar (`dalil-product`). Current version: **v0.2 (draft)**. Change only with a new version and a line in the history.
 
 ## 1. What it is
 A 3D-printed clip that snaps onto a handrail or handle, carrying braille, a raised number and a photoluminescent glow. No app, no battery, no tools to install.
@@ -46,4 +46,5 @@ Printer `[model]`, settings `[layer, infill, temperature]`, time per clip `[min]
 | Version | Date | Change | By |
 |---|---|---|---|
 | v0 | 2026-11-05 | Spec file created from the website description | Claude (dalil-product) |
+| v0.2 | 2026-11-19 | Founder: the product is a **flexible sticker** (door handles, handrails and walls), soft to the hand. First print model in `models/` (80 × 32 × 1.6 mm TPU pad, ribs, raised number, braille, sloped edges, VHB tape back). | Claude (dalil-product) |
 | v0.1 | 2026-11-19 | Candidate materials, anti-tamper locks, braille dimensions (ADA 703.3) and manufacturer questions added, for Ahmed's manufacturer meeting (`manufacturing-brief-2026-11-19.md`). All to be tested. | Claude (dalil-product) |
