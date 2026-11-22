@@ -1,0 +1,125 @@
+newmtl OWN_asphalt
+Kd 0.165 0.165 0.173
+Ns 10
+
+newmtl OWN_bark
+Kd 0.353 0.275 0.196
+Ns 19
+
+newmtl OWN_brass
+Kd 0.804 0.647 0.373
+Ns 140
+map_Kd textures/brass.jpg
+
+newmtl OWN_bulb
+Kd 1.000 0.824 0.604
+Ns 100
+Ke 1.000 0.824 0.604
+
+newmtl OWN_ceiling
+Kd 0.949 0.941 0.918
+Ns 10
+
+newmtl OWN_ceramic
+Kd 0.965 0.965 0.957
+Ns 170
+
+newmtl OWN_curb
+Kd 0.690 0.667 0.627
+Ns 19
+
+newmtl OWN_door_white
+Kd 0.922 0.906 0.875
+Ns 110
+
+newmtl OWN_floor
+Kd 0.925 0.906 0.871
+Ns 150
+map_Kd textures/floor_tile.jpg
+
+newmtl OWN_glass
+Kd 0.902 0.941 0.941
+Ns 200
+d 0.15
+
+newmtl OWN_glass_dark
+Kd 0.157 0.196 0.220
+Ns 190
+
+newmtl OWN_lacquer_white
+Kd 0.945 0.937 0.918
+Ns 130
+
+newmtl OWN_leaves
+Kd 0.333 0.404 0.243
+Ns 39
+
+newmtl OWN_led_cool
+Kd 0.953 0.965 1.000
+Ns 100
+Ke 0.953 0.965 1.000
+
+newmtl OWN_led_warm
+Kd 1.000 0.761 0.478
+Ns 100
+Ke 1.000 0.761 0.478
+
+newmtl OWN_metal_black
+Kd 0.086 0.086 0.086
+Ns 110
+
+newmtl OWN_mirror
+Kd 0.922 0.922 0.922
+Ns 196
+
+newmtl OWN_oak
+Kd 0.769 0.627 0.463
+Ns 89
+map_Kd textures/oak.jpg
+
+newmtl OWN_paint_yellow
+Kd 0.788 0.635 0.153
+Ns 39
+
+newmtl OWN_paver
+Kd 0.612 0.580 0.533
+Ns 19
+
+newmtl OWN_planter
+Kd 0.894 0.867 0.824
+Ns 39
+
+newmtl OWN_plaster_ext
+Kd 0.804 0.749 0.682
+Ns 10
+
+newmtl OWN_plaster_sand
+Kd 0.851 0.780 0.678
+Ns 19
+
+newmtl OWN_plaster_white
+Kd 0.937 0.925 0.902
+Ns 19
+
+newmtl OWN_quartz
+Kd 0.957 0.945 0.925
+Ns 160
+
+newmtl OWN_sign_glow
+Kd 1.000 0.851 0.627
+Ns 100
+Ke 1.000 0.851 0.627
+
+newmtl OWN_soil
+Kd 0.227 0.169 0.122
+Ns 0
+
+newmtl OWN_steel
+Kd 0.784 0.784 0.784
+Ns 140
+
+newmtl OWN_stone
+Kd 0.839 0.784 0.706
+Ns 80
+map_Kd textures/travertine.jpg
+
