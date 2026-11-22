@@ -66,7 +66,7 @@ The surfaces use Poly Haven scans (CC0), recoloured by `tools/make_interior_text
 - **Grazers:** the `Light_Grazer_*` lights are photometric rectangle lights lying along the foot of each wall, aimed up and tilted 12° toward the stone.
 
 - LEDs, the logo halo and the signs are emissive materials. The script also adds small photometric "helper" lights behind them (names `Light_Wave_*`, `Light_Logo_Halo_*`, `Light_Partition_Wash_*`, `Light_Bakery_Case`), so the glow shows in any renderer. Delete them if your renderer lights well from emissive surfaces (Corona, V-Ray).
-- Exposure: EV 4 on the exterior cameras, EV 5.5 inside. Lower the EV to brighten. Use a white balance of about 4300 K so the 3000 K lights read warm, not orange.
+- Exposure: EV 4 on the exterior cameras, EV 5.5 inside. Lower the EV to brighten. Use a camera white balance of about 3500 K inside and 4300 K outside, so the 3000 K lights read warm but whites stay white.
 - In Arnold, add a dim dark-blue Skydome light for the night sky.
 
 ## Assumptions to check on site
