@@ -132,6 +132,27 @@ fn mkLight nm kind p cd k aim hot fall = (
 	(getLayer "13_Lights").addNode l
 	l
 )
+fn mkLinear nm p ux emit len wid cd k = (
+	-- linear LED grazer: photometric rectangle light, emitting along local -Z
+	local l = undefined
+	try (l = Free_Light name:nm) catch (l = Omnilight name:nm)
+	sp l #type #Free_Rectangle
+	sp l #length len; sp l #width wid
+	sp l #light_length len; sp l #light_width wid
+	sp l #distribution 2
+	sp l #useKelvin true
+	sp l #kelvin k
+	sp l #intensityType 1
+	sp l #intensity cd
+	sp l #castShadows true
+	local Z = -(normalize emit)
+	local X = normalize ux
+	local Y = normalize (cross Z X)
+	X = normalize (cross Y Z)
+	l.transform = matrix3 X Y Z p
+	(getLayer "13_Lights").addNode l
+	l
+)
 fn mkCam nm p t mm ev = (
 	local tg = Targetobject name:(nm + "_Target") pos:t
 	local c = undefined
@@ -168,6 +189,9 @@ for o in objs:
     w(f'\tmkMesh "{o["n"]}" "{o["l"]}" "{o["m"]}" {vs} {fs}')
 w("\t-- lights (photometric, candela, Kelvin)")
 for l in lights:
+    if l["kind"] == "linear":
+        w(f'\tmkLinear "{l["n"]}" {p3(l["p"])} {p3(l["u"])} [{",".join(f(v, 4) for v in l["emit"])}] {f(l["len"])} {f(l["wid"])} {f(l["cd"])} {f(l["k"])}')
+        continue
     w(f'\tmkLight "{l["n"]}" "{l["kind"]}" {p3(l["p"])} {f(l["cd"])} {f(l["k"])} "{l["aim"]}" {f(l["hot"])} {f(l["fall"])}')
 w("\t-- cameras (physical; exposure value: exterior night ~4, interior ~5.5)")
 w("\tlocal cams = #()")
@@ -176,6 +200,15 @@ for c in cams:
     w(f'\tappend cams (mkCam "{c["n"]}" {p3(c["p"])} {p3(c["t"])} {f(c["mm"])} {f(ev)})')
 w(r"""	backgroundColor = color 10 14 30
 	ambientColor = color 0 0 0
+	-- night-sky HDRI (Poly Haven, CC0): background + sky light
+	try (
+		local hd = Bitmaptexture filename:(scriptDir + "hdri\\kloppenheim_07_puresky_2k.hdr") name:"Night_Sky_HDRI"
+		hd.coords.mappingType = 1
+		hd.coords.mapping = 0
+		hd.output.output_amount = 0.02
+		environmentMap = hd
+		useEnvironmentMap = true
+	) catch ()
 	try (
 		SceneExposureControl.exposureControl = Physical_Camera_Exposure_Control()
 		sp SceneExposureControl.exposureControl #use_physical_camera_controls true

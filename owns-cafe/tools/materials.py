@@ -38,6 +38,7 @@ MATS = {
     "screen":        dict(rgb=(60, 80, 105), rough=.05, metal=0, kind="emit", lum=60),
     "sign_glow":     dict(rgb=(255, 232, 196), rough=.5, metal=0, kind="emit", lum=500),
     "led_warm":      dict(rgb=(255, 196, 128), rough=.5, metal=0, kind="emit", lum=6000),
+    "shop_glow":     dict(rgb=(255, 226, 190), rough=.5, metal=0, kind="emit", lum=14),
     "led_hidden":    dict(rgb=(255, 196, 128), rough=.5, metal=0, kind="emit", lum=12000),
     "led_halo":      dict(rgb=(255, 200, 135), rough=.5, metal=0, kind="emit", lum=9000),
     "led_cool":      dict(rgb=(243, 246, 255), rough=.5, metal=0, kind="emit", lum=1500),

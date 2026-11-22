@@ -27,7 +27,8 @@ Option C: `Owns_Cafe.obj` (cm, Y-up) for any other software. `Owns_Cafe.blend` i
   - the "Owns / COFFEE & MORE" sign has letters standing off a stone panel that hidden grazers wash with light, and a halo glows behind the letters;
   - dark "DRIVE THRU →" letters with a halo glow;
   - satin glass above the ceiling line;
-  - soft-beam uplights;
+  - continuous linear LED grazers at the foot of every stone face, for an even warm wash up to the parapet with no scallops;
+  - a softly lit neighbouring shop;
   - olive trees with branching trunks and silvery leaves;
   - textured pavers, asphalt and neighbouring plaster.
 - **Shell, shopfront, drive-thru, kitchen, toilet:** from the CAD and photos.
@@ -47,6 +48,9 @@ Option C: `Owns_Cafe.obj` (cm, Y-up) for any other software. `Owns_Cafe.blend` i
 | 13_Lights / 14_Cameras | photometric lights (cd, Kelvin) and physical cameras |
 
 ## Rendering in 3ds Max
+
+- **Night sky:** `hdri/kloppenheim_07_puresky_2k.hdr` (Poly Haven, CC0) is set as the environment map at output 0.02. Keep the `hdri` folder next to the script. In Arnold, plug it into a Skydome light. In V-Ray or Corona, use it in a Dome or Sun-Sky environment and lower its strength until the sky is deep navy.
+- **Grazers:** the `Light_Grazer_*` lights are photometric rectangle lights lying along the foot of each wall, aimed up and tilted 12° toward the stone.
 
 - LEDs, the logo halo and the signs are emissive materials. The script also adds small photometric "helper" lights behind them (names `Light_Wave_*`, `Light_Logo_Halo_*`, `Light_Partition_Wash_*`, `Light_Bakery_Case`), so the glow shows in any renderer. Delete them if your renderer lights well from emissive surfaces (Corona, V-Ray).
 - Exposure: EV 4 on the exterior cameras, EV 5.5 inside. Lower the EV to brighten. Use a white balance of about 4300 K so the 3000 K lights read warm, not orange.
@@ -71,7 +75,7 @@ python3 tools/export.py meshes.json .
 To re-render, run `tools/blender_scene.py` with Blender's Python (the `bpy` module) using the same flags as the final renders:
 
 ```bash
-python tools/blender_scene.py meshes.json textures renders --render all --samples 96 --fbx --blend
+python tools/blender_scene.py meshes.json textures renders --hdri hdri/kloppenheim_07_puresky_2k.hdr --hdri_strength 0.02 --render all --samples 96 --fbx --blend
 ```
 
 All dimensions live in `tools/build_scene.py` (cm), materials in `tools/materials.py`, and edge radii in `tools/mesher.py`.

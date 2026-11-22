@@ -43,10 +43,6 @@ Kd 0.922 0.961 0.953
 Ns 200
 d 0.15
 
-newmtl OWN_glass_dark
-Kd 0.157 0.196 0.220
-Ns 190
-
 newmtl OWN_glass_satin
 Kd 0.925 0.910 0.878
 Ns 130
@@ -142,6 +138,11 @@ newmtl OWN_screen
 Kd 0.235 0.314 0.412
 Ns 190
 Ke 0.235 0.314 0.412
+
+newmtl OWN_shop_glow
+Kd 1.000 0.886 0.745
+Ns 100
+Ke 1.000 0.886 0.745
 
 newmtl OWN_sign_glow
 Kd 1.000 0.910 0.769

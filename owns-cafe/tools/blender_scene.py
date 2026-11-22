@@ -7,7 +7,7 @@ Run with Blender's Python (bpy module):
 import sys, os, json, math, argparse
 import numpy as np
 import bpy
-from mathutils import Vector
+from mathutils import Vector, Matrix
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from materials import MATS
@@ -21,6 +21,9 @@ ap.add_argument("--exposure", type=float, default=4.5)
 ap.add_argument("--fbx", action="store_true")
 ap.add_argument("--blend", action="store_true")
 ap.add_argument("--emit_scale", type=float, default=1.0)
+ap.add_argument("--hdri", default="")
+ap.add_argument("--hdri_strength", type=float, default=0.06)
+ap.add_argument("--hdri_rot", type=float, default=0.0, help="degrees about Z")
 A = ap.parse_args()
 os.makedirs(A.out, exist_ok=True)
 D = json.load(open(A.meshes))
@@ -188,6 +191,26 @@ for l in D["lights"]:
     if l.get("maxonly"):
         continue
     cd = l["cd"]
+    if l["kind"] == "linear":
+        ld = bpy.data.lights.new(l["n"], "AREA")
+        ld.shape = "RECTANGLE"
+        ld.size = l["len"] * CM
+        ld.size_y = l["wid"] * CM
+        ld.energy = math.pi * cd / K683
+        ld.spread = math.radians(110)
+        try:
+            ld.use_temperature = True
+            ld.temperature = l["k"]
+        except Exception:
+            ld.color = kelvin_rgb(l["k"])
+        X = Vector(l["u"]).normalized()
+        Z = -Vector(l["emit"]).normalized()          # area lights emit along local -Z
+        Y = Z.cross(X).normalized()
+        X = Y.cross(Z).normalized()
+        ob = bpy.data.objects.new(l["n"], ld)
+        ob.matrix_world = Matrix.Translation(Vector(l["p"]) * CM) @ Matrix((X, Y, Z)).transposed().to_4x4()
+        lc.objects.link(ob)
+        continue
     if l["kind"] == "spot":
         ld = bpy.data.lights.new(l["n"], "SPOT")
         ld.energy = cd * 4 * math.pi / K683
@@ -251,6 +274,15 @@ wl.new(tcw.outputs["Generated"], sep.inputs[0])
 wl.new(sep.outputs["Z"], ramp.inputs["Fac"])
 wl.new(ramp.outputs["Color"], bg.inputs["Color"])
 bg.inputs["Strength"].default_value = 0.16
+if A.hdri:      # night-sky HDRI: lights the scene and shows as the sky
+    env = wn.new("ShaderNodeTexEnvironment")
+    env.image = bpy.data.images.load(os.path.abspath(A.hdri))
+    mp = wn.new("ShaderNodeMapping")
+    mp.inputs["Rotation"].default_value = (0, 0, math.radians(A.hdri_rot))
+    wl.new(tcw.outputs["Generated"], mp.inputs["Vector"])
+    wl.new(mp.outputs["Vector"], env.inputs["Vector"])
+    wl.new(env.outputs["Color"], bg.inputs["Color"])
+    bg.inputs["Strength"].default_value = A.hdri_strength
 
 scene.render.engine = "CYCLES"
 cy = scene.cycles

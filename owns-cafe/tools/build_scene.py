@@ -138,6 +138,18 @@ def light(name, kind, x, y, z, cd, kelvin, aim="down", hot=40, fall=80, maxonly=
     LIGHTS.append(dict(n=name, kind=kind, p=[round(x, 1), round(y, 1), round(z, 1)], cd=cd, k=kelvin, aim=aim, hot=hot, fall=fall, maxonly=maxonly))
 
 
+def linear(name, p0, p1, z, toward, cd_per_m, kelvin, tilt=12, width=4):
+    """Linear LED grazer from p0 to p1 (plan points) at height z, aimed up and tilted `tilt` degrees
+    toward the wall (`toward` = plan unit vector pointing at the wall). Smooth wash, no scallops."""
+    ux, uy = p1[0] - p0[0], p1[1] - p0[1]
+    ln = math.hypot(ux, uy)
+    t = math.radians(tilt)
+    emit = (toward[0] * math.sin(t), toward[1] * math.sin(t), math.cos(t))
+    LIGHTS.append(dict(n=name, kind="linear", p=[round((p0[0] + p1[0]) / 2, 1), round((p0[1] + p1[1]) / 2, 1), z],
+                       u=[ux / ln, uy / ln, 0], len=round(ln, 1), wid=width, emit=[round(v, 4) for v in emit],
+                       cd=round(cd_per_m * ln / 100, 1), k=kelvin, aim="up", hot=0, fall=0, maxonly=False))
+
+
 def text_geom(s, height, bold=True, family="DejaVu Sans"):
     """Text outline (a, b) with baseline at b=0, left at a=0, cap height ~ height."""
     fp = FontProperties(family=family, weight="bold" if bold else "normal")
@@ -369,9 +381,8 @@ vprism("Front_Sign_Owns", L, "sign_glow", logo, FO, U, 0.5, 3.0, r=0.3, bot=True
 vprism("Front_Sign_Owns_Halo", L, "led_halo", logo.buffer(-0.4), FO, U, -1.6, -1.2, r=0)   # glow onto the stone
 sub = place(text_geom("COFFEE & MORE", 6.5, bold=False), a_center=(bx0 + bx1) / 2, b_base=432)
 vprism("Front_Sign_Coffee_More", L, "sign_glow", sub, FO, U, -0.5, 1.2, r=0.15, bot=True)
-for i, a in enumerate((bx0 + 18, (bx0 + bx1) / 2, bx1 - 18)):      # hidden grazers in the head bar wash the sign panel
-    px, py = D(a, -9)
-    light(f"Light_SignPanel_Wash_{i + 1}", "spot", px, py, 333, 110, 2900, "up", 70, 120)
+# hidden linear grazer on the head bar washes the sign panel evenly
+linear("Light_Grazer_SignPanel", D(bx0 + 2, -7), D(bx1 - 2, -7), 333, N_IN, 260, 2900, tilt=14, width=3)
 lc = logo.centroid
 for i, da in enumerate((-30, 0, 30)):
     px, py = D(lc.x + da, 0.5)
@@ -538,7 +549,8 @@ prism("Neighbour_Unit", L, "stone", rect(531.7, 111.5, 1100, 1140), 0, H_TOP)
 prism("Neighbour_Front_Stone_A", L, "stone", rect(531.7, 91.5, 620, 111.5), 0, H_TOP)
 prism("Neighbour_Front_Stone_B", L, "stone", rect(1000, 91.5, 1100, 111.5), 0, H_TOP)
 prism("Neighbour_Front_Stone_C", L, "stone", rect(620, 91.5, 1000, 111.5), 330, H_TOP)
-prism("Neighbour_Front_Glass", L, "glass_dark", rect(620, 95, 1000, 99), 0, 330)
+prism("Neighbour_Front_Glass", L, "glass", rect(620, 95, 1000, 99), 0, 330)
+prism("Neighbour_Shop_Glow", L, "shop_glow", rect(625, 110.5, 995, 111.5), 0, 325)   # softly lit shop behind the glass
 prism("Neighbour_Front_Frame", L, "metal_black", rect(620, 91.5, 1000, 95), 322, 330)
 prism("Back_Building", L, "plaster_ext", rect(-60, 1160, 1500, 2200), 0, 1250)
 prism("Back_Building_Low", L, "plaster_ext", rect(-60, 1140, 1100, 1160), 0, 640)
@@ -600,17 +612,13 @@ light("Light_Kitchen_2", "diffuse", 320, 880, H_CEIL - 2, 450, 4000)
 light("Light_WC", "diffuse", 411, 1044, 258, 200, 3500)
 light("Light_Shelves_Wash", "spot", 470, 430, H_CEIL - 1, 500, 3000, "down", 30, 70)
 light("Light_Canopy", "spot", XL0 - 35, (549.5 + 631.2) / 2, 212, 400, 3000, "down", 60, 110)
-# exterior uplights grazing the stone (the glow along the base in the inspiration)
-k = 0
-y = 300.0
-while y < 985:
-    k += 1
-    light(f"Light_Uplight_Wall_{k:02d}", "spot", XL0 - 14, y, 2, 650, 2900, "up", 28, 80)
-    y += 52
-for j, s in enumerate((S0 + 31, (A_N1 + A_P1) / 2, (A_B0 + A_B1) / 2 - 50, (A_B0 + A_B1) / 2 + 50, S1 + 20)):
-    x, yy = D(s, -14)
-    light(f"Light_Uplight_Front_{j + 1}", "spot", x, yy, 2, 650, 2900, "up", 28, 80)
-light("Light_Uplight_RightPier", "spot", 515.7, 77, 2, 650, 2900, "up", 28, 80)
+# exterior: continuous linear grazers at the foot of every stone face (smooth wash up to the parapet)
+GZ = 18   # cm off the wall
+linear("Light_Grazer_LeftWall_A", (XL0 - GZ, 285), (XL0 - GZ, 637), 3, (1, 0), 1100, 2900)
+linear("Light_Grazer_LeftWall_B", (XL0 - GZ, 637), (XL0 - GZ, 990), 3, (1, 0), 1100, 2900)
+linear("Light_Grazer_Front", D(S0, -GZ), D(S1 + 30, -GZ), 3, N_IN, 1100, 2900)
+linear("Light_Grazer_Door_Pier", (389.7, 91.5 - GZ), (531.7, 91.5 - GZ), 3, (0, 1), 1100, 2900)
+linear("Light_Grazer_Neighbour", (540, 91.5 - GZ), (1095, 91.5 - GZ), 3, (0, 1), 700, 3000)
 # glowing base strips
 L = "12_Exterior_Lighting"
 prism("LED_Strip_LeftWall", L, "led_warm", rect(XL0 - 8, 290, XL0 - 5, 985), -2, -1)

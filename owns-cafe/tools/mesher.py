@@ -24,7 +24,7 @@ CR = {
     "oak": 0.5, "quartz": 0.7, "lacquer_white": 0.6, "door_white": 0.5, "metal_black": 0.3, "steel": 0.3,
     "brass": 0.3, "glass": 0.0, "glass_dark": 0.0, "mirror": 0.2, "ceramic": 1.5, "paver": 0.6, "curb": 1.2,
     "asphalt": 0.0, "paint_yellow": 0.0, "planter": 2.0, "soil": 0.0, "bark": 0.4, "sign_glow": 0.25,
-    "led_warm": 0.0, "led_hidden": 0.0, "led_cool": 0.0, "led_halo": 0.0, "bulb": 0.0, "pastry": 1.2, "pastry_dark": 1.0,
+    "led_warm": 0.0, "shop_glow": 0.0, "led_hidden": 0.0, "led_cool": 0.0, "led_halo": 0.0, "bulb": 0.0, "pastry": 1.2, "pastry_dark": 1.0,
     "paper": 0.3, "screen": 0.0, "leaves": 0.0, "leaves_b": 0.0, "glass_satin": 0.0,
 }
 SEG = 3
