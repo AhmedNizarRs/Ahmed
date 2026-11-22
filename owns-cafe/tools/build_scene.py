@@ -11,6 +11,7 @@ The CAD drawing is shifted by (-2844, -962) so the shop sits near the origin.
 Run: python3 build_scene.py Owns_Cafe.dxf scene.json
 """
 import sys, json, math
+import numpy as np
 import ezdxf
 from shapely.geometry import Polygon, MultiPolygon, box as sbox, LineString
 from shapely.ops import unary_union
@@ -320,7 +321,7 @@ top_poly = Polygon(wave_up + [(PW, H_CEIL + 50), (0, H_CEIL + 50)]).intersection
 lower_poly = Polygon(wave_lo + [(PW, -50), (0, -50)]).intersection(panel)
 band_poly = panel.difference(top_poly).difference(lower_poly)
 prism("Partition_Slot_Extension", L, "plaster_white", rect(XL1, PY0, XR0, PY1), H_CEIL, H_CEIL + 18, r=0)
-vprism("Partition_Finish_Top", L, "plaster_taupe", top_poly.difference(openings), P_ORIG, P_U, 0, 1.5)
+vprism("Partition_Moss_Wall", L, "moss", top_poly.difference(openings), P_ORIG, P_U, 0, 3.0, r=0.8)   # preserved moss panel
 vprism("Partition_Finish_Bottom", L, "plaster_white", lower_poly.difference(openings), P_ORIG, P_U, 0, 1.5)
 vprism("Partition_Wave_Backing", L, "plaster_taupe", band_poly.difference(openings), P_ORIG, P_U, 0, 0.5, r=0)
 # oak wave band floats 3 cm off the wall; LED strips hidden in the gap wash the wall above and below it
@@ -340,8 +341,8 @@ for nm, curve, dy in (("Lower", wave_lo, 2.6), ("Upper", wave_up, -2.6)):
                   "down" if nm == "Lower" else "up", 60, 150, maxonly=True)
 # halo-lit logo: brass letters stand 2.5 cm off the wall, an LED layer behind them glows onto the wall
 logo_el = affinity.translate(lettering, -EL_X0, -EL_Y0)
-vprism("Partition_Logo_Owns", L, "logo_white", logo_el, P_ORIG, P_U, 4.0, 6.5, r=0.35, bot=True)   # opal letters, face-lit + halo
-vprism("Partition_Logo_Halo_LED", L, "led_halo", logo_el.buffer(-0.6), P_ORIG, P_U, 2.4, 2.8, r=0)
+vprism("Partition_Logo_Owns", L, "logo_white", logo_el, P_ORIG, P_U, 5.0, 7.5, r=0.35, bot=True)   # opal letters off the moss   # opal letters, face-lit + halo
+vprism("Partition_Logo_Halo_LED", L, "led_halo", logo_el.buffer(-0.6), P_ORIG, P_U, 3.4, 3.8, r=0)
 lx0, ly0, lx1, ly1 = logo_el.bounds
 for i, a in enumerate((lx0 + 30, (lx0 + lx1) / 2, lx1 - 30)):
     light(f"Light_Logo_Halo_{i + 1}", "point", XL1 + a, PY0 - 3, (ly0 + ly1) / 2, 40, 2800, maxonly=True)
@@ -487,7 +488,7 @@ prism("Back_Counter_Body", L, "lacquer_white", rect(143.7, 515, 203.7, 660), 0, 
 prism("Back_Counter_Top", L, "marble_white", rect(143.7, 513, 205.7, 662), 90, 94)
 for i, (x, y) in enumerate([(200, 469.5), (270, 469.5), (340, 469.5)]):
     cyl(f"Pendant_Cord_{i + 1}", L, "metal_black", x, y, 222, 0.4, H_CEIL - 222, 8)
-    cyl(f"Pendant_Shade_{i + 1}", L, "champagne", x, y, 200, 13, 22, 32)
+    cyl(f"Pendant_Shade_{i + 1}", L, "hessian", x, y, 198, 17, 26, 40, cr=0.6)
     sph(f"Pendant_Bulb_{i + 1}", L, "bulb", x, y, 203, 5)
     light(f"Light_Pendant_{i + 1}", "point", x, y, 199, 120, 2700)
 
@@ -501,7 +502,7 @@ for i, s in enumerate((70, 140, 210)):
     x, y = D(s, 88)
     cyl(f"Stool_{i + 1}_Base", L, "metal_black", x, y, 0, 20, 2, 32)
     cyl(f"Stool_{i + 1}_Post", L, "metal_black", x, y, 2, 2.5, 70, 12)
-    cyl(f"Stool_{i + 1}_Seat", L, "leather_cream", x, y, 72, 18, 6, 40, cr=2.2)
+    cyl(f"Stool_{i + 1}_Seat", L, "boucle", x, y, 72, 18, 7, 40, cr=2.8)
 # display shelves on the right wall (customer side)
 for i, z in enumerate((150, 185, 220)):
     prism(f"Shelf_{i + 1}", L, "champagne", rect(486.7, 340, 510.7, 520), z, z + 2, r=0.5, bot=True)
@@ -509,7 +510,15 @@ for i, z in enumerate((150, 185, 220)):
     for j, y in enumerate((355, 385, 415, 445, 475, 505)):
         if (i + j) % 3 == 1:
             continue
-        cyl(f"Shelf_{i + 1}_Jar_{j + 1}", L, ["ceramic_sand", "ceramic_matte", "ceramic_terra"][(i + j) % 3], 498.7, y, z + 3, 5.5 - (j % 2), 16 - 5 * ((i + j) % 2), 28)
+        if (i + j) % 3 == 0:      # small potted plants among the ceramics
+            cyl(f"Shelf_{i + 1}_Pot_{j + 1}", L, "ceramic_matte", 498.7, y, z + 2, 5, 9, 28, cr=0.8)
+            pr = np.random.default_rng(300 + i * 10 + j)
+            for q in range(34):    # small flat leaves fanning out of the pot
+                a = pr.uniform(0, 2 * math.pi); rr_ = pr.uniform(1, 9) ** 0.9
+                ell(f"Shelf_{i + 1}_Plant_{j + 1}_{q}", L, "leaves_green", (498.7 + rr_ * math.cos(a) * 0.55, y + rr_ * math.sin(a), z + 11 + pr.uniform(0, 10) - rr_ * 0.4),
+                    (pr.uniform(1.8, 2.8), pr.uniform(0.9, 1.4), 0.35), math.degrees(a) + pr.uniform(-25, 25), res=(10, 4), g=f"Shelf_Plants_{i + 1}")
+            continue
+        cyl(f"Shelf_{i + 1}_Jar_{j + 1}", L, ["ceramic_sand", "ceramic_matte", "ceramic_terra"][(i + j) % 3], 498.7, y, z + 2, 5.5 - (j % 2), 16 - 5 * ((i + j) % 2), 28)
 
 # ------------------------------------------------------------------ KITCHEN + WC
 L = "09_Kitchen_WC"
@@ -615,6 +624,23 @@ for i, (x, y) in enumerate([D((A_N1 + A_P1) / 2, -55), (515.7, 50)]):
     cyl(f"Planter_{i + 1}", L, "planter", x, y, -2, 30, 78, 32)
     cyl(f"Planter_{i + 1}_Soil", L, "soil", x, y, 70, 27, 5, 24)
     olive(i + 1, x, y, 75)
+
+# ------------------------------------------------------------------ BIOPHILIC: indoor tree + hanging plants
+L = "16_Plants"
+cyl("Indoor_Planter", L, "planter_clay", 178, 388, 0, 26, 58, 40, cr=3)    # corner between the window bar and the desk
+cyl("Indoor_Planter_Soil", L, "soil", 178, 388, 52, 23.5, 4, 32)
+olive(9, 178, 388, 56)
+for i, s_ in enumerate((65, 140, 215)):
+    hx, hy = D(s_, 48)
+    rr = np.random.default_rng(700 + i)
+    cyl(f"Hanging_Cord_{i + 1}", L, "metal_black", hx, hy, 262, 0.3, H_CEIL - 262, 8)
+    cyl(f"Hanging_Pot_{i + 1}", L, "ceramic_matte", hx, hy, 248, 10, 14, 32, cr=1.2)
+    for q in range(110):                                    # trailing foliage spilling over the pot
+        a = rr.uniform(0, 2 * math.pi)
+        rad = rr.uniform(4, 13) + (0 if q < 25 else rr.uniform(0, 8))
+        zz = 262 - (0 if q < 25 else rr.uniform(0, 70) ** 1.0)
+        ell(f"Hanging_Leaf_{i + 1}_{q}", L, "leaves_green", (hx + rad * math.cos(a), hy + rad * math.sin(a), zz),
+            (rr.uniform(2.2, 3.4), rr.uniform(1.4, 2.0), 0.4), rr.uniform(0, 360), res=(10, 4), g=f"Hanging_Plant_{i + 1}")
 
 # ------------------------------------------------------------------ LIGHTS
 for i, (x, y) in enumerate(DL):

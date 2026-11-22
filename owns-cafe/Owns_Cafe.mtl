@@ -7,6 +7,11 @@ newmtl OWN_bark
 Kd 0.353 0.275 0.196
 Ns 19
 
+newmtl OWN_boucle
+Kd 0.871 0.831 0.769
+Ns 19
+map_Kd textures/ph_curly_teddy_natural_diff.jpg
+
 newmtl OWN_brass
 Kd 0.839 0.675 0.392
 Ns 144
@@ -26,9 +31,9 @@ newmtl OWN_ceramic
 Kd 0.965 0.965 0.957
 Ns 180
 
-newmtl OWN_ceramic_sand
-Kd 0.784 0.698 0.588
-Ns 89
+newmtl OWN_ceramic_matte
+Kd 0.925 0.910 0.878
+Ns 100
 
 newmtl OWN_ceramic_terra
 Kd 0.667 0.376 0.259
@@ -61,14 +66,14 @@ newmtl OWN_glass_satin
 Kd 0.925 0.910 0.878
 Ns 130
 
+newmtl OWN_hessian
+Kd 0.745 0.627 0.471
+Ns 19
+map_Kd textures/ph_hessian_230_diff.jpg
+
 newmtl OWN_lacquer_white
 Kd 0.839 0.808 0.761
 Ns 130
-
-newmtl OWN_leather_cream
-Kd 0.886 0.839 0.769
-Ns 89
-map_Kd textures/ph_leather_white_diff.jpg
 
 newmtl OWN_leaves
 Kd 0.376 0.431 0.290
@@ -77,6 +82,10 @@ Ns 100
 newmtl OWN_leaves_b
 Kd 0.502 0.533 0.408
 Ns 100
+
+newmtl OWN_leaves_green
+Kd 0.243 0.376 0.173
+Ns 110
 
 newmtl OWN_led_cool
 Kd 0.953 0.965 1.000
@@ -116,6 +125,11 @@ newmtl OWN_mirror
 Kd 0.941 0.941 0.941
 Ns 196
 
+newmtl OWN_moss
+Kd 0.345 0.408 0.192
+Ns 10
+map_Kd textures/int_moss.jpg
+
 newmtl OWN_paint_white
 Kd 0.871 0.871 0.847
 Ns 80
@@ -144,6 +158,11 @@ map_Kd textures/paver.jpg
 newmtl OWN_planter
 Kd 0.886 0.859 0.812
 Ns 50
+
+newmtl OWN_planter_clay
+Kd 0.698 0.549 0.424
+Ns 39
+map_Kd textures/int_plaster.jpg
 
 newmtl OWN_plaster_ext
 Kd 0.729 0.682 0.620

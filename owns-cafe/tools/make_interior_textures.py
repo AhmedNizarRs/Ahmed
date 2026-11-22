@@ -61,3 +61,18 @@ out = base * (1 + cloud)[..., None] * (1 - v) + vein_col * v
 Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(os.path.join(T, "int_marble.jpg"), quality=92)
 print("int_marble.jpg", out.reshape(-1, 3).mean(0).round())
 recolour("ph_white_plaster_02_diff.jpg", "int_taupe.jpg", (156, 143, 129), 0.35)
+
+# ---- preserved cushion moss (biophilic wall): clumpy greens + height map, 120 cm repeat, tileable
+r = np.random.default_rng(33)
+N = 2048
+big = pnoise(N, 2.0, r); mid = pnoise(N, 1.4, r); grain = pnoise(N, 0.6, r)
+clumps = np.clip(0.55 * big + 0.35 * mid, -2.5, 2.5)
+height = 1 / (1 + np.exp(-2.2 * clumps)) * 0.75 + 0.25 * (grain * 0.5 + 0.5)
+hue = pnoise(N, 2.6, r)
+c_dark = np.array([46, 62, 30]); c_mid = np.array([86, 104, 48]); c_light = np.array([132, 142, 70])
+t = np.clip(height, 0, 1)[..., None]
+col = np.where(t < 0.5, c_dark + (c_mid - c_dark) * (t / 0.5), c_mid + (c_light - c_mid) * ((t - 0.5) / 0.5))
+col = col * (1 + 0.08 * hue)[..., None] * (1 + 0.1 * grain)[..., None]
+Image.fromarray(np.clip(col, 0, 255).astype(np.uint8)).save(os.path.join(T, "int_moss.jpg"), quality=92)
+Image.fromarray((np.clip(height, 0, 1) * 255).astype(np.uint8)).convert("RGB").save(os.path.join(T, "int_moss_h.jpg"), quality=92)
+print("int_moss.jpg", col.reshape(-1, 3).mean(0).round())
