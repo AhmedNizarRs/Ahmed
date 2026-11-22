@@ -102,6 +102,7 @@ fn defMat key rgb rough metal texFile mapSize kind lum coat bump bumpFile roughF
 	if kind == "emit" do (
 		sp m #emission 1.0
 		sp m #emit_color rgb
+		if texFile != undefined do sp m #emit_color_map (Bitmaptexture filename:(texDir + texFile) name:(key + "_emit"))
 		sp m #emit_luminance lum
 		sp m #base_color (color 0 0 0)
 		sp m #selfIllumAmount 100
@@ -109,7 +110,7 @@ fn defMat key rgb rough metal texFile mapSize kind lum coat bump bumpFile roughF
 	append matNames key; append mats m; append mapSizes mapSize
 	m
 )
-fn mkMesh nm lay mk vs fs = (
+fn mkMesh nm lay mk vs fs planar:0 = (
 	try (
 		local m = mesh vertices:vs faces:fs
 		m.name = nm
@@ -118,7 +119,11 @@ fn mkMesh nm lay mk vs fs = (
 		m.pivot = m.center
 		local i = findItem matNames mk
 		local ms = if i > 0 then mapSizes[i] else 100.0
-		addModifier m (Uvwmap maptype:4 length:ms width:ms height:ms)
+		if planar != 0 then (
+			local uvm = Uvwmap maptype:0 axis:0      -- screen: planar along X, fitted to the face
+			addModifier m uvm
+			if planar < 0 do uvm.utile = -1.0
+		) else addModifier m (Uvwmap maptype:4 length:ms width:ms height:ms)
 		if i > 0 do m.material = mats[i]
 		(getLayer lay).addNode m
 		nObj += 1
@@ -205,7 +210,8 @@ for o in objs:
     vs = "#(" + ",".join(f"[{f(V[i])},{f(V[i + 1])},{f(V[i + 2])}]" for i in range(0, len(V), 3)) + ")"
     F = o["f"]
     fs = "#(" + ",".join(f"[{F[i] + 1},{F[i + 1] + 1},{F[i + 2] + 1}]" for i in range(0, len(F), 3)) + ")"
-    w(f'\tmkMesh "{o["n"]}" "{o["l"]}" "{o["m"]}" {vs} {fs}')
+    pl = f' planar:{1 if o["uv"]["du"] > 0 else -1}' if o.get("uv") else ""
+    w(f'\tmkMesh "{o["n"]}" "{o["l"]}" "{o["m"]}" {vs} {fs}{pl}')
 w("\t-- lights (photometric, candela, Kelvin)")
 for l in lights:
     if l["kind"] == "linear":

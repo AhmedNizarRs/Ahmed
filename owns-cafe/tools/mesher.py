@@ -24,7 +24,7 @@ CR = {
     "oak": 0.5, "quartz": 0.7, "lacquer_white": 0.6, "door_white": 0.5, "metal_black": 0.3, "steel": 0.3,
     "brass": 0.3, "glass": 0.0, "glass_dark": 0.0, "mirror": 0.2, "ceramic": 1.5, "moss": 0.8, "boucle": 2.0, "hessian": 0.5, "leaves_green": 0.0, "planter_clay": 2.0, "marble_white": 1.0, "plaster_taupe": 0.5, "champagne": 0.3, "leather_cream": 1.5, "logo_white": 0.3, "ceramic_sand": 1.0, "ceramic_terra": 1.0, "ceramic_matte": 1.0, "paver": 0.6, "curb": 1.2,
     "asphalt": 0.0, "paint_yellow": 0.0, "paint_white": 0.0, "planter": 2.0, "soil": 0.0, "bark": 0.4, "sign_glow": 0.25,
-    "led_warm": 0.0, "shop_glow": 0.0, "led_hidden": 0.0, "led_cool": 0.0, "led_halo": 0.0, "bulb": 0.0, "pastry": 1.2, "pastry_dark": 1.0,
+    "led_warm": 0.0, "led_halo_soft": 0.0, "screen_owns": 0.0, "shop_glow": 0.0, "led_hidden": 0.0, "led_cool": 0.0, "led_halo": 0.0, "bulb": 0.0, "pastry": 1.2, "pastry_dark": 1.0,
     "paper": 0.3, "screen": 0.0, "leaves": 0.0, "leaves_b": 0.0, "glass_satin": 0.0,
 }
 SEG = 3
@@ -226,7 +226,7 @@ def build(scene):
             nm = e.get("g") or e["n"]
             if e.get("g") and any(k[0] == nm and k != key for k in objs):
                 nm = f"{nm}_{e['m']}"
-            objs[key] = dict(n=nm, l=e["l"], m=e["m"], g=e.get("g"), buf=Buf())
+            objs[key] = dict(n=nm, l=e["l"], m=e["m"], g=e.get("g"), buf=Buf(), uv=e.get("uv"))
             order.append(key)
         buf = objs[key]["buf"]
         cr = e.get("cr", CR.get(e["m"], 0.0))
@@ -256,7 +256,7 @@ def build(scene):
         b = o["buf"]
         if not b.t:
             continue
-        out.append(dict(n=nm, l=o["l"], m=o["m"], g=o["g"],
+        out.append(dict(n=nm, l=o["l"], m=o["m"], g=o["g"], uv=o.get("uv"),
                         v=[round(float(c), 3) for p in b.v for c in p], f=[int(i) for t in b.t for i in t]))
     return out
 

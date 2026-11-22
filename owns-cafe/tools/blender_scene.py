@@ -69,6 +69,10 @@ def make_mat(key):
     if m["kind"] == "emit":
         em = N.new("ShaderNodeEmission")
         em.inputs["Color"].default_value = col
+        if m["tex"]:
+            ti = N.new("ShaderNodeTexImage")
+            ti.image = image(m["tex"])
+            Lk.new(ti.outputs["Color"], em.inputs["Color"])
         em.inputs["Strength"].default_value = m["lum"] / K683 * A.emit_scale
         Lk.new(em.outputs[0], out.inputs["Surface"])
         return mat
@@ -199,11 +203,17 @@ for o in D["objects"]:
         sel = ax == a
         uv[sel, :, 0] = P[sel][:, :, iu] / size
         uv[sel, :, 1] = P[sel][:, :, iv] / size
+    if o.get("uv"):            # exact 1:1 mapping (screens)
+        q = o["uv"]
+        uv[..., 0] = (P[..., q["axis"]] - q["u0"]) * q["du"] / q["w"]
+        uv[..., 1] = (P[..., 2] - q["v0"]) / q["h"]
     ul = me.uv_layers.new(name="UVMap")
     ul.data.foreach_set("uv", uv.astype(np.float32).ravel())
     me.materials.append(MAT[o["m"]])
     me.validate()
     ob = bpy.data.objects.new(o["n"], me)
+    if o["n"].startswith(("DT_Logo", "DT_Sign", "Front_Sign")):    # signage letters: no cast shadows on the wall
+        ob.visible_shadow = False
     coll(o["l"]).objects.link(ob)
 
 # ------------------------------------------------------------------ lights

@@ -97,6 +97,11 @@ Kd 1.000 0.784 0.529
 Ns 100
 Ke 1.000 0.784 0.529
 
+newmtl OWN_led_halo_soft
+Kd 1.000 0.784 0.529
+Ns 100
+Ke 1.000 0.784 0.529
+
 newmtl OWN_led_hidden
 Kd 1.000 0.769 0.502
 Ns 100
@@ -183,6 +188,12 @@ newmtl OWN_screen
 Kd 0.235 0.314 0.412
 Ns 190
 Ke 0.235 0.314 0.412
+
+newmtl OWN_screen_owns
+Kd 1.000 1.000 1.000
+Ns 184
+Ke 1.000 1.000 1.000
+map_Kd textures/screen_owns.png
 
 newmtl OWN_shop_glow
 Kd 1.000 0.886 0.745

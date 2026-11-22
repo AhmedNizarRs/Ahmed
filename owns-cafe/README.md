@@ -36,8 +36,8 @@ The surfaces use Poly Haven scans (CC0), recoloured by `tools/make_interior_text
 - **Exterior:**
   - vein-cut travertine in 90 × 60 cm slabs (each slab with its own layering, pits and tone; 3 mm joints, with relief);
   - the "Owns / COFFEE & MORE" sign has letters standing off a stone panel that hidden grazers wash with light, and a halo glows behind the letters;
-  - a large glowing "Owns / COFFEE & MORE" logo above the drive-thru window, with dark halo-lit "DRIVE THRU →" letters under it;
-  - a double-sided projecting blade sign on the corner pier, so the logo is visible from the side streets;
+  - a large (about 3 m) dark-bronze "Owns / COFFEE & MORE" logo with a soft warm halo above the drive-thru window, with "DRIVE THRU →" under it;
+  - a double-sided projecting LED-screen sign on the corner pier showing the logo, visible from the side streets (screen image `textures/screen_owns.png`);
   - satin glass above the ceiling line;
   - continuous linear LED grazers at the foot of every stone face, for an even warm wash up to the parapet with no scallops;
   - a softly lit neighbouring shop;
