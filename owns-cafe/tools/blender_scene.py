@@ -22,8 +22,8 @@ ap.add_argument("--fbx", action="store_true")
 ap.add_argument("--blend", action="store_true")
 ap.add_argument("--emit_scale", type=float, default=1.0)
 ap.add_argument("--hdri", default="")
-ap.add_argument("--hdri_strength", type=float, default=0.06)
-ap.add_argument("--hdri_rot", type=float, default=0.0, help="degrees about Z")
+ap.add_argument("--hdri_strength", type=float, default=0.01)
+ap.add_argument("--hdri_rot", type=float, default=42.0, help="degrees about Z")
 A = ap.parse_args()
 os.makedirs(A.out, exist_ok=True)
 D = json.load(open(A.meshes))
@@ -233,9 +233,28 @@ for l in D["lights"]:
         ld.color = kelvin_rgb(l["k"])
     ob = bpy.data.objects.new(l["n"], ld)
     ob.location = Vector(l["p"]) * CM
-    if l["aim"] == "up":
+    if l.get("aimv"):
+        ob.rotation_euler = Vector(l["aimv"]).to_track_quat("-Z", "Y").to_euler()
+    elif l["aim"] == "up":
         ob.rotation_euler = (math.pi, 0, 0)
     lc.objects.link(ob)
+
+# ------------------------------------------------------------------ props (car)
+for pr in D.get("props", []):
+    fp = os.path.join(os.path.dirname(os.path.abspath(A.meshes)), pr["file"])
+    if not os.path.exists(fp):
+        print("prop missing:", fp)
+        continue
+    before = set(bpy.data.objects)
+    bpy.ops.import_scene.gltf(filepath=fp)
+    new = [o for o in bpy.data.objects if o not in before]
+    pc = coll("15_Car")
+    for o in new:
+        for c in list(o.users_collection):
+            c.objects.unlink(o)
+        pc.objects.link(o)
+        if o.parent is None:
+            o.location = Vector(pr["pos"]) * CM
 
 # ------------------------------------------------------------------ cameras (two-point perspective)
 cc = coll("14_Cameras")

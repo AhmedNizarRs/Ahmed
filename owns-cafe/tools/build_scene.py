@@ -133,9 +133,13 @@ def sph(name, layer, mat, x, y, z, r):
     E.append(dict(t="sph", n=name, l=layer, m=mat, p=[round(x, 2), round(y, 2), round(z, 2)], r=r))
 
 
-def light(name, kind, x, y, z, cd, kelvin, aim="down", hot=40, fall=80, maxonly=False):
-    """maxonly: helper light for 3ds Max where an emissive strip already lights the scene in Cycles."""
-    LIGHTS.append(dict(n=name, kind=kind, p=[round(x, 1), round(y, 1), round(z, 1)], cd=cd, k=kelvin, aim=aim, hot=hot, fall=fall, maxonly=maxonly))
+def light(name, kind, x, y, z, cd, kelvin, aim="down", hot=40, fall=80, maxonly=False, aimv=None):
+    """maxonly: helper light for 3ds Max where an emissive strip already lights the scene in Cycles.
+    aimv: explicit aim direction (x, y, z) for spots, overrides aim."""
+    d = dict(n=name, kind=kind, p=[round(x, 1), round(y, 1), round(z, 1)], cd=cd, k=kelvin, aim=aim, hot=hot, fall=fall, maxonly=maxonly)
+    if aimv:
+        d["aimv"] = [round(v, 4) for v in aimv]
+    LIGHTS.append(d)
 
 
 def linear(name, p0, p1, z, toward, cd_per_m, kelvin, tilt=12, width=4):
@@ -252,10 +256,10 @@ NOTES.append(f"front length ext {_L:.1f}, glazing s {S0:.1f}..{S1:.1f}")
 
 # ------------------------------------------------------------------ SHELL
 L = "01_Shell"
-prism("Wall_Left_A", L, "stone", [O, D(S0, 0), (142.7, 289.0), (142.7, 549.5), (122.7, 549.5)], 0, H_TOP)
-prism("Wall_Left_DriveThru_Sill", L, "stone", rect(XL0, 549.5, XL1, 631.2), 0, 95)
-prism("Wall_Left_DriveThru_Head", L, "stone", rect(XL0, 549.5, XL1, 631.2), 205, H_TOP)
-prism("Wall_Left_B", L, "stone", rect(XL0, 631.2, XL1, YB1), 0, H_TOP)
+prism("Wall_Left_A", L, "stone", [O, D(S0, 0), (142.7, 289.0), (142.7, 420.0), (122.7, 420.0)], 0, H_TOP, r=0.4)
+vprism("Wall_Left_Main", L, "stone",                      # one slab from y 420 to the back corner, window cut out
+       rect(0, 0, YB1 - 420.0, H_TOP).difference(rect(YB1 - 631.2, 95, YB1 - 549.5, 205)),
+       (XL0, YB1, 0), (0, -1), -20, 0, r=0.4)
 prism("Wall_Back_A", L, "stone", rect(XL1, YB0, 361.7, YB1), 0, H_TOP)
 prism("Wall_Back_OverWCDoor", L, "stone", rect(361.7, YB0, 436.7, YB1), 210, H_TOP)
 prism("Wall_Back_B", L, "stone", rect(436.7, YB0, XR1, YB1), 0, H_TOP)
@@ -538,13 +542,29 @@ prism("WC_Mirror", L, "mirror", rect(340, 1093.5, 384, 1094.5), 110, 170)
 
 # ------------------------------------------------------------------ SITE CONTEXT
 L = "10_Site"
-site = rect(-140, -150, 1100, 1140).difference(unary_union([foot, rect(291.7, 994.5, 531.7, 1114.5), rect(531.7, 91.5, 1100, 1140)]))
+# drive-thru lane along the long wall: asphalt lane (3.9 m), raised curb strip at the wall (grazers sit in it),
+# a median curb separating it from the side street, painted arrows and DRIVE THRU lettering
+LANE_X0, LANE_X1 = -330.0, 62.7
+WALL_CURB = rect(LANE_X1, 285, XL0, 1000)
+prism("DriveThru_Lane", L, "asphalt", rect(LANE_X0, -150, LANE_X1, 2600), -16, -2, r=0)
+prism("DriveThru_Wall_Curb", L, "curb", WALL_CURB, -16, 12, r=1.5)
+prism("DriveThru_Lane_Curb_Front", L, "curb", rect(LANE_X1 - 10, -150, LANE_X1, 285), -16, 10, r=1.5)
+prism("DriveThru_Median", L, "curb", rect(LANE_X0 - 40, -40, LANE_X0, 2600), -18, 10, r=1.5)
+prism("DriveThru_Line_Edge", L, "paint_white", rect(LANE_X0 + 8, -40, LANE_X0 + 18, 2600), -2, -1.6, r=0)
+arrow = Polygon([(0, 0), (34, 75), (8, 75), (8, 230), (-8, 230), (-8, 75), (-34, 75)])   # tip at y=0, pointing -y
+from shapely import affinity as _aff
+for i, y0 in enumerate((40, 1150)):
+    prism(f"DriveThru_Arrow_{i + 1}", L, "paint_white", _aff.translate(arrow, (LANE_X0 + LANE_X1) / 2 - 20, y0), -2, -1.6, r=0)
+txt = _aff.scale(text_geom("DRIVE THRU", 34), 1.0, 2.6, origin=(0, 0))
+txt = place(txt, a_center=0, b_base=0)
+fprism("DriveThru_Road_Text", L, "paint_white", txt, ((LANE_X0 + LANE_X1) / 2 - 20, 1035, -2), (-1, 0, 0), (0, -1, 0), 0, 0.4, r=0)
+site = unary_union([rect(LANE_X1, -150, 1100, 1140), rect(LANE_X1, 1140, 140, 2600)]).difference(
+    unary_union([foot, rect(291.7, 994.5, 531.7, 1114.5), rect(531.7, 91.5, 1100, 1140), WALL_CURB]))
 prism("Sidewalk", L, "paver", site, -16, -2)
-prism("Curb_Street_Side", L, "curb", rect(-140, -150, -125, 1140), -18, -1)
-prism("Curb_Front", L, "curb", rect(-140, -150, 1100, -135), -18, -1)
-prism("Road", L, "asphalt", rect(-1500, -1500, 2200, 2600).difference(rect(-140, -150, 2200, 2600)), -30, -18)
-prism("Road_Line_Side", L, "paint_yellow", rect(-155, -150, -149, 2600), -18, -17.6)
-prism("Road_Line_Front", L, "paint_yellow", rect(-1500, -165, 2200, -159), -18, -17.6)
+prism("Curb_Front", L, "curb", rect(LANE_X1, -150, 1100, -135), -18, -1)
+prism("Road", L, "asphalt", rect(-6000, -6000, 6000, 6000).difference(rect(LANE_X0 - 40, -150, 6000, 6000)), -30, -18, r=0)
+prism("Road_Line_Side", L, "paint_yellow", rect(LANE_X0 - 60, -150, LANE_X0 - 54, 6000), -18, -17.6, r=0)
+prism("Road_Line_Front", L, "paint_yellow", rect(-6000, -165, 6000, -159), -18, -17.6, r=0)
 prism("Neighbour_Unit", L, "stone", rect(531.7, 111.5, 1100, 1140), 0, H_TOP)
 prism("Neighbour_Front_Stone_A", L, "stone", rect(531.7, 91.5, 620, 111.5), 0, H_TOP)
 prism("Neighbour_Front_Stone_B", L, "stone", rect(1000, 91.5, 1100, 111.5), 0, H_TOP)
@@ -552,14 +572,14 @@ prism("Neighbour_Front_Stone_C", L, "stone", rect(620, 91.5, 1000, 111.5), 330, 
 prism("Neighbour_Front_Glass", L, "glass", rect(620, 95, 1000, 99), 0, 330)
 prism("Neighbour_Shop_Glow", L, "shop_glow", rect(625, 110.5, 995, 111.5), 0, 325)   # softly lit shop behind the glass
 prism("Neighbour_Front_Frame", L, "metal_black", rect(620, 91.5, 1000, 95), 322, 330)
-prism("Back_Building", L, "plaster_ext", rect(-60, 1160, 1500, 2200), 0, 1250)
-prism("Back_Building_Low", L, "plaster_ext", rect(-60, 1140, 1100, 1160), 0, 640)
+prism("Back_Building", L, "plaster_ext", rect(140, 1160, 1500, 2200), 0, 1250)
+prism("Back_Building_Low", L, "plaster_ext", rect(140, 1140, 1100, 1160), 0, 640)
 # street lamp
-cyl("StreetLamp_Pole", L, "metal_black", -175, 860, -18, 7, 900, 16)
-prism("StreetLamp_Arm", L, "metal_black", rect(-300, 857, -175, 863), 880, 886)
-prism("StreetLamp_Head", L, "metal_black", rect(-305, 850, -255, 870), 872, 880)
-prism("StreetLamp_Lens", L, "led_cool", rect(-302, 852, -258, 868), 871, 872)
-light("Light_StreetLamp", "spot", -280, 860, 868, 1800, 4000, "down", 40, 85)
+cyl("StreetLamp_Pole", L, "metal_black", -395, 1500, -18, 7, 900, 16)
+prism("StreetLamp_Arm", L, "metal_black", rect(-520, 1497, -395, 1503), 880, 886)
+prism("StreetLamp_Head", L, "metal_black", rect(-525, 1490, -475, 1510), 872, 880)
+prism("StreetLamp_Lens", L, "led_cool", rect(-522, 1492, -478, 1508), 871, 872)
+light("Light_StreetLamp", "spot", -500, 1500, 868, 1800, 4000, "down", 40, 85)
 
 # planters with olive trees either side of the front
 L = "11_Planters"
@@ -614,27 +634,37 @@ light("Light_Shelves_Wash", "spot", 470, 430, H_CEIL - 1, 500, 3000, "down", 30,
 light("Light_Canopy", "spot", XL0 - 35, (549.5 + 631.2) / 2, 212, 400, 3000, "down", 60, 110)
 # exterior: continuous linear grazers at the foot of every stone face (smooth wash up to the parapet)
 GZ = 18   # cm off the wall
-linear("Light_Grazer_LeftWall_A", (XL0 - GZ, 285), (XL0 - GZ, 637), 3, (1, 0), 1100, 2900)
-linear("Light_Grazer_LeftWall_B", (XL0 - GZ, 637), (XL0 - GZ, 990), 3, (1, 0), 1100, 2900)
+linear("Light_Grazer_LeftWall_A", (XL0 - GZ, 290), (XL0 - GZ, 637), 14, (1, 0), 1100, 2900)
+linear("Light_Grazer_LeftWall_B", (XL0 - GZ, 637), (XL0 - GZ, 990), 14, (1, 0), 1100, 2900)
+linear("Light_Grazer_Canopy_Top", (XL0 - 10, 536), (XL0 - 10, 645), 228, (1, 0), 1100, 2900, tilt=8, width=3)
 linear("Light_Grazer_Front", D(S0, -GZ), D(S1 + 30, -GZ), 3, N_IN, 1100, 2900)
 linear("Light_Grazer_Door_Pier", (389.7, 91.5 - GZ), (531.7, 91.5 - GZ), 3, (0, 1), 1100, 2900)
 linear("Light_Grazer_Neighbour", (540, 91.5 - GZ), (1095, 91.5 - GZ), 3, (0, 1), 700, 3000)
 # glowing base strips
 L = "12_Exterior_Lighting"
-prism("LED_Strip_LeftWall", L, "led_warm", rect(XL0 - 8, 290, XL0 - 5, 985), -2, -1)
+prism("LED_Strip_LeftWall", L, "led_warm", rect(XL0 - 8, 290, XL0 - 5, 985), 12, 13)
 strip = LineString([D(S0, -8), D(S1, -8)]).buffer(1.5, cap_style=2)
 prism("LED_Strip_Front", L, "led_warm", strip, -2, -1)
 
+# ------------------------------------------------------------------ CAR at the drive-thru window
+# Nissan Patrol 2021 by Nieve5677 (Sketchfab, CC-BY-4.0). Faces -y (toward the front street), driver's
+# window lined up with the service window; mirror ~10 cm off the curb strip.
+CAR = dict(n="Car_Nissan_Patrol_2021", file="car/Nissan_Patrol_2021.glb", length_cm=517, pos=[-54.5, 612, -2])
+car_front = CAR["pos"][1] - CAR["length_cm"] / 2
+for i, dx in enumerate((-72, 72)):
+    light(f"Light_Car_Headlight_{i + 1}", "spot", CAR["pos"][0] + dx, car_front + 6, 88, 2200, 5600,
+          hot=22, fall=55, aimv=(0, -math.cos(math.radians(5)), -math.sin(math.radians(5))))
+
 # ------------------------------------------------------------------ CAMERAS
 CAMS += [
-    dict(n="CAM_Exterior_Corner", p=[-420, -420, 165], t=[250, 330, 250], mm=24),
+    dict(n="CAM_Exterior_Corner", p=[-470, -440, 165], t=[190, 360, 245], mm=24),
     dict(n="CAM_Exterior_DriveThru", p=[-460, 160, 160], t=[122, 640, 210], mm=24),
     dict(n="CAM_Interior_ToPartition", p=[440, 175, 150], t=[290, 666, 175], mm=18),
     dict(n="CAM_Interior_ToFront", p=[478, 655, 160], t=[225, 215, 140], mm=18),
     dict(n="CAM_Counter_Bakery", p=[378, 368, 132], t=[318, 482, 120], mm=30),
 ]
 
-json.dump(dict(units="cm", elements=E, lights=LIGHTS, cameras=CAMS, notes=NOTES), open(OUT, "w"))
+json.dump(dict(units="cm", elements=E, lights=LIGHTS, cameras=CAMS, props=[CAR], notes=NOTES), open(OUT, "w"))
 print(f"{len(E)} objects, {len(LIGHTS)} lights, {len(CAMS)} cameras")
 for n in NOTES:
     print(" -", n)

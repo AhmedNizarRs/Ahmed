@@ -31,6 +31,8 @@ Option C: `Owns_Cafe.obj` (cm, Y-up) for any other software. `Owns_Cafe.blend` i
   - a softly lit neighbouring shop;
   - olive trees with branching trunks and silvery leaves;
   - textured pavers, asphalt and neighbouring plaster.
+- **Drive-thru lane:** a 3.9 m asphalt lane along the long wall, with a raised curb strip at the wall (the grazers sit in it), a median curb to the side street, a white edge line, arrows and painted "DRIVE THRU" lettering.
+- **Car:** a white Nissan Patrol 2021 waits at the drive-thru window with its headlights on (layer 15_Car, file `car/Nissan_Patrol_2021.fbx`).
 - **Shell, shopfront, drive-thru, kitchen, toilet:** from the CAD and photos.
 
 | Layer | Contents |
@@ -49,7 +51,7 @@ Option C: `Owns_Cafe.obj` (cm, Y-up) for any other software. `Owns_Cafe.blend` i
 
 ## Rendering in 3ds Max
 
-- **Night sky:** `hdri/kloppenheim_07_puresky_2k.hdr` (Poly Haven, CC0) is set as the environment map at output 0.02. Keep the `hdri` folder next to the script. In Arnold, plug it into a Skydome light. In V-Ray or Corona, use it in a Dome or Sun-Sky environment and lower its strength until the sky is deep navy.
+- **Night city:** `hdri/neuer_zollhof_2k.hdr` (Poly Haven, CC0; modern buildings at night) is set as the environment map at output 0.01, rotated 42°. Keep the `hdri` folder next to the script. In Arnold, plug it into a Skydome light. In V-Ray or Corona, use it in a Dome or Sun-Sky environment and lower its strength until the sky is deep navy.
 - **Grazers:** the `Light_Grazer_*` lights are photometric rectangle lights lying along the foot of each wall, aimed up and tilted 12° toward the stone.
 
 - LEDs, the logo halo and the signs are emissive materials. The script also adds small photometric "helper" lights behind them (names `Light_Wave_*`, `Light_Logo_Halo_*`, `Light_Partition_Wash_*`, `Light_Bakery_Case`), so the glow shows in any renderer. Delete them if your renderer lights well from emissive surfaces (Corona, V-Ray).
@@ -75,7 +77,12 @@ python3 tools/export.py meshes.json .
 To re-render, run `tools/blender_scene.py` with Blender's Python (the `bpy` module) using the same flags as the final renders:
 
 ```bash
-python tools/blender_scene.py meshes.json textures renders --hdri hdri/kloppenheim_07_puresky_2k.hdr --hdri_strength 0.02 --render all --samples 96 --fbx --blend
+python tools/blender_scene.py meshes.json textures renders --hdri hdri/neuer_zollhof_2k.hdr --hdri_strength 0.01 --hdri_rot 42 --render all --samples 96 --fbx --blend
 ```
 
 All dimensions live in `tools/build_scene.py` (cm), materials in `tools/materials.py`, and edge radii in `tools/mesher.py`.
+
+## Credits
+
+- Car: this work is based on "Nissan Patrol 2021" (https://sketchfab.com/3d-models/nissan-patrol-2021-9a2cda9f9a11474aa069e1895ff93443) by Nieve5677 (https://sketchfab.com/niev), licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified: materials assigned, scaled to 5.17 m, decimated (`tools/prepare_car.py`). Keep this credit wherever the renders or model are shared.
+- HDRI: "Neuer Zollhof" from Poly Haven (CC0).

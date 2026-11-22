@@ -1,0 +1,1 @@
+This work is based on "Nissan Patrol 2021" (https://sketchfab.com/3d-models/nissan-patrol-2021-9a2cda9f9a11474aa069e1895ff93443) by Nieve5677 (https://sketchfab.com/niev) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified: materials assigned, scaled to 5.17 m, decimated.

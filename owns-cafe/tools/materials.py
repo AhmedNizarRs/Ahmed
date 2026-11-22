@@ -26,6 +26,7 @@ MATS = {
     "paver":         dict(rgb=(176, 169, 157), rough=.5, metal=0, tex="paver.jpg", size=120, bump=.3),
     "curb":          dict(rgb=(190, 184, 174), rough=.7, metal=0),
     "asphalt":       dict(rgb=(44, 44, 46), rough=.55, metal=0, tex="asphalt.jpg", size=200, bump=.3),
+    "paint_white":   dict(rgb=(222, 222, 216), rough=.6, metal=0),
     "paint_yellow":  dict(rgb=(201, 162, 39), rough=.7, metal=0),
     "planter":       dict(rgb=(226, 219, 207), rough=.75, metal=0),
     "soil":          dict(rgb=(58, 43, 31), rough=1, metal=0),

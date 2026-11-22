@@ -92,6 +92,10 @@ Kd 0.769 0.627 0.463
 Ns 110
 map_Kd textures/oak.jpg
 
+newmtl OWN_paint_white
+Kd 0.871 0.871 0.847
+Ns 80
+
 newmtl OWN_paint_yellow
 Kd 0.788 0.635 0.153
 Ns 60

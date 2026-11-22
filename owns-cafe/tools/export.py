@@ -115,7 +115,7 @@ fn mkMesh nm lay mk vs fs = (
 		m
 	) catch (nFail += 1; format "Owns: could not build % (%)\n" nm (getCurrentException()))
 )
-fn mkLight nm kind p cd k aim hot fall = (
+fn mkLight nm kind p cd k aim hot fall aimv:undefined = (
 	local l = undefined
 	try (l = Free_Light name:nm pos:p) catch (l = Omnilight name:nm pos:p)
 	sp l #useKelvin true
@@ -128,7 +128,11 @@ fn mkLight nm kind p cd k aim hot fall = (
 		default: (sp l #distribution 0)
 	)
 	sp l #castShadows true
-	if aim == "up" do rotate l (angleaxis 180 [1,0,0])
+	if aimv != undefined then (
+		local tm = matrixFromNormal (-(normalize aimv))     -- photometric lights shine along local -Z
+		tm.row4 = p
+		l.transform = tm
+	) else if aim == "up" do rotate l (angleaxis 180 [1,0,0])
 	(getLayer "13_Lights").addNode l
 	l
 )
@@ -192,7 +196,23 @@ for l in lights:
     if l["kind"] == "linear":
         w(f'\tmkLinear "{l["n"]}" {p3(l["p"])} {p3(l["u"])} [{",".join(f(v, 4) for v in l["emit"])}] {f(l["len"])} {f(l["wid"])} {f(l["cd"])} {f(l["k"])}')
         continue
-    w(f'\tmkLight "{l["n"]}" "{l["kind"]}" {p3(l["p"])} {f(l["cd"])} {f(l["k"])} "{l["aim"]}" {f(l["hot"])} {f(l["fall"])}')
+    av = f' aimv:[{",".join(f(v, 4) for v in l["aimv"])}]' if l.get("aimv") else ""
+    w(f'\tmkLight "{l["n"]}" "{l["kind"]}" {p3(l["p"])} {f(l["cd"])} {f(l["k"])} "{l["aim"]}" {f(l["hot"])} {f(l["fall"])}{av}')
+for pr in D.get("props", []):
+    fbx = pr["file"].replace(".glb", ".fbx").replace("/", "\\\\")
+    pos = p3(pr["pos"])
+    w("\t-- " + pr["n"] + ": Nissan Patrol 2021 by Nieve5677 (Sketchfab, CC-BY-4.0), see car\\CREDIT.txt")
+    w("\ttry (")
+    w("\t\tlocal carFile = scriptDir + \"" + fbx + "\"")
+    w("\t\tif doesFileExist carFile do (")
+    w("\t\t\tlocal before = objects as array")
+    w("\t\t\timportFile carFile #noPrompt using:FBXIMP")
+    w("\t\t\tfor o in objects where (findItem before o) == 0 do (")
+    w("\t\t\t\tif o.parent == undefined do o.pos += " + pos)
+    w("\t\t\t\t(getLayer \"15_Car\").addNode o")
+    w("\t\t\t)")
+    w("\t\t)")
+    w("\t) catch (format \"Owns: car import failed (%)\\n\" (getCurrentException()))")
 w("\t-- cameras (physical; exposure value: exterior night ~4, interior ~5.5)")
 w("\tlocal cams = #()")
 for c in cams:
@@ -202,10 +222,11 @@ w(r"""	backgroundColor = color 10 14 30
 	ambientColor = color 0 0 0
 	-- night-sky HDRI (Poly Haven, CC0): background + sky light
 	try (
-		local hd = Bitmaptexture filename:(scriptDir + "hdri\\kloppenheim_07_puresky_2k.hdr") name:"Night_Sky_HDRI"
+		local hd = Bitmaptexture filename:(scriptDir + "hdri\\neuer_zollhof_2k.hdr") name:"Night_City_HDRI"
 		hd.coords.mappingType = 1
 		hd.coords.mapping = 0
-		hd.output.output_amount = 0.02
+		hd.output.output_amount = 0.01
+		hd.coords.U_Offset = 42.0 / 360.0
 		environmentMap = hd
 		useEnvironmentMap = true
 	) catch ()
