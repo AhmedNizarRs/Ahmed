@@ -257,9 +257,9 @@ NOTES.append(f"front length ext {_L:.1f}, glazing s {S0:.1f}..{S1:.1f}")
 
 # ------------------------------------------------------------------ SHELL
 L = "01_Shell"
-prism("Wall_Left_A", L, "stone", [O, D(S0, 0), (142.7, 289.0), (142.7, 420.0), (122.7, 420.0)], 0, H_TOP, r=0.4)
-vprism("Wall_Left_Main", L, "stone",                      # one slab from y 420 to the back corner, window cut out
-       rect(0, 0, YB1 - 420.0, H_TOP).difference(rect(YB1 - 631.2, 95, YB1 - 549.5, 205)),
+prism("Wall_Left_A", L, "stone", [O, D(S0, 0), (142.7, 289.0), (122.7, 289.0)], 0, H_TOP, r=0)   # small corner wedge only
+vprism("Wall_Left_Main", L, "stone",                      # one continuous slab: corner to back, window cut out
+       rect(0, 0, YB1 - 289.0, H_TOP).difference(rect(YB1 - 631.2, 95, YB1 - 549.5, 205)),
        (XL0, YB1, 0), (0, -1), -20, 0, r=0.4)
 prism("Wall_Back_A", L, "stone", rect(XL1, YB0, 361.7, YB1), 0, H_TOP)
 prism("Wall_Back_OverWCDoor", L, "stone", rect(361.7, YB0, 436.7, YB1), 210, H_TOP)
@@ -392,6 +392,20 @@ lc = logo.centroid
 for i, da in enumerate((-30, 0, 30)):
     px, py = D(lc.x + da, 0.5)
     light(f"Light_Sign_Halo_{i + 1}", "point", px, py, lc.y, 25, 3000, maxonly=True)
+# projecting blade sign on the right pier: double-sided "Owns" lightbox on a black bracket
+BX0, BX1, BY0 = 511.7, 519.7, 91.5
+prism("Blade_Sign_Bracket_Plate", L, "metal_black", rect(508.7, 89.5, 522.7, 91.5), 405, 485, r=0.3)
+prism("Blade_Sign_Bracket_Arm", L, "metal_black", rect(513.7, 6, 517.7, 91.5), 478, 482, r=0.3)
+prism("Blade_Sign_Box", L, "metal_black", rect(BX0, BY0 - 82, BX1, BY0 - 10), 412, 474, r=1.0, bot=True)
+blade = affinity.scale(lettering, 0.24, 0.24, origin=(0, 0))
+for side, (ox, u, sgn) in {"West": (BX0, (0, -1), 1), "East": (BX1, (0, 1), -1)}.items():
+    g = place(blade, a_center=sgn * 46, b_base=0)
+    g = affinity.translate(g, 0, 440 - g.bounds[1])
+    vprism(f"Blade_Sign_Owns_{side}", L, "sign_glow", g, (ox, BY0, 0), u, 0, 1.2, r=0.2, bot=True)
+    sub_ = place(text_geom("COFFEE & MORE", 3.2, bold=False), a_center=sgn * 46, b_base=428)
+    vprism(f"Blade_Sign_Sub_{side}", L, "sign_glow", sub_, (ox, BY0, 0), u, 0, 0.8, r=0.1, bot=True)
+light("Light_Blade_Sign", "point", 515.7, 50, 443, 30, 3000, maxonly=True)
+
 # entrance door on the short front (x 389.7 .. 499.7)
 DO, DU = (389.7, 111.5, 0), (1, 0)   # local Z = (0,-1): d = 0 at inner face, 20 at street face
 vprism("Door_Frame_Jambs", L, "metal_black", unary_union([rect(0, 0, 6, 545), rect(104, 0, 110, 545), rect(0, 539, 110, 545),
@@ -414,12 +428,22 @@ vprism("DT_Window_Glass_A", L, "glass", rect(wa0 + 5, 100, mid + 1, 200), WO, WU
 vprism("DT_Window_Glass_B", L, "glass", rect(mid - 1, 100, wa1 - 5, 200), WO, WU, -9, -8)
 vprism("DT_Window_Stile", L, "metal_black", rect(mid - 2, 100, mid + 2, 200), WO, WU, -13, -7)
 vprism("DT_Sill_Shelf", L, "steel", rect(wa0 - 4, 91, wa1 + 4, 95), WO, WU, -20, 25)
-vprism("DT_Canopy", L, "metal_black", rect(wa0 - 15, 215, wa1 + 15, 227), WO, WU, 0, 70)
-vprism("DT_Canopy_LED", L, "led_warm", rect(wa0 - 10, 214.4, wa1 + 10, 215), WO, WU, 58, 62)
+vprism("DT_Canopy", L, "metal_black", rect(wa0 - 15, 215, wa1 + 15, 227), WO, WU, 0, 45)
+vprism("DT_Canopy_LED", L, "led_warm", rect(wa0 - 10, 214.4, wa1 + 10, 215), WO, WU, 36, 40)
 dt = text_geom("DRIVE THRU →", 17)
 dt = place(dt, a_center=mid + 10, b_base=242)
-vprism("DT_Sign", L, "metal_black", dt, WO, WU, 2.5, 4.5, r=0.25, bot=True)       # dark letters standing off the wall
-vprism("DT_Sign_Halo", L, "led_halo", dt.buffer(-0.35), WO, WU, 0.4, 0.8, r=0)      # halo glow behind them
+vprism("DT_Sign", L, "metal_black", dt, WO, WU, 1.2, 3.0, r=0.25, bot=True)       # dark letters, short stand-off
+vprism("DT_Sign_Halo", L, "led_halo", dt.buffer(-0.35), WO, WU, 0.3, 0.6, r=0)      # halo glow behind them
+# big "Owns" logo above the drive-thru window (same glowing letters + halo as the front sign)
+dtl = affinity.scale(lettering, 0.78, 0.78, origin=(0, 0))
+dtl = place(dtl, a_center=mid + 10, b_base=0)
+dtl = affinity.translate(dtl, 0, 292 - dtl.bounds[1])
+vprism("DT_Logo_Owns", L, "sign_glow", dtl, WO, WU, 1.5, 4.0, r=0.3, bot=True)
+vprism("DT_Logo_Owns_Halo", L, "led_halo", dtl.buffer(-0.5), WO, WU, 0.3, 0.7, r=0)
+dsub = place(text_geom("COFFEE & MORE", 8, bold=False), a_center=mid + 10, b_base=278)
+vprism("DT_Logo_Coffee_More", L, "sign_glow", dsub, WO, WU, 1.0, 2.5, r=0.15, bot=True)
+for i, da in enumerate((-60, 0, 60)):
+    light(f"Light_DT_Logo_Halo_{i + 1}", "point", XL0 - 2, YB1 - (mid + 10 + da), 320, 30, 3000, maxonly=True)
 for i, da in enumerate((-35, 0, 35)):
     light(f"Light_DT_Halo_{i + 1}", "point", XL0 - 1.5, 994.5 - (mid + 10 + da), 250, 20, 3000, maxonly=True)
 
@@ -652,9 +676,9 @@ light("Light_Shelves_Wash", "spot", 470, 430, H_CEIL - 1, 500, 3000, "down", 30,
 light("Light_Canopy", "spot", XL0 - 35, (549.5 + 631.2) / 2, 212, 400, 3000, "down", 60, 110)
 # exterior: continuous linear grazers at the foot of every stone face (smooth wash up to the parapet)
 GZ = 18   # cm off the wall
-linear("Light_Grazer_LeftWall_A", (XL0 - GZ, 290), (XL0 - GZ, 637), 14, (1, 0), 1100, 2900)
-linear("Light_Grazer_LeftWall_B", (XL0 - GZ, 637), (XL0 - GZ, 990), 14, (1, 0), 1100, 2900)
-linear("Light_Grazer_Canopy_Top", (XL0 - 10, 536), (XL0 - 10, 645), 228, (1, 0), 1100, 2900, tilt=8, width=3)
+# 50 cm off the wall so the drive-thru canopy (45 cm deep) never blocks the wash above it
+linear("Light_Grazer_LeftWall_A", (XL0 - 50, 292), (XL0 - 50, 640), 14, (1, 0), 1250, 2900, tilt=16)
+linear("Light_Grazer_LeftWall_B", (XL0 - 50, 640), (XL0 - 50, 990), 14, (1, 0), 1250, 2900, tilt=16)
 linear("Light_Grazer_Front", D(S0, -GZ), D(S1 + 30, -GZ), 3, N_IN, 1100, 2900)
 linear("Light_Grazer_Door_Pier", (389.7, 91.5 - GZ), (531.7, 91.5 - GZ), 3, (0, 1), 1100, 2900)
 linear("Light_Grazer_Neighbour", (540, 91.5 - GZ), (1095, 91.5 - GZ), 3, (0, 1), 700, 3000)
