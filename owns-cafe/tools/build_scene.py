@@ -382,10 +382,14 @@ logo = affinity.scale(lettering, 0.5, 0.5, origin=(0, 0))
 logo = place(logo, a_center=(bx0 + bx1) / 2, b_base=0)
 lb = logo.bounds
 logo = affinity.translate(logo, 0, 448 - lb[1])
-vprism("Front_Sign_Owns", L, "sign_glow", logo, FO, U, 0.5, 3.0, r=0.3, bot=True)          # letters 2.5 cm off the panel
-vprism("Front_Sign_Owns_Halo", L, "led_halo", logo.buffer(-0.4), FO, U, -1.6, -1.2, r=0)   # glow onto the stone
-sub = place(text_geom("COFFEE & MORE", 6.5, bold=False), a_center=(bx0 + bx1) / 2, b_base=432)
-vprism("Front_Sign_Coffee_More", L, "sign_glow", sub, FO, U, -0.5, 1.2, r=0.15, bot=True)
+# same language as the drive-thru logo: dark bronze letters, soft warm halo, tagline between lines
+vprism("Front_Sign_Owns", L, "metal_black", logo, FO, U, -1.0, 1.0, r=0.3, bot=True)
+vprism("Front_Sign_Owns_Halo", L, "led_halo_soft", logo.buffer(-0.4), FO, U, -1.7, -1.3, r=0)
+sub = place(text_geom("COFFEE & MORE", 6.0, bold=False), a_center=(bx0 + bx1) / 2, b_base=433)
+qx0, _, qx1, _ = sub.bounds
+sub = unary_union([sub, rect(qx0 - 22, 435.3, qx0 - 5, 436.5), rect(qx1 + 5, 435.3, qx1 + 22, 436.5)])
+vprism("Front_Sign_Coffee_More", L, "metal_black", sub, FO, U, -1.2, 0.2, r=0.1, bot=True)
+vprism("Front_Sign_Coffee_More_Halo", L, "led_halo_soft", sub.buffer(-0.15), FO, U, -1.8, -1.4, r=0)
 # hidden linear grazer on the head bar washes the sign panel evenly
 linear("Light_Grazer_SignPanel", D(bx0 + 2, -7), D(bx1 - 2, -7), 333, N_IN, 260, 2900, tilt=14, width=3)
 lc = logo.centroid

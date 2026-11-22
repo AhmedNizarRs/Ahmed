@@ -35,7 +35,7 @@ The surfaces use Poly Haven scans (CC0), recoloured by `tools/make_interior_text
   - a recessed ceiling slot hides an LED wall-washer that lights the whole partition from above.
 - **Exterior:**
   - vein-cut travertine in 90 × 60 cm slabs (each slab with its own layering, pits and tone; 3 mm joints, with relief);
-  - the "Owns / COFFEE & MORE" sign has letters standing off a stone panel that hidden grazers wash with light, and a halo glows behind the letters;
+  - the front portal sign uses the same language as the drive-thru wall: dark bronze "Owns" letters with a soft warm halo and "— COFFEE & MORE —", on a stone panel washed by a hidden grazer;
   - a large (about 4.5 m × 1.4 m) dark-bronze "Owns — COFFEE & MORE —" logo with a soft warm halo above the drive-thru window, with "DRIVE THRU →" under it;
   - a 1.8 m × 0.75 m double-sided projecting lightbox sign with screen faces and a warm gold LED edge on the corner pier, visible from the side streets (screen image `textures/screen_owns.png`);
   - satin glass above the ceiling line;
