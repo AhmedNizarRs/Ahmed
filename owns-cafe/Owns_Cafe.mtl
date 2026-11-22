@@ -34,13 +34,18 @@ newmtl OWN_ceramic_terra
 Kd 0.667 0.376 0.259
 Ns 80
 
+newmtl OWN_champagne
+Kd 0.769 0.729 0.667
+Ns 131
+
 newmtl OWN_curb
 Kd 0.745 0.722 0.682
 Ns 60
 
 newmtl OWN_door_white
-Kd 0.922 0.906 0.875
-Ns 120
+Kd 0.871 0.843 0.800
+Ns 110
+map_Kd textures/int_plaster.jpg
 
 newmtl OWN_floor
 Kd 0.612 0.588 0.553
@@ -59,6 +64,11 @@ Ns 130
 newmtl OWN_lacquer_white
 Kd 0.839 0.808 0.761
 Ns 130
+
+newmtl OWN_leather_cream
+Kd 0.886 0.839 0.769
+Ns 89
+map_Kd textures/ph_leather_white_diff.jpg
 
 newmtl OWN_leaves
 Kd 0.376 0.431 0.290
@@ -88,6 +98,16 @@ Kd 1.000 0.769 0.502
 Ns 100
 Ke 1.000 0.769 0.502
 
+newmtl OWN_logo_white
+Kd 1.000 0.957 0.894
+Ns 120
+Ke 1.000 0.957 0.894
+
+newmtl OWN_marble_white
+Kd 0.937 0.925 0.910
+Ns 168
+map_Kd textures/int_marble.jpg
+
 newmtl OWN_metal_black
 Kd 0.078 0.078 0.078
 Ns 124
@@ -95,11 +115,6 @@ Ns 124
 newmtl OWN_mirror
 Kd 0.941 0.941 0.941
 Ns 196
-
-newmtl OWN_oak
-Kd 0.667 0.541 0.416
-Ns 100
-map_Kd textures/int_oak.jpg
 
 newmtl OWN_paint_white
 Kd 0.871 0.871 0.847
@@ -135,20 +150,15 @@ Kd 0.729 0.682 0.620
 Ns 19
 map_Kd textures/plaster.jpg
 
-newmtl OWN_plaster_sand
-Kd 0.376 0.290 0.239
-Ns 39
-map_Kd textures/int_mocha.jpg
+newmtl OWN_plaster_taupe
+Kd 0.612 0.561 0.506
+Ns 30
+map_Kd textures/int_taupe.jpg
 
 newmtl OWN_plaster_white
 Kd 0.910 0.886 0.847
 Ns 30
 map_Kd textures/int_plaster.jpg
-
-newmtl OWN_quartz
-Kd 0.933 0.914 0.878
-Ns 156
-map_Kd textures/int_quartz.jpg
 
 newmtl OWN_screen
 Kd 0.235 0.314 0.412

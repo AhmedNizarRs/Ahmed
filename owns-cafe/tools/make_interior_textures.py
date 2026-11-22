@@ -33,3 +33,31 @@ a = np.asarray(Image.open(os.path.join(T, "ph_white_oak_veneer_diff.jpg")).conve
 a = a * np.array([1.18, 1.14, 1.08])
 Image.fromarray(np.clip(a, 0, 255).astype(np.uint8)).save(os.path.join(T, "int_oak.jpg"), quality=92)
 print("int_oak.jpg", a.reshape(-1, 3).mean(0).round())
+
+
+# ---- white marble (Calacatta-like): soft grey veins on warm white, 240 cm repeat, tileable
+def pnoise(n, slope, r):
+    f = np.fft.fftfreq(n)
+    k = np.sqrt(f[None, :] ** 2 + f[:, None] ** 2); k[0, 0] = 1
+    spec = (r.normal(size=(n, n)) + 1j * r.normal(size=(n, n))) / k ** slope
+    spec[0, 0] = 0
+    a = np.real(np.fft.ifft2(spec))
+    return (a - a.mean()) / a.std()
+
+
+r = np.random.default_rng(21)
+N = 2048
+w1 = pnoise(N, 2.2, r); w2 = pnoise(N, 1.6, r); fine = pnoise(N, 1.0, r)
+y, x = np.mgrid[0:N, 0:N] / N
+field = np.sin(2 * np.pi * (x * 1 + y * 2) + 2.2 * w1 + 0.6 * w2)
+veins = np.exp(-(np.abs(field) / 0.035) ** 1.2)                  # thin main veins
+field2 = np.sin(2 * np.pi * (x * 3 - y * 1) + 3.0 * w2 + 0.8 * fine)
+veins2 = 0.45 * np.exp(-(np.abs(field2) / 0.02) ** 1.3)           # fine secondary veins
+cloud = 0.03 * pnoise(N, 2.4, r)
+base = np.array([242, 239, 234], float)
+vein_col = np.array([150, 148, 146], float)
+v = np.clip(veins + veins2, 0, 1)[..., None]
+out = base * (1 + cloud)[..., None] * (1 - v) + vein_col * v
+Image.fromarray(np.clip(out, 0, 255).astype(np.uint8)).save(os.path.join(T, "int_marble.jpg"), quality=92)
+print("int_marble.jpg", out.reshape(-1, 3).mean(0).round())
+recolour("ph_white_plaster_02_diff.jpg", "int_taupe.jpg", (156, 143, 129), 0.35)

@@ -22,7 +22,7 @@ import mapbox_earcut as earcut
 CR = {
     "stone": 0.8, "plaster_white": 0.5, "plaster_sand": 0.5, "plaster_ext": 1.0, "ceiling": 0.0, "floor": 0.0,
     "oak": 0.5, "quartz": 0.7, "lacquer_white": 0.6, "door_white": 0.5, "metal_black": 0.3, "steel": 0.3,
-    "brass": 0.3, "glass": 0.0, "glass_dark": 0.0, "mirror": 0.2, "ceramic": 1.5, "ceramic_sand": 1.0, "ceramic_terra": 1.0, "ceramic_matte": 1.0, "paver": 0.6, "curb": 1.2,
+    "brass": 0.3, "glass": 0.0, "glass_dark": 0.0, "mirror": 0.2, "ceramic": 1.5, "marble_white": 1.0, "plaster_taupe": 0.5, "champagne": 0.3, "leather_cream": 1.5, "logo_white": 0.3, "ceramic_sand": 1.0, "ceramic_terra": 1.0, "ceramic_matte": 1.0, "paver": 0.6, "curb": 1.2,
     "asphalt": 0.0, "paint_yellow": 0.0, "paint_white": 0.0, "planter": 2.0, "soil": 0.0, "bark": 0.4, "sign_glow": 0.25,
     "led_warm": 0.0, "shop_glow": 0.0, "led_hidden": 0.0, "led_cool": 0.0, "led_halo": 0.0, "bulb": 0.0, "pastry": 1.2, "pastry_dark": 1.0,
     "paper": 0.3, "screen": 0.0, "leaves": 0.0, "leaves_b": 0.0, "glass_satin": 0.0,

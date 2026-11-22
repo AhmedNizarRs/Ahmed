@@ -320,12 +320,12 @@ top_poly = Polygon(wave_up + [(PW, H_CEIL + 50), (0, H_CEIL + 50)]).intersection
 lower_poly = Polygon(wave_lo + [(PW, -50), (0, -50)]).intersection(panel)
 band_poly = panel.difference(top_poly).difference(lower_poly)
 prism("Partition_Slot_Extension", L, "plaster_white", rect(XL1, PY0, XR0, PY1), H_CEIL, H_CEIL + 18, r=0)
-vprism("Partition_Finish_Top", L, "plaster_sand", top_poly.difference(openings), P_ORIG, P_U, 0, 1.5)
+vprism("Partition_Finish_Top", L, "plaster_taupe", top_poly.difference(openings), P_ORIG, P_U, 0, 1.5)
 vprism("Partition_Finish_Bottom", L, "plaster_white", lower_poly.difference(openings), P_ORIG, P_U, 0, 1.5)
-vprism("Partition_Wave_Backing", L, "plaster_sand", band_poly.difference(openings), P_ORIG, P_U, 0, 0.5, r=0)
+vprism("Partition_Wave_Backing", L, "plaster_taupe", band_poly.difference(openings), P_ORIG, P_U, 0, 0.5, r=0)
 # oak wave band floats 3 cm off the wall; LED strips hidden in the gap wash the wall above and below it
 band = band_poly.difference(openings.buffer(1))
-vprism("Partition_Wave_Oak", L, "oak", band, P_ORIG, P_U, 3.0, 6.0, r=0.8, bot=True)
+vprism("Partition_Wave_Band", L, "champagne", band, P_ORIG, P_U, 3.0, 6.0, r=0.8, bot=True)
 from shapely import affinity
 inner_band = band.buffer(-1.8)
 for nm, curve, dy in (("Lower", wave_lo, 2.6), ("Upper", wave_up, -2.6)):
@@ -340,14 +340,14 @@ for nm, curve, dy in (("Lower", wave_lo, 2.6), ("Upper", wave_up, -2.6)):
                   "down" if nm == "Lower" else "up", 60, 150, maxonly=True)
 # halo-lit logo: brass letters stand 2.5 cm off the wall, an LED layer behind them glows onto the wall
 logo_el = affinity.translate(lettering, -EL_X0, -EL_Y0)
-vprism("Partition_Logo_Owns", L, "brass", logo_el, P_ORIG, P_U, 4.0, 6.5, r=0.35, bot=True)
+vprism("Partition_Logo_Owns", L, "logo_white", logo_el, P_ORIG, P_U, 4.0, 6.5, r=0.35, bot=True)   # opal letters, face-lit + halo
 vprism("Partition_Logo_Halo_LED", L, "led_halo", logo_el.buffer(-0.6), P_ORIG, P_U, 2.4, 2.8, r=0)
 lx0, ly0, lx1, ly1 = logo_el.bounds
 for i, a in enumerate((lx0 + 30, (lx0 + lx1) / 2, lx1 - 30)):
     light(f"Light_Logo_Halo_{i + 1}", "point", XL1 + a, PY0 - 3, (ly0 + ly1) / 2, 40, 2800, maxonly=True)
-vprism("Partition_Door_Frame", L, "oak", ring(door_a0 - 4, 0, door_a1 + 4, 214, 4, bottom=False), P_ORIG, P_U, -1, 3)
-prism("Partition_Door_Leaf", L, "oak", rect(353.7, 670.2, 439.7, 674.2), 0, 209)
-vprism("Partition_Door_Handle", L, "brass", rect(221.5, 92, 238.2, 95.2), P_ORIG, P_U, 0, 6)
+vprism("Partition_Door_Frame", L, "champagne", ring(door_a0 - 4, 0, door_a1 + 4, 214, 4, bottom=False), P_ORIG, P_U, -1, 3)
+prism("Partition_Door_Leaf", L, "door_white", rect(353.7, 670.2, 439.7, 674.2), 0, 209)
+vprism("Partition_Door_Handle", L, "champagne", rect(221.5, 92, 238.2, 95.2), P_ORIG, P_U, 0, 6)
 vprism("Partition_Hatch_Frame", L, "metal_black", ring(hatch_a0 - 5, 75, hatch_a1 + 5, 125, 5), P_ORIG, P_U, -12, 3.5)
 vprism("Partition_Hatch_Mullion", L, "metal_black", rect((hatch_a0 + hatch_a1) / 2 - 1.5, 80, (hatch_a0 + hatch_a1) / 2 + 1.5, 120), P_ORIG, P_U, -7, -3)
 vprism("Partition_Hatch_Glass", L, "glass", rect(hatch_a0, 80, hatch_a1, 120), P_ORIG, P_U, -6.5, -5.5)
@@ -427,24 +427,24 @@ L = "07_Counter"
 C = Polygon([(142.7, 434.5), (396.7, 434.5), (421.7, 459.5), (421.7, 504.5), (142.7, 504.5)])
 wall_clip = rect(143.0, 300, 600, 600)
 prism("Counter_Plinth", L, "metal_black", C.buffer(-6, join_style=2).intersection(wall_clip), 0, 10)
-prism("Counter_Body", L, "stone", C, 10, 100)
-prism("Counter_Top", L, "quartz", C.buffer(3, join_style=2).intersection(wall_clip), 100, 104)
+prism("Counter_Body", L, "marble_white", C, 10, 100, r=3.0)
+prism("Counter_Top", L, "marble_white", C.buffer(3, join_style=2).intersection(wall_clip), 100, 104, r=1.5, bot=True)
 prism("Counter_LED", L, "led_warm", C.buffer(3.2, join_style=2).difference(C.buffer(1, join_style=2)).intersection(rect(143.0, 300, 600, 470)), 97.5, 99.5)
 # --- bakery display case (glass, brass corner posts, LED-lit shelves) -------------------
 G = "Bakery_Case"
-prism("Bakery_Case_Base", L, "metal_black", rect(290, 446, 410, 500), 104, 107, r=0.6, g=G)
-for nm, rc in (("Front", rect(291, 446, 409, 447)), ("Back", rect(291, 499, 409, 500)),
-               ("Left", rect(290, 446, 291, 500)), ("Right", rect(409, 446, 410, 500))):
-    prism(f"Bakery_Case_Glass_{nm}", L, "glass", rc, 107, 151, r=0.15)
-prism("Bakery_Case_Glass_Top", L, "glass", rect(290, 446, 410, 500), 151, 152, r=0.3)
-prism("Bakery_Case_Shelf", L, "glass", rect(292, 452, 408, 496), 128, 128.8, r=0.2)
-for i, (x, y) in enumerate([(290.6, 446.6), (409.4, 446.6), (290.6, 499.4), (409.4, 499.4)]):
-    cyl(f"Bakery_Case_Post_{i + 1}", L, "brass", x, y, 107, 0.8, 45, 16, g=G)
-prism("Bakery_Case_LED_Top", L, "led_warm", rect(292, 447.6, 408, 449), 150.2, 150.7, r=0)
-prism("Bakery_Case_LED_Shelf", L, "led_warm", rect(292, 452.4, 408, 453.6), 127.4, 128, r=0)
-light("Light_Bakery_Case", "point", 350, 473, 148, 25, 3000, maxonly=True)
-prism("Bakery_Tray_Lower", L, "oak", rect(296, 452, 404, 494), 107, 107.8, r=0.3)
-prism("Bakery_Tray_Upper", L, "oak", rect(296, 455, 404, 493), 128.8, 129.4, r=0.3)
+# glass case follows the desk: same angled corner, inset 4 cm from the top edge, rounded glass edges
+CASE = C.buffer(3, join_style=2).intersection(rect(290, 400, 460, 520)).buffer(-4, join_style=2)
+prism("Bakery_Case_Base", L, "metal_black", CASE, 104, 107, r=0.6, g=G)
+prism("Bakery_Case_Glass_Walls", L, "glass", CASE.difference(CASE.buffer(-1.0, join_style=2)), 107, 151, r=0.3)
+prism("Bakery_Case_Glass_Top", L, "glass", CASE, 151, 152, r=0.45, bot=True)
+SHELF = CASE.buffer(-2.5, join_style=2)
+prism("Bakery_Case_Shelf", L, "glass", SHELF, 128, 128.8, r=0.3, bot=True)
+front = rect(280, 400, 470, 446)
+prism("Bakery_Case_LED_Top", L, "led_warm", CASE.buffer(-1.2, join_style=2).difference(CASE.buffer(-2.6, join_style=2)).intersection(front), 150.2, 150.7, r=0)
+prism("Bakery_Case_LED_Shelf", L, "led_warm", SHELF.difference(SHELF.buffer(-1.4, join_style=2)).intersection(front), 127.4, 128, r=0)
+light("Light_Bakery_Case", "point", 355, 470, 148, 25, 3000, maxonly=True)
+prism("Bakery_Tray_Lower", L, "champagne", CASE.buffer(-7, join_style=2), 107, 107.6, r=0.25, bot=True)
+prism("Bakery_Tray_Upper", L, "champagne", SHELF.buffer(-5, join_style=2), 128.8, 129.3, r=0.25, bot=True)
 
 
 def croissant(name, cx, cy, z0, rot, k=1.0):
@@ -484,16 +484,16 @@ fprism("Cashier_Screen", L, "screen", rect(-11.6, -7.6, 11.6, 7.6), (212, 476.6,
 prism("Card_Reader", L, "metal_black", rect(229, 452, 236.5, 464), 104, 105.8, r=0.6, bot=False)
 prism("Card_Reader_Screen", L, "screen", rect(230, 457.5, 235.5, 463), 105.8, 105.85, r=0)
 prism("Back_Counter_Body", L, "lacquer_white", rect(143.7, 515, 203.7, 660), 0, 90)
-prism("Back_Counter_Top", L, "quartz", rect(143.7, 513, 205.7, 662), 90, 94)
+prism("Back_Counter_Top", L, "marble_white", rect(143.7, 513, 205.7, 662), 90, 94)
 for i, (x, y) in enumerate([(200, 469.5), (270, 469.5), (340, 469.5)]):
     cyl(f"Pendant_Cord_{i + 1}", L, "metal_black", x, y, 222, 0.4, H_CEIL - 222, 8)
-    cyl(f"Pendant_Shade_{i + 1}", L, "brass", x, y, 200, 13, 22, 32)
+    cyl(f"Pendant_Shade_{i + 1}", L, "champagne", x, y, 200, 13, 22, 32)
     sph(f"Pendant_Bulb_{i + 1}", L, "bulb", x, y, 203, 5)
     light(f"Light_Pendant_{i + 1}", "point", x, y, 199, 120, 2700)
 
 L = "08_Seating"
 B = Polygon([(142.7, 289.0), (357.2, 134.8), (380.6, 167.3), (158.7, 329.0), (142.7, 329.0)])
-prism("WindowBar_Top", L, "oak", B, 100, 105)
+prism("WindowBar_Top", L, "marble_white", B, 100, 105, r=1.5, bot=True)
 for i, s in enumerate((60, 235)):
     x, y = D(s, 52)
     cyl(f"WindowBar_Leg_{i + 1}", L, "metal_black", x, y, 0, 2.5, 100, 12)
@@ -501,10 +501,11 @@ for i, s in enumerate((70, 140, 210)):
     x, y = D(s, 88)
     cyl(f"Stool_{i + 1}_Base", L, "metal_black", x, y, 0, 20, 2, 32)
     cyl(f"Stool_{i + 1}_Post", L, "metal_black", x, y, 2, 2.5, 70, 12)
-    cyl(f"Stool_{i + 1}_Seat", L, "oak", x, y, 72, 18, 5, 32)
+    cyl(f"Stool_{i + 1}_Seat", L, "leather_cream", x, y, 72, 18, 6, 40, cr=2.2)
 # display shelves on the right wall (customer side)
 for i, z in enumerate((150, 185, 220)):
-    prism(f"Shelf_{i + 1}", L, "oak", rect(486.7, 340, 510.7, 520), z, z + 3)
+    prism(f"Shelf_{i + 1}", L, "champagne", rect(486.7, 340, 510.7, 520), z, z + 2, r=0.5, bot=True)
+    prism(f"Shelf_{i + 1}_LED", L, "led_warm", rect(488.5, 342, 490, 518), z - 0.3, z, r=0)
     for j, y in enumerate((355, 385, 415, 445, 475, 505)):
         if (i + j) % 3 == 1:
             continue
