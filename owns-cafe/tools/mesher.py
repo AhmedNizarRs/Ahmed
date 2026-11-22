@@ -25,7 +25,7 @@ CR = {
     "brass": 0.3, "glass": 0.0, "glass_dark": 0.0, "mirror": 0.2, "ceramic": 1.5, "paver": 0.6, "curb": 1.2,
     "asphalt": 0.0, "paint_yellow": 0.0, "planter": 2.0, "soil": 0.0, "bark": 0.4, "sign_glow": 0.25,
     "led_warm": 0.0, "led_hidden": 0.0, "led_cool": 0.0, "led_halo": 0.0, "bulb": 0.0, "pastry": 1.2, "pastry_dark": 1.0,
-    "paper": 0.3, "screen": 0.0, "leaves": 0.0,
+    "paper": 0.3, "screen": 0.0, "leaves": 0.0, "leaves_b": 0.0, "glass_satin": 0.0,
 }
 SEG = 3
 SHARP_DEG = 35.0
@@ -240,7 +240,8 @@ def build(scene):
         elif e["t"] == "sph":
             ellipsoid_mesh(buf, e["p"], (e["r"],) * 3, 0)
         elif e["t"] == "ell":
-            ellipsoid_mesh(buf, e["p"], e["rad"], e.get("rz", 0))
+            nu, nv = e.get("res", (24, 14))
+            ellipsoid_mesh(buf, e["p"], e["rad"], e.get("rz", 0), nu, nv)
     # fix duplicate names
     seen = {}
     out = []

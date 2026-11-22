@@ -88,6 +88,11 @@ def make_mat(key):
             mr.inputs["To Max"].default_value = 0.30
             Lk.new(ti.outputs["Color"], mr.inputs["Value"])
             Lk.new(mr.outputs[0], bs.inputs["Roughness"])
+    if m["bumptex"]:
+        tb = N.new("ShaderNodeTexImage")
+        tb.image = image(m["bumptex"])
+        tb.image.colorspace_settings.name = "Non-Color"
+        height = tb.outputs["Color"]
     if m["bump"]:
         if height is None:
             nz = N.new("ShaderNodeTexNoise")
@@ -102,6 +107,19 @@ def make_mat(key):
         Lk.new(height, bp.inputs["Height"])
         Lk.new(bp.outputs["Normal"], bs.inputs["Normal"])
     shader = bs.outputs[0]
+    if m["kind"] == "satin":       # satin / back-lit frosted glass
+        bs.inputs["Transmission Weight"].default_value = 1.0
+        bs.inputs["Roughness"].default_value = m["rough"]
+        bs.inputs["Emission Color"].default_value = col
+        bs.inputs["Emission Strength"].default_value = m["lum"] / K683
+    if m["kind"] == "leaf":        # thin translucent leaves
+        trn = N.new("ShaderNodeBsdfTranslucent")
+        trn.inputs["Color"].default_value = tuple(min(1, c * 1.3) for c in col[:3]) + (1,)
+        mxl = N.new("ShaderNodeMixShader")
+        mxl.inputs["Fac"].default_value = 0.3
+        Lk.new(bs.outputs[0], mxl.inputs[1])
+        Lk.new(trn.outputs[0], mxl.inputs[2])
+        shader = mxl.outputs[0]
     if m["kind"] in ("glass", "glass_dark"):
         bs.inputs["Transmission Weight"].default_value = 1.0 if m["kind"] == "glass" else 0.5
         bs.inputs["IOR"].default_value = 1.52
@@ -221,8 +239,18 @@ world = bpy.data.worlds.new("Night")
 scene.world = world
 world.use_nodes = True
 bg = world.node_tree.nodes["Background"]
-bg.inputs["Color"].default_value = (0.0035, 0.005, 0.012, 1)
-bg.inputs["Strength"].default_value = 0.22
+wn, wl = world.node_tree.nodes, world.node_tree.links
+tcw = wn.new("ShaderNodeTexCoord")
+sep = wn.new("ShaderNodeSeparateXYZ")
+ramp = wn.new("ShaderNodeValToRGB")          # night sky: deep navy zenith, softer haze at the horizon
+ramp.color_ramp.elements[0].position = 0.0
+ramp.color_ramp.elements[0].color = (0.020, 0.024, 0.040, 1)
+ramp.color_ramp.elements[1].position = 0.45
+ramp.color_ramp.elements[1].color = (0.0025, 0.004, 0.011, 1)
+wl.new(tcw.outputs["Generated"], sep.inputs[0])
+wl.new(sep.outputs["Z"], ramp.inputs["Fac"])
+wl.new(ramp.outputs["Color"], bg.inputs["Color"])
+bg.inputs["Strength"].default_value = 0.16
 
 scene.render.engine = "CYCLES"
 cy = scene.cycles

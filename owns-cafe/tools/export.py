@@ -51,7 +51,7 @@ fn newMat nm = (
 	if m == undefined do m = StandardMaterial name:nm
 	m
 )
-fn defMat key rgb rough metal texFile mapSize kind lum coat bump = (
+fn defMat key rgb rough metal texFile mapSize kind lum coat bump bumpFile = (
 	local m = newMat ("OWN_" + key)
 	sp m #base_color rgb
 	sp m #diffuse rgb
@@ -63,7 +63,7 @@ fn defMat key rgb rough metal texFile mapSize kind lum coat bump = (
 		sp m #base_color_map b
 		sp m #diffuseMap b
 		if bump > 0 do (
-			local bb = Bitmaptexture filename:(texDir + texFile) name:(key + "_bump")
+			local bb = Bitmaptexture filename:(texDir + (if bumpFile != undefined then bumpFile else texFile)) name:(key + "_bump")
 			sp m #bump_map bb
 			sp m #bump_map_amt (bump * 0.3)
 		)
@@ -74,6 +74,20 @@ fn defMat key rgb rough metal texFile mapSize kind lum coat bump = (
 		sp m #trans_ior 1.52
 		sp m #thin_walled false
 		sp m #opacity (if kind == "glass" then 12 else 60)
+	)
+	if kind == "satin" do (
+		sp m #transparency 0.75
+		sp m #trans_color rgb
+		sp m #trans_roughness 0.45
+		sp m #thin_walled true
+		sp m #emission 1.0
+		sp m #emit_color rgb
+		sp m #emit_luminance lum
+	)
+	if kind == "leaf" do (
+		sp m #scattering 0.3
+		sp m #sss_color rgb
+		sp m #thin_walled true
 	)
 	if kind == "emit" do (
 		sp m #emission 1.0
@@ -143,7 +157,8 @@ for k in used:
     m = MATS[k]
     r, g, b = m["rgb"]
     tx = f'"{m["tex"]}"' if m["tex"] else "undefined"
-    w(f'\tdefMat "{k}" (color {r} {g} {b}) {f(m["rough"])} {f(m["metal"])} {tx} {f(m["size"])} "{m["kind"]}" {f(m["lum"])} {f(m["coat"])} {f(m["bump"])}')
+    bt = f'"{m["bumptex"]}"' if m["bumptex"] else "undefined"
+    w(f'\tdefMat "{k}" (color {r} {g} {b}) {f(m["rough"])} {f(m["metal"])} {tx} {f(m["size"])} "{m["kind"]}" {f(m["lum"])} {f(m["coat"])} {f(m["bump"])} {bt}')
 w("\t-- meshes")
 for o in objs:
     V = o["v"]

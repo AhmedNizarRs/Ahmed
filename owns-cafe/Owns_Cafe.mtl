@@ -1,6 +1,7 @@
 newmtl OWN_asphalt
-Kd 0.149 0.149 0.157
-Ns 19
+Kd 0.173 0.173 0.180
+Ns 89
+map_Kd textures/asphalt.jpg
 
 newmtl OWN_bark
 Kd 0.353 0.275 0.196
@@ -25,8 +26,8 @@ Kd 0.965 0.965 0.957
 Ns 180
 
 newmtl OWN_curb
-Kd 0.690 0.667 0.627
-Ns 19
+Kd 0.745 0.722 0.682
+Ns 60
 
 newmtl OWN_door_white
 Kd 0.922 0.906 0.875
@@ -46,13 +47,21 @@ newmtl OWN_glass_dark
 Kd 0.157 0.196 0.220
 Ns 190
 
+newmtl OWN_glass_satin
+Kd 0.925 0.910 0.878
+Ns 130
+
 newmtl OWN_lacquer_white
 Kd 0.945 0.937 0.918
 Ns 140
 
 newmtl OWN_leaves
-Kd 0.306 0.384 0.220
-Ns 80
+Kd 0.376 0.431 0.290
+Ns 100
+
+newmtl OWN_leaves_b
+Kd 0.502 0.533 0.408
+Ns 100
 
 newmtl OWN_led_cool
 Kd 0.953 0.965 1.000
@@ -104,16 +113,18 @@ Kd 0.361 0.220 0.125
 Ns 89
 
 newmtl OWN_paver
-Kd 0.588 0.561 0.518
-Ns 19
+Kd 0.690 0.663 0.616
+Ns 100
+map_Kd textures/paver.jpg
 
 newmtl OWN_planter
 Kd 0.886 0.859 0.812
 Ns 50
 
 newmtl OWN_plaster_ext
-Kd 0.804 0.749 0.682
+Kd 0.729 0.682 0.620
 Ns 19
+map_Kd textures/plaster.jpg
 
 newmtl OWN_plaster_sand
 Kd 0.839 0.761 0.651
@@ -133,9 +144,9 @@ Ns 190
 Ke 0.235 0.314 0.412
 
 newmtl OWN_sign_glow
-Kd 1.000 0.871 0.667
+Kd 1.000 0.910 0.769
 Ns 100
-Ke 1.000 0.871 0.667
+Ke 1.000 0.910 0.769
 
 newmtl OWN_soil
 Kd 0.227 0.169 0.122
@@ -146,7 +157,7 @@ Kd 0.804 0.804 0.804
 Ns 150
 
 newmtl OWN_stone
-Kd 0.839 0.784 0.706
-Ns 76
+Kd 0.871 0.824 0.745
+Ns 89
 map_Kd textures/travertine.jpg
 

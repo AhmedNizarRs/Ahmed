@@ -75,9 +75,28 @@ def fprism(name, layer, mat, geom, origin, X, Y, d0, d1, **kw):
     _emit(name, layer, mat, geom, d1 - d0, list(X) + list(Y) + list(Z) + P, kw)
 
 
-def ell(name, layer, mat, c, radii, rotz=0.0):
-    """Ellipsoid (pastries): centre c, radii (rx, ry, rz), rotated rotz degrees about Z."""
-    E.append(dict(t="ell", n=name, l=layer, m=mat, p=[round(v, 2) for v in c], rad=list(radii), rz=round(rotz, 2)))
+def ell(name, layer, mat, c, radii, rotz=0.0, res=None, g=None):
+    """Ellipsoid (pastries, leaf clusters): centre c, radii (rx, ry, rz), rotated rotz degrees about Z."""
+    el = dict(t="ell", n=name, l=layer, m=mat, p=[round(float(v), 2) for v in c], rad=[round(float(v), 2) for v in radii], rz=round(float(rotz), 2))
+    if res:
+        el["res"] = list(res)
+    if g:
+        el["g"] = g
+    E.append(el)
+
+
+def tube(name, layer, mat, p0, p1, r, sides=12, **kw):
+    """Round bar from p0 to p1 (any direction): trunks, branches."""
+    import numpy as _np
+    a = _np.subtract(p1, p0).astype(float)
+    Ln = float(_np.linalg.norm(a))
+    z = a / Ln
+    ref = (0, 0, 1) if abs(z[2]) < 0.9 else (1, 0, 0)
+    X = _np.cross(z, ref); X /= _np.linalg.norm(X)
+    Y = _np.cross(z, X)
+    circ = Polygon([(r * math.cos(2 * math.pi * i / sides), r * math.sin(2 * math.pi * i / sides)) for i in range(sides)])
+    kw.setdefault("r", min(0.4, r / 3))
+    fprism(name, layer, mat, circ, tuple(p0), tuple(X), tuple(Y), 0, Ln, **kw)
 
 
 def vprism(name, layer, mat, geom, origin, u, d0, d1, **kw):
@@ -331,7 +350,8 @@ vprism("Front_Lintel_Box", L, "stone", rect(A_B0, 545, A_B1, H_TOP), FO, U, -20,
 vprism("Front_Narrow_Frame", L, "metal_black", ring(A_N0, 0, A_N1, 545, 5), FO, U, -14, -6)
 for i, bz in enumerate((230, 320)):
     vprism(f"Front_Narrow_Transom_{i + 1}", L, "metal_black", rect(A_N0, bz - 2.5, A_N1, bz + 2.5), FO, U, -14, -6)
-vprism("Front_Narrow_Glass", L, "glass", rect(A_N0 + 5, 5, A_N1 - 5, 540), FO, U, -10.6, -9.4)
+vprism("Front_Narrow_Glass", L, "glass", rect(A_N0 + 5, 5, A_N1 - 5, 318), FO, U, -10.6, -9.4)
+vprism("Front_Narrow_Glass_Satin", L, "glass_satin", rect(A_N0 + 5, 322, A_N1 - 5, 540), FO, U, -10.6, -9.4)  # hides the ceiling void
 # box bay
 BW = 12
 vprism("Front_Box_Portal", L, "metal_black", ring(A_B0, 0, A_B1, 545, BW, bottom=False), FO, U, -20, 4)
@@ -345,9 +365,17 @@ logo = affinity.scale(lettering, 0.5, 0.5, origin=(0, 0))
 logo = place(logo, a_center=(bx0 + bx1) / 2, b_base=0)
 lb = logo.bounds
 logo = affinity.translate(logo, 0, 448 - lb[1])
-vprism("Front_Sign_Owns", L, "sign_glow", logo, FO, U, -2, 1.5)
+vprism("Front_Sign_Owns", L, "sign_glow", logo, FO, U, 0.5, 3.0, r=0.3, bot=True)          # letters 2.5 cm off the panel
+vprism("Front_Sign_Owns_Halo", L, "led_halo", logo.buffer(-0.4), FO, U, -1.6, -1.2, r=0)   # glow onto the stone
 sub = place(text_geom("COFFEE & MORE", 6.5, bold=False), a_center=(bx0 + bx1) / 2, b_base=432)
-vprism("Front_Sign_Coffee_More", L, "sign_glow", sub, FO, U, -2, 1)
+vprism("Front_Sign_Coffee_More", L, "sign_glow", sub, FO, U, -0.5, 1.2, r=0.15, bot=True)
+for i, a in enumerate((bx0 + 18, (bx0 + bx1) / 2, bx1 - 18)):      # hidden grazers in the head bar wash the sign panel
+    px, py = D(a, -9)
+    light(f"Light_SignPanel_Wash_{i + 1}", "spot", px, py, 333, 110, 2900, "up", 70, 120)
+lc = logo.centroid
+for i, da in enumerate((-30, 0, 30)):
+    px, py = D(lc.x + da, 0.5)
+    light(f"Light_Sign_Halo_{i + 1}", "point", px, py, lc.y, 25, 3000, maxonly=True)
 # entrance door on the short front (x 389.7 .. 499.7)
 DO, DU = (389.7, 111.5, 0), (1, 0)   # local Z = (0,-1): d = 0 at inner face, 20 at street face
 vprism("Door_Frame_Jambs", L, "metal_black", unary_union([rect(0, 0, 6, 545), rect(104, 0, 110, 545), rect(0, 539, 110, 545),
@@ -357,7 +385,7 @@ vprism("Door_Leaf_Glass", L, "glass", rect(13, 7, 97, 223), DO, DU, 9.4, 10.6)
 vprism("Door_Handle_Out", L, "brass", rect(86, 80, 89, 180), DO, DU, 12, 17)
 vprism("Door_Handle_In", L, "brass", rect(86, 80, 89, 180), DO, DU, 3, 8)
 vprism("Door_Transom_Glass", L, "glass", rect(6, 236, 104, 330), DO, DU, 9.4, 10.6)
-vprism("Door_Upper_Glass", L, "glass", rect(6, 336, 104, 539), DO, DU, 9.4, 10.6)
+vprism("Door_Upper_Glass", L, "glass_satin", rect(6, 336, 104, 539), DO, DU, 9.4, 10.6)
 vprism("Door_Lintel", L, "stone", rect(0, 545, 110, H_TOP), DO, DU, 0, 20)
 
 # ------------------------------------------------------------------ DRIVE-THRU (left wall)
@@ -374,7 +402,10 @@ vprism("DT_Canopy", L, "metal_black", rect(wa0 - 15, 215, wa1 + 15, 227), WO, WU
 vprism("DT_Canopy_LED", L, "led_warm", rect(wa0 - 10, 214.4, wa1 + 10, 215), WO, WU, 58, 62)
 dt = text_geom("DRIVE THRU →", 17)
 dt = place(dt, a_center=mid + 10, b_base=242)
-vprism("DT_Sign", L, "sign_glow", dt, WO, WU, 0, 2.5)
+vprism("DT_Sign", L, "metal_black", dt, WO, WU, 2.5, 4.5, r=0.25, bot=True)       # dark letters standing off the wall
+vprism("DT_Sign_Halo", L, "led_halo", dt.buffer(-0.35), WO, WU, 0.4, 0.8, r=0)      # halo glow behind them
+for i, da in enumerate((-35, 0, 35)):
+    light(f"Light_DT_Halo_{i + 1}", "point", XL0 - 1.5, 994.5 - (mid + 10 + da), 250, 20, 3000, maxonly=True)
 
 # ------------------------------------------------------------------ CAFE FURNITURE
 L = "07_Counter"
@@ -513,19 +544,53 @@ prism("Back_Building", L, "plaster_ext", rect(-60, 1160, 1500, 2200), 0, 1250)
 prism("Back_Building_Low", L, "plaster_ext", rect(-60, 1140, 1100, 1160), 0, 640)
 # street lamp
 cyl("StreetLamp_Pole", L, "metal_black", -175, 860, -18, 7, 900, 16)
-prism("StreetLamp_Arm", L, "metal_black", rect(-175, 857, -60, 863), 880, 886)
-prism("StreetLamp_Head", L, "metal_black", rect(-100, 850, -55, 870), 872, 880)
-prism("StreetLamp_Lens", L, "led_cool", rect(-98, 852, -57, 868), 871, 872)
-light("Light_StreetLamp", "spot", -78, 860, 868, 2500, 4500, "down", 70, 120)
+prism("StreetLamp_Arm", L, "metal_black", rect(-300, 857, -175, 863), 880, 886)
+prism("StreetLamp_Head", L, "metal_black", rect(-305, 850, -255, 870), 872, 880)
+prism("StreetLamp_Lens", L, "led_cool", rect(-302, 852, -258, 868), 871, 872)
+light("Light_StreetLamp", "spot", -280, 860, 868, 1800, 4000, "down", 40, 85)
 
 # planters with olive trees either side of the front
 L = "11_Planters"
+
+
+def olive(i, x, y, z0):
+    """Olive tree: gnarled trunk, branches, ~320 silvery leaf clusters."""
+    rr = np.random.default_rng(50 + i)
+    wood = f"Olive_{i}_Wood"
+    pts = [(x, y, z0 - 5), (x + 3, y + 1, z0 + 35), (x - 2, y + 4, z0 + 70), (x + 1, y + 2, z0 + 98)]
+    rad = [4.4, 3.8, 3.2]
+    for k in range(3):
+        tube(f"{wood}_{k}", L, "bark", pts[k], pts[k + 1], rad[k], 12, g=wood)
+    top = np.array(pts[-1], float)
+    tips = []
+    for k in range(6):
+        a = math.radians(k * 60 + rr.uniform(-15, 15))
+        R = rr.uniform(16, 26)
+        e1 = top + np.array([math.cos(a) * R, math.sin(a) * R, rr.uniform(22, 40)])
+        e2 = e1 + np.array([math.cos(a) * rr.uniform(8, 14), math.sin(a) * rr.uniform(8, 14), rr.uniform(10, 20)])
+        tube(f"{wood}_b{k}a", L, "bark", top, e1, 1.8, 8, g=wood)
+        tube(f"{wood}_b{k}b", L, "bark", e1, e2, 1.1, 8, g=wood)
+        tips.append(e2)
+    c = top + np.array([0, 0, 52])
+    R = np.array([47, 47, 37])
+    n = 0
+    while n < 320:
+        d = rr.normal(size=3)
+        d /= np.linalg.norm(d)
+        if d[2] < -0.75:
+            continue
+        p = c + d * R * (0.55 + 0.45 * rr.random() ** 0.5)
+        mat = "leaves_b" if rr.random() < 0.35 else "leaves"
+        ell(f"Olive_{i}_Leaf_{n}", L, mat, p, (rr.uniform(5, 9), rr.uniform(3.5, 6), rr.uniform(2.4, 4)),
+            rr.uniform(0, 360), res=(8, 5), g=f"Olive_{i}_Leaves")
+        n += 1
+
+
+import numpy as np
 for i, (x, y) in enumerate([D((A_N1 + A_P1) / 2, -55), (515.7, 50)]):
     cyl(f"Planter_{i + 1}", L, "planter", x, y, -2, 30, 78, 32)
     cyl(f"Planter_{i + 1}_Soil", L, "soil", x, y, 70, 27, 5, 24)
-    cyl(f"Olive_{i + 1}_Trunk", L, "bark", x, y, 75, 3.5, 85, 10)
-    for j, (dx, dy, dz, r) in enumerate([(0, 0, 200, 34), (18, 10, 180, 26), (-17, -8, 185, 27), (6, -16, 222, 24), (-8, 15, 215, 24)]):
-        sph(f"Olive_{i + 1}_Leaves_{j + 1}", L, "leaves", x + dx, y + dy, dz, r)
+    olive(i + 1, x, y, 75)
 
 # ------------------------------------------------------------------ LIGHTS
 for i, (x, y) in enumerate(DL):
@@ -540,12 +605,12 @@ k = 0
 y = 300.0
 while y < 985:
     k += 1
-    light(f"Light_Uplight_Wall_{k:02d}", "spot", XL0 - 6, y, 2, 260, 2900, "up", 12, 45)
+    light(f"Light_Uplight_Wall_{k:02d}", "spot", XL0 - 14, y, 2, 650, 2900, "up", 28, 80)
     y += 52
 for j, s in enumerate((S0 + 31, (A_N1 + A_P1) / 2, (A_B0 + A_B1) / 2 - 50, (A_B0 + A_B1) / 2 + 50, S1 + 20)):
-    x, yy = D(s, -6)
-    light(f"Light_Uplight_Front_{j + 1}", "spot", x, yy, 2, 260, 2900, "up", 12, 45)
-light("Light_Uplight_RightPier", "spot", 515.7, 85, 2, 260, 2900, "up", 12, 45)
+    x, yy = D(s, -14)
+    light(f"Light_Uplight_Front_{j + 1}", "spot", x, yy, 2, 650, 2900, "up", 28, 80)
+light("Light_Uplight_RightPier", "spot", 515.7, 77, 2, 650, 2900, "up", 28, 80)
 # glowing base strips
 L = "12_Exterior_Lighting"
 prism("LED_Strip_LeftWall", L, "led_warm", rect(XL0 - 8, 290, XL0 - 5, 985), -2, -1)

@@ -7,7 +7,7 @@ Built from the CAD plan (`cad/Owns_Cafe.dxf`, units cm), the partition elevation
 Option A, native build (recommended):
 1. Unzip `Owns_Cafe_3dsMax.zip` and keep `Owns_Cafe_build.ms` next to the `textures` folder.
 2. In 3ds Max: **Scripting > Run Script...**, then pick `Owns_Cafe_build.ms` and click **Yes**.
-3. It starts a new scene (asks to save the current one first), builds about 250 finished meshes with rounded edges, Physical Materials, photometric lights and 5 physical cameras, then saves **`Owns_Cafe.max`** next to the script. The file is large (3.5 MB of mesh data), so allow a minute or two.
+3. It starts a new scene (asks to save the current one first), builds about 250 finished meshes with rounded edges, Physical Materials, photometric lights and 5 physical cameras, then saves **`Owns_Cafe.max`** next to the script. The file is large (about 5.5 MB of mesh data), so allow a minute or two.
 
 Option B: **File > Import > `Owns_Cafe.fbx`**. Same meshes with UVs, textures embedded, plus cameras and lights. Materials will need a quick pass (glass and LEDs come in as plain materials).
 Option C: `Owns_Cafe.obj` (cm, Y-up) for any other software. `Owns_Cafe.blend` is the Blender scene used for the renders.
@@ -22,7 +22,15 @@ Option C: `Owns_Cafe.obj` (cm, Y-up) for any other software. `Owns_Cafe.blend` i
   - the oak wave band floats 3 cm off the wall, with LED strips hidden in the gap that wash light up and down the wall along both curves;
   - the **"Owns" logo** (letters traced from your CAD) is brass, standing 2.5 cm off the wall, with an LED layer behind it, so the letters glow with a halo;
   - a recessed ceiling slot hides an LED wall-washer that lights the whole partition from above.
-- **Shell, shopfront, drive-thru, kitchen, toilet and site:** as before, from the CAD and photos.
+- **Exterior:**
+  - vein-cut travertine in 90 × 60 cm slabs (each slab with its own layering, pits and tone; 3 mm joints, with relief);
+  - the "Owns / COFFEE & MORE" sign has letters standing off a stone panel that hidden grazers wash with light, and a halo glows behind the letters;
+  - dark "DRIVE THRU →" letters with a halo glow;
+  - satin glass above the ceiling line;
+  - soft-beam uplights;
+  - olive trees with branching trunks and silvery leaves;
+  - textured pavers, asphalt and neighbouring plaster.
+- **Shell, shopfront, drive-thru, kitchen, toilet:** from the CAD and photos.
 
 | Layer | Contents |
 |---|---|
