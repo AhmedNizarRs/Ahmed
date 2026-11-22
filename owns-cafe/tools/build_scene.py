@@ -393,24 +393,30 @@ for i, da in enumerate((-30, 0, 30)):
     px, py = D(lc.x + da, 0.5)
     light(f"Light_Sign_Halo_{i + 1}", "point", px, py, lc.y, 25, 3000, maxonly=True)
 # projecting blade sign on the right pier: double-sided "Owns" lightbox on a black bracket
-BX0, BX1, BY0 = 511.7, 519.7, 91.5
-prism("Blade_Sign_Bracket_Plate", L, "metal_black", rect(508.7, 89.5, 522.7, 91.5), 405, 485, r=0.3)
-prism("Blade_Sign_Bracket_Arm", L, "metal_black", rect(513.7, 6, 517.7, 91.5), 478, 482, r=0.3)
-prism("Blade_Sign_Box", L, "metal_black", rect(BX0, BY0 - 82, BX1, BY0 - 10), 412, 474, r=1.0, bot=True)
-# both faces are LED screens showing the logo (image generated below, mapped 1:1 onto each face)
-SY0, SY1, SZ0, SZ1 = BY0 - 79, BY0 - 13, 415, 471
+BX0, BX1, BY0 = 508.7, 522.7, 91.5          # 14 cm deep lightbox, projecting ~1.9 m from the pier
+BL0, BL1, BZ0, BZ1 = BY0 - 196, BY0 - 16, 425, 500
+prism("Blade_Sign_Wall_Plate", L, "metal_black", rect(506.7, 89.5, 524.7, 91.5), 410, 515, r=0.4)
+prism("Blade_Sign_Arm_Top", L, "metal_black", rect(513.7, BL0 + 10, 517.7, BY0), 503, 507, r=0.4)
+prism("Blade_Sign_Arm_Bottom", L, "metal_black", rect(513.7, BL1 - 6, 517.7, BY0), 418, 422, r=0.4)
+blade_box = Polygon([(0, 0), (BL1 - BL0, 0), (BL1 - BL0, BZ1 - BZ0), (0, BZ1 - BZ0)])
+vprism("Blade_Sign_Box", L, "metal_black", affinity.translate(blade_box.buffer(-6, join_style=2).buffer(6), 0, BZ0),
+       (BX0, BL0, 0), (0, 1), 0, BX1 - BX0, r=1.2, bot=True)
+SY0, SY1, SZ0, SZ1 = BL0 + 5, BL1 - 5, BZ0 + 5, BZ1 - 5
 SW_, SH_ = SY1 - SY0, SZ1 - SZ0
+for side, x0, d0, d1 in (("West", BX0 - 0.1, -0.5, 0), ("East", BX1 + 0.1, 0, 0.5)):     # warm LED edge around each face
+    edge = rect(SY0 - 3.5, SZ0 - 3.5, SY1 + 3.5, SZ1 + 3.5).buffer(2.5).difference(rect(SY0 - 1.5, SZ0 - 1.5, SY1 + 1.5, SZ1 + 1.5).buffer(2.5))
+    edge = affinity.translate(edge, -BL0, 0)
+    vprism(f"Blade_Sign_LED_Edge_{side}", L, "led_halo_soft", edge, (x0, BL0, 0), (0, 1), d0, d1, r=0)
 
 
-def make_screen_image(path, px=1024):
+def make_screen_image(path, px=1600):
     from PIL import Image, ImageDraw
     W, H = px, int(px * SH_ / SW_)
     img = Image.new("RGB", (W, H))
-    top, bot = np.array([42, 33, 28]), np.array([22, 17, 15])
+    top, bot = np.array([30, 24, 21]), np.array([16, 12, 11])
     for yy in range(H):
         img.paste(tuple(int(c) for c in top + (bot - top) * yy / H), (0, yy, W, yy + 1))
     d = ImageDraw.Draw(img)
-    d.rectangle([14, 14, W - 15, H - 15], outline=(176, 152, 112), width=3)
 
     def draw(geom, box, fill, bg):
         x0, y0, x1, y1 = geom.bounds
@@ -421,8 +427,11 @@ def make_screen_image(path, px=1024):
             d.polygon(tf(g.exterior.coords), fill=fill)
             for h in g.interiors:
                 d.polygon(tf(h.coords), fill=bg)
-    draw(lettering, (W * 0.14, H * 0.18, W * 0.86, H * 0.62), (246, 239, 228), (34, 27, 23))
-    draw(text_geom("COFFEE & MORE", 10, bold=False), (W * 0.27, H * 0.7, W * 0.73, H * 0.78), (206, 182, 140), (26, 20, 17))
+    draw(lettering, (W * 0.3, H * 0.12, W * 0.7, H * 0.62), (248, 242, 232), (24, 19, 17))
+    tg = text_geom("COFFEE & MORE", 10, bold=False)
+    draw(tg, (W * 0.38, H * 0.72, W * 0.62, H * 0.84), (232, 206, 160), (18, 14, 12))
+    d.rectangle([W * 0.24, H * 0.775, W * 0.355, H * 0.79], fill=(232, 206, 160))
+    d.rectangle([W * 0.645, H * 0.775, W * 0.76, H * 0.79], fill=(232, 206, 160))
     img.save(path)
 
 
@@ -431,7 +440,7 @@ prism("Blade_Sign_Screen_West", L, "screen_owns", rect(BX0 - 0.3, SY0, BX0, SY1)
 E[-1]["uv"] = dict(axis=1, u0=SY1, du=-1, w=SW_, v0=SZ0, h=SH_)
 prism("Blade_Sign_Screen_East", L, "screen_owns", rect(BX1, SY0, BX1 + 0.3, SY1), SZ0, SZ1, r=0)
 E[-1]["uv"] = dict(axis=1, u0=SY0, du=1, w=SW_, v0=SZ0, h=SH_)
-light("Light_Blade_Sign", "point", 515.7, 50, 443, 30, 3000, maxonly=True)
+light("Light_Blade_Sign", "point", 515.7, BY0 - 106, 462, 40, 3000, maxonly=True)
 
 # entrance door on the short front (x 389.7 .. 499.7)
 DO, DU = (389.7, 111.5, 0), (1, 0)   # local Z = (0,-1): d = 0 at inner face, 20 at street face
@@ -462,12 +471,14 @@ dt = place(dt, a_center=mid + 10, b_base=242)
 vprism("DT_Sign", L, "metal_black", dt, WO, WU, 1.2, 3.0, r=0.25, bot=True)       # dark letters, short stand-off
 vprism("DT_Sign_Halo", L, "led_halo", dt.buffer(-0.35), WO, WU, 0.3, 0.6, r=0)      # halo glow behind them
 # big "Owns" logo above the drive-thru window (same glowing letters + halo as the front sign)
-dtl = affinity.scale(lettering, 1.3, 1.3, origin=(0, 0))        # ~3 m wide
+dtl = affinity.scale(lettering, 1.95, 1.95, origin=(0, 0))       # ~4.5 m wide, ~1.4 m tall
 dtl = place(dtl, a_center=mid + 10, b_base=0)
-dtl = affinity.translate(dtl, 0, 300 - dtl.bounds[1])
+dtl = affinity.translate(dtl, 0, 335 - dtl.bounds[1])
 vprism("DT_Logo_Owns", L, "metal_black", dtl, WO, WU, 0.8, 3.3, r=0.4, bot=True)        # solid dark bronze letters
 vprism("DT_Logo_Owns_Halo", L, "led_halo_soft", dtl.buffer(-0.8), WO, WU, 0.2, 0.6, r=0)  # soft warm halo only
-dsub = place(text_geom("COFFEE & MORE", 11, bold=False), a_center=mid + 10, b_base=280)
+dsub = place(text_geom("COFFEE & MORE", 17, bold=False), a_center=mid + 10, b_base=290)
+sx0, _, sx1, _ = dsub.bounds
+dsub = unary_union([dsub, rect(sx0 - 95, 297, sx0 - 18, 300.5), rect(sx1 + 18, 297, sx1 + 95, 300.5)])   # flanking lines
 vprism("DT_Logo_Coffee_More", L, "metal_black", dsub, WO, WU, 1.0, 3.0, r=0.2, bot=True)
 vprism("DT_Logo_Coffee_More_Halo", L, "led_halo_soft", dsub.buffer(-0.3), WO, WU, 0.3, 0.6, r=0)
 for i, da in enumerate((-60, 0, 60)):
