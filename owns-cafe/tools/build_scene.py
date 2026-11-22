@@ -502,15 +502,6 @@ for i, s in enumerate((70, 140, 210)):
     cyl(f"Stool_{i + 1}_Base", L, "metal_black", x, y, 0, 20, 2, 32)
     cyl(f"Stool_{i + 1}_Post", L, "metal_black", x, y, 2, 2.5, 70, 12)
     cyl(f"Stool_{i + 1}_Seat", L, "oak", x, y, 72, 18, 5, 32)
-cyl("Table_Base", L, "metal_black", 462, 255, 0, 22, 2, 32)
-cyl("Table_Post", L, "metal_black", 462, 255, 2, 3, 71, 12)
-cyl("Table_Top", L, "quartz", 462, 255, 73, 32, 3, 48)
-for i, (cy, sgn) in enumerate([(200, -1), (310, 1)]):
-    prism(f"Chair_{i + 1}_Seat", L, "oak", rect(441, cy - 21, 483, cy + 21), 44, 48)
-    by = cy + sgn * 19
-    prism(f"Chair_{i + 1}_Back", L, "oak", rect(441, by - 2, 483, by + 2), 48, 88)
-    for j, (lx, ly) in enumerate([(444, cy - 18), (480, cy - 18), (444, cy + 18), (480, cy + 18)]):
-        cyl(f"Chair_{i + 1}_Leg_{j + 1}", L, "metal_black", lx, ly, 0, 1.5, 44, 8)
 # display shelves on the right wall (customer side)
 for i, z in enumerate((150, 185, 220)):
     prism(f"Shelf_{i + 1}", L, "oak", rect(486.7, 340, 510.7, 520), z, z + 3)
