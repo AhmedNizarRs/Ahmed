@@ -471,15 +471,17 @@ vprism("DT_Sign", L, "metal_black", dt, WO, WU, 1.2, 3.0, r=0.25, bot=True)     
 vprism("DT_Sign_Halo", L, "led_halo", dt.buffer(-0.35), WO, WU, 0.3, 0.6, r=0)      # halo glow behind them
 # big "Owns" logo above the drive-thru window (same glowing letters + halo as the front sign)
 dtl = affinity.scale(lettering, 1.95, 1.95, origin=(0, 0))       # ~4.5 m wide, ~1.4 m tall
-dtl = place(dtl, a_center=mid + 10, b_base=0)
-dtl = affinity.translate(dtl, 0, 335 - dtl.bounds[1])
-# same style as the front sign: white glowing letters + halo (slightly dimmer on the bright wall)
-vprism("DT_Logo_Owns", L, "sign_glow_dt", dtl, WO, WU, 0.8, 3.3, r=0.4, bot=True)
-vprism("DT_Logo_Owns_Halo", L, "led_halo_soft", dtl.buffer(-0.8), WO, WU, 0.2, 0.6, r=0)
-dsub = place(text_geom("COFFEE & MORE", 17, bold=False), a_center=mid + 10, b_base=290)
-vprism("DT_Logo_Coffee_More", L, "sign_glow_dt", dsub, WO, WU, 1.0, 3.0, r=0.2, bot=True)
+LOGO_A = (YB1 - 289.0) / 2                                         # centred on the wall
+dtl = place(dtl, a_center=LOGO_A, b_base=0)
+dtl = affinity.translate(dtl, 0, 385 - dtl.bounds[1])
+# same style as the DRIVE THRU sign: black letters with a bright white halo behind them
+vprism("DT_Logo_Owns", L, "metal_black", dtl, WO, WU, 1.2, 3.6, r=0.4, bot=True)
+vprism("DT_Logo_Owns_Halo", L, "led_halo", dtl.buffer(-0.8), WO, WU, 0.3, 0.7, r=0)
+dsub = place(text_geom("COFFEE & MORE", 17, bold=False), a_center=LOGO_A, b_base=345)
+vprism("DT_Logo_Coffee_More", L, "metal_black", dsub, WO, WU, 1.0, 3.0, r=0.2, bot=True)
+vprism("DT_Logo_Coffee_More_Halo", L, "led_halo", dsub.buffer(-0.3), WO, WU, 0.3, 0.6, r=0)
 for i, da in enumerate((-60, 0, 60)):
-    light(f"Light_DT_Logo_Halo_{i + 1}", "point", XL0 - 2, YB1 - (mid + 10 + da), 320, 30, 3000, maxonly=True)
+    light(f"Light_DT_Logo_Halo_{i + 1}", "point", XL0 - 2, YB1 - (LOGO_A + da), 440, 30, 3000, maxonly=True)
 for i, da in enumerate((-35, 0, 35)):
     light(f"Light_DT_Halo_{i + 1}", "point", XL0 - 1.5, 994.5 - (mid + 10 + da), 250, 20, 3000, maxonly=True)
 
@@ -736,7 +738,7 @@ for i, dx in enumerate((-72, 72)):
 # ------------------------------------------------------------------ CAMERAS
 CAMS += [
     dict(n="CAM_Exterior_Corner", p=[-470, -440, 165], t=[190, 360, 245], mm=24),
-    dict(n="CAM_Exterior_DriveThru", p=[-460, 160, 160], t=[122, 640, 210], mm=24),
+    dict(n="CAM_Exterior_DriveThru", p=[-560, 130, 165], t=[122, 640, 270], mm=24),
     dict(n="CAM_Interior_ToPartition", p=[440, 175, 150], t=[290, 666, 175], mm=18),
     dict(n="CAM_Interior_ToFront", p=[478, 655, 160], t=[225, 215, 140], mm=18),
     dict(n="CAM_Counter_Bakery", p=[378, 368, 132], t=[318, 482, 120], mm=30),

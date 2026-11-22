@@ -205,11 +205,6 @@ Kd 1.000 0.910 0.769
 Ns 100
 Ke 1.000 0.910 0.769
 
-newmtl OWN_sign_glow_dt
-Kd 1.000 0.910 0.769
-Ns 100
-Ke 1.000 0.910 0.769
-
 newmtl OWN_soil
 Kd 0.227 0.169 0.122
 Ns 0
