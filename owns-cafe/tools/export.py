@@ -51,7 +51,7 @@ fn newMat nm = (
 	if m == undefined do m = StandardMaterial name:nm
 	m
 )
-fn defMat key rgb rough metal texFile mapSize kind lum coat bump bumpFile = (
+fn defMat key rgb rough metal texFile mapSize kind lum coat bump bumpFile roughFile:undefined norFile:undefined norAmt:0.5 = (
 	local m = newMat ("OWN_" + key)
 	sp m #base_color rgb
 	sp m #diffuse rgb
@@ -67,6 +67,16 @@ fn defMat key rgb rough metal texFile mapSize kind lum coat bump bumpFile = (
 			sp m #bump_map bb
 			sp m #bump_map_amt (bump * 0.3)
 		)
+	)
+	if roughFile != undefined do (
+		local rb = Bitmaptexture filename:(texDir + roughFile) name:(key + "_rough")
+		sp m #roughness_map rb
+	)
+	if norFile != undefined do (
+		local nb = Bitmaptexture filename:(texDir + norFile) name:(key + "_normal")
+		local nbump = undefined
+		try (nbump = Normal_Bump normal_map:nb) catch ()
+		if nbump != undefined do (sp m #bump_map nbump; sp m #bump_map_amt norAmt)
 	)
 	if kind == "glass" or kind == "glass_dark" do (
 		sp m #transparency (if kind == "glass" then 1.0 else 0.6)
@@ -183,7 +193,12 @@ for k in used:
     r, g, b = m["rgb"]
     tx = f'"{m["tex"]}"' if m["tex"] else "undefined"
     bt = f'"{m["bumptex"]}"' if m["bumptex"] else "undefined"
-    w(f'\tdefMat "{k}" (color {r} {g} {b}) {f(m["rough"])} {f(m["metal"])} {tx} {f(m["size"])} "{m["kind"]}" {f(m["lum"])} {f(m["coat"])} {f(m["bump"])} {bt}')
+    extra = ""
+    if m["rough_map"]:
+        extra += f' roughFile:"{m["rough_map"]}"'
+    if m["nor_map"]:
+        extra += f' norFile:"{m["nor_map"]}" norAmt:{f(m["nor"])}'
+    w(f'\tdefMat "{k}" (color {r} {g} {b}) {f(m["rough"])} {f(m["metal"])} {tx} {f(m["size"])} "{m["kind"]}" {f(m["lum"])} {f(m["coat"])} {f(m["bump"])} {bt}{extra}')
 w("\t-- meshes")
 for o in objs:
     V = o["v"]

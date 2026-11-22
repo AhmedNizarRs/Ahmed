@@ -91,6 +91,25 @@ def make_mat(key):
             mr.inputs["To Max"].default_value = 0.30
             Lk.new(ti.outputs["Color"], mr.inputs["Value"])
             Lk.new(mr.outputs[0], bs.inputs["Roughness"])
+    if m["rough_map"]:
+        tr_ = N.new("ShaderNodeTexImage")
+        tr_.image = image(m["rough_map"])
+        tr_.image.colorspace_settings.name = "Non-Color"
+        mr_ = N.new("ShaderNodeMapRange")
+        mr_.inputs["To Min"].default_value = max(0.02, m["rough"] * 0.6)
+        mr_.inputs["To Max"].default_value = min(1.0, m["rough"] * 1.35)
+        Lk.new(tr_.outputs["Color"], mr_.inputs["Value"])
+        Lk.new(mr_.outputs[0], bs.inputs["Roughness"])
+    normal_out = None
+    if m["nor_map"]:
+        tn_ = N.new("ShaderNodeTexImage")
+        tn_.image = image(m["nor_map"])
+        tn_.image.colorspace_settings.name = "Non-Color"
+        nm_ = N.new("ShaderNodeNormalMap")
+        nm_.inputs["Strength"].default_value = m["nor"]
+        Lk.new(tn_.outputs["Color"], nm_.inputs["Color"])
+        Lk.new(nm_.outputs["Normal"], bs.inputs["Normal"])
+        normal_out = nm_.outputs["Normal"]
     if m["bumptex"]:
         tb = N.new("ShaderNodeTexImage")
         tb.image = image(m["bumptex"])
@@ -108,6 +127,8 @@ def make_mat(key):
         bp.inputs["Strength"].default_value = m["bump"] * 0.5
         bp.inputs["Distance"].default_value = 0.002
         Lk.new(height, bp.inputs["Height"])
+        if normal_out is not None:
+            Lk.new(normal_out, bp.inputs["Normal"])
         Lk.new(bp.outputs["Normal"], bs.inputs["Normal"])
     shader = bs.outputs[0]
     if m["kind"] == "satin":       # satin / back-lit frosted glass
@@ -355,11 +376,18 @@ if A.fbx:
 
 names = list(CAMS) if A.render == "all" else [n for n in A.render.split(",") if n]
 for n in names:
-    ev = A.exposure
-    if ":" in n:
-        n, ev = n.split(":")
-        ev = float(ev)
+    ev, wb = A.exposure, 4300
+    parts = n.split(":")
+    n = parts[0]
+    if len(parts) > 1:
+        ev = float(parts[1])
+    if len(parts) > 2:
+        wb = float(parts[2])
     scene.view_settings.exposure = ev
+    try:
+        scene.view_settings.white_balance_temperature = wb
+    except Exception:
+        pass
     scene.camera = CAMS[n]
     scene.render.filepath = os.path.join(os.path.abspath(A.out), n + ".png")
     bpy.ops.render.render(write_still=True)

@@ -346,7 +346,7 @@ lx0, ly0, lx1, ly1 = logo_el.bounds
 for i, a in enumerate((lx0 + 30, (lx0 + lx1) / 2, lx1 - 30)):
     light(f"Light_Logo_Halo_{i + 1}", "point", XL1 + a, PY0 - 3, (ly0 + ly1) / 2, 40, 2800, maxonly=True)
 vprism("Partition_Door_Frame", L, "oak", ring(door_a0 - 4, 0, door_a1 + 4, 214, 4, bottom=False), P_ORIG, P_U, -1, 3)
-prism("Partition_Door_Leaf", L, "door_white", rect(353.7, 670.2, 439.7, 674.2), 0, 209)
+prism("Partition_Door_Leaf", L, "oak", rect(353.7, 670.2, 439.7, 674.2), 0, 209)
 vprism("Partition_Door_Handle", L, "brass", rect(221.5, 92, 238.2, 95.2), P_ORIG, P_U, 0, 6)
 vprism("Partition_Hatch_Frame", L, "metal_black", ring(hatch_a0 - 5, 75, hatch_a1 + 5, 125, 5), P_ORIG, P_U, -12, 3.5)
 vprism("Partition_Hatch_Mullion", L, "metal_black", rect((hatch_a0 + hatch_a1) / 2 - 1.5, 80, (hatch_a0 + hatch_a1) / 2 + 1.5, 120), P_ORIG, P_U, -7, -3)
@@ -508,7 +508,7 @@ for i, z in enumerate((150, 185, 220)):
     for j, y in enumerate((355, 385, 415, 445, 475, 505)):
         if (i + j) % 3 == 1:
             continue
-        cyl(f"Shelf_{i + 1}_Jar_{j + 1}", L, ["glass", "lacquer_white", "metal_black"][(i + j) % 3], 498.7, y, z + 3, 6, 18, 20)
+        cyl(f"Shelf_{i + 1}_Jar_{j + 1}", L, ["ceramic_sand", "ceramic_matte", "ceramic_terra"][(i + j) % 3], 498.7, y, z + 3, 5.5 - (j % 2), 16 - 5 * ((i + j) % 2), 28)
 
 # ------------------------------------------------------------------ KITCHEN + WC
 L = "09_Kitchen_WC"

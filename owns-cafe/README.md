@@ -14,6 +14,17 @@ Option C: `Owns_Cafe.obj` (cm, Y-up) for any other software. `Owns_Cafe.blend` i
 
 ## Design
 
+**Interior palette (warm minimal, carrying the exterior travertine inside):**
+- **Walls and ceiling:** greige lime plaster.
+- **Partition above the wave:** deep mocha textured plaster.
+- **Joinery:** natural white oak veneer for the wave band, shelves, stools, bar top and kitchen door.
+- **Floor:** warm grey polished microcement.
+- **Counter:** travertine body with a honed cream top.
+- **Metal:** brushed brass pendants and logo, with dark bronze legs and plinths.
+- **Shelf decor:** matte ceramics in sand, terracotta and white.
+
+The surfaces use Poly Haven scans (CC0), recoloured by `tools/make_interior_textures.py`, with roughness and normal maps.
+
 - **Sleek edges everywhere:** every object is a finished mesh with rounded edges and corners (0.3–2 cm depending on material), with crisp flat faces and soft highlights on the edges.
 - **Reception desk:** travertine body, quartz top with a hidden LED strip, and on top only:
   - a **glass bakery case** with brass corner posts, a glass shelf and LED strips, holding croissants, pains au chocolat, muffins and cookies;
@@ -86,3 +97,4 @@ All dimensions live in `tools/build_scene.py` (cm), materials in `tools/material
 
 - Car: this work is based on "Nissan Patrol 2021" (https://sketchfab.com/3d-models/nissan-patrol-2021-9a2cda9f9a11474aa069e1895ff93443) by Nieve5677 (https://sketchfab.com/niev), licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/). Modified: materials assigned, scaled to 5.17 m, decimated (`tools/prepare_car.py`). Keep this credit wherever the renders or model are shared.
 - HDRI: "Neuer Zollhof" from Poly Haven (CC0).
+- Interior textures: white_plaster_02, plastered_wall_04, smooth_concrete_floor and white_oak_veneer from Poly Haven (CC0).

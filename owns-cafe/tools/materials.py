@@ -6,22 +6,30 @@ key: dict(rgb 0-255, rough, metal, tex (file in textures/), size (cm per texture
 """
 MATS = {
     "stone":         dict(rgb=(222, 210, 190), rough=.55, metal=0, tex="travertine.jpg", size=360, bump=.5, bumptex="travertine_bump.jpg"),
-    "floor":         dict(rgb=(236, 231, 222), rough=.18, metal=0, tex="floor_tile.jpg", size=120, coat=.3),
-    "oak":           dict(rgb=(196, 160, 118), rough=.45, metal=0, tex="oak.jpg", size=100, bump=.15),
+    "floor":         dict(rgb=(156, 150, 141), rough=.38, metal=0, tex="int_microcement.jpg", size=300, coat=.15,
+                          rough_map="ph_smooth_concrete_floor_rough.jpg", nor_map="ph_smooth_concrete_floor_nor.jpg", nor=.35),
+    "oak":           dict(rgb=(170, 138, 106), rough=.5, metal=0, tex="int_oak.jpg", size=110,
+                          rough_map="ph_white_oak_veneer_rough.jpg", nor_map="ph_white_oak_veneer_nor.jpg", nor=.4),
     "brass":         dict(rgb=(214, 172, 100), rough=.28, metal=1, tex="brass.jpg", size=50),
-    "plaster_white": dict(rgb=(239, 236, 230), rough=.85, metal=0),
-    "plaster_sand":  dict(rgb=(214, 194, 166), rough=.85, metal=0),
+    "plaster_white": dict(rgb=(232, 226, 216), rough=.85, metal=0, tex="int_plaster.jpg", size=220,
+                          nor_map="ph_white_plaster_02_nor.jpg", nor=.3),
+    "plaster_sand":  dict(rgb=(96, 74, 61), rough=.8, metal=0, tex="int_mocha.jpg", size=220,
+                          nor_map="ph_plastered_wall_04_nor.jpg", nor=.5),     # deep mocha accent (partition)
     "plaster_ext":   dict(rgb=(186, 174, 158), rough=.9, metal=0, tex="plaster.jpg", size=600),
-    "ceiling":       dict(rgb=(242, 240, 234), rough=.9, metal=0),
-    "lacquer_white": dict(rgb=(241, 239, 234), rough=.3, metal=0),
+    "ceiling":       dict(rgb=(240, 236, 228), rough=.9, metal=0, tex="int_plaster.jpg", size=260),
+    "lacquer_white": dict(rgb=(214, 206, 194), rough=.35, metal=0),
     "door_white":    dict(rgb=(235, 231, 223), rough=.4, metal=0),
-    "quartz":        dict(rgb=(244, 241, 236), rough=.12, metal=0, coat=.4),
+    "quartz":        dict(rgb=(238, 233, 224), rough=.22, metal=0, tex="int_quartz.jpg", size=150, coat=.2,
+                          nor_map="ph_white_plaster_02_nor.jpg", nor=.08),
     "metal_black":   dict(rgb=(20, 20, 20), rough=.38, metal=.7),
     "steel":         dict(rgb=(205, 205, 205), rough=.25, metal=1),
     "glass":         dict(rgb=(235, 245, 243), rough=0, metal=0, kind="glass"),
     "glass_dark":    dict(rgb=(40, 50, 56), rough=.05, metal=0, kind="glass_dark"),
     "glass_satin":   dict(rgb=(236, 232, 224), rough=.35, metal=0, kind="satin", lum=7),
     "mirror":        dict(rgb=(240, 240, 240), rough=.02, metal=1),
+    "ceramic_sand":  dict(rgb=(200, 178, 150), rough=.55, metal=0),
+    "ceramic_terra": dict(rgb=(170, 96, 66), rough=.6, metal=0),
+    "ceramic_matte": dict(rgb=(236, 232, 224), rough=.5, metal=0),
     "ceramic":       dict(rgb=(246, 246, 244), rough=.1, metal=0, coat=.5),
     "paver":         dict(rgb=(176, 169, 157), rough=.5, metal=0, tex="paver.jpg", size=120, bump=.3),
     "curb":          dict(rgb=(190, 184, 174), rough=.7, metal=0),
@@ -53,3 +61,6 @@ for _k, _m in MATS.items():
     _m.setdefault("bump", 0)
     _m.setdefault("coat", 0)
     _m.setdefault("bumptex", None)
+    _m.setdefault("rough_map", None)
+    _m.setdefault("nor_map", None)
+    _m.setdefault("nor", 0.5)
