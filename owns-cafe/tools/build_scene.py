@@ -461,7 +461,18 @@ def make_ad_image(path, px=1100):
 
 _tex = os.path.join(os.path.dirname(os.path.abspath(OUT)), "textures")
 make_blade_image(os.path.join(_tex, "screen_owns.png"))
-make_ad_image(os.path.join(_tex, "screen_ad.png"))
+_ad_src = os.path.join(_tex, "ad_coffee_source.png")
+if os.path.exists(_ad_src):         # client artwork: fit to the screen's aspect (pad with its own cream)
+    from PIL import Image as _Im
+    src = _Im.open(_ad_src).convert("RGB")
+    H_ = 1500; W_ = int(H_ * (AD_A1 - AD_A0) / (AD_B1 - AD_B0))
+    k_ = min(W_ / src.width, H_ / src.height)
+    sm = src.resize((int(src.width * k_), int(src.height * k_)), _Im.LANCZOS)
+    canvas = _Im.new("RGB", (W_, H_), src.getpixel((5, 5)))
+    canvas.paste(sm, ((W_ - sm.width) // 2, (H_ - sm.height) // 2))
+    canvas.save(os.path.join(_tex, "screen_ad.png"))
+else:
+    make_ad_image(os.path.join(_tex, "screen_ad.png"))
 prism("Blade_Sign_Screen_West", L, "screen_owns", rect(BX0 - 0.3, SY0, BX0, SY1), SZ0, SZ1, r=0)
 E[-1]["uv"] = dict(o=[BX0 - 0.3, SY1, SZ0], u=[0, -1, 0], v=[0, 0, 1], n=[-1, 0, 0], w=SW_, h=SH_)
 prism("Blade_Sign_Screen_East", L, "screen_owns", rect(BX1, SY0, BX1 + 0.3, SY1), SZ0, SZ1, r=0)
@@ -501,12 +512,11 @@ dtl = affinity.scale(lettering, 1.95, 1.95, origin=(0, 0))       # ~4.5 m wide, 
 LOGO_A = (YB1 - 289.0) / 2                                         # centred on the wall
 dtl = place(dtl, a_center=LOGO_A, b_base=0)
 dtl = affinity.translate(dtl, 0, 385 - dtl.bounds[1])
-# same style as the DRIVE THRU sign: black letters with a bright white halo behind them
-vprism("DT_Logo_Owns", L, "metal_black", dtl, WO, WU, 1.2, 3.6, r=0.4, bot=True)
-vprism("DT_Logo_Owns_Halo", L, "led_halo", dtl.buffer(-0.8), WO, WU, 0.3, 0.7, r=0)
+# white glowing letters with a soft halo (client reference photo)
+vprism("DT_Logo_Owns", L, "sign_glow_dt", dtl, WO, WU, 1.2, 3.6, r=0.4, bot=True)
+vprism("DT_Logo_Owns_Halo", L, "led_halo_soft", dtl.buffer(-0.8), WO, WU, 0.3, 0.7, r=0)
 dsub = place(text_geom("COFFEE & MORE", 17, bold=False), a_center=LOGO_A, b_base=345)
-vprism("DT_Logo_Coffee_More", L, "metal_black", dsub, WO, WU, 1.0, 3.0, r=0.2, bot=True)
-vprism("DT_Logo_Coffee_More_Halo", L, "led_halo", dsub.buffer(-0.3), WO, WU, 0.3, 0.6, r=0)
+vprism("DT_Logo_Coffee_More", L, "sign_glow_dt", dsub, WO, WU, 1.0, 3.0, r=0.2, bot=True)
 for i, da in enumerate((-60, 0, 60)):
     light(f"Light_DT_Logo_Halo_{i + 1}", "point", XL0 - 2, YB1 - (LOGO_A + da), 440, 30, 3000, maxonly=True)
 for i, da in enumerate((-35, 0, 35)):

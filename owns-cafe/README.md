@@ -38,7 +38,7 @@ The surfaces use Poly Haven scans (CC0), recoloured by `tools/make_interior_text
   - all signs share one style, set by the front portal sign: white glowing "Owns" letters with a halo and "COFFEE & MORE" beneath;
   - a large (about 4.5 m × 1.4 m) white glowing "Owns / COFFEE & MORE" logo with a soft halo above the drive-thru window, with "DRIVE THRU →" under it;
   - a 1.8 m × 0.75 m double-sided projecting cream lightbox with the dark "Owns" logo on the corner pier, visible from the side streets (`textures/screen_owns.png`);
-  - a digital ad screen in the middle of the front portal ("COFFEE · 15 AED", `textures/screen_ad.png`, so you can swap in your own artwork);
+  - a digital ad screen in the middle of the front portal showing the client's "COFFEE · 15 AED" artwork (`textures/ad_coffee_source.png`; replace it to change the ad);
   - satin glass above the ceiling line;
   - continuous linear LED grazers at the foot of every stone face, for an even warm wash up to the parapet with no scallops;
   - a softly lit neighbouring shop;
