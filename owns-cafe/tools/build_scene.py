@@ -377,69 +377,96 @@ vprism("Front_Box_Glass", L, "glass", rect(bx0, 0, bx1, 320), FO, U, -10.6, -9.4
 vprism("Front_Box_Mullion", L, "metal_black", rect((bx0 + bx1) / 2 - 3, 0, (bx0 + bx1) / 2 + 3, 320), FO, U, -14, -6)
 vprism("Front_Box_Transom", L, "metal_black", rect(bx0, 242, bx1, 248), FO, U, -14, -6)
 vprism("Front_Box_HeadBar", L, "metal_black", rect(bx0, 320, bx1, 330), FO, U, -16, -4)
-vprism("Front_Box_SignPanel", L, "stone", rect(bx0, 330, bx1, 545 - BW), FO, U, -16, -2)
-logo = affinity.scale(lettering, 0.5, 0.5, origin=(0, 0))
-logo = place(logo, a_center=(bx0 + bx1) / 2, b_base=0)
-lb = logo.bounds
-logo = affinity.translate(logo, 0, 448 - lb[1])
-# the reference sign: white glowing letters standing off the stone with a halo (all signs follow this)
-vprism("Front_Sign_Owns", L, "sign_glow", logo, FO, U, 0.5, 3.0, r=0.3, bot=True)
-vprism("Front_Sign_Owns_Halo", L, "led_halo", logo.buffer(-0.4), FO, U, -1.6, -1.2, r=0)
-sub = place(text_geom("COFFEE & MORE", 6.5, bold=False), a_center=(bx0 + bx1) / 2, b_base=432)
-vprism("Front_Sign_Coffee_More", L, "sign_glow", sub, FO, U, -0.5, 1.2, r=0.15, bot=True)
-# hidden linear grazer on the head bar washes the sign panel evenly
-linear("Light_Grazer_SignPanel", D(bx0 + 2, -7), D(bx1 - 2, -7), 333, N_IN, 260, 2900, tilt=14, width=3)
-lc = logo.centroid
-for i, da in enumerate((-30, 0, 30)):
-    px, py = D(lc.x + da, 0.5)
-    light(f"Light_Sign_Halo_{i + 1}", "point", px, py, lc.y, 25, 3000, maxonly=True)
-# projecting blade sign on the right pier: double-sided "Owns" lightbox on a black bracket
-BX0, BX1, BY0 = 508.7, 522.7, 91.5          # 14 cm deep lightbox, projecting ~1.9 m from the pier
+# middle of the portal: a digital ad screen (image textures/screen_ad.png) in a black surround
+vprism("Front_Box_SignPanel", L, "metal_black", rect(bx0, 330, bx1, 545 - BW), FO, U, -16, -2)
+AD_A0, AD_A1, AD_B0, AD_B1 = bx0 + 4, bx1 - 4, 334, 545 - BW - 4
+_Z = (U[1], -U[0])                                            # outward normal of the angled front
+_o = D(AD_A0, -1.7)
+prism("Front_Ad_Screen", L, "screen_ad", Polygon([D(AD_A0, -1.7), D(AD_A1, -1.7), D(AD_A1, -2.0), D(AD_A0, -2.0)]), AD_B0, AD_B1, r=0)
+E[-1]["uv"] = dict(o=[_o[0], _o[1], AD_B0], u=[U[0], U[1], 0], v=[0, 0, 1], n=[_Z[0], _Z[1], 0], w=AD_A1 - AD_A0, h=AD_B1 - AD_B0)
+# projecting blade sign on the right pier: double-sided light lightbox, dark logo (reference style)
+BX0, BX1, BY0 = 508.7, 522.7, 91.5          # 14 cm deep, projecting ~1.9 m from the pier
 BL0, BL1, BZ0, BZ1 = BY0 - 196, BY0 - 16, 425, 500
 prism("Blade_Sign_Wall_Plate", L, "metal_black", rect(506.7, 89.5, 524.7, 91.5), 410, 515, r=0.4)
 prism("Blade_Sign_Arm_Top", L, "metal_black", rect(513.7, BL0 + 10, 517.7, BY0), 503, 507, r=0.4)
 prism("Blade_Sign_Arm_Bottom", L, "metal_black", rect(513.7, BL1 - 6, 517.7, BY0), 418, 422, r=0.4)
 blade_box = Polygon([(0, 0), (BL1 - BL0, 0), (BL1 - BL0, BZ1 - BZ0), (0, BZ1 - BZ0)])
-vprism("Blade_Sign_Box", L, "metal_black", affinity.translate(blade_box.buffer(-6, join_style=2).buffer(6), 0, BZ0),
-       (BX0, BL0, 0), (0, 1), 0, BX1 - BX0, r=1.2, bot=True)
-SY0, SY1, SZ0, SZ1 = BL0 + 5, BL1 - 5, BZ0 + 5, BZ1 - 5
+vprism("Blade_Sign_Box", L, "metal_black", affinity.translate(blade_box.buffer(-4, join_style=2).buffer(4), 0, BZ0),
+       (BX0, BL0, 0), (0, 1), 0, BX1 - BX0, r=1.0, bot=True)
+SY0, SY1, SZ0, SZ1 = BL0 + 3.5, BL1 - 3.5, BZ0 + 3.5, BZ1 - 3.5
 SW_, SH_ = SY1 - SY0, SZ1 - SZ0
-for side, x0, d0, d1 in (("West", BX0 - 0.1, -0.5, 0), ("East", BX1 + 0.1, 0, 0.5)):     # warm LED edge around each face
-    edge = rect(SY0 - 3.5, SZ0 - 3.5, SY1 + 3.5, SZ1 + 3.5).buffer(2.5).difference(rect(SY0 - 1.5, SZ0 - 1.5, SY1 + 1.5, SZ1 + 1.5).buffer(2.5))
-    edge = affinity.translate(edge, -BL0, 0)
-    vprism(f"Blade_Sign_LED_Edge_{side}", L, "led_halo_soft", edge, (x0, BL0, 0), (0, 1), d0, d1, r=0)
 
 
-def make_screen_image(path, px=1600):
-    from PIL import Image, ImageDraw
-    W, H = px, int(px * SH_ / SW_)
+def _draw(d, geom, box, fill, bg):
+    x0, y0, x1, y1 = geom.bounds
+    k = min((box[2] - box[0]) / (x1 - x0), (box[3] - box[1]) / (y1 - y0))
+    cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
+    tf = lambda pts: [(cx + (x - (x0 + x1) / 2) * k, cy - (y - (y0 + y1) / 2) * k) for x, y in pts]
+    for g in (geom.geoms if hasattr(geom, "geoms") else [geom]):
+        d.polygon(tf(g.exterior.coords), fill=fill)
+        for h in g.interiors:
+            d.polygon(tf(h.coords), fill=bg)
+
+
+def _cream(W, H):
+    from PIL import Image
     img = Image.new("RGB", (W, H))
-    top, bot = np.array([30, 24, 21]), np.array([16, 12, 11])
+    top, bot = np.array([247, 243, 236]), np.array([236, 229, 218])
     for yy in range(H):
         img.paste(tuple(int(c) for c in top + (bot - top) * yy / H), (0, yy, W, yy + 1))
-    d = ImageDraw.Draw(img)
+    return img
 
-    def draw(geom, box, fill, bg):
-        x0, y0, x1, y1 = geom.bounds
-        k = min((box[2] - box[0]) / (x1 - x0), (box[3] - box[1]) / (y1 - y0))
-        cx, cy = (box[0] + box[2]) / 2, (box[1] + box[3]) / 2
-        tf = lambda pts: [(cx + (x - (x0 + x1) / 2) * k, cy - (y - (y0 + y1) / 2) * k) for x, y in pts]
-        for g in (geom.geoms if hasattr(geom, "geoms") else [geom]):
-            d.polygon(tf(g.exterior.coords), fill=fill)
-            for h in g.interiors:
-                d.polygon(tf(h.coords), fill=bg)
-    draw(lettering, (W * 0.3, H * 0.12, W * 0.7, H * 0.62), (248, 242, 232), (24, 19, 17))
-    tg = text_geom("COFFEE & MORE", 10, bold=False)
-    draw(tg, (W * 0.36, H * 0.71, W * 0.64, H * 0.83), (248, 242, 232), (18, 14, 12))
+
+def make_blade_image(path, px=1600):
+    from PIL import ImageDraw
+    W, H = px, int(px * SH_ / SW_)
+    img = _cream(W, H)
+    d = ImageDraw.Draw(img)
+    ink = (43, 36, 32)
+    _draw(d, lettering, (W * 0.25, H * 0.14, W * 0.75, H * 0.64), ink, (243, 238, 230))
+    _draw(d, text_geom("COFFEE & MORE", 10, bold=False), (W * 0.37, H * 0.72, W * 0.63, H * 0.83), (92, 80, 70), (238, 232, 222))
     img.save(path)
 
 
-make_screen_image(os.path.join(os.path.dirname(os.path.abspath(OUT)), "textures", "screen_owns.png"))
+def make_ad_image(path, px=1100):
+    """Ad: COFFEE / iced coffee cup / 15 AED on cream."""
+    from PIL import ImageDraw
+    W, H = px, int(px * (AD_B1 - AD_B0) / (AD_A1 - AD_A0))
+    img = _cream(W, H)
+    d = ImageDraw.Draw(img)
+    ink = (43, 36, 32)
+    _draw(d, text_geom("COFFEE", 10, bold=False), (W * 0.2, H * 0.08, W * 0.8, H * 0.16), ink, (246, 242, 234))
+    cx, top, bot = W / 2, H * 0.30, H * 0.70                   # clear cup with iced latte
+    tw, bw = W * 0.30, W * 0.22
+    lid = H * 0.035
+    d.rounded_rectangle([cx - tw / 2 - 10, top - lid - 6, cx + tw / 2 + 10, top + 4], radius=12, fill=(232, 228, 222), outline=(150, 140, 130), width=3)
+    d.rectangle([cx - 10, top - lid - 60, cx + 10, top - lid - 4], fill=(70, 60, 52))           # straw
+    cup = [(cx - tw / 2, top + 4), (cx + tw / 2, top + 4), (cx + bw / 2, bot), (cx - bw / 2, bot)]
+    d.polygon(cup, fill=(238, 236, 232), outline=(150, 140, 130))
+    for i in range(60):                                         # coffee: dark bottom to milky top
+        f0, f1 = 0.22 + i / 60 * 0.78, 0.22 + (i + 1) / 60 * 0.78
+        y0, y1 = top + 4 + (bot - top - 4) * f0, top + 4 + (bot - top - 4) * f1
+        w0 = tw + (bw - tw) * f0
+        w1 = tw + (bw - tw) * f1
+        t = i / 60
+        c = tuple(int(a + (b - a) * t) for a, b in zip((214, 178, 136), (96, 58, 32)))
+        d.polygon([(cx - w0 / 2 + 6, y0), (cx + w0 / 2 - 6, y0), (cx + w1 / 2 - 6, y1), (cx - w1 / 2 + 6, y1)], fill=c)
+    for k in range(4):                                          # ice cubes
+        x = cx - tw * 0.28 + k * tw * 0.17
+        y = top + (bot - top) * (0.32 + 0.06 * (k % 2))
+        d.rounded_rectangle([x, y, x + tw * 0.13, y + tw * 0.13], radius=6, fill=(236, 226, 210), outline=(200, 186, 166))
+    _draw(d, text_geom("15 AED", 10, bold=False), (W * 0.28, H * 0.80, W * 0.72, H * 0.88), ink, (240, 234, 224))
+    img.save(path)
+
+
+_tex = os.path.join(os.path.dirname(os.path.abspath(OUT)), "textures")
+make_blade_image(os.path.join(_tex, "screen_owns.png"))
+make_ad_image(os.path.join(_tex, "screen_ad.png"))
 prism("Blade_Sign_Screen_West", L, "screen_owns", rect(BX0 - 0.3, SY0, BX0, SY1), SZ0, SZ1, r=0)
-E[-1]["uv"] = dict(axis=1, u0=SY1, du=-1, w=SW_, v0=SZ0, h=SH_)
+E[-1]["uv"] = dict(o=[BX0 - 0.3, SY1, SZ0], u=[0, -1, 0], v=[0, 0, 1], n=[-1, 0, 0], w=SW_, h=SH_)
 prism("Blade_Sign_Screen_East", L, "screen_owns", rect(BX1, SY0, BX1 + 0.3, SY1), SZ0, SZ1, r=0)
-E[-1]["uv"] = dict(axis=1, u0=SY0, du=1, w=SW_, v0=SZ0, h=SH_)
-light("Light_Blade_Sign", "point", 515.7, BY0 - 106, 462, 40, 3000, maxonly=True)
+E[-1]["uv"] = dict(o=[BX1 + 0.3, SY0, SZ0], u=[0, 1, 0], v=[0, 0, 1], n=[1, 0, 0], w=SW_, h=SH_)
+light("Light_Blade_Sign", "point", 515.7, BY0 - 106, 462, 30, 4000, maxonly=True)
 
 # entrance door on the short front (x 389.7 .. 499.7)
 DO, DU = (389.7, 111.5, 0), (1, 0)   # local Z = (0,-1): d = 0 at inner face, 20 at street face

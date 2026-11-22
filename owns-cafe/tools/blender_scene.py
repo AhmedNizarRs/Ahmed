@@ -205,8 +205,9 @@ for o in D["objects"]:
         uv[sel, :, 1] = P[sel][:, :, iv] / size
     if o.get("uv"):            # exact 1:1 mapping (screens)
         q = o["uv"]
-        uv[..., 0] = (P[..., q["axis"]] - q["u0"]) * q["du"] / q["w"]
-        uv[..., 1] = (P[..., 2] - q["v0"]) / q["h"]
+        rel = P - np.array(q["o"])
+        uv[..., 0] = rel @ np.array(q["u"]) / q["w"]
+        uv[..., 1] = rel @ np.array(q["v"]) / q["h"]
     ul = me.uv_layers.new(name="UVMap")
     ul.data.foreach_set("uv", uv.astype(np.float32).ravel())
     me.materials.append(MAT[o["m"]])

@@ -37,7 +37,8 @@ The surfaces use Poly Haven scans (CC0), recoloured by `tools/make_interior_text
   - vein-cut travertine in 90 × 60 cm slabs (each slab with its own layering, pits and tone; 3 mm joints, with relief);
   - all signs share one style, set by the front portal sign: white glowing "Owns" letters with a halo and "COFFEE & MORE" beneath;
   - a large (about 4.5 m × 1.4 m) white glowing "Owns / COFFEE & MORE" logo with a soft halo above the drive-thru window, with "DRIVE THRU →" under it;
-  - a 1.8 m × 0.75 m double-sided projecting lightbox sign with screen faces and a warm gold LED edge on the corner pier, visible from the side streets (screen image `textures/screen_owns.png`);
+  - a 1.8 m × 0.75 m double-sided projecting cream lightbox with the dark "Owns" logo on the corner pier, visible from the side streets (`textures/screen_owns.png`);
+  - a digital ad screen in the middle of the front portal ("COFFEE · 15 AED", `textures/screen_ad.png`, so you can swap in your own artwork);
   - satin glass above the ceiling line;
   - continuous linear LED grazers at the foot of every stone face, for an even warm wash up to the parapet with no scallops;
   - a softly lit neighbouring shop;

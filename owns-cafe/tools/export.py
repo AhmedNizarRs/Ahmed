@@ -130,6 +130,17 @@ fn mkMesh nm lay mk vs fs planar:0 = (
 		m
 	) catch (nFail += 1; format "Owns: could not build % (%)\n" nm (getCurrentException()))
 )
+fn mkScreen nm lay mk wd ht tm = (
+	try (
+		local pl = Plane name:nm width:wd length:ht lengthsegs:1 widthsegs:1 mapcoords:true
+		pl.transform = tm
+		local i = findItem matNames mk
+		if i > 0 do pl.material = mats[i]
+		(getLayer lay).addNode pl
+		nObj += 1
+		pl
+	) catch (nFail += 1)
+)
 fn mkLight nm kind p cd k aim hot fall aimv:undefined = (
 	local l = undefined
 	try (l = Free_Light name:nm pos:p) catch (l = Omnilight name:nm pos:p)
@@ -210,8 +221,13 @@ for o in objs:
     vs = "#(" + ",".join(f"[{f(V[i])},{f(V[i + 1])},{f(V[i + 2])}]" for i in range(0, len(V), 3)) + ")"
     F = o["f"]
     fs = "#(" + ",".join(f"[{F[i] + 1},{F[i + 1] + 1},{F[i + 2] + 1}]" for i in range(0, len(F), 3)) + ")"
-    pl = f' planar:{1 if o["uv"]["du"] > 0 else -1}' if o.get("uv") else ""
-    w(f'\tmkMesh "{o["n"]}" "{o["l"]}" "{o["m"]}" {vs} {fs}{pl}')
+    if o.get("uv"):           # screens: a Plane primitive gives exact 0..1 UVs for the image
+        q = o["uv"]
+        X, Y, Nn = np.array(q["u"], float), np.array(q["v"], float), np.array(q["n"], float)
+        c = np.array(q["o"], float) + X * q["w"] / 2 + Y * q["h"] / 2 + Nn * 0.05
+        w(f'\tmkScreen "{o["n"]}" "{o["l"]}" "{o["m"]}" {f(q["w"])} {f(q["h"])} (matrix3 {p3(X)} {p3(Y)} {p3(Nn)} {p3(c)})')
+        continue
+    w(f'\tmkMesh "{o["n"]}" "{o["l"]}" "{o["m"]}" {vs} {fs}')
 w("\t-- lights (photometric, candela, Kelvin)")
 for l in lights:
     if l["kind"] == "linear":
