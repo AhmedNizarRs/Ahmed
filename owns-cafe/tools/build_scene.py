@@ -46,21 +46,41 @@ def rings_of(poly):
     return out
 
 
-def _emit(name, layer, mat, geom, h, M):
+def _emit(name, layer, mat, geom, h, M, kw):
+    """kw: r = edge radius (cm, rounded chamfer; default per material), bot = round the d0/z0 face too,
+    seg = segments of the rounding."""
     parts = rings_of(geom)
     for i, rs in enumerate(parts):
         nm = name if len(parts) == 1 else f"{name}_{i + 1:02d}"
-        E.append(dict(t="prism", n=nm, l=layer, m=mat, rings=rs, h=round(h, 2), M=[round(v, 7) for v in M]))
+        el = dict(t="prism", n=nm, l=layer, m=mat, rings=rs, h=round(h, 2), M=[round(v, 7) for v in M])
+        el.update({("cr" if k == "r" else k): v for k, v in kw.items() if v is not None})
+        E.append(el)
 
 
-def prism(name, layer, mat, geom, z0, z1):
+def prism(name, layer, mat, geom, z0, z1, **kw):
     """Plan outline extruded from z0 to z1."""
     if not hasattr(geom, "geom_type"):
         geom = Polygon(geom)
-    _emit(name, layer, mat, geom, z1 - z0, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, z0])
+    kw.setdefault("bot", z0 > 0.5)          # objects standing on the floor: no rounding underneath
+    _emit(name, layer, mat, geom, z1 - z0, [1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, z0], kw)
 
 
-def vprism(name, layer, mat, geom, origin, u, d0, d1):
+def fprism(name, layer, mat, geom, origin, X, Y, d0, d1, **kw):
+    """Outline in an arbitrary plane (orthonormal X, Y), extruded along Z = X x Y from d0 to d1."""
+    if not hasattr(geom, "geom_type"):
+        geom = Polygon(geom)
+    Z = (X[1] * Y[2] - X[2] * Y[1], X[2] * Y[0] - X[0] * Y[2], X[0] * Y[1] - X[1] * Y[0])
+    P = [origin[i] + Z[i] * d0 for i in range(3)]
+    kw.setdefault("bot", True)
+    _emit(name, layer, mat, geom, d1 - d0, list(X) + list(Y) + list(Z) + P, kw)
+
+
+def ell(name, layer, mat, c, radii, rotz=0.0):
+    """Ellipsoid (pastries): centre c, radii (rx, ry, rz), rotated rotz degrees about Z."""
+    E.append(dict(t="ell", n=name, l=layer, m=mat, p=[round(v, 2) for v in c], rad=list(radii), rz=round(rotz, 2)))
+
+
+def vprism(name, layer, mat, geom, origin, u, d0, d1, **kw):
     """Outline drawn in a vertical plane: a = distance along u (plan direction), b = height.
     Local Z = u x up, i.e. the outward side when u runs left-to-right for a viewer facing the wall.
     Extruded from d0 to d1 along local Z."""
@@ -69,7 +89,8 @@ def vprism(name, layer, mat, geom, origin, u, d0, d1):
     ux, uy = u
     zx, zy = uy, -ux
     px, py, pz = origin[0] + zx * d0, origin[1] + zy * d0, origin[2]
-    _emit(name, layer, mat, geom, d1 - d0, [ux, uy, 0, 0, 0, 1, zx, zy, 0, px, py, pz])
+    kw.setdefault("bot", False)             # the d0 face usually sits against a wall
+    _emit(name, layer, mat, geom, d1 - d0, [ux, uy, 0, 0, 0, 1, zx, zy, 0, px, py, pz], kw)
 
 
 def rect(a0, b0, a1, b1):
@@ -82,16 +103,20 @@ def ring(a0, b0, a1, b1, w, bottom=True):
     return outer.difference(inner)
 
 
-def cyl(name, layer, mat, x, y, z0, r, h, sides=24):
-    E.append(dict(t="cyl", n=name, l=layer, m=mat, p=[round(x, 2), round(y, 2), round(z0, 2)], r=r, h=h, s=sides))
+def cyl(name, layer, mat, x, y, z0, r, h, sides=24, **kw):
+    sides = max(sides, 40 if r > 10 else 28)
+    el = dict(t="cyl", n=name, l=layer, m=mat, p=[round(x, 2), round(y, 2), round(z0, 2)], r=r, h=h, s=sides, bot=z0 > 0.5)
+    el.update({k: v for k, v in kw.items() if v is not None})
+    E.append(el)
 
 
 def sph(name, layer, mat, x, y, z, r):
     E.append(dict(t="sph", n=name, l=layer, m=mat, p=[round(x, 2), round(y, 2), round(z, 2)], r=r))
 
 
-def light(name, kind, x, y, z, cd, kelvin, aim="down", hot=40, fall=80):
-    LIGHTS.append(dict(n=name, kind=kind, p=[round(x, 1), round(y, 1), round(z, 1)], cd=cd, k=kelvin, aim=aim, hot=hot, fall=fall))
+def light(name, kind, x, y, z, cd, kelvin, aim="down", hot=40, fall=80, maxonly=False):
+    """maxonly: helper light for 3ds Max where an emissive strip already lights the scene in Cycles."""
+    LIGHTS.append(dict(n=name, kind=kind, p=[round(x, 1), round(y, 1), round(z, 1)], cd=cd, k=kelvin, aim=aim, hot=hot, fall=fall, maxonly=maxonly))
 
 
 def text_geom(s, height, bold=True, family="DejaVu Sans"):
@@ -221,7 +246,13 @@ ceil_holes = []
 DL = [(230, 330), (330, 255), (455, 175), (455, 320), (200, 585), (320, 585), (465, 470), (465, 610), (280, 400)]
 for (x, y) in DL:
     ceil_holes.append(Polygon([(x + 6 * math.cos(a), y + 6 * math.sin(a)) for a in [i * math.pi / 8 for i in range(16)]]))
-prism("Ceiling_Cafe_Kitchen", L, "ceiling", inner.difference(unary_union(ceil_holes)), H_CEIL, H_CEIL + 8)
+SLOT = rect(XL1, 652, XR0, 666.2)        # hidden LED wall-washer slot along the partition
+prism("Ceiling_Cafe_Kitchen", L, "ceiling", inner.difference(unary_union(ceil_holes)).difference(SLOT), H_CEIL, H_CEIL + 8, r=0)
+prism("Ceiling_Slot_Top", L, "ceiling", rect(XL1, 645, XR0, 666.2), H_CEIL + 18, H_CEIL + 22, r=0)
+prism("Ceiling_Slot_Side", L, "ceiling", rect(XL1, 650, XR0, 652), H_CEIL + 8, H_CEIL + 18, r=0)
+prism("Ceiling_Slot_LED", L, "led_warm", rect(XL1 + 2, 652.5, XR0 - 2, 655), H_CEIL + 17, H_CEIL + 18, r=0)
+for i, x in enumerate((190, 280, 370, 460)):
+    light(f"Light_Partition_Wash_{i + 1}", "spot", x, 659, H_CEIL + 16, 350, 3000, "down", 20, 70, maxonly=True)
 prism("Ceiling_WC", L, "ceiling", rect(311.7, 994.5, 511.7, 1094.5), 260, 268)
 
 # interior wall linings (white, 1 cm)
@@ -253,12 +284,32 @@ panel = rect(0, 0, PW, H_CEIL)
 top_poly = Polygon(wave_up + [(PW, H_CEIL + 50), (0, H_CEIL + 50)]).intersection(panel)
 lower_poly = Polygon(wave_lo + [(PW, -50), (0, -50)]).intersection(panel)
 band_poly = panel.difference(top_poly).difference(lower_poly)
+prism("Partition_Slot_Extension", L, "plaster_white", rect(XL1, PY0, XR0, PY1), H_CEIL, H_CEIL + 18, r=0)
 vprism("Partition_Finish_Top", L, "plaster_sand", top_poly.difference(openings), P_ORIG, P_U, 0, 1.5)
-vprism("Partition_Finish_Wave", L, "oak", band_poly.difference(openings), P_ORIG, P_U, 0, 2.5)
 vprism("Partition_Finish_Bottom", L, "plaster_white", lower_poly.difference(openings), P_ORIG, P_U, 0, 1.5)
+vprism("Partition_Wave_Backing", L, "plaster_sand", band_poly.difference(openings), P_ORIG, P_U, 0, 0.5, r=0)
+# oak wave band floats 3 cm off the wall; LED strips hidden in the gap wash the wall above and below it
+band = band_poly.difference(openings.buffer(1))
+vprism("Partition_Wave_Oak", L, "oak", band, P_ORIG, P_U, 3.0, 6.0, r=0.8, bot=True)
 from shapely import affinity
+inner_band = band.buffer(-1.8)
+for nm, curve, dy in (("Lower", wave_lo, 2.6), ("Upper", wave_up, -2.6)):
+    # thin LED fin standing in the gap: its faces point along the wall (down / up), so the light
+    # escapes from under the floating band and grazes the plaster
+    strip = LineString([(x, y + dy) for x, y in curve]).buffer(0.15, cap_style=2).intersection(inner_band)
+    vprism(f"Partition_Wave_LED_{nm}", L, "led_hidden", strip, P_ORIG, P_U, 0.6, 2.9, r=0)
+    for i, a in enumerate((60, 150, 240, 330)):
+        b = float(LineString(curve).interpolate(a / PW, normalized=True).y)
+        if not openings.buffer(5).contains(Polygon([(a - 1, b - 1), (a + 1, b - 1), (a + 1, b + 1), (a - 1, b + 1)])):
+            light(f"Light_Wave_{nm}_{i + 1}", "spot", XL1 + a, PY0 - 2.5, b, 60, 2800,
+                  "down" if nm == "Lower" else "up", 60, 150, maxonly=True)
+# halo-lit logo: brass letters stand 2.5 cm off the wall, an LED layer behind them glows onto the wall
 logo_el = affinity.translate(lettering, -EL_X0, -EL_Y0)
-vprism("Partition_Logo_Owns", L, "brass", logo_el, P_ORIG, P_U, 1.5, 4.5)
+vprism("Partition_Logo_Owns", L, "brass", logo_el, P_ORIG, P_U, 4.0, 6.5, r=0.35, bot=True)
+vprism("Partition_Logo_Halo_LED", L, "led_halo", logo_el.buffer(-0.6), P_ORIG, P_U, 2.4, 2.8, r=0)
+lx0, ly0, lx1, ly1 = logo_el.bounds
+for i, a in enumerate((lx0 + 30, (lx0 + lx1) / 2, lx1 - 30)):
+    light(f"Light_Logo_Halo_{i + 1}", "point", XL1 + a, PY0 - 3, (ly0 + ly1) / 2, 40, 2800, maxonly=True)
 vprism("Partition_Door_Frame", L, "oak", ring(door_a0 - 4, 0, door_a1 + 4, 214, 4, bottom=False), P_ORIG, P_U, -1, 3)
 prism("Partition_Door_Leaf", L, "door_white", rect(353.7, 670.2, 439.7, 674.2), 0, 209)
 vprism("Partition_Door_Handle", L, "brass", rect(221.5, 92, 238.2, 95.2), P_ORIG, P_U, 0, 6)
@@ -333,15 +384,59 @@ prism("Counter_Plinth", L, "metal_black", C.buffer(-6, join_style=2).intersectio
 prism("Counter_Body", L, "stone", C, 10, 100)
 prism("Counter_Top", L, "quartz", C.buffer(3, join_style=2).intersection(wall_clip), 100, 104)
 prism("Counter_LED", L, "led_warm", C.buffer(3.2, join_style=2).difference(C.buffer(1, join_style=2)).intersection(rect(143.0, 300, 600, 470)), 97.5, 99.5)
-prism("Espresso_Machine", L, "steel", rect(250, 458, 330, 500), 104, 148)
-prism("Espresso_Machine_Top", L, "metal_black", rect(252, 460, 328, 498), 148, 151)
-cyl("Grinder_1", L, "metal_black", 345, 482, 104, 9, 42)
-cyl("Grinder_2", L, "metal_black", 368, 482, 104, 9, 42)
-prism("POS_Screen", L, "metal_black", rect(170, 445, 200, 470), 104, 134)
-prism("Pastry_Case_Base", L, "quartz", rect(352, 462, 412, 500), 104, 108)
-prism("Pastry_Case_Glass", L, "glass", rect(352, 462, 412, 500), 108, 140)
-for i, x in enumerate((360, 380, 400)):
-    cyl(f"Pastry_{i + 1}", L, "oak", x, 481, 108, 7, 5)
+# --- bakery display case (glass, brass corner posts, LED-lit shelves) -------------------
+G = "Bakery_Case"
+prism("Bakery_Case_Base", L, "metal_black", rect(290, 446, 410, 500), 104, 107, r=0.6, g=G)
+for nm, rc in (("Front", rect(291, 446, 409, 447)), ("Back", rect(291, 499, 409, 500)),
+               ("Left", rect(290, 446, 291, 500)), ("Right", rect(409, 446, 410, 500))):
+    prism(f"Bakery_Case_Glass_{nm}", L, "glass", rc, 107, 151, r=0.15)
+prism("Bakery_Case_Glass_Top", L, "glass", rect(290, 446, 410, 500), 151, 152, r=0.3)
+prism("Bakery_Case_Shelf", L, "glass", rect(292, 452, 408, 496), 128, 128.8, r=0.2)
+for i, (x, y) in enumerate([(290.6, 446.6), (409.4, 446.6), (290.6, 499.4), (409.4, 499.4)]):
+    cyl(f"Bakery_Case_Post_{i + 1}", L, "brass", x, y, 107, 0.8, 45, 16, g=G)
+prism("Bakery_Case_LED_Top", L, "led_warm", rect(292, 447.6, 408, 449), 150.2, 150.7, r=0)
+prism("Bakery_Case_LED_Shelf", L, "led_warm", rect(292, 452.4, 408, 453.6), 127.4, 128, r=0)
+light("Light_Bakery_Case", "point", 350, 473, 148, 25, 3000, maxonly=True)
+prism("Bakery_Tray_Lower", L, "oak", rect(296, 452, 404, 494), 107, 107.8, r=0.3)
+prism("Bakery_Tray_Upper", L, "oak", rect(296, 455, 404, 493), 128.8, 129.4, r=0.3)
+
+
+def croissant(name, cx, cy, z0, rot, k=1.0):
+    """Crescent of overlapping ellipsoids."""
+    sizes = [(1.9, 1.4, 1.2), (2.9, 2.1, 1.8), (3.5, 2.7, 2.3), (2.9, 2.1, 1.8), (1.9, 1.4, 1.2)]
+    for j, a in enumerate((-78, -40, 0, 40, 78)):
+        ar = math.radians(a + rot)
+        R = 4.3 * k
+        x = cx + R * math.sin(ar)
+        y = cy - R * math.cos(ar) + 2.2 * k * math.cos(math.radians(rot))
+        rx, ry, rz = (v * k for v in sizes[j])
+        ell(f"{name}_part{j + 1}", L, "pastry", (x, y, z0 + rz * 0.85), (rx, ry, rz), a + rot)
+        E[-1]["g"] = name
+
+
+for i, x in enumerate((309, 336, 363, 390)):
+    croissant(f"Croissant_{i + 1}", x, 474 + (3 if i % 2 else -3), 107.8, 180 if i % 2 else 0, k=1.2)
+for i, x in enumerate((303, 318, 333)):
+    for j, y in enumerate((466, 481)):
+        prism(f"PainChocolat_{i + 1}_{j + 1}", L, "pastry", rect(x - 6, y - 3.5, x + 6, y + 3.5), 129.4, 133.4, r=1.6, bot=True)
+for i, x in enumerate((354, 369, 384, 399 - 1)):
+    if i == 3:
+        for j in range(3):
+            cyl(f"Cookie_{j + 1}", L, "pastry", 396, 466 + j * 0.6, 129.4 + j * 1.0, 3.3, 0.9, 24, cr=0.35, g="Cookies")
+        continue
+    cyl(f"Muffin_{i + 1}_Cup", L, "paper", x, 478, 129.4, 3.1, 3.4, 24, cr=0.3, g=f"Muffin_{i + 1}")
+    ell(f"Muffin_{i + 1}_Top", L, "pastry_dark", (x, 478, 133.4), (3.7, 3.7, 2.3))
+    E[-1]["g"] = f"Muffin_{i + 1}"
+# --- cashier: slim tablet on a stand + card reader ---------------------------------------
+G = "Cashier_Tablet"
+cyl("Cashier_Base", L, "lacquer_white", 212, 478, 104, 5.5, 0.9, 40, cr=0.4, g=G)
+cyl("Cashier_Stem", L, "steel", 212, 477, 104.9, 1.0, 11.5, 20, cr=0.2, g=G)
+tilt = math.radians(22)
+TY = (0, -math.sin(tilt), math.cos(tilt))
+fprism("Cashier_Body", L, "metal_black", rect(-12.5, -8.5, 12.5, 8.5), (212, 476.6, 123.5), (1, 0, 0), TY, 0, 1.0, r=0.45, g=G)
+fprism("Cashier_Screen", L, "screen", rect(-11.6, -7.6, 11.6, 7.6), (212, 476.6, 123.5), (1, 0, 0), TY, -0.06, 0, r=0)
+prism("Card_Reader", L, "metal_black", rect(229, 452, 236.5, 464), 104, 105.8, r=0.6, bot=False)
+prism("Card_Reader_Screen", L, "screen", rect(230, 457.5, 235.5, 463), 105.8, 105.85, r=0)
 prism("Back_Counter_Body", L, "lacquer_white", rect(143.7, 515, 203.7, 660), 0, 90)
 prism("Back_Counter_Top", L, "quartz", rect(143.7, 513, 205.7, 662), 90, 94)
 for i, (x, y) in enumerate([(200, 469.5), (270, 469.5), (340, 469.5)]):
@@ -463,6 +558,7 @@ CAMS += [
     dict(n="CAM_Exterior_DriveThru", p=[-460, 160, 160], t=[122, 640, 210], mm=24),
     dict(n="CAM_Interior_ToPartition", p=[440, 175, 150], t=[290, 666, 175], mm=18),
     dict(n="CAM_Interior_ToFront", p=[478, 655, 160], t=[225, 215, 140], mm=18),
+    dict(n="CAM_Counter_Bakery", p=[378, 368, 132], t=[318, 482, 120], mm=30),
 ]
 
 json.dump(dict(units="cm", elements=E, lights=LIGHTS, cameras=CAMS, notes=NOTES), open(OUT, "w"))
