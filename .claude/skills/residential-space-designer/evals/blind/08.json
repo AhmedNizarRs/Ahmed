@@ -1,0 +1,381 @@
+{
+ "version": "1",
+ "room": {
+  "name": "Bedroom, built-out niche wall behind the bed (no cutting into the structure)",
+  "type": "bedroom",
+  "width": 3.0,
+  "depth": 3.4,
+  "height": 2.7,
+  "walls": {
+   "S": {
+    "load_bearing": true
+   },
+   "E": {
+    "load_bearing": true
+   },
+   "N": {
+    "load_bearing": true
+   },
+   "W": {
+    "load_bearing": true
+   }
+  },
+  "openings": [
+   {
+    "id": "door",
+    "type": "door",
+    "wall": "S",
+    "offset": 2.1,
+    "width": 0.8,
+    "height": 2.05,
+    "swing": "in"
+   },
+   {
+    "id": "win",
+    "type": "window",
+    "wall": "E",
+    "offset": 1.2,
+    "width": 1.2,
+    "height": 1.3,
+    "sill": 0.9,
+    "egress": true
+   }
+  ]
+ },
+ "occupants": [
+  {
+   "id": "user",
+   "role": "adult",
+   "needs": [
+    "sleep",
+    "bedside storage"
+   ]
+  }
+ ],
+ "zones": [
+  {
+   "id": "sleep",
+   "purpose": "sleep",
+   "owner": "user"
+  },
+  {
+   "id": "entry",
+   "purpose": "entry",
+   "owner": "user"
+  }
+ ],
+ "elements": [
+  {
+   "id": "bw_1",
+   "type": "other",
+   "label": "Built-out headboard wall segment: gypsum board on metal studs, 0.2 m proud of wall N (non-structural)",
+   "zone": "sleep",
+   "x": 0,
+   "y": 3.2,
+   "z": 0,
+   "w": 0.15,
+   "d": 0.2,
+   "h": 2.7,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_2",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 0.15,
+   "y": 3.2,
+   "z": 0,
+   "w": 0.5,
+   "d": 0.2,
+   "h": 0.55,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_3",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 0.15,
+   "y": 3.2,
+   "z": 1.0,
+   "w": 0.5,
+   "d": 0.2,
+   "h": 1.7,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_4",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 0.65,
+   "y": 3.2,
+   "z": 0,
+   "w": 0.05,
+   "d": 0.2,
+   "h": 2.7,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_5",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 0.7,
+   "y": 3.2,
+   "z": 0,
+   "w": 1.6,
+   "d": 0.2,
+   "h": 1.25,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_6",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 0.7,
+   "y": 3.2,
+   "z": 1.6,
+   "w": 1.6,
+   "d": 0.2,
+   "h": 1.1,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_7",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 2.3,
+   "y": 3.2,
+   "z": 0,
+   "w": 0.05,
+   "d": 0.2,
+   "h": 2.7,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_8",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 2.35,
+   "y": 3.2,
+   "z": 0,
+   "w": 0.5,
+   "d": 0.2,
+   "h": 0.55,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_9",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 2.35,
+   "y": 3.2,
+   "z": 1.0,
+   "w": 0.5,
+   "d": 0.2,
+   "h": 1.7,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "bw_10",
+   "type": "other",
+   "label": "Built-out wall segment",
+   "zone": "sleep",
+   "x": 2.85,
+   "y": 3.2,
+   "z": 0,
+   "w": 0.15,
+   "d": 0.2,
+   "h": 2.7,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "niche_left",
+   "type": "shelf",
+   "label": "Left bedside niche, recessed into the built-out wall (replaces nightstand), 0.5 W x 0.15 D x 0.45 H, LED strip + outlet",
+   "zone": "sleep",
+   "x": 0.15,
+   "y": 3.2,
+   "z": 0.55,
+   "w": 0.5,
+   "d": 0.15,
+   "h": 0.45,
+   "material": "wood_veneer"
+  },
+  {
+   "id": "niche_right",
+   "type": "shelf",
+   "label": "Right bedside niche, mirror of left",
+   "zone": "sleep",
+   "x": 2.35,
+   "y": 3.2,
+   "z": 0.55,
+   "w": 0.5,
+   "d": 0.15,
+   "h": 0.45,
+   "material": "wood_veneer"
+  },
+  {
+   "id": "niche_long",
+   "type": "shelf",
+   "label": "Long display niche above the headboard, 1.6 W x 0.15 D x 0.35 H, warm LED cove",
+   "zone": "sleep",
+   "x": 0.7,
+   "y": 3.2,
+   "z": 1.25,
+   "w": 1.6,
+   "d": 0.15,
+   "h": 0.35,
+   "material": "wood_veneer"
+  },
+  {
+   "id": "headboard",
+   "type": "board",
+   "label": "Upholstered headboard panel between the bedside niches",
+   "zone": "sleep",
+   "x": 0.75,
+   "y": 3.17,
+   "z": 0.45,
+   "w": 1.5,
+   "d": 0.03,
+   "h": 0.65,
+   "material": "padded_panel"
+  },
+  {
+   "id": "bed",
+   "type": "bed",
+   "label": "Existing double bed 1.4 x 2.0 (frame 1.5 x 2.05), pulled forward 0.2 m",
+   "zone": "sleep",
+   "owner": "user",
+   "x": 0.75,
+   "y": 1.15,
+   "z": 0.0,
+   "w": 1.5,
+   "d": 2.05,
+   "h": 0.5,
+   "material": "solid_wood"
+  }
+ ],
+ "services": [
+  {
+   "type": "outlet",
+   "wall": "N",
+   "offset": 0.4,
+   "height": 0.6,
+   "serves": "bed"
+  },
+  {
+   "type": "usb",
+   "wall": "N",
+   "offset": 2.6,
+   "height": 0.6,
+   "serves": "bed"
+  },
+  {
+   "type": "light",
+   "wall": "N",
+   "offset": 1.5,
+   "height": 1.6
+  },
+  {
+   "type": "switch",
+   "wall": "N",
+   "offset": 0.4,
+   "height": 0.9
+  },
+  {
+   "type": "switch",
+   "wall": "S",
+   "offset": 2.0,
+   "height": 1.1
+  }
+ ],
+ "reveal_path": [
+  {
+   "stop": "entry",
+   "zone": "entry",
+   "camera": [
+    2.5,
+    0.3,
+    1.6
+   ],
+   "target": [
+    1.5,
+    3.2,
+    1.0
+   ],
+   "line": "Two nightstands crowding a 3 m wall, and no one knows if that wall can be cut."
+  },
+  {
+   "stop": "wall",
+   "zone": "sleep",
+   "camera": [
+    1.5,
+    0.6,
+    1.5
+   ],
+   "target": [
+    1.5,
+    3.3,
+    1.2
+   ],
+   "line": "So we don't cut it: a new wall is built 20 cm in front, and the niches are recessed into that."
+  },
+  {
+   "stop": "left_niche",
+   "zone": "sleep",
+   "camera": [
+    0.4,
+    2.2,
+    1.1
+   ],
+   "target": [
+    0.4,
+    3.3,
+    0.75
+   ],
+   "line": "Each side gets a lit niche with its own outlet, in place of a nightstand."
+  },
+  {
+   "stop": "long_niche",
+   "zone": "sleep",
+   "camera": [
+    1.5,
+    1.8,
+    1.6
+   ],
+   "target": [
+    1.5,
+    3.3,
+    1.4
+   ],
+   "line": "Above the headboard, a long warm-lit niche for books and a few objects."
+  },
+  {
+   "stop": "wide",
+   "zone": "entry",
+   "camera": [
+    2.8,
+    0.2,
+    2.2
+   ],
+   "target": [
+    1.5,
+    2.6,
+    0.8
+   ],
+   "line": "Bedside floor is free on both sides, and the structural wall is untouched."
+  }
+ ],
+ "notes": [
+  "All walls treated as load-bearing until confirmed (safety.md). The niches are in a new non-structural built-out wall, not in wall N.",
+  "Door on S and window on E are assumptions; confirm.",
+  "The built-out wall costs 0.2 m of room depth: the foot-of-bed walkway becomes 1.15 m."
+ ]
+}

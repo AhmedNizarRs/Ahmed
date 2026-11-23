@@ -1,0 +1,69 @@
+{
+  "version": "1",
+  "room": {
+    "name": "4 m² micro-room, side-tilt wall bed (dimensions estimated)",
+    "type": "bedroom",
+    "width": 1.7, "depth": 2.35, "height": 2.6, "estimated": true,
+    "walls": { "S": {"load_bearing": true}, "E": {"load_bearing": true}, "N": {"load_bearing": true}, "W": {"load_bearing": true} },
+    "openings": [
+      { "id": "door", "type": "door", "wall": "S", "offset": 0.95, "width": 0.7, "height": 2.0, "swing": "in" },
+      { "id": "win", "type": "window", "wall": "E", "offset": 0.75, "width": 1.0, "height": 1.2, "sill": 0.9, "egress": true }
+    ]
+  },
+  "states": ["night", "day"],
+  "occupants": [ { "id": "user", "role": "adult", "needs": ["sleep flat", "work", "clothes"] } ],
+  "zones": [
+    { "id": "sleep", "purpose": "sleep", "owner": "user" },
+    { "id": "study", "purpose": "study", "owner": "user" },
+    { "id": "dress", "purpose": "dressing", "owner": "user" },
+    { "id": "entry", "purpose": "entry", "owner": "user" }
+  ],
+  "elements": [
+    { "id": "bed", "type": "bed", "label": "Side-tilt (horizontal) wall bed, 0.9 x 2.0 mattress, folds up along the west wall; slatted base, gas-strut mechanism", "zone": "sleep", "owner": "user",
+      "x": 0.0, "y": 0.0, "z": 0.0, "w": 0.95, "d": 2.05, "h": 0.45, "material": "slatted_base",
+      "states": { "day": { "hidden": true } } },
+    { "id": "bed_cabinet", "type": "cabinet", "label": "Wall-bed housing with the bed folded up (0.4 deep x 1.1 high); fold-out desk on its underside", "zone": "sleep",
+      "x": 0.0, "y": 0.0, "z": 0.0, "w": 0.4, "d": 2.05, "h": 1.1, "material": "wood_panel_eco",
+      "states": { "night": { "hidden": true } } },
+    { "id": "desk", "type": "desk", "label": "Fold-out desk on the folded bed's underside, 1.0 x 0.55, stays level", "zone": "study", "owner": "user",
+      "x": 0.4, "y": 0.6, "z": 0.0, "w": 0.55, "d": 1.0, "h": 0.75, "front": "+x", "clearance": 0.6, "material": "solid_wood",
+      "states": { "night": { "hidden": true } } },
+    { "id": "overhead_w", "type": "cabinet", "label": "Overhead cabinet above the wall bed, full length", "zone": "dress",
+      "x": 0.0, "y": 0.0, "z": 1.5, "w": 0.4, "d": 2.05, "h": 1.1, "material": "wood_panel_eco" },
+    { "id": "head_cab", "type": "cabinet", "label": "Shallow full-height headboard cabinet: open shelf at bed level (replaces nightstand), doors above", "zone": "sleep",
+      "x": 0.0, "y": 2.05, "z": 0.0, "w": 0.95, "d": 0.3, "h": 2.6, "front": "-y", "doors": "hinged", "material": "wood_panel_eco" },
+    { "id": "wardrobe", "type": "wardrobe", "label": "Floor-to-ceiling wardrobe 0.75 W, mirrored sliding doors", "zone": "dress", "owner": "user",
+      "x": 0.95, "y": 1.8, "z": 0.0, "w": 0.75, "d": 0.55, "h": 2.6, "front": "-y", "clearance": 0.6, "doors": "sliding", "material": "wood_veneer" },
+    { "id": "overhead_door", "type": "cabinet", "label": "Cabinet over the door", "zone": "entry",
+      "x": 0.95, "y": 0.0, "z": 2.1, "w": 0.75, "d": 0.35, "h": 0.5, "material": "wood_panel_eco" },
+    { "id": "hooks", "type": "hooks", "label": "Worn-once hooks behind the door", "zone": "entry", "x": 1.68, "y": 0.2, "z": 1.4, "w": 0.02, "d": 0.4, "h": 0.2 }
+  ],
+  "services": [
+    { "type": "outlet", "wall": "N", "offset": 0.5, "height": 0.7, "serves": "bed" },
+    { "type": "usb", "wall": "N", "offset": 0.7, "height": 0.7, "serves": "bed" },
+    { "type": "outlet", "wall": "W", "offset": 1.1, "height": 1.2, "serves": "desk" },
+    { "type": "light", "wall": "ceiling", "offset": 0.85, "height": 2.6 },
+    { "type": "light", "wall": "N", "offset": 0.5, "height": 1.0 },
+    { "type": "switch", "wall": "S", "offset": 0.8, "height": 1.1 },
+    { "type": "switch", "wall": "N", "offset": 0.3, "height": 0.8 }
+  ],
+  "reveal_path": [
+    { "stop": "entry", "zone": "entry", "camera": [1.3, 0.2, 1.6], "target": [0.6, 1.8, 1.0],
+      "line": "Four square metres, and the bed doesn't fit flat. You've been sleeping curled up." },
+    { "stop": "night", "zone": "sleep", "camera": [1.4, 0.4, 1.7], "target": [0.4, 1.6, 0.4],
+      "line": "At night a full 2-metre single bed folds down along the long wall. You can lie flat." },
+    { "stop": "headboard", "zone": "sleep", "camera": [1.2, 1.0, 1.1], "target": [0.4, 2.2, 0.8],
+      "line": "At the head: a shelf, an outlet, a reading light. No nightstand needed." },
+    { "stop": "day", "zone": "study", "camera": [1.5, 0.4, 1.4], "target": [0.5, 1.1, 0.8],
+      "line": "By day the bed tilts up into a low cabinet and a desk folds out from its underside." },
+    { "stop": "wardrobe", "zone": "dress", "camera": [1.3, 0.6, 1.5], "target": [1.3, 2.1, 1.3],
+      "line": "Every wall goes to the ceiling: wardrobe, overhead cabinets, even over the door. Mirrored doors double the room." },
+    { "stop": "wide", "zone": "entry", "camera": [1.6, 0.1, 2.3], "target": [0.6, 1.6, 0.6],
+      "line": "Same 4 m², now with a real bed, a desk and a place for everything." }
+  ],
+  "notes": [
+    "Room 1.7 x 2.35 m, ceiling 2.6 m, door and window positions are assumptions; confirm.",
+    "Side-tilt wall beds must be anchored to the wall or floor per the manufacturer; get the fixing confirmed.",
+    "A 4 m² room may fall below the local minimum size for a habitable bedroom; check the local code."
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Split-level stair hall: garden level (0.0) to kids' level (+1.5)",
+    "type": "stairs",
+    "width": 2.4,
+    "depth": 4.0,
+    "height": 4.2,
+    "estimated": true,
+    "walls": {
+      "S": { "load_bearing": true },
+      "E": { "load_bearing": true },
+      "N": { "load_bearing": true },
+      "W": { "load_bearing": true }
+    },
+    "openings": [
+      { "id": "to_heart", "type": "door", "wall": "S", "offset": 1.15, "width": 1.2, "height": 2.4, "swing": "sliding" }
+    ]
+  },
+  "occupants": [
+    { "id": "family", "role": "adult", "needs": ["daily route between levels"] },
+    { "id": "kid_3", "age": 6, "role": "child" },
+    { "id": "guests", "role": "adult" }
+  ],
+  "zones": [
+    { "id": "foot", "purpose": "entry", "owner": "shared" },
+    { "id": "flight", "purpose": "circulation", "owner": "shared" },
+    { "id": "library", "purpose": "storage", "owner": "shared" }
+  ],
+  "elements": [
+    { "id": "stair_1", "type": "stairs", "label": "Half-flight, 8 risers x 0.1875 m, 7 treads x 0.28 m", "zone": "flight",
+      "x": 0.0, "y": 0.9, "z": 0.0, "w": 1.1, "d": 1.96, "h": 1.5, "front": "-y", "clearance": 0.9,
+      "rise": 0.1875, "tread": 0.28, "stair_width": 1.1, "headroom": 2.7, "material": "solid_wood" },
+    { "id": "balustrade", "type": "other", "label": "Glass balustrade + handrail at 0.9 m on the open side", "zone": "flight",
+      "x": 1.1, "y": 0.9, "z": 0.0, "w": 0.04, "d": 1.96, "h": 2.45, "material": "glass_tempered" },
+    { "id": "landing", "type": "platform", "label": "Kids' level floor (+1.5 m)", "zone": "flight",
+      "x": 0.0, "y": 2.86, "z": 0.0, "w": 2.4, "d": 1.14, "h": 1.5 },
+    { "id": "landing_guard", "type": "divider", "label": "Guard 1.0 m high along the landing edge, glass", "zone": "flight",
+      "x": 1.14, "y": 2.82, "z": 1.5, "w": 1.26, "d": 0.04, "h": 1.0, "material": "glass_tempered" },
+    { "id": "library", "type": "shelf", "label": "Shallow library wall, board games for hosting", "zone": "library",
+      "x": 2.05, "y": 0.2, "z": 0.0, "w": 0.35, "d": 2.5, "h": 2.4, "front": "-x", "clearance": 0.6, "material": "wood_panel_eco" }
+  ],
+  "services": [
+    { "type": "light", "wall": "W", "offset": 1.9, "height": 0.3 },
+    { "type": "light", "wall": "ceiling", "offset": 1.5, "height": 4.2 },
+    { "type": "switch", "wall": "S", "offset": 1.0, "height": 1.1 },
+    { "type": "switch", "wall": "N", "offset": 0.4, "height": 2.6 }
+  ],
+  "reveal_path": [
+    { "stop": "foot", "zone": "foot", "camera": [1.7, 0.3, 1.6], "target": [0.5, 2.5, 1.2],
+      "line": "On a slope, every level change is a chance to trip. Here it's one short, even flight of eight steps." },
+    { "stop": "flight", "zone": "flight", "camera": [1.6, 0.5, 1.2], "target": [0.5, 1.9, 0.8],
+      "line": "Risers 187 mm, treads 280 mm, 1.1 m wide: easy for a six-year-old and a guest carrying a tray." },
+    { "stop": "library", "zone": "library", "camera": [1.2, 0.4, 1.5], "target": [2.2, 1.5, 1.2],
+      "line": "The wall opposite is a shallow library, games and books for the whole house." },
+    { "stop": "landing", "zone": "flight", "camera": [1.8, 1.0, 2.2], "target": [1.2, 3.4, 1.8],
+      "line": "Glass guards keep the light and the view, and keep small people from falling." }
+  ],
+  "notes": [
+    "Openings at the landing level (+1.5 m to the kids' wing) cannot be expressed in the schema (openings have no base height); the kids' wing opens off the landing to the north.",
+    "The +1.5 to +3.0 flight sits in the adjoining bay, not over this flight, so headroom over this flight is the full void (about 2.7 m).",
+    "Under-stair storage (drawers in the flight's side) is not modelled because elements cannot overlap the stair box."
+  ]
+}

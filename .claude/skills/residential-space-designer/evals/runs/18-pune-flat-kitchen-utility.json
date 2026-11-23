@@ -1,0 +1,301 @@
+{
+  "version": "1",
+  "room": {
+    "name": "3BHK flat kitchen + utility balcony",
+    "type": "kitchen",
+    "width": 2.7,
+    "depth": 4.4,
+    "height": 2.9,
+    "walls": {},
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "S",
+        "offset": 0.1,
+        "width": 0.9,
+        "swing": "in"
+      },
+      {
+        "id": "utility_win",
+        "type": "window",
+        "wall": "N",
+        "offset": 0.2,
+        "width": 2.3,
+        "sill": 1.0,
+        "drop_outside": 20
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "family",
+      "role": "family"
+    },
+    {
+      "id": "maid",
+      "role": "staff (twice daily)"
+    }
+  ],
+  "zones": [
+    {
+      "id": "cold",
+      "purpose": "storage",
+      "owner": "shared"
+    },
+    {
+      "id": "prep",
+      "purpose": "cooking",
+      "owner": "shared"
+    },
+    {
+      "id": "cook",
+      "purpose": "cooking",
+      "owner": "shared"
+    },
+    {
+      "id": "utility",
+      "purpose": "laundry",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "fridge",
+      "type": "fridge",
+      "x": 0,
+      "y": 0.95,
+      "z": 0,
+      "w": 0.7,
+      "d": 0.7,
+      "h": 1.85,
+      "zone": "cold",
+      "front": "+x"
+    },
+    {
+      "id": "counter_w",
+      "type": "counter",
+      "x": 0,
+      "y": 1.65,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.75,
+      "h": 0.9,
+      "zone": "prep",
+      "front": "+x"
+    },
+    {
+      "id": "sink",
+      "type": "sink",
+      "x": 0,
+      "y": 2.4,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "prep",
+      "front": "+x",
+      "label": "Sink next to the utility door"
+    },
+    {
+      "id": "counter_e1",
+      "type": "counter",
+      "x": 2.1,
+      "y": 0,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x"
+    },
+    {
+      "id": "cooktop",
+      "type": "cooktop",
+      "x": 2.1,
+      "y": 0.8,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.6,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x"
+    },
+    {
+      "id": "counter_e2",
+      "type": "counter",
+      "x": 2.1,
+      "y": 1.4,
+      "z": 0,
+      "w": 0.6,
+      "d": 1.0,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x",
+      "label": "Deep drawers: cookers, kadai, tawa"
+    },
+    {
+      "id": "pantry",
+      "type": "cabinet",
+      "x": 2.1,
+      "y": 2.4,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.8,
+      "h": 2.2,
+      "zone": "cook",
+      "label": "Tall pantry"
+    },
+    {
+      "id": "lofts",
+      "type": "cabinet",
+      "x": 0,
+      "y": 0.95,
+      "z": 2.2,
+      "w": 0.6,
+      "d": 2.25,
+      "h": 0.7,
+      "label": "Lofts for festival vessels and bulk storage"
+    },
+    {
+      "id": "partition_w",
+      "type": "partition",
+      "x": 0,
+      "y": 3.2,
+      "z": 0,
+      "w": 1.8,
+      "d": 0.1,
+      "h": 2.9
+    },
+    {
+      "id": "utility_door",
+      "type": "door",
+      "x": 1.8,
+      "y": 3.2,
+      "z": 0,
+      "w": 0.8,
+      "d": 0.1,
+      "h": 2.1,
+      "label": "Sliding glass door to utility"
+    },
+    {
+      "id": "partition_e",
+      "type": "partition",
+      "x": 2.6,
+      "y": 3.2,
+      "z": 0,
+      "w": 0.1,
+      "d": 0.1,
+      "h": 2.9
+    },
+    {
+      "id": "washer",
+      "type": "washer",
+      "x": 0,
+      "y": 3.8,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.6,
+      "h": 0.85,
+      "zone": "utility",
+      "front": "-y"
+    },
+    {
+      "id": "utility_sink",
+      "type": "other",
+      "x": 0.7,
+      "y": 3.9,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.5,
+      "h": 0.6,
+      "zone": "utility",
+      "label": "Low tap and sink for vessel washing"
+    },
+    {
+      "id": "drying",
+      "type": "other",
+      "x": 1.4,
+      "y": 3.6,
+      "z": 2.3,
+      "w": 1.2,
+      "d": 0.6,
+      "h": 0.1,
+      "zone": "utility",
+      "label": "Ceiling drying rack"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 2.0,
+      "height": 1.1
+    },
+    {
+      "type": "outlet",
+      "wall": "E",
+      "offset": 1.9,
+      "height": 1.1
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 4.1,
+      "height": 1.0,
+      "serves": "washer"
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "door",
+      "zone": "prep",
+      "camera": [
+        0.6,
+        0.2,
+        1.6
+      ],
+      "target": [
+        1.4,
+        3.0,
+        1.0
+      ],
+      "line": "A parallel kitchen with a 1.4 m aisle, so two people can work."
+    },
+    {
+      "stop": "cook",
+      "zone": "cook",
+      "camera": [
+        1.0,
+        1.5,
+        1.6
+      ],
+      "target": [
+        2.4,
+        1.2,
+        1.0
+      ],
+      "line": "Deep drawers by the hob for daily Indian cooking."
+    },
+    {
+      "stop": "utility",
+      "zone": "utility",
+      "camera": [
+        1.4,
+        2.8,
+        1.6
+      ],
+      "target": [
+        0.8,
+        4.1,
+        0.8
+      ],
+      "line": "The utility balcony keeps washing and vessel cleaning out of the kitchen."
+    }
+  ],
+  "notes": [
+    "Maid's route: main door → dining → kitchen → utility; never through bedrooms. If the flat has a service entry, use it.",
+    "Pooja unit goes on the NE wall of the dining/living area, not in the kitchen (see the home plan in results.md).",
+    "Check society rules before glazing or grilling the utility balcony."
+  ]
+}

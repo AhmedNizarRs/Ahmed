@@ -1,0 +1,64 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Double-height living with new loft and quarter-turn stair",
+    "type": "stairs",
+    "width": 4.2,
+    "depth": 6.5,
+    "height": 5.0,
+    "estimated": true,
+    "walls": {"S": {"load_bearing": true}, "E": {"load_bearing": true}, "N": {"load_bearing": true}, "W": {"load_bearing": true}},
+    "openings": [
+      {"id": "entry_door", "type": "door", "wall": "W", "offset": 3.2, "width": 1.0, "swing": "in"},
+      {"id": "tall_window", "type": "window", "wall": "S", "offset": 0.3, "width": 1.2, "sill": 2.9, "height": 1.6},
+      {"id": "lower_window", "type": "window", "wall": "N", "offset": 1.0, "width": 1.8, "sill": 0.9}
+    ]
+  },
+  "occupants": [
+    {"id": "household", "role": "adult", "needs": ["daily route to loft", "carrying laundry/bedding up"]}
+  ],
+  "zones": [
+    {"id": "stair_foot", "purpose": "circulation", "owner": "shared"},
+    {"id": "stair", "purpose": "circulation", "owner": "shared"},
+    {"id": "under_stair", "purpose": "storage", "owner": "shared"},
+    {"id": "under_loft", "purpose": "leisure", "owner": "shared"},
+    {"id": "loft", "purpose": "study", "owner": "shared"}
+  ],
+  "elements": [
+    {"id": "flight1_landing", "type": "stairs", "x": 1.64, "y": 0.0, "z": 0.0, "w": 2.56, "d": 1.0, "h": 1.3, "zone": "stair", "front": "-x", "clearance": 0.9,
+     "rise": 0.186, "tread": 0.26, "stair_width": 1.0, "headroom": 3.5,
+     "label": "Flight 1: 7 risers along S wall, 6 treads + 1.0 x 1.0 m landing in SE corner", "material": "solid_wood"},
+    {"id": "flight2", "type": "stairs", "x": 3.2, "y": 1.0, "z": 1.3, "w": 1.0, "d": 1.56, "h": 1.3, "zone": "stair",
+     "rise": 0.186, "tread": 0.26, "stair_width": 1.0, "headroom": 2.4,
+     "label": "Flight 2: 7 risers along E wall up to loft edge", "material": "solid_wood"},
+    {"id": "under_stair_store", "type": "cabinet", "x": 3.2, "y": 1.0, "z": 0.0, "w": 1.0, "d": 1.56, "h": 1.25, "zone": "under_stair", "front": "-x", "clearance": 0.6, "doors": "none",
+     "label": "Pull-out drawers / shoe and vacuum bay under flight 2", "material": "wood_panel_eco"},
+    {"id": "loft_slab", "type": "platform", "x": 0.0, "y": 2.56, "z": 2.4, "w": 4.2, "d": 3.94, "h": 0.2, "zone": "loft",
+     "label": "Loft floor: steel beams + deck, top at 2.60 m, 2.40 m clear below and above", "material": "steel_square_tube_galv"},
+    {"id": "loft_guard", "type": "other", "x": 0.0, "y": 2.56, "z": 2.6, "w": 3.2, "d": 0.05, "h": 1.0, "zone": "loft",
+     "label": "Loft edge guard 1.0 m, glass_tempered or vertical balusters < 0.10 m gaps", "material": "glass_tempered"},
+    {"id": "flight2_guard", "type": "other", "x": 3.15, "y": 1.0, "z": 1.3, "w": 0.05, "d": 1.56, "h": 2.2, "zone": "stair",
+     "label": "Open-side guard + handrail on flight 2 (sloped; boxed here)", "material": "glass_tempered"}
+  ],
+  "services": [
+    {"type": "switch", "wall": "W", "offset": 2.9, "height": 1.2, "serves": "stair light, two-way"},
+    {"type": "switch", "wall": "E", "offset": 2.7, "height": 3.8, "serves": "stair light, two-way at loft"},
+    {"type": "light", "wall": "E", "offset": 1.8, "height": 2.2, "serves": "stair wall light"},
+    {"type": "outlet", "wall": "W", "offset": 4.5, "height": 0.3, "serves": "under-loft"}
+  ],
+  "reveal_path": [
+    {"stop": "volume", "zone": "under_loft", "camera": [1.0, 5.8, 1.6], "target": [2.5, 0.5, 2.5], "line": "Five metres of ceiling, half of it wasted air. Now a loft takes the back of the room."},
+    {"stop": "foot", "zone": "stair_foot", "camera": [0.6, 1.6, 1.5], "target": [2.4, 0.5, 0.8], "line": "The stair starts here, with a clear landing at its foot, and runs along the south wall."},
+    {"stop": "landing", "zone": "stair", "camera": [2.2, 2.0, 2.4], "target": [3.7, 0.5, 1.3], "line": "Seven easy steps, a full landing in the corner, then a quarter turn. No winders, no ladder."},
+    {"stop": "under_stair", "zone": "under_stair", "camera": [2.0, 1.8, 1.0], "target": [3.4, 1.8, 0.6], "line": "Under the second flight: drawers for shoes, the vacuum and bedding."},
+    {"stop": "loft", "zone": "loft", "camera": [1.0, 6.2, 4.1], "target": [3.0, 1.0, 2.6], "line": "At the top: a loft with 2.4 m standing height and a guard along the edge."},
+    {"stop": "wide", "zone": "under_loft", "camera": [0.4, 0.4, 4.5], "target": [3.0, 5.0, 1.0], "line": "Wide shot: stair in the open half, loft above the back, living below."}
+  ],
+  "notes": [
+    "Room size, door and window positions are assumed; loft depth follows from the stair.",
+    "Floor-to-loft 2.60 m = 14 risers x 0.186 m; 12 treads x 0.26 m (7.3 in riser, 10.2 in tread; IRC limits 7.75 in / 10 in). 2R+T = 0.63 m.",
+    "Headroom is open to the 5 m ceiling over both flights; the lowest point is 2.4 m at the loft arrival.",
+    "India: verify against NBC 2016 Part 3/4 and local bye-laws; IRC values used by the checker are stricter in places, looser in others.",
+    "Loft structure, anchorage into walls/slab and any FSI/permission questions need a structural engineer."
+  ]
+}

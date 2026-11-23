@@ -1,0 +1,93 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Rear kitchen-dining-family room (side-return infill + knock-through)",
+    "type": "kitchen",
+    "width": 4.6,
+    "depth": 8.0,
+    "height": 2.75,
+    "estimated": true,
+    "walls": {
+      "S": { "load_bearing": true },
+      "E": { "load_bearing": true },
+      "N": { "load_bearing": false },
+      "W": { "load_bearing": true }
+    },
+    "openings": [
+      { "id": "hall_door", "type": "door", "wall": "S", "offset": 3.6, "width": 0.8, "height": 2.1, "swing": "sliding" },
+      { "id": "garden_doors", "type": "door", "wall": "N", "offset": 0.4, "width": 3.8, "height": 2.3, "swing": "sliding" }
+    ]
+  },
+  "occupants": [
+    { "id": "parent_1", "role": "adult", "needs": ["cook while watching kids"] },
+    { "id": "parent_2", "role": "adult", "needs": ["second cook"] },
+    { "id": "kid_1", "age": 7, "role": "child", "needs": ["homework", "play"] },
+    { "id": "kid_2", "age": 4, "role": "child", "needs": ["play"] }
+  ],
+  "zones": [
+    { "id": "entry", "purpose": "entry", "owner": "shared" },
+    { "id": "cook", "purpose": "storage", "owner": "shared" },
+    { "id": "dine", "purpose": "leisure", "owner": "shared" },
+    { "id": "family", "purpose": "leisure", "owner": "shared" },
+    { "id": "route", "purpose": "circulation", "owner": "shared" }
+  ],
+  "elements": [
+    { "id": "fridge", "type": "fridge", "label": "Fridge-freezer, run end", "zone": "cook", "x": 0.0, "y": 0.0, "z": 0.0, "w": 0.7, "d": 0.7, "h": 2.0, "front": "+y" },
+    { "id": "pantry", "type": "cabinet", "label": "Full-height pull-out pantry", "zone": "cook", "x": 0.7, "y": 0.0, "z": 0.0, "w": 0.6, "d": 0.65, "h": 2.2, "material": "wood_panel_eco" },
+    { "id": "oven", "type": "oven", "label": "Oven tower (oven + combi microwave)", "zone": "cook", "x": 1.3, "y": 0.0, "z": 0.0, "w": 0.6, "d": 0.65, "h": 2.2, "front": "+y" },
+    { "id": "counter_s1", "type": "counter", "label": "Dishwasher + drawers under", "zone": "cook", "x": 1.9, "y": 0.0, "z": 0.0, "w": 0.6, "d": 0.65, "h": 0.9, "front": "+y", "material": "stone_marble" },
+    { "id": "sink", "type": "sink", "label": "Sink, bin pull-out under", "zone": "cook", "x": 2.5, "y": 0.0, "z": 0.0, "w": 0.6, "d": 0.65, "h": 0.9, "front": "+y" },
+    { "id": "counter_s2", "type": "counter", "label": "Sink landing, toe-kick drawer", "zone": "cook", "x": 3.1, "y": 0.0, "z": 0.0, "w": 0.45, "d": 0.65, "h": 0.9, "front": "+y", "material": "stone_marble" },
+    { "id": "uppers_s", "type": "cabinet", "label": "Wall cabinets + task light under", "zone": "cook", "x": 1.9, "y": 0.0, "z": 1.45, "w": 1.65, "d": 0.35, "h": 0.75, "material": "wood_panel_eco" },
+    { "id": "island_w", "type": "island", "label": "Island: hob landing, pan drawers", "zone": "cook", "x": 0.6, "y": 1.9, "z": 0.0, "w": 0.6, "d": 1.0, "h": 0.9, "front": "-y", "material": "stone_marble" },
+    { "id": "cooktop", "type": "cooktop", "label": "Induction hob facing the family room", "zone": "cook", "x": 1.2, "y": 1.9, "z": 0.0, "w": 0.8, "d": 1.0, "h": 0.9, "front": "-y" },
+    { "id": "island_e", "type": "island", "label": "Island: main prep, craft cupboards on the far face", "zone": "cook", "x": 2.0, "y": 1.9, "z": 0.0, "w": 1.0, "d": 1.0, "h": 0.9, "front": "-y", "material": "stone_marble" },
+    { "id": "hood", "type": "cabinet", "label": "Ceiling extractor, ducted through flat roof", "zone": "cook", "x": 1.25, "y": 2.1, "z": 2.25, "w": 0.7, "d": 0.6, "h": 0.4 },
+    { "id": "table", "type": "table", "label": "Dining / homework table, 6 seats", "zone": "dine", "x": 0.6, "y": 3.9, "z": 0.0, "w": 1.8, "d": 0.9, "h": 0.75, "front": "+y", "clearance": 1.12, "material": "solid_wood" },
+    { "id": "chair_s1", "type": "chair", "zone": "dine", "x": 0.75, "y": 3.45, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.85 },
+    { "id": "chair_s2", "type": "chair", "zone": "dine", "x": 1.35, "y": 3.45, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.85 },
+    { "id": "chair_s3", "type": "chair", "zone": "dine", "x": 1.95, "y": 3.45, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.85 },
+    { "id": "chair_n1", "type": "chair", "zone": "dine", "x": 0.75, "y": 4.8, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.85 },
+    { "id": "chair_n2", "type": "chair", "zone": "dine", "x": 1.35, "y": 4.8, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.85 },
+    { "id": "chair_n3", "type": "chair", "zone": "dine", "x": 1.95, "y": 4.8, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.85 },
+    { "id": "storage_e", "type": "cabinet", "label": "Family wall: closed joinery, homework + art supplies, charging shelf", "zone": "route", "x": 4.15, "y": 3.6, "z": 0.0, "w": 0.45, "d": 2.2, "h": 2.2, "front": "-x", "clearance": 0.6, "doors": "sliding", "material": "wood_panel_eco" },
+    { "id": "sofa", "type": "sofa", "label": "Sofa facing the garden, back to the kitchen", "zone": "family", "x": 0.4, "y": 5.95, "z": 0.0, "w": 2.2, "d": 0.95, "h": 0.85, "front": "+y" },
+    { "id": "toy_bench", "type": "cabinet", "label": "Toy-drawer bench, seat on top", "zone": "family", "x": 4.15, "y": 6.0, "z": 0.0, "w": 0.45, "d": 1.6, "h": 0.45, "front": "-x", "clearance": 0.6, "material": "wood_panel_eco" }
+  ],
+  "services": [
+    { "type": "outlet", "wall": "S", "offset": 2.2, "height": 1.1, "serves": "counter_s1" },
+    { "type": "outlet", "wall": "S", "offset": 3.35, "height": 1.1, "serves": "counter_s2" },
+    { "type": "outlet", "wall": "E", "offset": 4.0, "height": 1.0, "serves": "storage_e" },
+    { "type": "outlet", "wall": "W", "offset": 4.35, "height": 0.3, "serves": "table" },
+    { "type": "outlet", "wall": "W", "offset": 6.4, "height": 0.3, "serves": "sofa" },
+    { "type": "light", "wall": "ceiling", "offset": 2.4, "height": 2.75 },
+    { "type": "light", "wall": "ceiling", "offset": 4.35, "height": 2.75 },
+    { "type": "light", "wall": "ceiling", "offset": 6.5, "height": 2.75 },
+    { "type": "switch", "wall": "S", "offset": 4.5, "height": 1.1 },
+    { "type": "switch", "wall": "E", "offset": 7.6, "height": 1.1 }
+  ],
+  "reveal_path": [
+    { "stop": "hall", "zone": "entry", "camera": [4.0, 0.4, 1.6], "target": [2.0, 6.0, 1.0],
+      "line": "Before: kitchen in the narrow back extension, kids out of sight two rooms away. Now one room runs straight to the garden." },
+    { "stop": "hob", "zone": "cook", "camera": [1.6, 1.2, 1.6], "target": [1.8, 7.5, 0.8],
+      "line": "Stand at the hob and look up: homework table, sofa and garden are all in front of you." },
+    { "stop": "triangle", "zone": "cook", "camera": [3.6, 3.2, 1.8], "target": [1.5, 0.8, 0.9],
+      "line": "Fridge, sink and hob form a 7.3 m triangle, and nobody walks through it on the way to the garden." },
+    { "stop": "storage", "zone": "cook", "camera": [2.2, 1.5, 1.5], "target": [0.9, 0.2, 1.2],
+      "line": "Pull-out pantry and oven tower sit in the darker back, so the bright end stays open." },
+    { "stop": "table", "zone": "dine", "camera": [3.4, 3.4, 1.4], "target": [1.5, 4.3, 0.75],
+      "line": "Homework happens one metre from the cook, not up in a bedroom." },
+    { "stop": "family_wall", "zone": "route", "camera": [2.8, 4.6, 1.5], "target": [4.4, 4.7, 1.1],
+      "line": "Art supplies, chargers and school bags live behind sliding doors along the route." },
+    { "stop": "wide", "zone": "family", "camera": [4.3, 7.8, 2.2], "target": [1.8, 1.5, 0.9],
+      "line": "From the garden doors: play, sit, eat and cook in one line of sight." }
+  ],
+  "notes": [
+    "All dimensions estimated from a typical London Victorian terrace (about 4.6 m between party walls); confirm with a measured survey.",
+    "Layout walls are axes: S = wall to the hall / front of house, N = garden. They are not compass directions.",
+    "Island far (north) face: shallow cupboards only, no stools opposite the hob.",
+    "Gap from island to table edge 1.0 m (NKBA 0.91 m to edge past a seated diner).",
+    "Rooflight over the side-return strip (W side) is not modelled; the schema has no rooflight opening type.",
+    "Ceiling height varies in reality (about 3.0 m original, 2.6-2.75 m extension); 2.75 m used throughout."
+  ]
+}

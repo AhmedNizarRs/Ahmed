@@ -1,0 +1,79 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Two boys, offset L-loft with two desks (dimensions estimated)",
+    "type": "kids_bedroom",
+    "width": 3.0, "depth": 3.0, "height": 2.7, "estimated": true,
+    "walls": { "S": {"load_bearing": true}, "E": {"load_bearing": true}, "N": {"load_bearing": true}, "W": {"load_bearing": true} },
+    "openings": [
+      { "id": "door", "type": "door", "wall": "S", "offset": 2.1, "width": 0.8, "height": 2.05, "swing": "in" },
+      { "id": "win", "type": "window", "wall": "E", "offset": 0.85, "width": 1.0, "height": 1.2, "sill": 0.9, "egress": true }
+    ]
+  },
+  "occupants": [
+    { "id": "boy_a", "age": 10, "role": "child", "needs": ["study", "sleep"] },
+    { "id": "boy_b", "age": 8, "role": "child", "needs": ["study", "sleep"] }
+  ],
+  "zones": [
+    { "id": "entry", "purpose": "entry", "owner": "shared" },
+    { "id": "sleep_a", "purpose": "sleep", "owner": "boy_a" },
+    { "id": "study_a", "purpose": "study", "owner": "boy_a" },
+    { "id": "dress_a", "purpose": "dressing", "owner": "boy_a" },
+    { "id": "sleep_b", "purpose": "sleep", "owner": "boy_b" },
+    { "id": "study_b", "purpose": "study", "owner": "boy_b" },
+    { "id": "dress_b", "purpose": "dressing", "owner": "boy_b" },
+    { "id": "play", "purpose": "leisure", "owner": "shared" }
+  ],
+  "elements": [
+    { "id": "bed_lower", "type": "bed", "label": "Lower bed 0.9 x 2.0 on 3 wheeled drawers, slatted base", "zone": "sleep_b", "owner": "boy_b",
+      "x": 0.0, "y": 0.0, "z": 0.0, "w": 0.95, "d": 2.0, "h": 0.45, "material": "solid_wood" },
+    { "id": "bed_upper", "type": "bed", "label": "Upper bed 0.9 x 2.0 along the north wall, curtain on the room side", "zone": "sleep_a", "owner": "boy_a",
+      "x": 1.0, "y": 2.05, "z": 1.55, "w": 2.0, "d": 0.95, "h": 0.25, "guardrail": true, "guardrail_height": 0.18, "material": "steel_square_tube_galv" },
+    { "id": "ladder_a", "type": "ladder", "label": "Fixed angled ladder, flat anti-slip rungs at 0.25 m pitch, grab handle at top", "zone": "sleep_a", "owner": "boy_a",
+      "x": 0.55, "y": 2.6, "z": 0.0, "w": 0.4, "d": 0.4, "h": 1.8, "front": "-y", "clearance": 0.6, "serves": "bed_upper", "material": "solid_wood" },
+    { "id": "tower_a", "type": "cabinet", "label": "Book and toy tower in the corner, doubles as the ladder's side rail", "zone": "sleep_a", "owner": "boy_a",
+      "x": 0.0, "y": 2.6, "z": 0.0, "w": 0.55, "d": 0.4, "h": 1.8, "material": "wood_panel_eco" },
+    { "id": "desk_a", "type": "desk", "label": "Desk under the loft, 1.0 m, pinboard over", "zone": "study_a", "owner": "boy_a",
+      "x": 1.0, "y": 2.45, "z": 0.0, "w": 1.0, "d": 0.55, "h": 0.75, "front": "-y", "clearance": 0.6, "material": "solid_wood" },
+    { "id": "ward_a", "type": "wardrobe", "label": "Wardrobe under the loft, 1.0 m, sliding doors, short hang + drawers", "zone": "dress_a", "owner": "boy_a",
+      "x": 2.0, "y": 2.45, "z": 0.0, "w": 1.0, "d": 0.55, "h": 1.5, "front": "-y", "clearance": 0.6, "doors": "sliding", "material": "wood_veneer" },
+    { "id": "board_a", "type": "board", "zone": "study_a", "x": 1.0, "y": 2.98, "z": 0.9, "w": 1.0, "d": 0.02, "h": 0.55 },
+    { "id": "curtain_a", "type": "curtain", "zone": "sleep_a", "x": 1.0, "y": 2.03, "z": 1.85, "w": 2.0, "d": 0.02, "h": 0.8 },
+    { "id": "desk_b", "type": "desk", "label": "Window desk, 1.0 m", "zone": "study_b", "owner": "boy_b",
+      "x": 2.45, "y": 0.82, "z": 0.0, "w": 0.55, "d": 1.0, "h": 0.75, "front": "-x", "clearance": 0.6, "material": "solid_wood" },
+    { "id": "ward_b", "type": "wardrobe", "label": "Floor-to-ceiling wardrobe, 1.05 m, sliding doors, long-hang column", "zone": "dress_b", "owner": "boy_b",
+      "x": 0.95, "y": 0.0, "z": 0.0, "w": 1.05, "d": 0.6, "h": 2.6, "front": "+y", "clearance": 0.6, "doors": "sliding", "material": "wood_veneer" },
+    { "id": "shelf_b", "type": "cabinet", "label": "Overhead cabinet above the lower bed (seasonal, quilts)", "zone": "dress_b", "owner": "boy_b",
+      "x": 0.0, "y": 0.0, "z": 2.1, "w": 0.4, "d": 2.0, "h": 0.5, "material": "wood_panel_eco" },
+    { "id": "hooks_b", "type": "hooks", "label": "Worn-once hooks", "zone": "dress_b", "x": 0.0, "y": 2.1, "z": 1.2, "w": 0.02, "d": 0.4, "h": 0.2 }
+  ],
+  "services": [
+    { "type": "outlet", "wall": "W", "offset": 1.0, "height": 0.6, "serves": "bed_lower" },
+    { "type": "outlet", "wall": "N", "offset": 2.7, "height": 2.0, "serves": "bed_upper" },
+    { "type": "outlet", "wall": "N", "offset": 1.5, "height": 0.85, "serves": "desk_a" },
+    { "type": "usb", "wall": "E", "offset": 1.9, "height": 0.85, "serves": "desk_b" },
+    { "type": "light", "wall": "ceiling", "offset": 1.5, "height": 2.7 },
+    { "type": "switch", "wall": "S", "offset": 2.0, "height": 1.1 },
+    { "type": "switch", "wall": "N", "offset": 1.1, "height": 1.95, "serves": "bed_upper" }
+  ],
+  "reveal_path": [
+    { "stop": "entry", "zone": "entry", "camera": [2.5, 0.3, 1.6], "target": [1.2, 2.3, 1.2],
+      "line": "Two boys, about 9 m², and both need a desk. Two beds on the floor would leave room for neither." },
+    { "stop": "upper_bed", "zone": "sleep_a", "camera": [1.6, 1.2, 1.9], "target": [2.2, 2.5, 1.8],
+      "line": "One bed goes up and turns the corner, so neither boy sleeps under the other." },
+    { "stop": "desk_a", "zone": "study_a", "camera": [1.5, 1.4, 1.1], "target": [1.5, 2.8, 0.8],
+      "line": "Under it: a full desk with 1.55 m of headroom and a sliding wardrobe beside it." },
+    { "stop": "ladder", "zone": "sleep_a", "camera": [1.4, 1.6, 1.2], "target": [0.6, 2.8, 1.0],
+      "line": "A fixed ladder with flat rungs and a grab handle, braced by a book tower." },
+    { "stop": "lower_bed", "zone": "sleep_b", "camera": [1.6, 1.3, 1.2], "target": [0.4, 1.0, 0.4],
+      "line": "The lower bed has open sky above it and drawers that roll out." },
+    { "stop": "window_desk", "zone": "study_b", "camera": [1.5, 1.3, 1.2], "target": [2.8, 1.3, 0.8],
+      "line": "The window is the second desk: best daylight in the room, to balance the loft." },
+    { "stop": "wide", "zone": "play", "camera": [2.9, 0.2, 2.2], "target": [1.2, 1.8, 0.8],
+      "line": "The middle of the floor stays open for play. One desk, one wardrobe, one bed each." }
+  ],
+  "notes": [
+    "Room size 3.0 x 3.0 m, ceiling 2.7 m, ages 10 and 8, door and window positions are all assumptions; confirm before building.",
+    "Under-loft desk headroom 1.55 m is a [std] value."
+  ]
+}

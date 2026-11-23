@@ -1,0 +1,518 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "residential-space-designer/layout.schema.json",
+  "title": "Room layout",
+  "description": "Units are metres. Origin: inner corner where wall S meets wall W. x runs along S toward E, y along W toward N, z up. Elements are axis-aligned boxes: (x, y, z) is the min corner, (w, d, h) the size along x, y, z. Wall offsets: S/N walls measured along x from W; E/W walls measured along y from S. Wall letters S/E/N/W are layout axes; give the real compass direction of wall N in room.north if it differs.",
+  "type": "object",
+  "required": [
+    "version",
+    "room",
+    "occupants",
+    "zones",
+    "elements",
+    "reveal_path"
+  ],
+  "properties": {
+    "version": {
+      "const": "1"
+    },
+    "room": {
+      "type": "object",
+      "required": [
+        "width",
+        "depth",
+        "height",
+        "openings"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "depth": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "estimated": {
+          "type": "boolean",
+          "description": "true when dimensions were estimated from photos/video"
+        },
+        "walls": {
+          "type": "object",
+          "description": "Per-wall facts. Unknown load-bearing status is treated as load-bearing.",
+          "patternProperties": {
+            "^(S|E|N|W)$": {
+              "type": "object",
+              "properties": {
+                "load_bearing": {
+                  "type": "boolean"
+                }
+              }
+            }
+          }
+        },
+        "openings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "type",
+              "wall",
+              "offset",
+              "width"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "type": {
+                "enum": [
+                  "door",
+                  "window",
+                  "bay_window"
+                ]
+              },
+              "wall": {
+                "enum": [
+                  "S",
+                  "E",
+                  "N",
+                  "W"
+                ]
+              },
+              "offset": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              },
+              "sill": {
+                "type": "number",
+                "description": "windows: sill height above floor"
+              },
+              "swing": {
+                "enum": [
+                  "in",
+                  "out",
+                  "sliding"
+                ],
+                "description": "doors"
+              },
+              "egress": {
+                "type": "boolean",
+                "description": "windows: this is the bedroom's emergency escape opening"
+              },
+              "drop_outside": {
+                "type": "number",
+                "description": "windows: height of the drop outside (m); > 1.83 m triggers fall-protection checks"
+              },
+              "estimated": {
+                "type": "boolean",
+                "description": "position or size estimated, not measured"
+              },
+              "restrictor": {
+                "type": "boolean",
+                "description": "windows: fitted with child-safe restrictors or fixed lower glazing; silences fall/climbable warnings"
+              }
+            }
+          }
+        },
+        "type": {
+          "enum": [
+            "bedroom",
+            "kids_bedroom",
+            "kitchen",
+            "bathroom",
+            "living",
+            "dining",
+            "living_dining",
+            "entry",
+            "corridor",
+            "stairs",
+            "balcony",
+            "laundry",
+            "office",
+            "studio",
+            "pooja",
+            "utility",
+            "verandah",
+            "courtyard",
+            "terrace",
+            "exterior",
+            "other"
+          ],
+          "default": "bedroom",
+          "description": "Turns on the room module's checks (see SKILL.md room modules)"
+        },
+        "north": {
+          "type": "string",
+          "description": "compass direction the layout's N wall actually faces, e.g. 'E' for an east-facing plot drawn road-side down"
+        }
+      }
+    },
+    "occupants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "age": {
+            "type": "number"
+          },
+          "role": {
+            "type": "string",
+            "description": "e.g. child, teen, adult, partner"
+          },
+          "needs": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "zones": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "purpose"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "purpose": {
+            "enum": [
+              "sleep",
+              "study",
+              "dressing",
+              "storage",
+              "leisure",
+              "entry",
+              "circulation",
+              "cooking",
+              "dining",
+              "wet",
+              "worship",
+              "laundry",
+              "work",
+              "play"
+            ]
+          },
+          "owner": {
+            "type": "string",
+            "description": "occupant id, or 'shared'"
+          }
+        }
+      }
+    },
+    "elements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "type",
+          "x",
+          "y",
+          "z",
+          "w",
+          "d",
+          "h"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "type": {
+            "enum": [
+              "bed",
+              "wardrobe",
+              "desk",
+              "chair",
+              "steps",
+              "ladder",
+              "drawers",
+              "cabinet",
+              "niche",
+              "platform",
+              "divider",
+              "partition",
+              "door",
+              "closet",
+              "den",
+              "seat",
+              "sofa",
+              "shelf",
+              "board",
+              "hooks",
+              "curtain",
+              "counter",
+              "sink",
+              "cooktop",
+              "oven",
+              "fridge",
+              "dishwasher",
+              "island",
+              "toilet",
+              "shower",
+              "bathtub",
+              "vanity",
+              "washer",
+              "dryer",
+              "table",
+              "coffee_table",
+              "tv_unit",
+              "stairs",
+              "swing",
+              "pooja_unit",
+              "water_feature",
+              "planter",
+              "route",
+              "mirror",
+              "guard",
+              "other"
+            ],
+            "description": "partition and door (interior, modelled closed) split the floor into separate areas for the egress check; 'route' is a non-solid box marking a circulation path that must stay clear"
+          },
+          "states": {
+            "type": "object",
+            "description": "Per-state overrides, keyed by a name from the top-level 'states'. Any element field can be overridden; {\"hidden\": true} removes the element in that state.",
+            "additionalProperties": {
+              "type": "object"
+            }
+          },
+          "label": {
+            "type": "string"
+          },
+          "zone": {
+            "type": "string"
+          },
+          "owner": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number"
+          },
+          "y": {
+            "type": "number"
+          },
+          "z": {
+            "type": "number"
+          },
+          "w": {
+            "type": "number"
+          },
+          "d": {
+            "type": "number"
+          },
+          "h": {
+            "type": "number"
+          },
+          "front": {
+            "description": "side(s) that are used/opened; a list for islands, dining tables or other multi-sided items",
+            "oneOf": [
+              {
+                "enum": [
+                  "+x",
+                  "-x",
+                  "+y",
+                  "-y"
+                ]
+              },
+              {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "+x",
+                    "-x",
+                    "+y",
+                    "-y"
+                  ]
+                },
+                "minItems": 1
+              }
+            ]
+          },
+          "clearance": {
+            "type": "number",
+            "description": "free floor depth required in front of each side listed in 'front' (m)"
+          },
+          "doors": {
+            "enum": [
+              "hinged",
+              "sliding",
+              "bifold",
+              "none"
+            ]
+          },
+          "material": {
+            "type": "string",
+            "description": "id from references/materials.md"
+          },
+          "wall": {
+            "enum": [
+              "S",
+              "E",
+              "N",
+              "W"
+            ],
+            "description": "niche: wall it is cut into"
+          },
+          "guardrail": {
+            "type": "boolean",
+            "description": "bed: guardrails on open sides"
+          },
+          "guardrail_height": {
+            "type": "number",
+            "description": "bed: rail top above mattress top (m)"
+          },
+          "serves": {
+            "type": "string",
+            "description": "steps/ladder: id of the bed it gives access to"
+          },
+          "walk_under": {
+            "type": "boolean",
+            "description": "element (e.g. closet) that people walk into beneath a raised bed"
+          },
+          "estimated": {
+            "type": "boolean"
+          },
+          "notes": {
+            "type": "string"
+          },
+          "rise": {
+            "type": "number",
+            "description": "stairs or steps: riser height (m). Steps above 0.25 m error; above 0.22 m warn as steep"
+          },
+          "tread": {
+            "type": "number",
+            "description": "stairs or steps: tread depth (m)"
+          },
+          "stair_width": {
+            "type": "number",
+            "description": "stairs: clear width (m); defaults to the smaller footprint side"
+          },
+          "headroom": {
+            "type": "number",
+            "description": "stairs: clear headroom above the pitch line (m)"
+          }
+        }
+      }
+    },
+    "services": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "type",
+          "wall",
+          "offset",
+          "height"
+        ],
+        "properties": {
+          "type": {
+            "enum": [
+              "outlet",
+              "switch",
+              "light",
+              "ac",
+              "usb"
+            ]
+          },
+          "wall": {
+            "enum": [
+              "S",
+              "E",
+              "N",
+              "W",
+              "ceiling"
+            ]
+          },
+          "offset": {
+            "type": "number"
+          },
+          "height": {
+            "type": "number"
+          },
+          "serves": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "reveal_path": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "required": [
+          "stop",
+          "camera",
+          "target",
+          "line"
+        ],
+        "properties": {
+          "stop": {
+            "type": "string"
+          },
+          "zone": {
+            "type": "string"
+          },
+          "camera": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "target": {
+            "type": "array",
+            "items": {
+              "type": "number"
+            },
+            "minItems": 3,
+            "maxItems": 3
+          },
+          "line": {
+            "type": "string",
+            "description": "one narration line: problem solved, then what is here"
+          }
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Named configurations for convertible furniture, e.g. [\"night\", \"day\"]. Each is checked separately."
+    },
+    "notes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

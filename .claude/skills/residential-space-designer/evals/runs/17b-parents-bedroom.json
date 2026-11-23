@@ -1,0 +1,199 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Parents' bedroom (SW, ground floor)",
+    "type": "bedroom",
+    "width": 3.3,
+    "depth": 3.6,
+    "height": 3.0,
+    "walls": {},
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "E",
+        "offset": 0.6,
+        "width": 0.9,
+        "swing": "in"
+      },
+      {
+        "id": "bath",
+        "type": "door",
+        "wall": "N",
+        "offset": 0.2,
+        "width": 0.8,
+        "swing": "out"
+      },
+      {
+        "id": "win_w",
+        "type": "window",
+        "wall": "W",
+        "offset": 1.0,
+        "width": 1.5,
+        "sill": 0.75,
+        "egress": true
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "grandfather",
+      "age": 72,
+      "role": "elder"
+    },
+    {
+      "id": "grandmother",
+      "age": 68,
+      "role": "elder"
+    }
+  ],
+  "zones": [
+    {
+      "id": "sleep",
+      "purpose": "sleep",
+      "owner": "grandfather"
+    },
+    {
+      "id": "dress",
+      "purpose": "dressing",
+      "owner": "shared"
+    },
+    {
+      "id": "read",
+      "purpose": "leisure",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "bed",
+      "type": "bed",
+      "x": 0.9,
+      "y": 0,
+      "z": 0,
+      "w": 1.5,
+      "d": 2.05,
+      "h": 0.5,
+      "zone": "sleep",
+      "label": "Queen bed, head to the south, low 0.5 m height"
+    },
+    {
+      "id": "ns_left",
+      "type": "cabinet",
+      "x": 0.45,
+      "y": 0,
+      "z": 0,
+      "w": 0.45,
+      "d": 0.45,
+      "h": 0.55,
+      "zone": "sleep",
+      "label": "Nightstand with night light"
+    },
+    {
+      "id": "ns_right",
+      "type": "cabinet",
+      "x": 2.4,
+      "y": 0,
+      "z": 0,
+      "w": 0.45,
+      "d": 0.45,
+      "h": 0.55,
+      "zone": "sleep"
+    },
+    {
+      "id": "wardrobe",
+      "type": "wardrobe",
+      "x": 1.1,
+      "y": 3.0,
+      "z": 0,
+      "w": 2.2,
+      "d": 0.6,
+      "h": 2.4,
+      "zone": "dress",
+      "front": "-y",
+      "clearance": 0.6,
+      "doors": "sliding",
+      "label": "Sliding wardrobe, nothing above 1.8 m used daily"
+    },
+    {
+      "id": "chair",
+      "type": "seat",
+      "x": 0.1,
+      "y": 2.4,
+      "z": 0,
+      "w": 0.7,
+      "d": 0.6,
+      "h": 0.9,
+      "zone": "read",
+      "label": "Reading chair with arms"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 0.3,
+      "height": 0.6,
+      "serves": "bed"
+    },
+    {
+      "type": "outlet",
+      "wall": "E",
+      "offset": 0.3,
+      "height": 0.6,
+      "serves": "bed"
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "door",
+      "zone": "sleep",
+      "camera": [
+        3.0,
+        1.8,
+        1.6
+      ],
+      "target": [
+        1.6,
+        1.0,
+        0.5
+      ],
+      "line": "Grandparents stay on the ground floor, a few steps from the pooja room."
+    },
+    {
+      "stop": "bed",
+      "zone": "sleep",
+      "camera": [
+        2.8,
+        2.8,
+        1.5
+      ],
+      "target": [
+        1.6,
+        0.8,
+        0.5
+      ],
+      "line": "A low bed they can reach from both sides, with night lights at each side."
+    },
+    {
+      "stop": "read",
+      "zone": "read",
+      "camera": [
+        2.4,
+        1.5,
+        1.4
+      ],
+      "target": [
+        0.4,
+        2.7,
+        0.7
+      ],
+      "line": "A reading chair by the west window for the afternoons."
+    }
+  ],
+  "notes": [
+    "No level changes from the entrance to this room or its bath (elders).",
+    "Attached bath: grab bars, anti-skid tiles, a seat in the shower, and an outward-opening door.",
+    "Assumed attached bath to the north; pooja room adjoining to the NE of the hall."
+  ]
+}

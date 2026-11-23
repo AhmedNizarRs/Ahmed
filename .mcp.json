@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "autocad": {
+      "command": "uvx",
+      "args": ["--from", "autocad-mcp-pro[pdf]==1.8.0", "autocad-mcp"],
+      "env": { "AUTOCAD_MCP_BACKEND": "ezdxf" }
+    },
+    "residential-space-designer": {
+      "command": "python3",
+      "args": [".claude/skills/residential-space-designer/scripts/mcp_server.py"]
+    }
+  }
+}

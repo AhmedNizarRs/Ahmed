@@ -1,0 +1,60 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Living-dining with closet office",
+    "type": "living_dining",
+    "width": 4.2, "depth": 5.0, "height": 2.7,
+    "walls": {"S": {"load_bearing": true}, "E": {"load_bearing": true}, "N": {"load_bearing": true}, "W": {"load_bearing": true}},
+    "openings": [
+      {"id": "entrance", "type": "door", "wall": "S", "offset": 0.3, "width": 0.9, "height": 2.1, "swing": "in"},
+      {"id": "kitchen_door", "type": "door", "wall": "E", "offset": 0.3, "width": 0.9, "height": 2.1, "swing": "sliding"},
+      {"id": "bedroom_passage", "type": "door", "wall": "W", "offset": 1.8, "width": 0.9, "height": 2.1, "swing": "sliding"},
+      {"id": "balcony_door", "type": "door", "wall": "E", "offset": 3.7, "width": 1.2, "height": 2.1, "swing": "sliding"},
+      {"id": "win_n", "type": "window", "wall": "N", "offset": 2.4, "width": 1.2, "sill": 0.9}
+    ]
+  },
+  "occupants": [
+    {"id": "partner_a", "role": "adult"},
+    {"id": "partner_b", "role": "adult", "needs": ["WFH 2 days a week, closable desk"]},
+    {"id": "child", "age": 7, "role": "child"}
+  ],
+  "zones": [
+    {"id": "entry", "purpose": "entry", "owner": "shared"},
+    {"id": "dining", "purpose": "leisure", "owner": "shared"},
+    {"id": "living", "purpose": "leisure", "owner": "shared"},
+    {"id": "work", "purpose": "study", "owner": "partner_b"},
+    {"id": "route", "purpose": "circulation", "owner": "shared"}
+  ],
+  "elements": [
+    {"id": "shoes", "type": "cabinet", "x": 0, "y": 1.0, "z": 0, "w": 0.4, "d": 0.75, "h": 2.2, "zone": "entry", "front": "+x", "clearance": 0.6, "label": "Shoe cabinet with seat niche, key shelf, coat hooks above"},
+    {"id": "dining_table", "type": "table", "x": 1.6, "y": 0.9, "z": 0, "w": 1.2, "d": 0.8, "h": 0.75, "zone": "dining", "front": "-y", "clearance": 0.9, "label": "Extendable table, 4 seats (6 extended)"},
+    {"id": "crockery", "type": "cabinet", "x": 3.8, "y": 1.4, "z": 0, "w": 0.4, "d": 1.2, "h": 2.1, "zone": "dining", "front": "-x", "clearance": 0.6, "label": "Crockery and board-game cabinet by the kitchen"},
+    {"id": "tv_unit", "type": "tv_unit", "x": 0, "y": 3.0, "z": 0, "w": 0.45, "d": 1.6, "h": 0.5, "zone": "living", "front": "+x", "label": "Low TV unit, drawers for toys"},
+    {"id": "tv_upper", "type": "cabinet", "x": 0, "y": 3.0, "z": 1.9, "w": 0.35, "d": 1.6, "h": 0.7, "zone": "living", "label": "Closed cabinets above the TV"},
+    {"id": "sofa", "type": "sofa", "x": 2.55, "y": 2.8, "z": 0, "w": 0.85, "d": 2.0, "h": 0.85, "zone": "living", "front": "-x", "label": "3-seat sofa floated off the east wall; the route to the balcony runs behind it"},
+    {"id": "coffee", "type": "coffee_table", "x": 1.7, "y": 3.3, "z": 0, "w": 0.45, "d": 1.0, "h": 0.4, "zone": "living"},
+    {"id": "desk", "type": "desk", "x": 0.5, "y": 4.4, "z": 0, "w": 1.1, "d": 0.6, "h": 0.75, "zone": "work", "owner": "partner_b", "front": "-y", "clearance": 0.75, "label": "Closet office: desk inside a bi-fold cabinet"},
+    {"id": "office_upper", "type": "cabinet", "x": 0.5, "y": 4.65, "z": 1.2, "w": 1.1, "d": 0.35, "h": 1.2, "zone": "work", "label": "Shelves, pinboard and printer shelf inside the closet office"}
+  ],
+  "services": [
+    {"type": "outlet", "wall": "N", "offset": 1.0, "height": 0.9, "serves": "desk"},
+    {"type": "outlet", "wall": "W", "offset": 3.8, "height": 0.6, "serves": "tv_unit"},
+    {"type": "outlet", "wall": "E", "offset": 3.0, "height": 0.4, "serves": "sofa"},
+    {"type": "outlet", "wall": "S", "offset": 2.2, "height": 0.4, "serves": "dining_table"},
+    {"type": "light", "wall": "ceiling", "offset": 1.3, "height": 2.7},
+    {"type": "light", "wall": "ceiling", "offset": 3.8, "height": 2.7},
+    {"type": "switch", "wall": "S", "offset": 1.4, "height": 1.1}
+  ],
+  "reveal_path": [
+    {"stop": "entrance", "zone": "entry", "camera": [0.75, 0.3, 1.6], "target": [2.1, 3.5, 1.0], "line": "Before: shoes, bags and laptops piled on the dining table the moment you walked in."},
+    {"stop": "drop_zone", "zone": "entry", "camera": [1.2, 0.6, 1.5], "target": [0.2, 1.4, 1.0], "line": "Now a drop zone by the door takes shoes, keys and school bags in two steps."},
+    {"stop": "dining", "zone": "dining", "camera": [3.4, 0.4, 1.6], "target": [2.2, 1.3, 0.75], "line": "The dining table sits right by the kitchen and stays a dining table."},
+    {"stop": "living", "zone": "living", "camera": [3.0, 2.4, 1.6], "target": [0.3, 3.8, 0.8], "line": "Sofa faces the TV wall, and the route to the balcony runs behind it, not through it."},
+    {"stop": "office", "zone": "work", "camera": [1.05, 3.3, 1.4], "target": [1.05, 4.8, 1.0], "line": "On WFH days the bi-folds open into a real desk; at six they close and the living room is back."},
+    {"stop": "wide", "zone": "route", "camera": [4.0, 0.3, 2.2], "target": [1.2, 4.0, 0.6], "line": "One room for arriving, eating, relaxing and working, each in its own corner."}
+  ],
+  "notes": [
+    "Assumed opening positions: entrance S-west, kitchen E-south, bedroom passage W-middle, balcony sliding door E-north, window N.",
+    "Main route: entrance → passage (W side) never crosses the seating; dining → balcony runs behind the sofa (0.8 m)."
+  ]
+}

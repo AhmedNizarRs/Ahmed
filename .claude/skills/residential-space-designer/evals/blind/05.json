@@ -1,0 +1,365 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Teen girl's room, low loft over a hidden gaming den",
+    "type": "kids_bedroom",
+    "width": 2.8,
+    "depth": 2.9,
+    "height": 2.4,
+    "walls": {
+      "S": {
+        "load_bearing": true
+      },
+      "E": {
+        "load_bearing": true
+      },
+      "N": {
+        "load_bearing": true
+      },
+      "W": {
+        "load_bearing": true
+      }
+    },
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "S",
+        "offset": 1.9,
+        "width": 0.8,
+        "height": 2.05,
+        "swing": "in"
+      },
+      {
+        "id": "win",
+        "type": "window",
+        "wall": "N",
+        "offset": 1.0,
+        "width": 1.0,
+        "height": 1.2,
+        "sill": 0.9,
+        "egress": true
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "teen",
+      "age": 14,
+      "role": "teen",
+      "needs": [
+        "gaming",
+        "privacy",
+        "study",
+        "storage"
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "entry",
+      "purpose": "entry",
+      "owner": "shared"
+    },
+    {
+      "id": "sleep",
+      "purpose": "sleep",
+      "owner": "teen"
+    },
+    {
+      "id": "den",
+      "purpose": "leisure",
+      "owner": "teen"
+    },
+    {
+      "id": "study",
+      "purpose": "study",
+      "owner": "teen"
+    },
+    {
+      "id": "dress",
+      "purpose": "dressing",
+      "owner": "teen"
+    }
+  ],
+  "elements": [
+    {
+      "id": "bed_loft",
+      "type": "bed",
+      "label": "Low loft, 0.9 x 2.0, 0.15 m mattress, steel frame fixed to W wall + floor",
+      "zone": "sleep",
+      "owner": "teen",
+      "x": 0.0,
+      "y": 0.9,
+      "z": 1.2,
+      "w": 1.0,
+      "d": 2.0,
+      "h": 0.22,
+      "guardrail": true,
+      "guardrail_height": 0.18,
+      "material": "steel_square_tube_galv"
+    },
+    {
+      "id": "den",
+      "type": "den",
+      "label": "Enclosed gaming den 1.0 x 2.0 x 1.2: floor cushions, wall-mounted screen on N end, LED strip; front is wardrobe-style panels, one hides the door at the S end",
+      "zone": "den",
+      "owner": "teen",
+      "x": 0.0,
+      "y": 0.9,
+      "z": 0.0,
+      "w": 1.0,
+      "d": 2.0,
+      "h": 1.15,
+      "material": "wood_veneer"
+    },
+    {
+      "id": "steps",
+      "type": "steps",
+      "label": "Storage steps, 6 rises of 0.2 m to the frame + grab handle, anti-slip treads",
+      "zone": "sleep",
+      "owner": "teen",
+      "x": 0.0,
+      "y": 0.3,
+      "z": 0.0,
+      "w": 1.0,
+      "d": 0.6,
+      "h": 1.2,
+      "front": "+x",
+      "clearance": 0.6,
+      "serves": "bed_loft",
+      "material": "wood_panel_eco"
+    },
+    {
+      "id": "wardrobe",
+      "type": "wardrobe",
+      "label": "Floor-to-ceiling wardrobe, sliding, veneer matching the den front",
+      "zone": "dress",
+      "owner": "teen",
+      "x": 2.2,
+      "y": 0.85,
+      "z": 0.0,
+      "w": 0.6,
+      "d": 1.45,
+      "h": 2.4,
+      "front": "-x",
+      "clearance": 0.6,
+      "doors": "sliding",
+      "material": "wood_veneer"
+    },
+    {
+      "id": "desk",
+      "type": "desk",
+      "label": "Window desk 1.2 x 0.55",
+      "zone": "study",
+      "owner": "teen",
+      "x": 1.0,
+      "y": 2.35,
+      "z": 0.0,
+      "w": 1.2,
+      "d": 0.55,
+      "h": 0.74,
+      "front": "-y",
+      "clearance": 0.6,
+      "material": "solid_wood"
+    },
+    {
+      "id": "chair",
+      "type": "chair",
+      "zone": "study",
+      "x": 1.35,
+      "y": 1.85,
+      "z": 0.0,
+      "w": 0.5,
+      "d": 0.5,
+      "h": 0.95
+    },
+    {
+      "id": "bookcase",
+      "type": "shelf",
+      "label": "Corner bookcase / display (figures, plants)",
+      "zone": "study",
+      "x": 2.2,
+      "y": 2.35,
+      "z": 0.0,
+      "w": 0.6,
+      "d": 0.55,
+      "h": 2.4,
+      "material": "wood_panel_eco"
+    },
+    {
+      "id": "mirror_hooks",
+      "type": "hooks",
+      "label": "Full-length mirror + worn-once hooks",
+      "zone": "entry",
+      "x": 0.0,
+      "y": 0.0,
+      "z": 1.0,
+      "w": 0.6,
+      "d": 0.05,
+      "h": 0.2
+    },
+    {
+      "id": "curtain",
+      "type": "curtain",
+      "label": "Blackout curtain on the loft side",
+      "zone": "sleep",
+      "x": 1.0,
+      "y": 0.9,
+      "z": 1.45,
+      "w": 0.02,
+      "d": 2.0,
+      "h": 0.9
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 2.4,
+      "height": 1.55,
+      "serves": "bed_loft"
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 2.7,
+      "height": 0.4
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.6,
+      "height": 0.4
+    },
+    {
+      "type": "outlet",
+      "wall": "N",
+      "offset": 1.6,
+      "height": 0.85,
+      "serves": "desk"
+    },
+    {
+      "type": "usb",
+      "wall": "N",
+      "offset": 1.2,
+      "height": 0.85,
+      "serves": "desk"
+    },
+    {
+      "type": "light",
+      "wall": "ceiling",
+      "offset": 1.6,
+      "height": 2.4
+    },
+    {
+      "type": "switch",
+      "wall": "S",
+      "offset": 1.8,
+      "height": 1.05
+    },
+    {
+      "type": "switch",
+      "wall": "W",
+      "offset": 1.0,
+      "height": 1.6
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "entry",
+      "zone": "entry",
+      "camera": [
+        2.3,
+        0.3,
+        1.5
+      ],
+      "target": [
+        0.6,
+        2.0,
+        1.0
+      ],
+      "line": "A low 2.4 m ceiling, 8 m², and a girl who wants somewhere to disappear."
+    },
+    {
+      "stop": "wall",
+      "zone": "den",
+      "camera": [
+        1.8,
+        1.4,
+        1.2
+      ],
+      "target": [
+        0.5,
+        1.6,
+        0.6
+      ],
+      "line": "Looks like a row of wardrobe doors. One of them isn't."
+    },
+    {
+      "stop": "den",
+      "zone": "den",
+      "camera": [
+        0.5,
+        1.1,
+        0.7
+      ],
+      "target": [
+        0.5,
+        2.8,
+        0.6
+      ],
+      "line": "Behind it: her den. Cushions, a screen, a light strip, and a door she can close."
+    },
+    {
+      "stop": "loft",
+      "zone": "sleep",
+      "camera": [
+        1.6,
+        1.0,
+        1.9
+      ],
+      "target": [
+        0.4,
+        2.0,
+        1.5
+      ],
+      "line": "Above it, the bed, with almost a metre to sit up in and a curtain to pull."
+    },
+    {
+      "stop": "desk",
+      "zone": "study",
+      "camera": [
+        1.6,
+        1.3,
+        1.3
+      ],
+      "target": [
+        1.6,
+        2.8,
+        0.9
+      ],
+      "line": "Homework moves to the window, where the daylight is."
+    },
+    {
+      "stop": "wide",
+      "zone": "dress",
+      "camera": [
+        2.6,
+        0.2,
+        2.1
+      ],
+      "target": [
+        1.0,
+        2.0,
+        0.6
+      ],
+      "line": "Sliding wardrobe, clear floor, and a hideout nobody else can see."
+    }
+  ],
+  "notes": [
+    "Door and window positions are assumptions; confirm. Age assumed 14.",
+    "Ceiling 2.4 is below Pattern B's 2.5; den clear height 1.2 m (>= 1.0 [std]), loft headroom 0.98 m (>= 0.84).",
+    "Den must be ventilated (console heat): louvred panel + gap under loft; no sealed box."
+  ]
+}

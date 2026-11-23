@@ -1,0 +1,309 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Brother 14 + sister 11",
+    "width": 3.2,
+    "depth": 4.2,
+    "height": 2.7,
+    "walls": {},
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "S",
+        "offset": 2.3,
+        "width": 0.8,
+        "swing": "in"
+      },
+      {
+        "id": "win_s",
+        "type": "window",
+        "wall": "W",
+        "offset": 0.5,
+        "width": 1.0,
+        "sill": 0.9,
+        "egress": true
+      },
+      {
+        "id": "win_b",
+        "type": "window",
+        "wall": "N",
+        "offset": 1.2,
+        "width": 1.2,
+        "sill": 0.9,
+        "egress": true
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "bro",
+      "age": 14,
+      "role": "teen"
+    },
+    {
+      "id": "sis",
+      "age": 11,
+      "role": "child"
+    }
+  ],
+  "zones": [
+    {
+      "id": "entry",
+      "purpose": "entry",
+      "owner": "shared"
+    },
+    {
+      "id": "sleep_s",
+      "purpose": "sleep",
+      "owner": "sis"
+    },
+    {
+      "id": "study_s",
+      "purpose": "study",
+      "owner": "sis"
+    },
+    {
+      "id": "dress_s",
+      "purpose": "dressing",
+      "owner": "sis"
+    },
+    {
+      "id": "sleep_b",
+      "purpose": "sleep",
+      "owner": "bro"
+    },
+    {
+      "id": "study_b",
+      "purpose": "study",
+      "owner": "bro"
+    },
+    {
+      "id": "dress_b",
+      "purpose": "dressing",
+      "owner": "bro"
+    }
+  ],
+  "elements": [
+    {
+      "id": "partition",
+      "type": "partition",
+      "x": 0,
+      "y": 2.05,
+      "z": 0,
+      "w": 2.3,
+      "d": 0.1,
+      "h": 2.7,
+      "label": "Gypsum partition, frosted glass top band",
+      "material": "gypsum_board"
+    },
+    {
+      "id": "slide_door",
+      "type": "door",
+      "x": 2.3,
+      "y": 2.06,
+      "z": 0,
+      "w": 0.9,
+      "d": 0.08,
+      "h": 2.1,
+      "label": "Frosted sliding door to brother's room",
+      "material": "glass_frosted"
+    },
+    {
+      "id": "bed_s",
+      "type": "bed",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 2.0,
+      "d": 0.9,
+      "h": 0.45,
+      "zone": "sleep_s",
+      "owner": "sis",
+      "label": "Bed with drawers"
+    },
+    {
+      "id": "desk_s",
+      "type": "desk",
+      "x": 0,
+      "y": 1.0,
+      "z": 0,
+      "w": 0.55,
+      "d": 1.05,
+      "h": 0.75,
+      "zone": "study_s",
+      "owner": "sis",
+      "front": "+x",
+      "clearance": 0.6
+    },
+    {
+      "id": "wardrobe_s",
+      "type": "wardrobe",
+      "x": 1.2,
+      "y": 1.5,
+      "z": 0,
+      "w": 1.1,
+      "d": 0.55,
+      "h": 2.4,
+      "zone": "dress_s",
+      "owner": "sis",
+      "front": "-y",
+      "clearance": 0.6,
+      "doors": "sliding"
+    },
+    {
+      "id": "loft_b",
+      "type": "bed",
+      "x": 0,
+      "y": 2.2,
+      "z": 1.55,
+      "w": 0.95,
+      "d": 2.0,
+      "h": 0.25,
+      "zone": "sleep_b",
+      "owner": "bro",
+      "guardrail": true,
+      "guardrail_height": 0.18,
+      "material": "steel_square_tube_galv"
+    },
+    {
+      "id": "steps_b",
+      "type": "steps",
+      "x": 0,
+      "y": 2.2,
+      "z": 0,
+      "w": 0.95,
+      "d": 0.5,
+      "h": 1.55,
+      "zone": "sleep_b",
+      "front": "+x",
+      "clearance": 0.6,
+      "serves": "loft_b"
+    },
+    {
+      "id": "desk_b",
+      "type": "desk",
+      "x": 0,
+      "y": 2.7,
+      "z": 0,
+      "w": 0.6,
+      "d": 1.5,
+      "h": 0.75,
+      "zone": "study_b",
+      "owner": "bro",
+      "front": "+x",
+      "clearance": 0.6
+    },
+    {
+      "id": "wardrobe_b",
+      "type": "wardrobe",
+      "x": 2.65,
+      "y": 3.1,
+      "z": 0,
+      "w": 0.55,
+      "d": 1.1,
+      "h": 2.4,
+      "zone": "dress_b",
+      "owner": "bro",
+      "front": "-x",
+      "clearance": 0.6,
+      "doors": "sliding"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 0.2,
+      "height": 0.6,
+      "serves": "bed_s"
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.6,
+      "height": 0.85,
+      "serves": "desk_s"
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 3.5,
+      "height": 0.85,
+      "serves": "desk_b"
+    },
+    {
+      "type": "usb",
+      "wall": "W",
+      "offset": 3.0,
+      "height": 2.0,
+      "serves": "loft_b"
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "entry",
+      "zone": "entry",
+      "camera": [
+        2.7,
+        0.3,
+        1.6
+      ],
+      "target": [
+        1.2,
+        2.1,
+        1.4
+      ],
+      "line": "A brother and sister who needed their own space now each have a room."
+    },
+    {
+      "stop": "sis",
+      "zone": "sleep_s",
+      "camera": [
+        2.4,
+        1.2,
+        1.3
+      ],
+      "target": [
+        0.8,
+        0.5,
+        0.5
+      ],
+      "line": "Her side: bed, window desk, sliding wardrobe."
+    },
+    {
+      "stop": "door",
+      "zone": "entry",
+      "camera": [
+        2.7,
+        1.2,
+        1.5
+      ],
+      "target": [
+        2.75,
+        2.1,
+        1.2
+      ],
+      "line": "A frosted sliding door lets light through but not looks."
+    },
+    {
+      "stop": "bro",
+      "zone": "sleep_b",
+      "camera": [
+        2.0,
+        2.6,
+        1.6
+      ],
+      "target": [
+        0.4,
+        3.3,
+        1.5
+      ],
+      "line": "His side: a loft over a desk, by the second window."
+    }
+  ],
+  "notes": [
+    "Assumed the room has two windows (W and N) so each part keeps an escape window. With one window, the partition must not cut it off: use a glass-topped partition and confirm with local code.",
+    "The brother passes through the sister's zone to his door; alternative is a central entry vestibule."
+  ]
+}

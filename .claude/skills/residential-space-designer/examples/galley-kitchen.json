@@ -1,0 +1,275 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Galley kitchen",
+    "type": "kitchen",
+    "width": 2.4,
+    "depth": 3.2,
+    "height": 2.6,
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "S",
+        "offset": 0.8,
+        "width": 0.8,
+        "swing": "in"
+      },
+      {
+        "id": "win",
+        "type": "window",
+        "wall": "N",
+        "offset": 0.7,
+        "width": 1.0,
+        "sill": 1.0
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "cook",
+      "role": "adult"
+    }
+  ],
+  "zones": [
+    {
+      "id": "entry",
+      "purpose": "entry",
+      "owner": "shared"
+    },
+    {
+      "id": "cold",
+      "purpose": "storage",
+      "owner": "shared"
+    },
+    {
+      "id": "prep",
+      "purpose": "cooking",
+      "owner": "shared"
+    },
+    {
+      "id": "cook",
+      "purpose": "cooking",
+      "owner": "shared"
+    },
+    {
+      "id": "clean",
+      "purpose": "cooking",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "fridge",
+      "type": "fridge",
+      "x": 0,
+      "y": 0.1,
+      "z": 0,
+      "w": 0.7,
+      "d": 0.7,
+      "h": 1.85,
+      "zone": "cold",
+      "front": "+x"
+    },
+    {
+      "id": "counter_w1",
+      "type": "counter",
+      "x": 0,
+      "y": 0.8,
+      "z": 0,
+      "w": 0.6,
+      "d": 1.4,
+      "h": 0.9,
+      "zone": "prep",
+      "front": "+x",
+      "label": "Prep run, drawer bases"
+    },
+    {
+      "id": "sink",
+      "type": "sink",
+      "x": 0,
+      "y": 2.2,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "clean",
+      "front": "+x",
+      "label": "Sink + dishwasher under"
+    },
+    {
+      "id": "counter_w2",
+      "type": "counter",
+      "x": 0,
+      "y": 3.0,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.2,
+      "h": 0.9,
+      "zone": "clean",
+      "front": "+x"
+    },
+    {
+      "id": "pantry",
+      "type": "cabinet",
+      "x": 1.8,
+      "y": 0,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.9,
+      "h": 2.2,
+      "zone": "cold",
+      "label": "Full-height pull-out pantry"
+    },
+    {
+      "id": "counter_e1",
+      "type": "counter",
+      "x": 1.8,
+      "y": 0.9,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.5,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x",
+      "label": "Cooktop landing"
+    },
+    {
+      "id": "cooktop",
+      "type": "cooktop",
+      "x": 1.8,
+      "y": 1.4,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.6,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x",
+      "label": "Induction hob, oven under"
+    },
+    {
+      "id": "counter_e2",
+      "type": "counter",
+      "x": 1.8,
+      "y": 2.0,
+      "z": 0,
+      "w": 0.6,
+      "d": 1.2,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x"
+    },
+    {
+      "id": "uppers_w",
+      "type": "cabinet",
+      "x": 0,
+      "y": 0.8,
+      "z": 1.45,
+      "w": 0.35,
+      "d": 2.4,
+      "h": 0.7,
+      "label": "Wall cabinets"
+    },
+    {
+      "id": "hood",
+      "type": "cabinet",
+      "x": 1.95,
+      "y": 1.4,
+      "z": 1.6,
+      "w": 0.45,
+      "d": 0.6,
+      "h": 0.5,
+      "label": "Ducted hood"
+    },
+    {
+      "id": "uppers_e",
+      "type": "cabinet",
+      "x": 2.05,
+      "y": 2.0,
+      "z": 1.45,
+      "w": 0.35,
+      "d": 1.2,
+      "h": 0.7
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.5,
+      "height": 1.1
+    },
+    {
+      "type": "outlet",
+      "wall": "E",
+      "offset": 2.6,
+      "height": 1.1
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "entry",
+      "zone": "entry",
+      "camera": [
+        1.2,
+        0.3,
+        1.6
+      ],
+      "target": [
+        1.2,
+        2.8,
+        1.0
+      ],
+      "line": "A narrow kitchen where two people used to collide."
+    },
+    {
+      "stop": "triangle",
+      "zone": "cook",
+      "camera": [
+        1.2,
+        1.0,
+        1.7
+      ],
+      "target": [
+        1.2,
+        2.0,
+        0.9
+      ],
+      "line": "Fridge, hob and sink now form a tight triangle, about two metres per leg."
+    },
+    {
+      "stop": "pantry",
+      "zone": "cold",
+      "camera": [
+        1.0,
+        1.2,
+        1.4
+      ],
+      "target": [
+        2.1,
+        0.45,
+        1.2
+      ],
+      "line": "A full-height pull-out pantry replaces the cluttered corner."
+    },
+    {
+      "stop": "wide",
+      "zone": "clean",
+      "camera": [
+        1.2,
+        0.1,
+        2.0
+      ],
+      "target": [
+        1.2,
+        3.0,
+        0.9
+      ],
+      "line": "There's a 1.2 m aisle between the runs, with landing space on both sides of the hob."
+    }
+  ],
+  "notes": [
+    "Galley: aisle 1.2 m (1.07 m minimum for one cook).",
+    "Gas/electric hob connection by a professional."
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Tiny bathroom, wet/dry split",
+    "type": "bathroom",
+    "width": 1.7, "depth": 2.5, "height": 2.4,
+    "walls": {"S": {"load_bearing": true}, "E": {"load_bearing": true}, "N": {"load_bearing": true}, "W": {"load_bearing": true}},
+    "openings": [
+      {"id": "door", "type": "door", "wall": "S", "offset": 0.4, "width": 0.7, "height": 2.1, "swing": "out"}
+    ]
+  },
+  "occupants": [
+    {"id": "household", "role": "adult"}
+  ],
+  "zones": [
+    {"id": "dry", "purpose": "dressing", "owner": "shared"},
+    {"id": "wet", "purpose": "storage", "owner": "shared"}
+  ],
+  "elements": [
+    {"id": "vanity", "type": "vanity", "x": 0, "y": 0.2, "z": 0, "w": 0.35, "d": 0.6, "h": 0.85, "zone": "dry", "front": "+x", "label": "Slim floating vanity 0.6 × 0.35, two drawers"},
+    {"id": "mirror_cab", "type": "cabinet", "x": 0, "y": 0.15, "z": 1.2, "w": 0.15, "d": 0.7, "h": 0.8, "zone": "dry", "label": "Mirror cabinet, recessed light"},
+    {"id": "toilet", "type": "toilet", "x": 1.12, "y": 0.26, "z": 0, "w": 0.58, "d": 0.4, "h": 0.8, "zone": "dry", "front": "-x", "label": "Short-projection wall-hung WC, concealed cistern"},
+    {"id": "wc_cabinet", "type": "cabinet", "x": 1.45, "y": 0.1, "z": 1.3, "w": 0.25, "d": 0.72, "h": 0.7, "zone": "dry", "label": "Over-toilet cabinet"},
+    {"id": "towel_rail", "type": "hooks", "x": 1.62, "y": 0.85, "z": 0.9, "w": 0.08, "d": 0.6, "h": 0.9, "zone": "dry", "label": "Heated towel rail by the shower exit"},
+    {"id": "shower", "type": "shower", "x": 0, "y": 1.58, "z": 0, "w": 1.7, "d": 0.92, "h": 2.0, "zone": "wet", "front": "-y", "label": "Full-width walk-in shower: fixed glass + hinged glass door, linear drain on the N wall, floor falls away from the screen"}
+  ],
+  "services": [
+    {"type": "outlet", "wall": "W", "offset": 1.0, "height": 1.2, "serves": "vanity"},
+    {"type": "light", "wall": "ceiling", "offset": 0.8, "height": 2.4},
+    {"type": "light", "wall": "ceiling", "offset": 2.0, "height": 2.4},
+    {"type": "switch", "wall": "S", "offset": 1.25, "height": 1.1}
+  ],
+  "reveal_path": [
+    {"stop": "door", "zone": "dry", "camera": [0.75, 0.1, 1.6], "target": [0.85, 2.3, 1.0], "line": "Before: an open shower and a flat floor, so every shower flooded the whole room."},
+    {"stop": "wet", "zone": "wet", "camera": [0.75, 1.0, 1.7], "target": [0.85, 2.4, 0.3], "line": "Now the shower takes the full far end behind glass, and the floor falls to a linear drain at the back wall."},
+    {"stop": "screen", "zone": "wet", "camera": [0.3, 1.2, 1.2], "target": [1.2, 1.58, 0.5], "line": "A sealed glass door and a 25 mm step-down keep the water on the wet side."},
+    {"stop": "dry", "zone": "dry", "camera": [0.9, 1.4, 1.6], "target": [0.2, 0.5, 1.0], "line": "The dry zone stays dry: a floating vanity you can mop under and a mirror cabinet for everything."},
+    {"stop": "toilet", "zone": "dry", "camera": [0.4, 1.2, 1.5], "target": [1.4, 0.45, 0.8], "line": "A wall-hung toilet with a hidden cistern frees floor and gives a ledge, with a cabinet above."},
+    {"stop": "wide", "zone": "dry", "camera": [0.75, 0.15, 2.0], "target": [0.85, 2.0, 0.6], "line": "One room, two climates: wet behind the glass, dry in front."}
+  ],
+  "notes": [
+    "Assumed: door centred-left on the short south wall, no window (extract fan ducted outside), toilet soil stack on the east wall near the door. If the stack is elsewhere, the toilet stays on it and the plan is mirrored.",
+    "Waterproofing: two coats on floor and walls (full height in the shower, 0.3 m up the walls in the dry zone), 48 h flood test before tiling [DI 14, 31].",
+    "Wet zone floor sunk ~25 mm below the dry zone [std], falls ~1.5-2 % to the linear drain [std].",
+    "Door opens outward so it can't trap someone who falls inside."
+  ]
+}

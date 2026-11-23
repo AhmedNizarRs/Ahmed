@@ -1,0 +1,59 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Galley kitchen, two cooks",
+    "type": "kitchen",
+    "width": 2.4, "depth": 3.2, "height": 2.7,
+    "walls": {"S": {"load_bearing": true}, "E": {"load_bearing": true}, "N": {"load_bearing": true}, "W": {"load_bearing": true}},
+    "openings": [
+      {"id": "door", "type": "door", "wall": "S", "offset": 0.8, "width": 0.8, "height": 2.1, "swing": "sliding"},
+      {"id": "win", "type": "window", "wall": "N", "offset": 0.7, "width": 1.0, "sill": 1.0}
+    ]
+  },
+  "occupants": [
+    {"id": "cook", "role": "adult", "needs": ["hob station, stays put"]},
+    {"id": "helper", "role": "adult", "needs": ["fridge, washing, chopping, serving out"]}
+  ],
+  "zones": [
+    {"id": "entry", "purpose": "entry", "owner": "shared"},
+    {"id": "helper_station", "purpose": "study", "owner": "helper"},
+    {"id": "cook_station", "purpose": "study", "owner": "cook"},
+    {"id": "aisle", "purpose": "circulation", "owner": "shared"}
+  ],
+  "elements": [
+    {"id": "fridge", "type": "fridge", "x": 0, "y": 0, "z": 0, "w": 0.65, "d": 0.7, "h": 1.85, "zone": "helper_station", "front": "+x", "label": "Counter-depth fridge at the door end, hinge on the wall side"},
+    {"id": "counter_w1", "type": "counter", "x": 0, "y": 0.7, "z": 0, "w": 0.6, "d": 1.4, "h": 0.9, "zone": "helper_station", "front": "+x", "label": "Prep run: chopping at the front, cook's left landing at the back; drawer bases"},
+    {"id": "cooktop", "type": "cooktop", "x": 0, "y": 2.1, "z": 0, "w": 0.6, "d": 0.6, "h": 0.9, "zone": "cook_station", "front": "+x", "label": "Hob at the far end, away from the door; deep pot drawers under"},
+    {"id": "counter_w2", "type": "counter", "x": 0, "y": 2.7, "z": 0, "w": 0.6, "d": 0.5, "h": 0.9, "zone": "cook_station", "front": "+x", "label": "Hob landing, spice pull-out"},
+    {"id": "counter_e0", "type": "counter", "x": 1.85, "y": 0, "z": 0, "w": 0.55, "d": 0.46, "h": 0.9, "zone": "helper_station", "front": "-x", "label": "Sink landing, 0.55 m deep run"},
+    {"id": "sink", "type": "sink", "x": 1.85, "y": 0.46, "z": 0, "w": 0.55, "d": 0.8, "h": 0.9, "zone": "helper_station", "front": "-x", "label": "Sink near the door, offset from the hob"},
+    {"id": "counter_e1", "type": "counter", "x": 1.85, "y": 1.26, "z": 0, "w": 0.55, "d": 1.39, "h": 0.9, "zone": "cook_station", "front": "-x", "label": "Drainer and serving counter; pull-out second chopping board"},
+    {"id": "pantry", "type": "cabinet", "x": 1.85, "y": 2.65, "z": 0, "w": 0.55, "d": 0.55, "h": 2.3, "zone": "cook_station", "label": "Tall pull-out pantry beside the cook"},
+    {"id": "uppers_w", "type": "cabinet", "x": 0, "y": 0.7, "z": 1.45, "w": 0.35, "d": 1.4, "h": 0.75, "label": "Wall cabinets with lift-up doors"},
+    {"id": "hood", "type": "cabinet", "x": 0, "y": 2.1, "z": 1.6, "w": 0.45, "d": 0.6, "h": 0.6, "label": "Ducted hood to the N outside wall"},
+    {"id": "uppers_e", "type": "cabinet", "x": 2.1, "y": 0.0, "z": 1.45, "w": 0.3, "d": 2.65, "h": 0.75, "label": "Shallow wall cabinets, plate rack over the sink"},
+    {"id": "fridge_top", "type": "cabinet", "x": 0, "y": 0, "z": 1.9, "w": 0.6, "d": 0.7, "h": 0.5, "label": "Over-fridge cabinet"}
+  ],
+  "services": [
+    {"type": "outlet", "wall": "W", "offset": 1.0, "height": 1.1, "serves": "counter_w1"},
+    {"type": "outlet", "wall": "W", "offset": 1.8, "height": 1.1, "serves": "counter_w1"},
+    {"type": "outlet", "wall": "E", "offset": 1.6, "height": 1.1, "serves": "counter_e1"},
+    {"type": "outlet", "wall": "E", "offset": 2.3, "height": 1.1, "serves": "counter_e1"},
+    {"type": "light", "wall": "ceiling", "offset": 1.6, "height": 2.7},
+    {"type": "switch", "wall": "S", "offset": 0.6, "height": 1.1}
+  ],
+  "reveal_path": [
+    {"stop": "entry", "zone": "entry", "camera": [1.2, 0.2, 1.6], "target": [1.2, 3.0, 1.0], "line": "Before: one cramped strip where you both stood back to back at the same spot."},
+    {"stop": "helper", "zone": "helper_station", "camera": [1.3, 0.3, 1.5], "target": [1.9, 0.9, 0.9], "line": "The helper station sits by the door: fridge, sink and chopping all within one step."},
+    {"stop": "cook", "zone": "cook_station", "camera": [1.2, 1.4, 1.6], "target": [0.3, 2.4, 0.9], "line": "The hob moves to the far end, so the cook stays put while the other person comes and goes."},
+    {"stop": "aisle", "zone": "aisle", "camera": [1.25, 0.1, 2.0], "target": [1.25, 3.0, 0.5], "line": "A slimmer 0.55 m counter on one side widens the aisle to 1.25 m, room to pass behind each other."},
+    {"stop": "storage", "zone": "cook_station", "camera": [1.0, 1.8, 1.4], "target": [2.1, 2.9, 1.2], "line": "Drawers instead of doors, and a tall pull-out pantry, so nothing swings into the aisle."},
+    {"stop": "wide", "zone": "aisle", "camera": [1.2, 3.0, 2.2], "target": [1.2, 0.3, 0.8], "line": "Two stations, staggered, with the window end left open for light."}
+  ],
+  "notes": [
+    "Aisle 1.25 m between runs (1.22 m two-cook guideline [NKBA]); 1.20 m at the fridge.",
+    "Assumed: sink drain on E wall near the door, gas/hob point on W wall at the far end. If not, moving them is plumber/gas-fitter work.",
+    "Sliding or pocket door so the door leaf never blocks the aisle.",
+    "Gas/hob and electrical connections by licensed professionals."
+  ]
+}

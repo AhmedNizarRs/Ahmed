@@ -1,0 +1,284 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Living room, route moved behind the sofa",
+    "type": "living",
+    "width": 3.5,
+    "depth": 4.5,
+    "height": 2.75,
+    "walls": {
+      "S": {
+        "load_bearing": true
+      },
+      "E": {
+        "load_bearing": true
+      },
+      "N": {
+        "load_bearing": true
+      },
+      "W": {
+        "load_bearing": true
+      }
+    },
+    "openings": [
+      {
+        "id": "entry_door",
+        "type": "door",
+        "wall": "S",
+        "offset": 2.5,
+        "width": 0.9,
+        "swing": "in"
+      },
+      {
+        "id": "inner_door",
+        "type": "door",
+        "wall": "N",
+        "offset": 2.5,
+        "width": 0.9,
+        "swing": "in"
+      },
+      {
+        "id": "win",
+        "type": "window",
+        "wall": "N",
+        "offset": 0.4,
+        "width": 1.5,
+        "sill": 0.9
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "household",
+      "role": "adult",
+      "needs": [
+        "tv",
+        "guests",
+        "through-route between front door and rest of home"
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "route",
+      "purpose": "circulation",
+      "owner": "shared"
+    },
+    {
+      "id": "entry",
+      "purpose": "entry",
+      "owner": "shared"
+    },
+    {
+      "id": "seating",
+      "purpose": "leisure",
+      "owner": "shared"
+    },
+    {
+      "id": "tv_wall",
+      "purpose": "storage",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "console",
+      "type": "cabinet",
+      "x": 0.45,
+      "y": 0,
+      "z": 0,
+      "w": 1.85,
+      "d": 0.35,
+      "h": 0.9,
+      "zone": "entry",
+      "front": "+y",
+      "clearance": 0.55,
+      "doors": "none",
+      "material": "wood_panel_eco",
+      "label": "Shoe and key console (drawers) with mirror above"
+    },
+    {
+      "id": "tv_unit",
+      "type": "tv_unit",
+      "x": 0,
+      "y": 0.9,
+      "z": 0,
+      "w": 0.4,
+      "d": 3.0,
+      "h": 0.45,
+      "zone": "tv_wall",
+      "front": "+x",
+      "material": "wood_veneer",
+      "label": "Low TV cabinet, drawers"
+    },
+    {
+      "id": "tv_uppers",
+      "type": "cabinet",
+      "x": 0,
+      "y": 0.9,
+      "z": 1.9,
+      "w": 0.35,
+      "d": 3.0,
+      "h": 0.8,
+      "zone": "tv_wall",
+      "material": "wood_veneer",
+      "label": "Closed overhead cabinets; TV wall-mounted between at eye height ~1.0 m"
+    },
+    {
+      "id": "coffee_table",
+      "type": "coffee_table",
+      "x": 0.89,
+      "y": 1.6,
+      "z": 0,
+      "w": 0.5,
+      "d": 1.0,
+      "h": 0.4,
+      "zone": "seating",
+      "material": "solid_wood"
+    },
+    {
+      "id": "sofa",
+      "type": "sofa",
+      "x": 1.75,
+      "y": 1.2,
+      "z": 0,
+      "w": 0.85,
+      "d": 2.2,
+      "h": 0.85,
+      "zone": "seating",
+      "front": "-x",
+      "label": "3-seat sofa floated off the wall, low back toward the route"
+    },
+    {
+      "id": "side_table",
+      "type": "table",
+      "x": 2.05,
+      "y": 3.45,
+      "z": 0,
+      "w": 0.45,
+      "d": 0.45,
+      "h": 0.55,
+      "zone": "seating",
+      "label": "Side table + lamp"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 2.4,
+      "height": 0.3,
+      "serves": "tv_unit"
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 2.4,
+      "height": 1.0,
+      "serves": "wall-mounted TV"
+    },
+    {
+      "type": "outlet",
+      "wall": "N",
+      "offset": 2.2,
+      "height": 0.3,
+      "serves": "side_table lamp"
+    },
+    {
+      "type": "switch",
+      "wall": "S",
+      "offset": 2.3,
+      "height": 1.2,
+      "serves": "entry"
+    },
+    {
+      "type": "light",
+      "wall": "ceiling",
+      "offset": 2.0,
+      "height": 2.75,
+      "serves": "general"
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "entry",
+      "zone": "entry",
+      "camera": [
+        2.95,
+        0.4,
+        1.6
+      ],
+      "target": [
+        2.95,
+        4.2,
+        1.2
+      ],
+      "line": "Before: everyone coming in cut straight across the TV. Now the door opens onto a clear lane along the wall."
+    },
+    {
+      "stop": "route",
+      "zone": "route",
+      "camera": [
+        3.05,
+        1.0,
+        1.6
+      ],
+      "target": [
+        3.05,
+        4.0,
+        0.8
+      ],
+      "line": "A 0.9 m lane runs behind the sofa, from the front door to the inner door, never past the screen."
+    },
+    {
+      "stop": "seating",
+      "zone": "seating",
+      "camera": [
+        2.2,
+        2.3,
+        1.1
+      ],
+      "target": [
+        0.1,
+        2.4,
+        1.0
+      ],
+      "line": "The sofa now faces the long wall, about two metres from the screen."
+    },
+    {
+      "stop": "tv_wall",
+      "zone": "tv_wall",
+      "camera": [
+        1.6,
+        0.6,
+        1.5
+      ],
+      "target": [
+        0.2,
+        2.4,
+        1.4
+      ],
+      "line": "The TV wall soaks up the clutter: drawers below, closed cabinets above."
+    },
+    {
+      "stop": "wide",
+      "zone": "seating",
+      "camera": [
+        3.3,
+        4.3,
+        2.3
+      ],
+      "target": [
+        1.0,
+        1.5,
+        0.5
+      ],
+      "line": "Wide shot: route on one side, seating on the other, centre open."
+    }
+  ],
+  "notes": [
+    "Door and window positions are assumed (entry on S near the E corner, inner door on N near the E corner); confirm.",
+    "Route lane x 2.6-3.5 = 0.9 m clear [BO][IDE].",
+    "Eye position to screen about 1.9 m: suits a 43-55 inch TV at 1.5-2.5 x diagonal [std]."
+  ]
+}

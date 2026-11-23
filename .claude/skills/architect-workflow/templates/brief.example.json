@@ -1,0 +1,8 @@
+{
+  "project": "Smoke test unit",
+  "entrance_doors": ["D1"],
+  "rooms": [
+    {"name": "LIVING",  "type": "living",  "min_area_m2": 14, "accessible": true,  "needs_window": false, "must_connect": ["BEDROOM"]},
+    {"name": "BEDROOM", "type": "bedroom", "min_area_m2": 10, "accessible": true,  "needs_window": true,  "forbid_direct_door": []}
+  ]
+}

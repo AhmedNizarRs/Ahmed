@@ -1,0 +1,253 @@
+{
+ "version": "1",
+ "room": {
+  "name": "Bedroom, niche cut into the north wall (ONLY after it is confirmed non-load-bearing)",
+  "type": "bedroom",
+  "width": 3.0,
+  "depth": 3.4,
+  "height": 2.7,
+  "walls": {
+   "S": {
+    "load_bearing": true
+   },
+   "E": {
+    "load_bearing": true
+   },
+   "N": {
+    "load_bearing": false
+   },
+   "W": {
+    "load_bearing": true
+   }
+  },
+  "openings": [
+   {
+    "id": "door",
+    "type": "door",
+    "wall": "S",
+    "offset": 2.1,
+    "width": 0.8,
+    "height": 2.05,
+    "swing": "in"
+   },
+   {
+    "id": "win",
+    "type": "window",
+    "wall": "E",
+    "offset": 1.2,
+    "width": 1.2,
+    "height": 1.3,
+    "sill": 0.9,
+    "egress": true
+   }
+  ]
+ },
+ "occupants": [
+  {
+   "id": "user",
+   "role": "adult",
+   "needs": [
+    "sleep",
+    "bedside storage"
+   ]
+  }
+ ],
+ "zones": [
+  {
+   "id": "sleep",
+   "purpose": "sleep",
+   "owner": "user"
+  },
+  {
+   "id": "entry",
+   "purpose": "entry",
+   "owner": "user"
+  }
+ ],
+ "elements": [
+  {
+   "id": "niche_long",
+   "type": "niche",
+   "wall": "N",
+   "label": "Recessed niche cut into the non-load-bearing north partition, 1.6 W x 0.08-0.10 D x 0.35 H (depth limited by wall thickness), lintel over the opening",
+   "zone": "sleep",
+   "x": 0.7,
+   "y": 3.3,
+   "z": 1.25,
+   "w": 1.6,
+   "d": 0.1,
+   "h": 0.35,
+   "material": "gypsum_board"
+  },
+  {
+   "id": "niche_left",
+   "type": "niche",
+   "wall": "N",
+   "label": "Left bedside niche cut into the partition, 0.45 W x 0.10 D x 0.4 H",
+   "zone": "sleep",
+   "x": 0.2,
+   "y": 3.3,
+   "z": 0.55,
+   "w": 0.45,
+   "d": 0.1,
+   "h": 0.4,
+   "material": "wood_veneer"
+  },
+  {
+   "id": "niche_right",
+   "type": "niche",
+   "wall": "N",
+   "label": "Right bedside niche, mirror of left",
+   "zone": "sleep",
+   "x": 2.35,
+   "y": 3.3,
+   "z": 0.55,
+   "w": 0.45,
+   "d": 0.1,
+   "h": 0.4,
+   "material": "wood_veneer"
+  },
+  {
+   "id": "headboard",
+   "type": "board",
+   "label": "Upholstered headboard panel",
+   "zone": "sleep",
+   "x": 0.75,
+   "y": 3.37,
+   "z": 0.45,
+   "w": 1.5,
+   "d": 0.03,
+   "h": 0.65,
+   "material": "padded_panel"
+  },
+  {
+   "id": "bed",
+   "type": "bed",
+   "label": "Existing double bed, back against the north wall",
+   "zone": "sleep",
+   "owner": "user",
+   "x": 0.75,
+   "y": 1.32,
+   "z": 0.0,
+   "w": 1.5,
+   "d": 2.05,
+   "h": 0.5,
+   "material": "solid_wood"
+  }
+ ],
+ "services": [
+  {
+   "type": "outlet",
+   "wall": "N",
+   "offset": 0.4,
+   "height": 0.6,
+   "serves": "bed"
+  },
+  {
+   "type": "usb",
+   "wall": "N",
+   "offset": 2.6,
+   "height": 0.6,
+   "serves": "bed"
+  },
+  {
+   "type": "light",
+   "wall": "N",
+   "offset": 1.5,
+   "height": 1.6
+  },
+  {
+   "type": "switch",
+   "wall": "N",
+   "offset": 0.4,
+   "height": 0.9
+  },
+  {
+   "type": "switch",
+   "wall": "S",
+   "offset": 2.0,
+   "height": 1.1
+  }
+ ],
+ "reveal_path": [
+  {
+   "stop": "entry",
+   "zone": "entry",
+   "camera": [
+    2.5,
+    0.3,
+    1.6
+   ],
+   "target": [
+    1.5,
+    3.2,
+    1.0
+   ],
+   "line": "Two nightstands crowding a 3 m wall, and no one knows if that wall can be cut."
+  },
+  {
+   "stop": "wall",
+   "zone": "sleep",
+   "camera": [
+    1.5,
+    0.6,
+    1.5
+   ],
+   "target": [
+    1.5,
+    3.3,
+    1.2
+   ],
+   "line": "With the wall confirmed as a non-structural partition, the niches are cut straight into it; no depth lost."
+  },
+  {
+   "stop": "left_niche",
+   "zone": "sleep",
+   "camera": [
+    0.4,
+    2.2,
+    1.1
+   ],
+   "target": [
+    0.4,
+    3.3,
+    0.75
+   ],
+   "line": "Each side gets a lit niche with its own outlet, in place of a nightstand."
+  },
+  {
+   "stop": "long_niche",
+   "zone": "sleep",
+   "camera": [
+    1.5,
+    1.8,
+    1.6
+   ],
+   "target": [
+    1.5,
+    3.3,
+    1.4
+   ],
+   "line": "Above the headboard, a long warm-lit niche for books and a few objects."
+  },
+  {
+   "stop": "wide",
+   "zone": "entry",
+   "camera": [
+    2.8,
+    0.2,
+    2.2
+   ],
+   "target": [
+    1.5,
+    2.6,
+    0.8
+   ],
+   "line": "Bedside floor is free on both sides, and the structural wall is untouched."
+  }
+ ],
+ "notes": [
+  "Use ONLY after a structural engineer or the building drawings confirm wall N is non-load-bearing, and nothing (pipes, cables, a neighbour's back-to-back socket) runs where you cut.",
+  "Niche depth is limited by the wall: a 100-115 mm partition allows about 80-100 mm."
+ ]
+}

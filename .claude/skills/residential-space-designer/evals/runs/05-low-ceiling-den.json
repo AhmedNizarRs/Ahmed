@@ -1,0 +1,241 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Teen den, 2.4 m ceiling",
+    "width": 2.8,
+    "depth": 2.9,
+    "height": 2.4,
+    "walls": {},
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "S",
+        "offset": 2.0,
+        "width": 0.8,
+        "swing": "in"
+      },
+      {
+        "id": "win",
+        "type": "window",
+        "wall": "N",
+        "offset": 1.0,
+        "width": 1.2,
+        "sill": 0.9,
+        "egress": true
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "teen",
+      "age": 15,
+      "role": "teen",
+      "needs": [
+        "gaming",
+        "privacy"
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "entry",
+      "purpose": "entry",
+      "owner": "shared"
+    },
+    {
+      "id": "sleep",
+      "purpose": "sleep",
+      "owner": "teen"
+    },
+    {
+      "id": "den",
+      "purpose": "leisure",
+      "owner": "teen"
+    },
+    {
+      "id": "study",
+      "purpose": "study",
+      "owner": "teen"
+    },
+    {
+      "id": "dress",
+      "purpose": "dressing",
+      "owner": "teen"
+    }
+  ],
+  "elements": [
+    {
+      "id": "bed",
+      "type": "bed",
+      "x": 0,
+      "y": 0.9,
+      "z": 1.0,
+      "w": 0.95,
+      "d": 2.0,
+      "h": 0.25,
+      "zone": "sleep",
+      "owner": "teen",
+      "guardrail": true,
+      "guardrail_height": 0.18,
+      "material": "steel_square_tube_galv"
+    },
+    {
+      "id": "den",
+      "type": "den",
+      "x": 0,
+      "y": 1.4,
+      "z": 0,
+      "w": 0.95,
+      "d": 1.5,
+      "h": 1.0,
+      "zone": "den",
+      "owner": "teen",
+      "label": "Gaming den, curtain + LED"
+    },
+    {
+      "id": "steps",
+      "type": "steps",
+      "x": 0,
+      "y": 0.9,
+      "z": 0,
+      "w": 0.95,
+      "d": 0.5,
+      "h": 1.0,
+      "zone": "sleep",
+      "front": "+x",
+      "clearance": 0.6,
+      "serves": "bed"
+    },
+    {
+      "id": "desk",
+      "type": "desk",
+      "x": 1.6,
+      "y": 2.35,
+      "z": 0,
+      "w": 1.2,
+      "d": 0.55,
+      "h": 0.75,
+      "zone": "study",
+      "owner": "teen",
+      "front": "-y",
+      "clearance": 0.6
+    },
+    {
+      "id": "wardrobe",
+      "type": "wardrobe",
+      "x": 2.25,
+      "y": 0.9,
+      "z": 0,
+      "w": 0.55,
+      "d": 0.8,
+      "h": 2.3,
+      "zone": "dress",
+      "owner": "teen",
+      "front": "-x",
+      "clearance": 0.6,
+      "doors": "sliding"
+    },
+    {
+      "id": "curtain",
+      "type": "curtain",
+      "x": 0.95,
+      "y": 1.4,
+      "z": 0,
+      "w": 0.02,
+      "d": 1.5,
+      "h": 1.0,
+      "zone": "den"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 2.0,
+      "height": 0.4,
+      "serves": "den"
+    },
+    {
+      "type": "usb",
+      "wall": "W",
+      "offset": 1.5,
+      "height": 1.3,
+      "serves": "bed"
+    },
+    {
+      "type": "outlet",
+      "wall": "N",
+      "offset": 2.3,
+      "height": 0.85,
+      "serves": "desk"
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "entry",
+      "zone": "entry",
+      "camera": [
+        2.2,
+        0.3,
+        1.5
+      ],
+      "target": [
+        0.5,
+        2.0,
+        1.0
+      ],
+      "line": "A 2.4 m ceiling is too low for a full loft, so the bed sits halfway up."
+    },
+    {
+      "stop": "den",
+      "zone": "den",
+      "camera": [
+        1.6,
+        1.6,
+        0.8
+      ],
+      "target": [
+        0.4,
+        2.1,
+        0.5
+      ],
+      "line": "Behind the curtain, a gaming den with room to sit up."
+    },
+    {
+      "stop": "bed",
+      "zone": "sleep",
+      "camera": [
+        1.6,
+        1.4,
+        1.6
+      ],
+      "target": [
+        0.4,
+        1.9,
+        1.2
+      ],
+      "line": "Up top: 1.15 m of headroom and its own reading light."
+    },
+    {
+      "stop": "desk",
+      "zone": "study",
+      "camera": [
+        2.0,
+        1.2,
+        1.2
+      ],
+      "target": [
+        2.2,
+        2.7,
+        0.8
+      ],
+      "line": "The desk takes the window light."
+    }
+  ],
+  "notes": [
+    "Assumed door S, window N.",
+    "Rejected: loft over desk (needs ≈2.6 m ceiling; this room is 2.4 m).",
+    "Den clear height 1.0 m: sitting only."
+  ]
+}

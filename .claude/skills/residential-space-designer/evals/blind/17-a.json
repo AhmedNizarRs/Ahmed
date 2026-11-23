@@ -1,0 +1,220 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Pooja room (NE corner, ground floor)",
+    "type": "pooja",
+    "width": 1.5,
+    "depth": 1.8,
+    "height": 3.0,
+    "walls": {
+      "S": {
+        "load_bearing": true
+      },
+      "E": {
+        "load_bearing": true
+      },
+      "N": {
+        "load_bearing": true
+      },
+      "W": {
+        "load_bearing": true
+      }
+    },
+    "openings": [
+      {
+        "id": "pooja_door",
+        "type": "door",
+        "wall": "W",
+        "offset": 0.45,
+        "width": 0.9,
+        "swing": "out",
+        "height": 2.1
+      },
+      {
+        "id": "vent_win",
+        "type": "window",
+        "wall": "N",
+        "offset": 0.3,
+        "width": 0.6,
+        "sill": 1.6,
+        "height": 0.6
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "grandmother",
+      "role": "elder",
+      "needs": [
+        "daily pooja",
+        "no high steps",
+        "sits on low stool"
+      ]
+    },
+    {
+      "id": "family",
+      "role": "adult",
+      "needs": [
+        "festival pooja, 3-5 people standing at the door"
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "altar",
+      "purpose": "storage",
+      "owner": "shared"
+    },
+    {
+      "id": "prayer",
+      "purpose": "leisure",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "altar_plinth",
+      "type": "platform",
+      "x": 1.05,
+      "y": 0.2,
+      "z": 0,
+      "w": 0.45,
+      "d": 1.4,
+      "h": 0.15,
+      "zone": "altar",
+      "material": "stone_marble",
+      "label": "Raised 15 cm marble plinth with 2 shallow drawers (agarbatti, matchboxes, cloth)"
+    },
+    {
+      "id": "mandir",
+      "type": "pooja_unit",
+      "x": 1.05,
+      "y": 0.2,
+      "z": 0.15,
+      "w": 0.45,
+      "d": 1.4,
+      "h": 1.55,
+      "zone": "altar",
+      "front": "-x",
+      "clearance": 0.75,
+      "material": "solid_wood",
+      "label": "Teak mandir on E wall, deities face W so the worshipper faces E; brass bell hook; fluted glass shutters"
+    },
+    {
+      "id": "mandir_overhead",
+      "type": "cabinet",
+      "x": 1.05,
+      "y": 0.2,
+      "z": 2.3,
+      "w": 0.45,
+      "d": 1.4,
+      "h": 0.6,
+      "zone": "altar",
+      "material": "solid_wood",
+      "label": "Overhead cabinet: festival items, spare lamps"
+    },
+    {
+      "id": "side_shelf",
+      "type": "shelf",
+      "x": 0,
+      "y": 1.45,
+      "z": 0,
+      "w": 0.3,
+      "d": 0.35,
+      "h": 2.0,
+      "zone": "prayer",
+      "material": "solid_wood",
+      "label": "Tall shelf: oil, ghee, scriptures, low stool stored at the base"
+    }
+  ],
+  "services": [
+    {
+      "type": "light",
+      "wall": "ceiling",
+      "offset": 0.75,
+      "height": 3.0,
+      "serves": "warm 2700 K dimmable downlight"
+    },
+    {
+      "type": "outlet",
+      "wall": "E",
+      "offset": 1.7,
+      "height": 1.9,
+      "serves": "mandir LED backlight"
+    },
+    {
+      "type": "switch",
+      "wall": "W",
+      "offset": 0.3,
+      "height": 1.2,
+      "serves": "pooja light, outside the door"
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "door",
+      "zone": "prayer",
+      "camera": [
+        0.15,
+        0.9,
+        1.5
+      ],
+      "target": [
+        1.4,
+        0.9,
+        1.0
+      ],
+      "line": "A pooja shelf squeezed into the living room never felt sacred. Now it has its own room in the north-east."
+    },
+    {
+      "stop": "mandir",
+      "zone": "altar",
+      "camera": [
+        0.4,
+        0.9,
+        1.1
+      ],
+      "target": [
+        1.3,
+        0.9,
+        1.0
+      ],
+      "line": "Raised marble plinth and a teak mandir on the east wall; you face east as you pray."
+    },
+    {
+      "stop": "storage",
+      "zone": "altar",
+      "camera": [
+        0.4,
+        0.4,
+        1.3
+      ],
+      "target": [
+        1.3,
+        1.0,
+        2.4
+      ],
+      "line": "Everything for daily pooja lives in the drawers and the overhead cabinet, so nothing sits out."
+    },
+    {
+      "stop": "vent",
+      "zone": "prayer",
+      "camera": [
+        0.6,
+        0.6,
+        1.6
+      ],
+      "target": [
+        0.6,
+        1.8,
+        1.9
+      ],
+      "line": "A high ventilator lets lamp smoke out; doors open outward so the floor stays free to sit."
+    }
+  ],
+  "notes": [
+    "Pooja in the NE corner of the house; not under the stair, not sharing a wall with a toilet (preference) [HT-I2, I3, I6].",
+    "Door swings out into the living room so a low stool and floor mat fit inside.",
+    "Exhaust/ventilator for lamp smoke: services enum has no 'exhaust' type, listed here instead."
+  ]
+}

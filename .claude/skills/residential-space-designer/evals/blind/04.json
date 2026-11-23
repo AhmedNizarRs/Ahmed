@@ -1,0 +1,421 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Couple's bedroom with split WFH desk + vanity",
+    "type": "bedroom",
+    "width": 3.0,
+    "depth": 3.2,
+    "height": 2.7,
+    "walls": {
+      "S": {
+        "load_bearing": true
+      },
+      "E": {
+        "load_bearing": true
+      },
+      "N": {
+        "load_bearing": true
+      },
+      "W": {
+        "load_bearing": true
+      }
+    },
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "W",
+        "offset": 0.1,
+        "width": 0.8,
+        "height": 2.05,
+        "swing": "in"
+      },
+      {
+        "id": "win",
+        "type": "window",
+        "wall": "N",
+        "offset": 0.6,
+        "width": 1.0,
+        "height": 1.3,
+        "sill": 0.9,
+        "egress": true
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "her",
+      "role": "adult",
+      "needs": [
+        "vanity",
+        "wardrobe"
+      ]
+    },
+    {
+      "id": "him",
+      "role": "adult",
+      "needs": [
+        "wfh",
+        "video_calls",
+        "wardrobe"
+      ]
+    }
+  ],
+  "zones": [
+    {
+      "id": "entry",
+      "purpose": "entry",
+      "owner": "shared"
+    },
+    {
+      "id": "sleep",
+      "purpose": "sleep",
+      "owner": "shared"
+    },
+    {
+      "id": "work",
+      "purpose": "study",
+      "owner": "him"
+    },
+    {
+      "id": "vanity_zone",
+      "purpose": "dressing",
+      "owner": "her"
+    },
+    {
+      "id": "dress",
+      "purpose": "dressing",
+      "owner": "shared"
+    },
+    {
+      "id": "storage",
+      "purpose": "storage",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "bed",
+      "type": "bed",
+      "label": "Queen 1.5 x 2.0 storage platform, head on S wall; his/her drawers on the W side, lift-free",
+      "zone": "sleep",
+      "owner": "shared",
+      "x": 1.5,
+      "y": 0.0,
+      "z": 0.0,
+      "w": 1.5,
+      "d": 2.0,
+      "h": 0.55,
+      "material": "wood_panel_eco"
+    },
+    {
+      "id": "headboard_shelf",
+      "type": "shelf",
+      "label": "Headboard shelf with two reading lights (replaces nightstands)",
+      "zone": "sleep",
+      "x": 1.5,
+      "y": 0.0,
+      "z": 0.85,
+      "w": 1.5,
+      "d": 0.18,
+      "h": 0.25,
+      "material": "solid_wood"
+    },
+    {
+      "id": "overhead",
+      "type": "cabinet",
+      "label": "Overhead cabinet above bed head (seasonal, suitcases)",
+      "zone": "storage",
+      "x": 1.5,
+      "y": 0.0,
+      "z": 1.95,
+      "w": 1.5,
+      "d": 0.35,
+      "h": 0.65,
+      "material": "wood_panel_eco"
+    },
+    {
+      "id": "desk_wfh",
+      "type": "desk",
+      "label": "WFH desk 1.2 x 0.7 on W wall, window to his right",
+      "zone": "work",
+      "owner": "him",
+      "x": 0.0,
+      "y": 1.5,
+      "z": 0.0,
+      "w": 0.7,
+      "d": 1.2,
+      "h": 0.74,
+      "front": "+x",
+      "clearance": 0.75,
+      "material": "solid_wood"
+    },
+    {
+      "id": "chair_wfh",
+      "type": "chair",
+      "zone": "work",
+      "x": 0.75,
+      "y": 1.85,
+      "z": 0.0,
+      "w": 0.55,
+      "d": 0.55,
+      "h": 1.0
+    },
+    {
+      "id": "corner_unit",
+      "type": "cabinet",
+      "label": "Corner drawer tower joining the two desks (printer, files)",
+      "zone": "work",
+      "owner": "him",
+      "x": 0.0,
+      "y": 2.7,
+      "z": 0.0,
+      "w": 0.7,
+      "d": 0.5,
+      "h": 0.74,
+      "material": "wood_panel_eco"
+    },
+    {
+      "id": "overhead_desk",
+      "type": "cabinet",
+      "label": "Closed overhead cabinet above WFH desk (work files; hides work after hours)",
+      "zone": "work",
+      "owner": "him",
+      "x": 0.0,
+      "y": 1.5,
+      "z": 1.9,
+      "w": 0.35,
+      "d": 1.2,
+      "h": 0.7,
+      "material": "wood_panel_eco"
+    },
+    {
+      "id": "vanity",
+      "type": "desk",
+      "label": "Vanity under the window, 0.9 x 0.5, mirror on reveal + lit mirror",
+      "zone": "vanity_zone",
+      "owner": "her",
+      "x": 0.7,
+      "y": 2.7,
+      "z": 0.0,
+      "w": 0.9,
+      "d": 0.5,
+      "h": 0.74,
+      "front": "-y",
+      "clearance": 0.6,
+      "material": "stone_marble"
+    },
+    {
+      "id": "stool",
+      "type": "chair",
+      "zone": "vanity_zone",
+      "x": 0.95,
+      "y": 2.25,
+      "z": 0.0,
+      "w": 0.4,
+      "d": 0.4,
+      "h": 0.45
+    },
+    {
+      "id": "wardrobe",
+      "type": "wardrobe",
+      "label": "Floor-to-ceiling wardrobe 1.4 m, sliding: her long-hang + his column",
+      "zone": "dress",
+      "owner": "shared",
+      "x": 1.6,
+      "y": 2.6,
+      "z": 0.0,
+      "w": 1.4,
+      "d": 0.6,
+      "h": 2.7,
+      "front": "-y",
+      "clearance": 0.6,
+      "doors": "sliding",
+      "material": "wood_veneer"
+    },
+    {
+      "id": "hooks",
+      "type": "hooks",
+      "label": "Worn-once hooks behind the door swing",
+      "zone": "entry",
+      "x": 0.0,
+      "y": 1.0,
+      "z": 1.3,
+      "w": 0.05,
+      "d": 0.4,
+      "h": 0.2
+    },
+    {
+      "id": "curtain_call",
+      "type": "curtain",
+      "label": "Ceiling-track curtain between desk and bed: drawn = neutral call background, and hides the bed",
+      "zone": "work",
+      "owner": "him",
+      "x": 1.45,
+      "y": 1.0,
+      "z": 0.0,
+      "w": 0.02,
+      "d": 1.6,
+      "h": 2.6,
+      "material": "fabric_curtain"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "S",
+      "offset": 1.4,
+      "height": 0.6,
+      "serves": "bed"
+    },
+    {
+      "type": "usb",
+      "wall": "E",
+      "offset": 0.3,
+      "height": 0.7,
+      "serves": "bed"
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.8,
+      "height": 0.85,
+      "serves": "desk_wfh"
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 2.4,
+      "height": 0.85,
+      "serves": "desk_wfh"
+    },
+    {
+      "type": "outlet",
+      "wall": "N",
+      "offset": 1.55,
+      "height": 1.05,
+      "serves": "vanity"
+    },
+    {
+      "type": "light",
+      "wall": "ceiling",
+      "offset": 1.5,
+      "height": 2.7
+    },
+    {
+      "type": "light",
+      "wall": "N",
+      "offset": 1.15,
+      "height": 1.7
+    },
+    {
+      "type": "switch",
+      "wall": "W",
+      "offset": 1.0,
+      "height": 1.05
+    },
+    {
+      "type": "switch",
+      "wall": "S",
+      "offset": 1.55,
+      "height": 0.75
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "entry",
+      "zone": "entry",
+      "camera": [
+        0.3,
+        0.6,
+        1.6
+      ],
+      "target": [
+        2.2,
+        2.0,
+        1.0
+      ],
+      "line": "Two people, 9.6 m², one table: she needed a mirror, he needed a desk."
+    },
+    {
+      "stop": "bed",
+      "zone": "sleep",
+      "camera": [
+        0.9,
+        2.3,
+        1.5
+      ],
+      "target": [
+        2.3,
+        0.6,
+        0.6
+      ],
+      "line": "The bed moves into the corner on a storage platform, his drawers and hers."
+    },
+    {
+      "stop": "wfh",
+      "zone": "work",
+      "camera": [
+        1.6,
+        1.9,
+        1.3
+      ],
+      "target": [
+        0.2,
+        2.1,
+        1.0
+      ],
+      "line": "His desk faces the wall, window to the side: no glare, and one pull of a curtain hides the bed on every call."
+    },
+    {
+      "stop": "vanity",
+      "zone": "vanity_zone",
+      "camera": [
+        1.2,
+        1.7,
+        1.3
+      ],
+      "target": [
+        1.15,
+        3.1,
+        1.1
+      ],
+      "line": "Her vanity takes the window, so she does her make-up in daylight."
+    },
+    {
+      "stop": "wardrobe",
+      "zone": "dress",
+      "camera": [
+        1.2,
+        1.6,
+        1.5
+      ],
+      "target": [
+        2.3,
+        2.9,
+        1.3
+      ],
+      "line": "One sliding wardrobe, split down the middle, with a long-hang column for her."
+    },
+    {
+      "stop": "wide",
+      "zone": "sleep",
+      "camera": [
+        2.9,
+        2.1,
+        2.3
+      ],
+      "target": [
+        0.8,
+        0.8,
+        0.6
+      ],
+      "line": "Work by day, rest by night, and a clear path from the door to every zone."
+    }
+  ],
+  "notes": [
+    "Ceiling height, door and window positions are assumptions; confirm.",
+    "Bed pushed to the E wall: the E-side sleeper gets in from the foot (0.6 m strip in front of the wardrobe).",
+    "Wardrobe 1.4 m < 2.0 m target for two adults; made up with platform drawers and two overhead cabinets."
+  ]
+}

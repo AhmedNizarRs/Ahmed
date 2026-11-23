@@ -1,0 +1,224 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Utility balcony off kitchen",
+    "type": "balcony",
+    "width": 2.7,
+    "depth": 1.2,
+    "height": 2.85,
+    "estimated": true,
+    "walls": {
+      "S": {
+        "load_bearing": true
+      },
+      "E": {
+        "load_bearing": true
+      },
+      "N": {
+        "load_bearing": true
+      },
+      "W": {
+        "load_bearing": true
+      }
+    },
+    "openings": [
+      {
+        "id": "kitchen_door",
+        "type": "door",
+        "wall": "S",
+        "offset": 1.85,
+        "width": 0.8,
+        "swing": "sliding"
+      },
+      {
+        "id": "parapet",
+        "type": "window",
+        "wall": "N",
+        "offset": 0,
+        "width": 2.7,
+        "sill": 1.0,
+        "drop_outside": 15
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "maid",
+      "role": "household staff",
+      "needs": [
+        "vessel washing squatting at a low tap",
+        "clothes washing/drying"
+      ]
+    },
+    {
+      "id": "family",
+      "role": "adult"
+    }
+  ],
+  "zones": [
+    {
+      "id": "laundry",
+      "purpose": "storage",
+      "owner": "shared"
+    },
+    {
+      "id": "vessel_wash",
+      "purpose": "study",
+      "owner": "maid"
+    },
+    {
+      "id": "entry",
+      "purpose": "circulation",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "washer",
+      "type": "washer",
+      "x": 0,
+      "y": 0.3,
+      "z": 0,
+      "w": 0.65,
+      "d": 0.65,
+      "h": 0.85,
+      "zone": "laundry",
+      "front": "+x",
+      "clearance": 1.0,
+      "label": "Front-loader on a 10 cm stand (drain clear)"
+    },
+    {
+      "id": "detergent_cab",
+      "type": "cabinet",
+      "x": 0,
+      "y": 0.3,
+      "z": 1.1,
+      "w": 0.4,
+      "d": 0.65,
+      "h": 0.8,
+      "zone": "laundry",
+      "label": "Detergent / cleaning cabinet above washer"
+    },
+    {
+      "id": "broom_cupboard",
+      "type": "cabinet",
+      "x": 0.7,
+      "y": 0,
+      "z": 0,
+      "w": 1.1,
+      "d": 0.3,
+      "h": 2.1,
+      "zone": "laundry",
+      "front": "+y",
+      "doors": "hinged",
+      "label": "Shallow cupboard: mop, bucket, broom, vacuum; maid's bag hook inside"
+    },
+    {
+      "id": "drying_rack",
+      "type": "other",
+      "x": 0.7,
+      "y": 0.4,
+      "z": 2.25,
+      "w": 1.9,
+      "d": 0.6,
+      "h": 0.1,
+      "zone": "laundry",
+      "label": "Pulley ceiling drying rack"
+    },
+    {
+      "id": "vessel_kerb",
+      "type": "other",
+      "x": 1.9,
+      "y": 0.5,
+      "z": 0,
+      "w": 0.8,
+      "d": 0.7,
+      "h": 0.08,
+      "zone": "vessel_wash",
+      "label": "Sunken wash bay (nahani) with low tap at 0.45 m, floor drain and 0.08 m kerb; stainless vessel rack on the side wall above"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.0,
+      "height": 1.0,
+      "serves": "washer (weatherproof, RCD)"
+    },
+    {
+      "type": "light",
+      "wall": "ceiling",
+      "offset": 1.3,
+      "height": 2.85,
+      "serves": "utility light"
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "door",
+      "zone": "entry",
+      "camera": [
+        2.25,
+        0.1,
+        1.6
+      ],
+      "target": [
+        1.0,
+        1.0,
+        1.0
+      ],
+      "line": "Vessels used to pile up in the kitchen sink. Now they go straight out here."
+    },
+    {
+      "stop": "vessel",
+      "zone": "vessel_wash",
+      "camera": [
+        1.4,
+        0.2,
+        1.3
+      ],
+      "target": [
+        2.3,
+        0.85,
+        0.2
+      ],
+      "line": "A sunken wash bay with a low tap and floor drain: vessel washing the way it is actually done."
+    },
+    {
+      "stop": "laundry",
+      "zone": "laundry",
+      "camera": [
+        1.8,
+        0.6,
+        1.4
+      ],
+      "target": [
+        0.3,
+        0.6,
+        0.8
+      ],
+      "line": "Washer at the far end, cleaning cupboard beside it, nothing on the floor."
+    },
+    {
+      "stop": "drying",
+      "zone": "laundry",
+      "camera": [
+        2.0,
+        0.3,
+        1.5
+      ],
+      "target": [
+        1.6,
+        0.7,
+        2.3
+      ],
+      "line": "Clothes dry on a ceiling rack, so the parapet stays free."
+    }
+  ],
+  "notes": [
+    "Balcony guard/parapet height per local code (commonly 0.91-1.07 m) [std]; never place climbable items against it.",
+    "Waterproofing, floor slope to drain and a weatherproof RCD socket are professional work.",
+    "Check society rules before enclosing or grilling the balcony."
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Garden-level hosting heart: kitchen, dining for 10, conversation lounge",
+    "type": "living_dining",
+    "width": 10.0,
+    "depth": 7.0,
+    "height": 3.0,
+    "estimated": true,
+    "walls": {
+      "S": { "load_bearing": true },
+      "E": { "load_bearing": true },
+      "N": { "load_bearing": true },
+      "W": { "load_bearing": true }
+    },
+    "openings": [
+      { "id": "garden_sliders", "type": "door", "wall": "S", "offset": 0.6, "width": 8.8, "height": 2.7, "swing": "sliding" },
+      { "id": "stair_opening", "type": "door", "wall": "N", "offset": 2.9, "width": 1.0, "height": 2.4, "swing": "sliding" },
+      { "id": "scullery_door", "type": "door", "wall": "N", "offset": 4.9, "width": 0.9, "height": 2.1, "swing": "out" },
+      { "id": "kitchen_window", "type": "window", "wall": "E", "offset": 1.0, "width": 2.0, "height": 1.4, "sill": 1.0 }
+    ]
+  },
+  "occupants": [
+    { "id": "parent_1", "role": "adult", "needs": ["hosting", "cooking"] },
+    { "id": "parent_2", "role": "adult", "needs": ["hosting", "cooking"] },
+    { "id": "kid_1", "age": 13, "role": "teen" },
+    { "id": "kid_2", "age": 10, "role": "child" },
+    { "id": "kid_3", "age": 6, "role": "child" },
+    { "id": "guests", "role": "adult", "needs": ["up to 12 for dinner"] }
+  ],
+  "zones": [
+    { "id": "arrive", "purpose": "entry", "owner": "shared" },
+    { "id": "kitchen", "purpose": "storage", "owner": "shared" },
+    { "id": "dining", "purpose": "leisure", "owner": "shared" },
+    { "id": "lounge", "purpose": "leisure", "owner": "shared" },
+    { "id": "route", "purpose": "circulation", "owner": "shared" }
+  ],
+  "elements": [
+    { "id": "pantry", "type": "cabinet", "label": "Tall pantry beside the scullery door", "zone": "kitchen", "x": 6.0, "y": 6.35, "z": 0.0, "w": 0.6, "d": 0.65, "h": 2.4, "material": "wood_panel_eco" },
+    { "id": "oven", "type": "oven", "label": "Double oven tower", "zone": "kitchen", "x": 6.6, "y": 6.35, "z": 0.0, "w": 0.6, "d": 0.65, "h": 2.4, "front": "-y" },
+    { "id": "counter_n1", "type": "counter", "label": "Hob landing, deep pan drawers", "zone": "kitchen", "x": 7.2, "y": 6.35, "z": 0.0, "w": 0.6, "d": 0.65, "h": 0.9, "front": "-y", "material": "stone_marble" },
+    { "id": "cooktop", "type": "cooktop", "label": "0.9 m hob under ducted hood", "zone": "kitchen", "x": 7.8, "y": 6.35, "z": 0.0, "w": 0.9, "d": 0.65, "h": 0.9, "front": "-y" },
+    { "id": "counter_n2", "type": "counter", "label": "Hob landing, spice pull-out", "zone": "kitchen", "x": 8.7, "y": 6.35, "z": 0.0, "w": 0.6, "d": 0.65, "h": 0.9, "front": "-y", "material": "stone_marble" },
+    { "id": "fridge", "type": "fridge", "label": "Wide fridge-freezer", "zone": "kitchen", "x": 9.3, "y": 6.3, "z": 0.0, "w": 0.7, "d": 0.7, "h": 2.0, "front": "-y" },
+    { "id": "hood", "type": "cabinet", "label": "Ducted hood", "zone": "kitchen", "x": 7.8, "y": 6.5, "z": 1.6, "w": 0.9, "d": 0.5, "h": 0.6 },
+    { "id": "uppers_n", "type": "cabinet", "label": "Glass-front display uppers", "zone": "kitchen", "x": 8.7, "y": 6.65, "z": 1.45, "w": 0.6, "d": 0.35, "h": 0.8 },
+    { "id": "island_w", "type": "island", "label": "Island prep, drawers", "zone": "kitchen", "x": 6.8, "y": 3.95, "z": 0.0, "w": 1.0, "d": 1.1, "h": 0.9, "front": "+y", "material": "stone_marble" },
+    { "id": "sink", "type": "sink", "label": "Island sink, faces guests", "zone": "kitchen", "x": 7.8, "y": 3.95, "z": 0.0, "w": 0.8, "d": 1.1, "h": 0.9, "front": "+y" },
+    { "id": "island_e", "type": "island", "label": "Dishwasher x2 + bin, serving end", "zone": "kitchen", "x": 8.6, "y": 3.95, "z": 0.0, "w": 1.0, "d": 1.1, "h": 0.9, "front": "+y", "material": "stone_marble" },
+    { "id": "stool_1", "type": "chair", "zone": "kitchen", "x": 7.0, "y": 3.5, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.75 },
+    { "id": "stool_2", "type": "chair", "zone": "kitchen", "x": 7.65, "y": 3.5, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.75 },
+    { "id": "stool_3", "type": "chair", "zone": "kitchen", "x": 8.3, "y": 3.5, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.75 },
+    { "id": "stool_4", "type": "chair", "zone": "kitchen", "x": 8.95, "y": 3.5, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.75 },
+    { "id": "table", "type": "table", "label": "Dining table 3.0 x 1.0, seats 10 (12 with end chairs)", "zone": "dining", "x": 3.8, "y": 2.0, "z": 0.0, "w": 3.0, "d": 1.0, "h": 0.75, "front": "+y", "clearance": 1.12, "material": "solid_wood" },
+    { "id": "sofa_s", "type": "sofa", "label": "Sofa facing north", "zone": "lounge", "x": 0.6, "y": 1.5, "z": 0.0, "w": 2.2, "d": 0.95, "h": 0.8, "front": "+y" },
+    { "id": "sofa_n", "type": "sofa", "label": "Sofa facing south to the garden", "zone": "lounge", "x": 0.6, "y": 4.15, "z": 0.0, "w": 2.2, "d": 0.95, "h": 0.8, "front": "-y" },
+    { "id": "coffee", "type": "coffee_table", "zone": "lounge", "x": 1.1, "y": 2.85, "z": 0.0, "w": 1.2, "d": 0.9, "h": 0.4 },
+    { "id": "fireplace", "type": "tv_unit", "label": "Fireplace + media wall (TV behind sliding panels)", "zone": "lounge", "x": 0.0, "y": 2.4, "z": 0.0, "w": 0.45, "d": 1.8, "h": 1.1, "front": "+x" },
+    { "id": "sideboard", "type": "cabinet", "label": "Bar sideboard: glassware, drinks fridge", "zone": "lounge", "x": 0.5, "y": 6.5, "z": 0.0, "w": 2.4, "d": 0.5, "h": 0.9, "front": "-y", "clearance": 0.6, "material": "wood_veneer" }
+  ],
+  "services": [
+    { "type": "outlet", "wall": "N", "offset": 7.5, "height": 1.1 },
+    { "type": "outlet", "wall": "N", "offset": 9.0, "height": 1.1 },
+    { "type": "outlet", "wall": "N", "offset": 1.7, "height": 1.0, "serves": "sideboard" },
+    { "type": "outlet", "wall": "W", "offset": 3.3, "height": 1.2, "serves": "fireplace" },
+    { "type": "outlet", "wall": "W", "offset": 1.2, "height": 0.3, "serves": "sofa_s" },
+    { "type": "outlet", "wall": "W", "offset": 5.0, "height": 0.3, "serves": "sofa_n" },
+    { "type": "light", "wall": "ceiling", "offset": 8.2, "height": 3.0 },
+    { "type": "light", "wall": "ceiling", "offset": 5.3, "height": 3.0 },
+    { "type": "light", "wall": "ceiling", "offset": 1.7, "height": 3.0 },
+    { "type": "switch", "wall": "N", "offset": 2.7, "height": 1.1 },
+    { "type": "switch", "wall": "E", "offset": 4.5, "height": 1.1 }
+  ],
+  "reveal_path": [
+    { "stop": "stair_arrival", "zone": "arrive", "camera": [3.4, 6.6, 1.7], "target": [5.0, 0.5, 1.0],
+      "line": "Guests come down the half-flight and the whole garden opens up in front of them." },
+    { "stop": "island", "zone": "kitchen", "camera": [8.2, 5.7, 1.65], "target": [5.0, 2.0, 1.0],
+      "line": "The host never turns their back: the sink faces the table, the stools and the garden." },
+    { "stop": "triangle", "zone": "kitchen", "camera": [6.4, 3.0, 1.8], "target": [8.6, 6.5, 1.0],
+      "line": "Hob, fridge and sink sit in a tight 6.2 m triangle that guests never have to cross." },
+    { "stop": "dining", "zone": "dining", "camera": [5.3, 0.4, 1.5], "target": [5.3, 3.0, 0.75],
+      "line": "Ten at the table, twelve with end chairs, and 1.12 m behind the chairs so people can get past." },
+    { "stop": "lounge", "zone": "lounge", "camera": [3.3, 3.3, 1.3], "target": [0.2, 3.3, 0.8],
+      "line": "Two sofas face each other for conversation; the TV hides behind sliding panels." },
+    { "stop": "bar", "zone": "lounge", "camera": [1.7, 3.3, 1.4], "target": [1.7, 6.9, 0.8],
+      "line": "Drinks live at the lounge end, so guests help themselves without entering the kitchen." },
+    { "stop": "wide", "zone": "route", "camera": [9.6, 0.4, 2.4], "target": [2.0, 5.5, 1.0],
+      "line": "Slide the whole south wall open and the terrace becomes part of the room." }
+  ],
+  "notes": [
+    "All sizes estimated; based on an assumed 3 m fall across the site and a 10 x 7 m garden-level plate.",
+    "Back run to island aisle 1.25 m (two cooks need 1.22 m [NKBA]).",
+    "Scullery / butler's pantry behind the N wall (not modelled) takes dirty dishes and catering prep out of sight.",
+    "N wall is retained earth: tanking/waterproofing and drainage by a specialist; the hood duct runs in the ceiling void to the E wall.",
+    "Wall labels are layout axes: S here is the garden side, which faces the sun in this assumption."
+  ]
+}

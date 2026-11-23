@@ -1,0 +1,294 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Hosting level (street side, upper)",
+    "type": "living_dining",
+    "width": 7.0,
+    "depth": 9.0,
+    "height": 3.0,
+    "walls": {},
+    "openings": [
+      {
+        "id": "entry",
+        "type": "door",
+        "wall": "S",
+        "offset": 0.3,
+        "width": 1.0,
+        "swing": "in"
+      },
+      {
+        "id": "deck",
+        "type": "door",
+        "wall": "N",
+        "offset": 1.0,
+        "width": 5.0,
+        "swing": "sliding"
+      },
+      {
+        "id": "view",
+        "type": "window",
+        "wall": "W",
+        "offset": 2.0,
+        "width": 4.0,
+        "sill": 0.9,
+        "drop_outside": 3.5
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "family",
+      "role": "family of five"
+    }
+  ],
+  "zones": [
+    {
+      "id": "entry",
+      "purpose": "entry",
+      "owner": "shared"
+    },
+    {
+      "id": "living",
+      "purpose": "leisure",
+      "owner": "shared"
+    },
+    {
+      "id": "dining",
+      "purpose": "dining",
+      "owner": "shared"
+    },
+    {
+      "id": "kitchen",
+      "purpose": "cooking",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "stair",
+      "type": "stairs",
+      "x": 5.8,
+      "y": 0.5,
+      "z": 0,
+      "w": 1.0,
+      "d": 4.0,
+      "h": 1.0,
+      "rise": 0.175,
+      "tread": 0.28,
+      "headroom": 2.4,
+      "label": "Stair down to the family level, guarded opening"
+    },
+    {
+      "id": "fridge",
+      "type": "fridge",
+      "x": 6.3,
+      "y": 5.0,
+      "z": 0,
+      "w": 0.7,
+      "d": 0.7,
+      "h": 1.85,
+      "zone": "kitchen",
+      "front": "-x"
+    },
+    {
+      "id": "counter1",
+      "type": "counter",
+      "x": 6.4,
+      "y": 5.7,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.9,
+      "h": 0.9,
+      "zone": "kitchen",
+      "front": "-x"
+    },
+    {
+      "id": "cooktop",
+      "type": "cooktop",
+      "x": 6.4,
+      "y": 6.6,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.6,
+      "h": 0.9,
+      "zone": "kitchen",
+      "front": "-x"
+    },
+    {
+      "id": "counter2",
+      "type": "counter",
+      "x": 6.4,
+      "y": 7.2,
+      "z": 0,
+      "w": 0.6,
+      "d": 1.6,
+      "h": 0.9,
+      "zone": "kitchen",
+      "front": "-x"
+    },
+    {
+      "id": "island_s",
+      "type": "island",
+      "x": 4.4,
+      "y": 5.6,
+      "z": 0,
+      "w": 0.8,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "kitchen",
+      "front": "+x"
+    },
+    {
+      "id": "sink",
+      "type": "sink",
+      "x": 4.4,
+      "y": 6.4,
+      "z": 0,
+      "w": 0.8,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "kitchen",
+      "front": "+x"
+    },
+    {
+      "id": "island_n",
+      "type": "island",
+      "x": 4.4,
+      "y": 7.2,
+      "z": 0,
+      "w": 0.8,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "kitchen",
+      "front": "+x"
+    },
+    {
+      "id": "table",
+      "type": "table",
+      "x": 1.0,
+      "y": 6.2,
+      "z": 0,
+      "w": 2.5,
+      "d": 1.0,
+      "h": 0.75,
+      "zone": "dining",
+      "label": "Table for 10"
+    },
+    {
+      "id": "sofa",
+      "type": "sofa",
+      "x": 0.7,
+      "y": 1.8,
+      "z": 0,
+      "w": 0.9,
+      "d": 2.5,
+      "h": 0.85,
+      "zone": "living",
+      "front": "+x",
+      "label": "Kept 0.7 m off the view window (3.5 m drop outside)"
+    },
+    {
+      "id": "coffee",
+      "type": "coffee_table",
+      "x": 2.0,
+      "y": 2.6,
+      "z": 0,
+      "w": 0.8,
+      "d": 1.0,
+      "h": 0.4,
+      "zone": "living"
+    },
+    {
+      "id": "sofa2",
+      "type": "sofa",
+      "x": 3.2,
+      "y": 2.0,
+      "z": 0,
+      "w": 0.9,
+      "d": 2.0,
+      "h": 0.85,
+      "zone": "living",
+      "front": "-x"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "E",
+      "offset": 6.2,
+      "height": 1.1
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.0,
+      "height": 0.3
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "entry",
+      "zone": "entry",
+      "camera": [
+        0.8,
+        0.5,
+        1.6
+      ],
+      "target": [
+        3.5,
+        6.0,
+        1.2
+      ],
+      "line": "Arrive at street level straight into the hosting floor."
+    },
+    {
+      "stop": "living",
+      "zone": "living",
+      "camera": [
+        3.6,
+        1.0,
+        1.4
+      ],
+      "target": [
+        0.5,
+        3.0,
+        0.8
+      ],
+      "line": "The sofas face each other with the valley view to the west."
+    },
+    {
+      "stop": "kitchen",
+      "zone": "kitchen",
+      "camera": [
+        3.0,
+        6.8,
+        1.6
+      ],
+      "target": [
+        6.4,
+        6.8,
+        1.0
+      ],
+      "line": "The island lets the cook host while guests sit around it."
+    },
+    {
+      "stop": "deck",
+      "zone": "dining",
+      "camera": [
+        2.0,
+        5.0,
+        1.6
+      ],
+      "target": [
+        3.5,
+        9.0,
+        1.2
+      ],
+      "line": "The table for ten opens onto the deck through sliding doors."
+    }
+  ],
+  "notes": [
+    "Site falls about 3.5 m from east (street) to west; bedrooms are on the lower levels (see the home plan).",
+    "Stair geometry follows IRC R311.7 values; check the local code."
+  ]
+}

@@ -1,0 +1,307 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Rear kitchen-diner-family room",
+    "type": "living_dining",
+    "width": 5.0,
+    "depth": 6.5,
+    "height": 2.7,
+    "walls": {
+      "E": {
+        "load_bearing": true
+      },
+      "W": {
+        "load_bearing": true
+      }
+    },
+    "openings": [
+      {
+        "id": "hall",
+        "type": "door",
+        "wall": "S",
+        "offset": 0.2,
+        "width": 0.9,
+        "swing": "in"
+      },
+      {
+        "id": "garden",
+        "type": "door",
+        "wall": "N",
+        "offset": 0.5,
+        "width": 4.0,
+        "swing": "sliding"
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "parents",
+      "role": "couple"
+    },
+    {
+      "id": "kids",
+      "age": 5,
+      "role": "two children"
+    }
+  ],
+  "zones": [
+    {
+      "id": "cook",
+      "purpose": "cooking",
+      "owner": "shared"
+    },
+    {
+      "id": "family",
+      "purpose": "leisure",
+      "owner": "shared"
+    },
+    {
+      "id": "dining",
+      "purpose": "dining",
+      "owner": "shared"
+    },
+    {
+      "id": "play",
+      "purpose": "play",
+      "owner": "shared"
+    }
+  ],
+  "elements": [
+    {
+      "id": "tall",
+      "type": "cabinet",
+      "x": 4.4,
+      "y": 0,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.6,
+      "h": 2.3,
+      "zone": "cook",
+      "label": "Tall larder"
+    },
+    {
+      "id": "fridge",
+      "type": "fridge",
+      "x": 4.3,
+      "y": 0.6,
+      "z": 0,
+      "w": 0.7,
+      "d": 0.7,
+      "h": 1.85,
+      "zone": "cook",
+      "front": "-x"
+    },
+    {
+      "id": "counter_e1",
+      "type": "counter",
+      "x": 4.4,
+      "y": 1.3,
+      "z": 0,
+      "w": 0.6,
+      "d": 1.1,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x"
+    },
+    {
+      "id": "cooktop",
+      "type": "cooktop",
+      "x": 4.4,
+      "y": 2.4,
+      "z": 0,
+      "w": 0.6,
+      "d": 0.6,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x"
+    },
+    {
+      "id": "counter_e2",
+      "type": "counter",
+      "x": 4.4,
+      "y": 3.0,
+      "z": 0,
+      "w": 0.6,
+      "d": 1.0,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "-x"
+    },
+    {
+      "id": "island_s",
+      "type": "island",
+      "x": 2.3,
+      "y": 1.6,
+      "z": 0,
+      "w": 0.9,
+      "d": 0.6,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "+x"
+    },
+    {
+      "id": "sink",
+      "type": "sink",
+      "x": 2.3,
+      "y": 2.2,
+      "z": 0,
+      "w": 0.9,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "+x",
+      "label": "Island sink: the cook faces the family area and garden"
+    },
+    {
+      "id": "island_n",
+      "type": "island",
+      "x": 2.3,
+      "y": 3.0,
+      "z": 0,
+      "w": 0.9,
+      "d": 0.6,
+      "h": 0.9,
+      "zone": "cook",
+      "front": "+x"
+    },
+    {
+      "id": "sofa",
+      "type": "sofa",
+      "x": 0,
+      "y": 1.2,
+      "z": 0,
+      "w": 0.9,
+      "d": 2.2,
+      "h": 0.85,
+      "zone": "family",
+      "front": "+x"
+    },
+    {
+      "id": "coffee",
+      "type": "coffee_table",
+      "x": 1.3,
+      "y": 1.8,
+      "z": 0,
+      "w": 0.5,
+      "d": 1.0,
+      "h": 0.4,
+      "zone": "family"
+    },
+    {
+      "id": "toys",
+      "type": "cabinet",
+      "x": 0,
+      "y": 3.6,
+      "z": 0,
+      "w": 0.45,
+      "d": 0.8,
+      "h": 0.9,
+      "zone": "play",
+      "label": "Low toy storage, kids can reach"
+    },
+    {
+      "id": "bench",
+      "type": "seat",
+      "x": 0,
+      "y": 4.6,
+      "z": 0,
+      "w": 0.45,
+      "d": 1.6,
+      "h": 0.45,
+      "zone": "play",
+      "label": "Boot bench by the garden door"
+    },
+    {
+      "id": "table",
+      "type": "table",
+      "x": 2.2,
+      "y": 4.8,
+      "z": 0,
+      "w": 1.6,
+      "d": 0.9,
+      "h": 0.75,
+      "zone": "dining"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "E",
+      "offset": 2.0,
+      "height": 1.1
+    },
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.0,
+      "height": 0.3
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "hall",
+      "zone": "family",
+      "camera": [
+        0.6,
+        0.4,
+        1.6
+      ],
+      "target": [
+        3.0,
+        5.0,
+        1.0
+      ],
+      "line": "The dark back rooms become one bright room facing the garden."
+    },
+    {
+      "stop": "sink",
+      "zone": "cook",
+      "camera": [
+        4.0,
+        2.6,
+        1.6
+      ],
+      "target": [
+        0.6,
+        2.4,
+        0.6
+      ],
+      "line": "From the island sink you can see the sofa, the toys and the garden."
+    },
+    {
+      "stop": "garden",
+      "zone": "dining",
+      "camera": [
+        2.5,
+        3.8,
+        1.5
+      ],
+      "target": [
+        2.5,
+        6.4,
+        1.2
+      ],
+      "line": "The table sits by the sliding doors; boots go on the bench."
+    },
+    {
+      "stop": "wide",
+      "zone": "play",
+      "camera": [
+        4.6,
+        0.3,
+        2.1
+      ],
+      "target": [
+        1.5,
+        4.5,
+        0.6
+      ],
+      "line": "The original hall and stairs stay; the stair cupboard becomes the pantry."
+    }
+  ],
+  "notes": [
+    "Party walls (E, W) are load-bearing: no niches; any opening needs a structural engineer and a party wall agreement.",
+    "Keep the original hall floor tiles, cornices and stair (respect original fabric).",
+    "Drop zone for coats and shoes in the hall; under-stair cupboard as pantry or utility."
+  ]
+}

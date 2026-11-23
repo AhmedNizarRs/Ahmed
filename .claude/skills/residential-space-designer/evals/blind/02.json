@@ -1,0 +1,100 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Twins' room, mirrored side-by-side platforms",
+    "type": "kids_bedroom",
+    "width": 3.4,
+    "depth": 3.4,
+    "height": 2.8,
+    "walls": {
+      "S": { "load_bearing": true },
+      "E": { "load_bearing": true },
+      "N": { "load_bearing": true },
+      "W": { "load_bearing": true }
+    },
+    "openings": [
+      { "id": "door", "type": "door", "wall": "S", "offset": 1.3, "width": 0.8, "height": 2.05, "swing": "in", "estimated": true },
+      { "id": "win", "type": "window", "wall": "N", "offset": 1.1, "width": 1.2, "height": 1.3, "sill": 0.9, "egress": true, "drop_outside": 3.0, "estimated": true }
+    ]
+  },
+  "occupants": [
+    { "id": "kid_a", "age": 9, "role": "child", "needs": ["own bed space", "study", "privacy"] },
+    { "id": "kid_b", "age": 9, "role": "child", "needs": ["own bed space", "study", "privacy"] }
+  ],
+  "zones": [
+    { "id": "entry", "purpose": "entry", "owner": "shared" },
+    { "id": "sleep_a", "purpose": "sleep", "owner": "kid_a" },
+    { "id": "dress_a", "purpose": "dressing", "owner": "kid_a" },
+    { "id": "study_a", "purpose": "study", "owner": "kid_a" },
+    { "id": "sleep_b", "purpose": "sleep", "owner": "kid_b" },
+    { "id": "dress_b", "purpose": "dressing", "owner": "kid_b" },
+    { "id": "study_b", "purpose": "study", "owner": "kid_b" },
+    { "id": "play", "purpose": "leisure", "owner": "shared" }
+  ],
+  "elements": [
+    { "id": "bed_a", "type": "bed", "label": "Platform bed, mattress top 0.55 m, 3 wheeled drawers", "zone": "sleep_a", "owner": "kid_a",
+      "x": 0.0, "y": 0.0, "z": 0.0, "w": 0.95, "d": 2.0, "h": 0.55, "material": "solid_wood" },
+    { "id": "bed_b", "type": "bed", "label": "Platform bed, mattress top 0.55 m, 3 wheeled drawers", "zone": "sleep_b", "owner": "kid_b",
+      "x": 2.45, "y": 0.0, "z": 0.0, "w": 0.95, "d": 2.0, "h": 0.55, "material": "solid_wood" },
+    { "id": "curtain_a", "type": "curtain", "label": "Ceiling-track blackout curtain: bed den A", "zone": "sleep_a",
+      "x": 0.95, "y": 0.0, "z": 0.0, "w": 0.02, "d": 2.0, "h": 2.75, "material": "fabric_curtain" },
+    { "id": "curtain_b", "type": "curtain", "label": "Ceiling-track blackout curtain: bed den B", "zone": "sleep_b",
+      "x": 2.43, "y": 0.0, "z": 0.0, "w": 0.02, "d": 2.0, "h": 2.75, "material": "fabric_curtain" },
+    { "id": "headshelf_a", "type": "shelf", "label": "Headboard shelf + reading light", "zone": "sleep_a", "owner": "kid_a",
+      "x": 0.0, "y": 0.0, "z": 1.15, "w": 0.95, "d": 0.2, "h": 0.25, "material": "solid_wood" },
+    { "id": "headshelf_b", "type": "shelf", "label": "Headboard shelf + reading light", "zone": "sleep_b", "owner": "kid_b",
+      "x": 2.45, "y": 0.0, "z": 1.15, "w": 0.95, "d": 0.2, "h": 0.25, "material": "solid_wood" },
+    { "id": "wardrobe_a", "type": "wardrobe", "label": "Floor-to-ceiling wardrobe, sliding doors", "zone": "dress_a", "owner": "kid_a",
+      "x": 0.0, "y": 2.0, "z": 0.0, "w": 0.6, "d": 0.85, "h": 2.75, "front": "+x", "clearance": 0.6, "doors": "sliding", "material": "wood_veneer" },
+    { "id": "wardrobe_b", "type": "wardrobe", "label": "Floor-to-ceiling wardrobe, sliding doors", "zone": "dress_b", "owner": "kid_b",
+      "x": 2.8, "y": 2.0, "z": 0.0, "w": 0.6, "d": 0.85, "h": 2.75, "front": "-x", "clearance": 0.6, "doors": "sliding", "material": "wood_veneer" },
+    { "id": "books_a", "type": "shelf", "label": "Full-height bookcase, own colour", "zone": "study_a", "owner": "kid_a",
+      "x": 0.0, "y": 2.85, "z": 0.0, "w": 0.6, "d": 0.55, "h": 2.75, "material": "wood_panel_eco" },
+    { "id": "books_b", "type": "shelf", "label": "Full-height bookcase, own colour", "zone": "study_b", "owner": "kid_b",
+      "x": 2.8, "y": 2.85, "z": 0.0, "w": 0.6, "d": 0.55, "h": 2.75, "material": "wood_panel_eco" },
+    { "id": "desk_a", "type": "desk", "label": "Window desk A, 1.1 m, drawer pedestal", "zone": "study_a", "owner": "kid_a",
+      "x": 0.6, "y": 2.85, "z": 0.0, "w": 1.1, "d": 0.55, "h": 0.72, "front": "-y", "clearance": 0.6, "material": "solid_wood" },
+    { "id": "desk_b", "type": "desk", "label": "Window desk B, 1.1 m, drawer pedestal", "zone": "study_b", "owner": "kid_b",
+      "x": 1.7, "y": 2.85, "z": 0.0, "w": 1.1, "d": 0.55, "h": 0.72, "front": "-y", "clearance": 0.6, "material": "solid_wood" },
+    { "id": "chair_a", "type": "chair", "zone": "study_a", "x": 0.95, "y": 2.4, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.8 },
+    { "id": "chair_b", "type": "chair", "zone": "study_b", "x": 2.0, "y": 2.4, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.8 },
+    { "id": "board_a", "type": "board", "label": "My wall: pinboard", "zone": "sleep_a", "x": 0.0, "y": 1.0, "z": 1.0, "w": 0.02, "d": 1.0, "h": 0.6 },
+    { "id": "board_b", "type": "board", "label": "My wall: pinboard", "zone": "sleep_b", "x": 3.38, "y": 1.0, "z": 1.0, "w": 0.02, "d": 1.0, "h": 0.6 },
+    { "id": "hooks_a", "type": "hooks", "label": "Worn-once hooks A", "zone": "dress_a", "x": 0.95, "y": 0.0, "z": 1.2, "w": 0.3, "d": 0.05, "h": 0.2 },
+    { "id": "hooks_b", "type": "hooks", "label": "Worn-once hooks B", "zone": "dress_b", "x": 2.15, "y": 0.0, "z": 1.2, "w": 0.3, "d": 0.05, "h": 0.2 }
+  ],
+  "services": [
+    { "type": "outlet", "wall": "W", "offset": 0.4, "height": 0.7, "serves": "bed_a" },
+    { "type": "outlet", "wall": "E", "offset": 0.4, "height": 0.7, "serves": "bed_b" },
+    { "type": "usb", "wall": "N", "offset": 0.85, "height": 0.85, "serves": "desk_a" },
+    { "type": "usb", "wall": "N", "offset": 2.55, "height": 0.85, "serves": "desk_b" },
+    { "type": "light", "wall": "W", "offset": 0.3, "height": 1.2, "serves": "bed_a" },
+    { "type": "light", "wall": "E", "offset": 0.3, "height": 1.2, "serves": "bed_b" },
+    { "type": "light", "wall": "ceiling", "offset": 1.7, "height": 2.8 },
+    { "type": "switch", "wall": "S", "offset": 2.2, "height": 1.1 },
+    { "type": "switch", "wall": "W", "offset": 0.6, "height": 0.75, "serves": "bed_a" },
+    { "type": "switch", "wall": "E", "offset": 0.6, "height": 0.75, "serves": "bed_b" }
+  ],
+  "reveal_path": [
+    { "stop": "entry", "zone": "entry", "camera": [1.7, 0.3, 1.5], "target": [1.7, 3.0, 1.0],
+      "line": "One bunk bed, two kids, a fight every night about who gets the top. Now there is no top." },
+    { "stop": "beds", "zone": "play", "camera": [1.7, 1.2, 1.6], "target": [1.7, 0.4, 0.5],
+      "line": "Two identical platform beds, one on each wall, same height, same size. Nothing left to argue about." },
+    { "stop": "den_a", "zone": "sleep_a", "camera": [1.4, 1.5, 1.0], "target": [0.3, 0.6, 0.8],
+      "line": "Pull the curtain and each bed becomes a private den with its own reading light and shelf." },
+    { "stop": "drawers", "zone": "sleep_b", "camera": [1.9, 1.0, 0.9], "target": [2.9, 1.0, 0.2],
+      "line": "Three wheeled drawers under each bed: toys and spare bedding, no lift-up lids." },
+    { "stop": "wardrobes", "zone": "dress_a", "camera": [1.7, 1.6, 1.4], "target": [0.3, 2.4, 1.4],
+      "line": "Matching floor-to-ceiling wardrobes with sliding doors, so they open even with a chair out." },
+    { "stop": "desks", "zone": "study_b", "camera": [1.7, 1.6, 1.4], "target": [1.7, 3.2, 0.8],
+      "line": "The window is shared exactly down the middle: one 1.1 m desk each, same daylight." },
+    { "stop": "wide", "zone": "play", "camera": [1.7, 0.2, 2.3], "target": [1.7, 2.0, 0.3],
+      "line": "And the middle of the room, 1.5 m wide, is a shared floor for play." }
+  ],
+  "notes": [
+    "Door and window positions are assumed (door centred on S, window centred on N); confirm.",
+    "Room on an upper floor assumed (3.0 m drop outside the window): fit window restrictors that a parent can override for escape.",
+    "Beds stay below 0.60 m mattress top, so no guardrails or ladders are needed.",
+    "All walls treated as load-bearing until confirmed, so no wall niches; headboard shelves instead."
+  ]
+}

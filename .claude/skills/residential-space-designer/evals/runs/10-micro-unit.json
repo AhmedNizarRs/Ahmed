@@ -1,0 +1,191 @@
+{
+  "version": "1",
+  "room": {
+    "name": "Micro-room 4 m²",
+    "width": 2.0,
+    "depth": 2.0,
+    "height": 2.6,
+    "walls": {},
+    "openings": [
+      {
+        "id": "door",
+        "type": "door",
+        "wall": "S",
+        "offset": 1.2,
+        "width": 0.8,
+        "swing": "sliding"
+      },
+      {
+        "id": "win",
+        "type": "window",
+        "wall": "N",
+        "offset": 0.6,
+        "width": 0.8,
+        "sill": 1.0,
+        "egress": true
+      }
+    ]
+  },
+  "occupants": [
+    {
+      "id": "adult",
+      "role": "adult"
+    }
+  ],
+  "zones": [
+    {
+      "id": "sleep",
+      "purpose": "sleep",
+      "owner": "adult"
+    },
+    {
+      "id": "storage",
+      "purpose": "storage",
+      "owner": "adult"
+    },
+    {
+      "id": "work",
+      "purpose": "study",
+      "owner": "adult"
+    }
+  ],
+  "elements": [
+    {
+      "id": "bed_housing",
+      "type": "cabinet",
+      "x": 0,
+      "y": 0,
+      "z": 0,
+      "w": 0.45,
+      "d": 2.0,
+      "h": 2.2,
+      "zone": "storage",
+      "label": "Wall-bed housing + side storage"
+    },
+    {
+      "id": "bed",
+      "type": "bed",
+      "x": 0.45,
+      "y": 0.02,
+      "z": 0,
+      "w": 0.95,
+      "d": 1.96,
+      "h": 0.45,
+      "zone": "sleep",
+      "owner": "adult",
+      "label": "Fold-down wall bed",
+      "states": {
+        "day": {
+          "hidden": true
+        }
+      }
+    },
+    {
+      "id": "desk",
+      "type": "other",
+      "x": 1.95,
+      "y": 0.9,
+      "z": 0.4,
+      "w": 0.05,
+      "d": 0.8,
+      "h": 0.8,
+      "zone": "work",
+      "label": "Fold-down desk",
+      "states": {
+        "day": {
+          "type": "desk",
+          "x": 1.45,
+          "z": 0,
+          "w": 0.55,
+          "h": 0.75,
+          "front": "-x",
+          "clearance": 0.6
+        }
+      }
+    },
+    {
+      "id": "shelf",
+      "type": "shelf",
+      "x": 1.7,
+      "y": 0.1,
+      "z": 1.8,
+      "w": 0.3,
+      "d": 1.8,
+      "h": 0.5,
+      "zone": "storage",
+      "label": "Overhead shelf"
+    }
+  ],
+  "services": [
+    {
+      "type": "outlet",
+      "wall": "W",
+      "offset": 1.0,
+      "height": 0.6,
+      "serves": "bed"
+    },
+    {
+      "type": "outlet",
+      "wall": "E",
+      "offset": 1.3,
+      "height": 0.85
+    }
+  ],
+  "reveal_path": [
+    {
+      "stop": "day",
+      "zone": "work",
+      "camera": [
+        1.6,
+        0.3,
+        1.5
+      ],
+      "target": [
+        0.5,
+        1.5,
+        1.0
+      ],
+      "line": "By day, a wall of cabinets and a desk."
+    },
+    {
+      "stop": "night",
+      "zone": "sleep",
+      "camera": [
+        1.7,
+        0.2,
+        1.6
+      ],
+      "target": [
+        0.8,
+        1.2,
+        0.4
+      ],
+      "line": "At night the bed folds down full length."
+    },
+    {
+      "stop": "storage",
+      "zone": "storage",
+      "camera": [
+        1.5,
+        1.0,
+        1.4
+      ],
+      "target": [
+        0.2,
+        1.0,
+        1.2
+      ],
+      "line": "Every wall is storage, top to bottom."
+    }
+  ],
+  "notes": [
+    "States: night = bed down, desk folded; day = bed folded into its housing, desk open.",
+    "Sliding door: an inward swing would hit the deployed bed.",
+    "Rejected: cantilever/extension beyond the facade (needs an engineer and permits).",
+    "Inner length 2.0 m only just fits a 1.9 m mattress; confirm the exact measurement."
+  ],
+  "states": [
+    "night",
+    "day"
+  ]
+}

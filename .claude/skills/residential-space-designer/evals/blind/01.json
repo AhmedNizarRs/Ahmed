@@ -1,0 +1,66 @@
+{
+  "version": "1",
+  "room": {
+    "name": "10-year-old's room, study loft",
+    "type": "kids_bedroom",
+    "width": 2.6, "depth": 3.0, "height": 2.75,
+    "walls": { "S": {"load_bearing": true}, "E": {"load_bearing": true}, "N": {"load_bearing": true}, "W": {"load_bearing": true} },
+    "openings": [
+      { "id": "door", "type": "door", "wall": "S", "offset": 1.75, "width": 0.8, "height": 2.05, "swing": "in", "estimated": true },
+      { "id": "win", "type": "window", "wall": "N", "offset": 1.2, "width": 1.0, "height": 1.2, "sill": 0.9, "egress": true, "estimated": true }
+    ]
+  },
+  "occupants": [ { "id": "son", "age": 10, "role": "child", "needs": ["study", "storage", "play"] } ],
+  "zones": [
+    { "id": "entry", "purpose": "entry", "owner": "shared" },
+    { "id": "sleep", "purpose": "sleep", "owner": "son" },
+    { "id": "study", "purpose": "study", "owner": "son" },
+    { "id": "dress", "purpose": "dressing", "owner": "son" },
+    { "id": "play", "purpose": "leisure", "owner": "son" }
+  ],
+  "elements": [
+    { "id": "bed_loft", "type": "bed", "label": "Loft bed 0.9 x 2.0 mattress, steel frame on W wall", "zone": "sleep", "owner": "son",
+      "x": 0.0, "y": 1.0, "z": 1.5, "w": 0.95, "d": 2.0, "h": 0.25, "guardrail": true, "guardrail_height": 0.18, "material": "steel_square_tube_galv" },
+    { "id": "steps", "type": "steps", "label": "Storage steps, 7 drawers/cubbies, anti-slip treads, grab handle at top", "zone": "sleep", "owner": "son",
+      "x": 0.0, "y": 0.4, "z": 0.0, "w": 0.95, "d": 0.6, "h": 1.5, "front": "+x", "clearance": 0.6, "serves": "bed_loft", "material": "wood_panel_eco" },
+    { "id": "desk", "type": "desk", "label": "Desk under loft, 1.4 m wide, adjustable height", "zone": "study", "owner": "son",
+      "x": 0.0, "y": 1.0, "z": 0.0, "w": 0.6, "d": 1.4, "h": 0.75, "front": "+x", "clearance": 0.6, "material": "solid_wood" },
+    { "id": "chair", "type": "chair", "zone": "study", "x": 0.65, "y": 1.45, "z": 0.0, "w": 0.45, "d": 0.45, "h": 0.9 },
+    { "id": "shelf_under", "type": "shelf", "label": "Bookshelf under loft head end", "zone": "study", "owner": "son",
+      "x": 0.0, "y": 2.4, "z": 0.0, "w": 0.4, "d": 0.6, "h": 1.45, "material": "wood_panel_eco" },
+    { "id": "board", "type": "board", "label": "Pinboard over desk", "zone": "study", "x": 0.0, "y": 1.05, "z": 0.85, "w": 0.02, "d": 1.3, "h": 0.55 },
+    { "id": "wardrobe", "type": "wardrobe", "label": "Floor-to-ceiling wardrobe, sliding doors, quilts on top", "zone": "dress", "owner": "son",
+      "x": 2.0, "y": 0.85, "z": 0.0, "w": 0.6, "d": 1.4, "h": 2.7, "front": "-x", "clearance": 0.6, "doors": "sliding", "material": "wood_veneer" },
+    { "id": "hooks", "type": "hooks", "label": "Worn-once hooks + school bag", "zone": "entry", "x": 0.0, "y": 0.05, "z": 1.1, "w": 0.05, "d": 0.3, "h": 0.2 },
+    { "id": "shelf_entry", "type": "shelf", "label": "Shallow open shelf beside steps (books, Lego display)", "zone": "play",
+      "x": 0.0, "y": 0.0, "z": 0.0, "w": 0.95, "d": 0.4, "h": 0.9, "material": "wood_panel_eco" }
+  ],
+  "services": [
+    { "type": "outlet", "wall": "W", "offset": 2.7, "height": 1.95, "serves": "bed_loft" },
+    { "type": "light", "wall": "W", "offset": 2.2, "height": 2.2 },
+    { "type": "outlet", "wall": "W", "offset": 1.6, "height": 0.85, "serves": "desk" },
+    { "type": "usb", "wall": "W", "offset": 1.9, "height": 0.85, "serves": "desk" },
+    { "type": "light", "wall": "ceiling", "offset": 1.3, "height": 2.75 },
+    { "type": "switch", "wall": "S", "offset": 1.65, "height": 1.05 },
+    { "type": "switch", "wall": "W", "offset": 1.2, "height": 1.95 }
+  ],
+  "reveal_path": [
+    { "stop": "entry", "zone": "entry", "camera": [2.1, 0.3, 1.5], "target": [0.8, 2.2, 1.2],
+      "line": "Before: the bed sat on the floor and the wardrobe door hit it every morning." },
+    { "stop": "loft", "zone": "sleep", "camera": [1.6, 1.2, 1.9], "target": [0.4, 2.2, 1.7],
+      "line": "Now the bed goes up: a loft with a full metre of sitting-up room under the ceiling." },
+    { "stop": "steps", "zone": "sleep", "camera": [1.5, 0.9, 1.0], "target": [0.4, 0.7, 0.8],
+      "line": "Seven storage steps get him up there, and every step is a drawer." },
+    { "stop": "desk", "zone": "study", "camera": [1.5, 1.8, 1.2], "target": [0.2, 1.7, 0.8],
+      "line": "Underneath, the desk he was missing: 1.4 m wide, lit, with power and a pinboard." },
+    { "stop": "wardrobe", "zone": "dress", "camera": [0.9, 1.6, 1.4], "target": [2.3, 1.5, 1.3],
+      "line": "The wardrobe now has sliding doors, so nothing can get in its way again." },
+    { "stop": "wide", "zone": "play", "camera": [2.4, 0.2, 2.2], "target": [1.0, 2.4, 0.6],
+      "line": "And the middle of the room is free floor for Lego, friends and a beanbag." }
+  ],
+  "notes": [
+    "Door and window positions are assumptions; confirm.",
+    "Loft headroom 1.0 m (>= 0.84 recommended). Desk clear height 1.5 m is a [std] value.",
+    "Walls of unknown structure treated as load-bearing; no niches cut."
+  ]
+}
