@@ -1,0 +1,465 @@
+{
+ "meta": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 30,
+  "dur": 30.0,
+  "clock": "music",
+  "register": "clean",
+  "loop": false,
+  "bpm": 80,
+  "meter": "4/4",
+  "bars": 10,
+  "t0": 0.0,
+  "grid": "designed",
+  "hookWaiver": null
+ },
+ "objects": [
+  {
+   "id": "grains",
+   "role": "constant",
+   "what": "~5000 sand grains sampled from the word, carried through every scene"
+  },
+  {
+   "id": "lines",
+   "role": "bridge",
+   "what": "12 polylines: dune ridges -> floor-plan walls"
+  },
+  {
+   "id": "mashrabiya",
+   "role": "hero",
+   "what": "gold 8-point-star band on the feature wall"
+  },
+  {
+   "id": "logo",
+   "role": "prop",
+   "what": "assets/img/dunes.png brand mark"
+  }
+ ],
+ "scenes": [
+  {
+   "id": "hook",
+   "start": 0.0,
+   "end": 6.0,
+   "beats": {
+    "open": 0.0,
+    "line2": 1.5,
+    "out": 5.7
+   },
+   "cueRef": {
+    "line2": "bar0.beat3"
+   },
+   "reads": [
+    {
+     "what": "word + meaning",
+     "from": 0.0,
+     "to": 2.1
+    },
+    {
+     "what": "it is our idea",
+     "from": 2.1,
+     "to": 5.7
+    }
+   ],
+   "transitionOut": {
+    "type": "shape morph",
+    "dur": 0.6,
+    "why": "the letters of the word become the sand it names",
+    "bridge": "grains"
+   }
+  },
+  {
+   "id": "sand",
+   "start": 6.0,
+   "end": 12.0,
+   "beats": {
+    "dissolve": 6.0,
+    "settle": 8.4,
+    "contour": 9.0,
+    "contoured": 10.5,
+    "textOut": 11.4
+   },
+   "cueRef": {
+    "dissolve": "bar2",
+    "contour": "bar3"
+   },
+   "reads": [
+    {
+     "what": "grains settle into a dune",
+     "from": 6.0,
+     "to": 9.0
+    },
+    {
+     "what": "grains become lines",
+     "from": 9.0,
+     "to": 11.4
+    }
+   ],
+   "transitionOut": {
+    "type": "shape morph",
+    "dur": 1.75,
+    "why": "the dune lines bend straight into walls: sand -> interior",
+    "bridge": "lines"
+   }
+  },
+  {
+   "id": "interior",
+   "start": 12.0,
+   "end": 15.0,
+   "beats": {
+    "text": 12.0,
+    "morph": 12.75,
+    "plan": 14.5
+   },
+   "cueRef": {
+    "morph": "bar4.beat2"
+   },
+   "reads": [
+    {
+     "what": "it is a room now",
+     "from": 14.5,
+     "to": 15.5
+    }
+   ],
+   "transitionOut": {
+    "type": "next step",
+    "dur": 0.0,
+    "why": "the empty plan gets furnished",
+    "bridge": "lines"
+   }
+  },
+  {
+   "id": "repeat",
+   "start": 15.0,
+   "end": 21.0,
+   "beats": {
+    "text": 15.0,
+    "stamp0": 16.5,
+    "stamp1": 17.25,
+    "stamp2": 18.0,
+    "stamp3": 18.375,
+    "stamp4": 18.75,
+    "stamp5": 19.125,
+    "stamp6": 19.3125,
+    "stamp7": 19.5,
+    "stamp8": 19.6875,
+    "stamp9": 19.875,
+    "silence": 20.25
+   },
+   "cueRef": {
+    "stamp0": "bar5.beat3",
+    "silence": "bar6.beat4"
+   },
+   "reads": [
+    {
+     "what": "blocks repeat faster and faster",
+     "from": 16.5,
+     "to": 20.25
+    }
+   ],
+   "transitionOut": {
+    "type": "cause -> effect",
+    "dur": 0.0,
+    "why": "the tools finished the repeats; now the designer designs",
+    "bridge": "lines"
+   }
+  },
+  {
+   "id": "hero",
+   "start": 21.0,
+   "end": 24.75,
+   "beats": {
+    "hero": 21.0,
+    "drawn": 22.8,
+    "textOut": 24.7
+   },
+   "cueRef": {
+    "hero": "bar7"
+   },
+   "reads": [
+    {
+     "what": "a gold pattern is being designed",
+     "from": 21.0,
+     "to": 22.8
+    },
+    {
+     "what": "your time goes into design",
+     "from": 21.4,
+     "to": 24.7
+    }
+   ],
+   "transitionOut": {
+    "type": "shape morph",
+    "dur": 1.5,
+    "why": "the whole room breaks back into sand, which lands as the Rimal mark (rhymes with the open)",
+    "bridge": "grains"
+   }
+  },
+  {
+   "id": "end",
+   "start": 24.75,
+   "end": 30.0,
+   "beats": {
+    "gather": 24.75,
+    "logo": 26.25,
+    "wordmark": 26.5,
+    "still": 27.0
+   },
+   "cueRef": {
+    "gather": "bar8.beat2",
+    "still": "bar9"
+   },
+   "reads": [
+    {
+     "what": "brand",
+     "from": 26.5,
+     "to": 28.0
+    },
+    {
+     "what": "what + where",
+     "from": 27.0,
+     "to": 30.0
+    }
+   ]
+  }
+ ],
+ "cuts": [],
+ "hero": {
+  "t": 21.0,
+  "what": "gold mashrabiya draws itself on the feature wall after one beat of silence"
+ },
+ "silences": [
+  {
+   "from": 20.25,
+   "to": 21.0
+  }
+ ],
+ "sfx": [
+  {
+   "at": "sand.dissolve",
+   "offset": 0.0,
+   "src": "sand pour (noise, level = grain speed)",
+   "gain": 0.22,
+   "why": "the material at work"
+  },
+  {
+   "at": "interior.morph",
+   "offset": 0.0,
+   "src": "soft low whoosh",
+   "gain": 0.12,
+   "why": "lines bend"
+  },
+  {
+   "at": "repeat.stamp0",
+   "offset": 0.0,
+   "src": "wood tick A/B alternating, gain stepping down",
+   "gain": 0.3,
+   "why": "each repeated block lands"
+  },
+  {
+   "at": "repeat.stamp0",
+   "offset": 0.0,
+   "src": "riser 16.5 -> 20.25, hard stop",
+   "gain": 0.14,
+   "why": "build into the silence"
+  },
+  {
+   "at": "hero.hero",
+   "offset": 0.0,
+   "src": "impact + sub + Hijaz chord stab",
+   "gain": 0.35,
+   "why": "payoff, loudest"
+  },
+  {
+   "at": "end.gather",
+   "offset": 0.0,
+   "src": "sand sweep",
+   "gain": 0.18,
+   "why": "grains travel to the logo"
+  }
+ ],
+ "texts": [
+  {
+   "id": "hook",
+   "text": "This word means sand.",
+   "from": 0.0,
+   "to": 5.7,
+   "role": "hook",
+   "px": 96,
+   "box": [
+    324,
+    325,
+    431,
+    81
+   ]
+  },
+  {
+   "id": "name",
+   "text": "Rimal",
+   "from": 0.0,
+   "to": 5.7,
+   "role": "term",
+   "px": 64,
+   "box": [
+    457,
+    994,
+    166,
+    56
+   ]
+  },
+  {
+   "id": "cta0",
+   "text": "@rimalinterior",
+   "from": 0.0,
+   "to": 5.7,
+   "role": "cta",
+   "px": 48,
+   "box": [
+    388,
+    1378,
+    303,
+    47
+   ]
+  },
+  {
+   "id": "t2",
+   "text": "And it's the whole idea behind our tools.",
+   "from": 2.1,
+   "to": 5.7,
+   "role": null,
+   "px": 60,
+   "box": [
+    227,
+    1142,
+    626,
+    53
+   ]
+  },
+  {
+   "id": "t3",
+   "text": "Dunes are shaped by thousands of small, patient moves.",
+   "from": 7.0,
+   "to": 11.4,
+   "role": null,
+   "px": 64,
+   "box": [
+    237,
+    279,
+    606,
+    71
+   ]
+  },
+  {
+   "id": "t4",
+   "text": "Good interiors are too.",
+   "from": 12.5,
+   "to": 14.8,
+   "role": null,
+   "px": 84,
+   "box": [
+    260,
+    314,
+    559,
+    72
+   ]
+  },
+  {
+   "id": "t5",
+   "text": "Our tools take the repeated moves.",
+   "from": 15.6,
+   "to": 20.2,
+   "role": null,
+   "px": 64,
+   "box": [
+    272,
+    349,
+    537,
+    56
+   ]
+  },
+  {
+   "id": "t6",
+   "text": "So your time goes into the design.",
+   "from": 21.4,
+   "to": 24.7,
+   "role": null,
+   "px": 72,
+   "box": [
+    243,
+    344,
+    595,
+    79
+   ]
+  },
+  {
+   "id": "brand",
+   "text": "Rimal Interiors",
+   "from": 26.5,
+   "to": 30.0,
+   "role": "term",
+   "px": 96,
+   "box": [
+    223,
+    1005,
+    633,
+    81
+   ]
+  },
+  {
+   "id": "soft",
+   "text": "Tools for AutoCAD · Revit · SketchUp · 3ds Max",
+   "from": 26.5,
+   "to": 30.0,
+   "role": null,
+   "px": 40,
+   "box": [
+    300,
+    1131,
+    480,
+    45
+   ]
+  },
+  {
+   "id": "cta1",
+   "text": "@rimalinterior · link in bio",
+   "from": 27.0,
+   "to": 30.0,
+   "role": "cta",
+   "px": 48,
+   "box": [
+    261,
+    1348,
+    557,
+    47
+   ]
+  }
+ ],
+ "terms": [
+  "Rimal Interiors",
+  "AutoCAD",
+  "Revit"
+ ],
+ "camera": [
+  {
+   "t": 0.0,
+   "zoom": 1.0,
+   "x": 0,
+   "y": 0,
+   "why": "still"
+  },
+  {
+   "t": 21.0,
+   "zoom": 1.0,
+   "x": 0,
+   "y": 0,
+   "why": "hold through the silence"
+  },
+  {
+   "t": 23.5,
+   "zoom": 1.18,
+   "x": 0,
+   "y": 0,
+   "why": "push toward the feature wall (pivot 540,1000) while the pattern draws"
+  }
+ ]
+}
