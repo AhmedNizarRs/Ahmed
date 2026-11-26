@@ -386,16 +386,17 @@
     const D = (px) => `${px}px "Marcellus"`;
     const J = (px, w = 500) => `${w} ${px}px "Jost"`;
     const out = B["hook.out"];
-    block("hook", ["This word", "means sand."], D(96), 96, 400, 106, null, out);
-    block("name", ["Rimal"], D(64), 64, 1045, 70, null, out);
-    block("t2", ["And it's the whole idea", "behind our tools."], D(60), 60, 1190, 72, B["hook.line2"], out);
-    block("cta0", ["@rimalinterior"], J(52), 52, 1420, 60, null, out);
+    // Exits staggered 80 ms, bottom to top, so the word is left alone before it dissolves.
+    block("hook", ["This word", "means sand."], D(96), 96, 400, 106, null, out - 0.04);
+    block("name", ["Rimal"], D(64), 64, 1045, 70, null, out + 0.04);
+    block("t2", ["It's the idea behind our tools", "for architects & designers."], D(60), 60, 1190, 72, B["hook.line2"], out - 0.12);
+    block("cta0", ["@rimalinterior"], J(52), 52, 1420, 60, null, out - 0.2);
     block("t3", ["Dunes are shaped by", "thousands of small,", "patient moves."], D(64), 64, 330, 78, 6.4, B["sand.textOut"]);
     block("t4", ["Good interiors", "are too."], D(84), 84, 380, 96, 11.9, 14.8);
     block("t5", ["Our tools take the", "repeated moves."], D(64), 64, 400, 80, 15.0, 20.2);
     block("t6", ["So your time goes", [{ s: "into the ", c: COL.ink }, { s: "design.", c: COL.goldHi }]], D(72), 72, 400, 88, 20.8, 24.7);
     block("brand", ["Rimal Interiors"], D(96), 96, 1080, 100, 25.9, null);
-    block("soft", ["Tools for AutoCAD · Revit", "SketchUp · 3ds Max"], J(44, 400), 44, 1170, 60, 25.98, null, 0.86);
+    block("soft", ["Tools for AutoCAD · Revit", "SketchUp · 3ds Max"], J(52, 400), 52, 1180, 68, 25.98, null, 0.9);
     block("cta1", ["@rimalinterior · link in bio"], J(48), 48, 1390, 60, 26.4, null);
   }
 
@@ -411,6 +412,8 @@
       ctx.rect(front, 0, W - front, H);
       ctx.clip();
     }
+    const z = creep(t);
+    ctx.translate(WORD.x, WORD.cy); ctx.scale(z, z); ctx.translate(-WORD.x, -WORD.cy);
     ctx.font = WORD.font; ctx.textAlign = "center"; ctx.direction = "rtl";
     ctx.fillStyle = rgba(COL.goldHi, 1);
     ctx.fillText(WORD.text, WORD.x, WORD.y);
@@ -432,11 +435,25 @@
     }
   }
 
+  // Two-step morph so lines never tangle: the dune flattens into evenly ruled lines (stacked,
+  // so no crossings), then each ruled line folds into its wall, y first, then x.
+  const flatPts = [];
+  for (let k = 0; k < K; k++) {
+    const y = R.y0 + (k * (R.y1 - R.y0)) / (K - 1);
+    flatPts.push(Array.from({ length: M }, (_, j) => [lerp(R.x0, R.x1, j / (M - 1)), y]));
+  }
   function linePoints(k, t) {
-    const u = eIO(prog(t, B["interior.morph"] + 0.03 * k, 1.4));
-    if (u <= 0) return { pts: dunePts[k], u: 0 };
-    const a = dunePts[k], b = planPts[k];
-    return { pts: a.map((p, j) => [lerp(p[0], b[j][0], u), lerp(p[1], b[j][1], u)]), u };
+    const m0 = B["interior.morph"], m1 = B["interior.flat"];
+    const u1 = eIO(prog(t, m0 + 0.02 * k, m1 - m0 - 0.2));
+    const v = prog(t, m1 + 0.025 * k, B["interior.plan"] - m1 - 0.3);
+    if (u1 <= 0) return { pts: dunePts[k], u: 0 };
+    const a = dunePts[k], f = flatPts[k], b = planPts[k];
+    const uy = eIO(clamp(v / 0.6)), ux = eIO(clamp((v - 0.4) / 0.6));
+    const pts = a.map((p, j) => {
+      const fx = lerp(p[0], f[j][0], u1), fy = lerp(p[1], f[j][1], u1);
+      return [lerp(fx, b[j][0], ux), lerp(fy, b[j][1], uy)];
+    });
+    return { pts, u: 0.5 * u1 + 0.5 * Math.min(ux, uy) };
   }
 
   function drawLines(t) {

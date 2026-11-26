@@ -43,11 +43,11 @@
    "end": 6.0,
    "beats": {
     "open": 0.0,
-    "line2": 1.5,
+    "line2": 0.75,
     "out": 5.7
    },
    "cueRef": {
-    "line2": "bar0.beat3"
+    "line2": "bar0.beat2"
    },
    "reads": [
     {
@@ -109,7 +109,8 @@
    "beats": {
     "text": 12.0,
     "morph": 12.75,
-    "plan": 14.5
+    "plan": 14.5,
+    "flat": 13.5
    },
    "cueRef": {
     "morph": "bar4.beat2"
@@ -134,26 +135,26 @@
    "end": 21.0,
    "beats": {
     "text": 15.0,
-    "stamp0": 16.5,
-    "stamp1": 17.25,
-    "stamp2": 18.0,
-    "stamp3": 18.375,
+    "stamp0": 15.75,
+    "stamp1": 16.5,
+    "stamp2": 17.25,
+    "stamp3": 18.0,
     "stamp4": 18.75,
     "stamp5": 19.125,
-    "stamp6": 19.3125,
-    "stamp7": 19.5,
-    "stamp8": 19.6875,
-    "stamp9": 19.875,
+    "stamp6": 19.5,
+    "stamp7": 19.6875,
+    "stamp8": 19.875,
+    "stamp9": 20.0625,
     "silence": 20.25
    },
    "cueRef": {
-    "stamp0": "bar5.beat3",
+    "stamp0": "bar5.beat2",
     "silence": "bar6.beat4"
    },
    "reads": [
     {
      "what": "blocks repeat faster and faster",
-     "from": 16.5,
+     "from": 15.75,
      "to": 20.25
     }
    ],
@@ -283,7 +284,7 @@
    "id": "hook",
    "text": "This word means sand.",
    "from": 0.0,
-   "to": 5.7,
+   "to": 5.66,
    "role": "hook",
    "px": 96,
    "box": [
@@ -297,7 +298,7 @@
    "id": "name",
    "text": "Rimal",
    "from": 0.0,
-   "to": 5.7,
+   "to": 5.74,
    "role": "term",
    "px": 64,
    "box": [
@@ -311,9 +312,9 @@
    "id": "cta0",
    "text": "@rimalinterior",
    "from": 0.0,
-   "to": 5.7,
+   "to": 5.5,
    "role": "cta",
-   "px": 48,
+   "px": 52,
    "box": [
     388,
     1378,
@@ -323,9 +324,9 @@
   },
   {
    "id": "t2",
-   "text": "And it's the whole idea behind our tools.",
-   "from": 2.1,
-   "to": 5.7,
+   "text": "It's the idea behind our tools for architects & designers.",
+   "from": 1.35,
+   "to": 5.58,
    "role": null,
    "px": 60,
    "box": [
@@ -411,7 +412,7 @@
    "from": 26.5,
    "to": 30.0,
    "role": null,
-   "px": 40,
+   "px": 52,
    "box": [
     300,
     1131,

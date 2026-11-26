@@ -1,0 +1,749 @@
+{
+ "meta": {
+  "w": 1080,
+  "h": 1920,
+  "fps": 30,
+  "dur": 52.25,
+  "clock": "voice",
+  "register": "kinetic",
+  "loop": false,
+  "grid": "none",
+  "hookWaiver": null,
+  "vo": {
+   "status": "ESTIMATED",
+   "file": null
+  }
+ },
+ "vo": [
+  {
+   "id": "hook",
+   "text": "Five measurements that make any room look professionally designed. Save this.",
+   "from": 0.3,
+   "to": 5.625,
+   "words": [
+    {
+     "w": "Five",
+     "t": 0.3
+    },
+    {
+     "w": "measurements",
+     "t": 0.68
+    },
+    {
+     "w": "that",
+     "t": 1.42
+    },
+    {
+     "w": "make",
+     "t": 1.8
+    },
+    {
+     "w": "any",
+     "t": 2.18
+    },
+    {
+     "w": "room",
+     "t": 2.515
+    },
+    {
+     "w": "look",
+     "t": 2.895
+    },
+    {
+     "w": "professionally",
+     "t": 3.275
+    },
+    {
+     "w": "designed.",
+     "t": 4.105
+    },
+    {
+     "w": "Save",
+     "t": 4.905
+    },
+    {
+     "w": "this.",
+     "t": 5.285
+    }
+   ]
+  },
+  {
+   "id": "art",
+   "text": "One. Hang art with its centre one hundred and forty-five centimetres from the floor. It's called the 57-inch rule fifty-seven inch rule.",
+   "from": 6.255,
+   "to": 15.24,
+   "words": [
+    {
+     "w": "One.",
+     "t": 6.255
+    },
+    {
+     "w": "Hang",
+     "t": 6.83
+    },
+    {
+     "w": "art",
+     "t": 7.21
+    },
+    {
+     "w": "with",
+     "t": 7.545
+    },
+    {
+     "w": "its",
+     "t": 7.925
+    },
+    {
+     "w": "centre",
+     "t": 8.26
+    },
+    {
+     "w": "one",
+     "t": 8.73
+    },
+    {
+     "w": "hundred",
+     "t": 9.065
+    },
+    {
+     "w": "and",
+     "t": 9.58
+    },
+    {
+     "w": "forty-five",
+     "t": 9.915
+    },
+    {
+     "w": "centimetres",
+     "t": 10.565
+    },
+    {
+     "w": "from",
+     "t": 11.26
+    },
+    {
+     "w": "the",
+     "t": 11.64
+    },
+    {
+     "w": "floor.",
+     "t": 11.975
+    },
+    {
+     "w": "It's",
+     "t": 12.64
+    },
+    {
+     "w": "called",
+     "t": 13.02
+    },
+    {
+     "w": "the",
+     "t": 13.49
+    },
+    {
+     "w": "fifty-seven",
+     "t": 13.825
+    },
+    {
+     "w": "inch",
+     "t": 14.52
+    },
+    {
+     "w": "rule.",
+     "t": 14.9
+    }
+   ]
+  },
+  {
+   "id": "coffee",
+   "text": "Two. Keep your coffee table forty to fifty centimetres from the sofa. Close enough to reach your cup.",
+   "from": 15.87,
+   "to": 23.555,
+   "words": [
+    {
+     "w": "Two.",
+     "t": 15.87
+    },
+    {
+     "w": "Keep",
+     "t": 16.445
+    },
+    {
+     "w": "your",
+     "t": 16.825
+    },
+    {
+     "w": "coffee",
+     "t": 17.205
+    },
+    {
+     "w": "table",
+     "t": 17.675
+    },
+    {
+     "w": "forty",
+     "t": 18.1
+    },
+    {
+     "w": "to",
+     "t": 18.525
+    },
+    {
+     "w": "fifty",
+     "t": 18.815
+    },
+    {
+     "w": "centimetres",
+     "t": 19.24
+    },
+    {
+     "w": "from",
+     "t": 19.935
+    },
+    {
+     "w": "the",
+     "t": 20.315
+    },
+    {
+     "w": "sofa.",
+     "t": 20.65
+    },
+    {
+     "w": "Close",
+     "t": 21.27
+    },
+    {
+     "w": "enough",
+     "t": 21.695
+    },
+    {
+     "w": "to",
+     "t": 22.165
+    },
+    {
+     "w": "reach",
+     "t": 22.455
+    },
+    {
+     "w": "your",
+     "t": 22.88
+    },
+    {
+     "w": "cup.",
+     "t": 23.26
+    }
+   ]
+  },
+  {
+   "id": "pendant",
+   "text": "Three. Hang a pendant seventy-five to ninety centimetres above the dining table.",
+   "from": 24.185,
+   "to": 29.8,
+   "words": [
+    {
+     "w": "Three.",
+     "t": 24.185
+    },
+    {
+     "w": "Hang",
+     "t": 24.85
+    },
+    {
+     "w": "a",
+     "t": 25.23
+    },
+    {
+     "w": "pendant",
+     "t": 25.475
+    },
+    {
+     "w": "seventy-five",
+     "t": 25.99
+    },
+    {
+     "w": "to",
+     "t": 26.73
+    },
+    {
+     "w": "ninety",
+     "t": 27.02
+    },
+    {
+     "w": "centimetres",
+     "t": 27.49
+    },
+    {
+     "w": "above",
+     "t": 28.185
+    },
+    {
+     "w": "the",
+     "t": 28.61
+    },
+    {
+     "w": "dining",
+     "t": 28.945
+    },
+    {
+     "w": "table.",
+     "t": 29.415
+    }
+   ]
+  },
+  {
+   "id": "dining",
+   "text": "Four. Give every seat at the table sixty centimetres of width.",
+   "from": 30.43,
+   "to": 35.08,
+   "words": [
+    {
+     "w": "Four.",
+     "t": 30.43
+    },
+    {
+     "w": "Give",
+     "t": 31.05
+    },
+    {
+     "w": "every",
+     "t": 31.43
+    },
+    {
+     "w": "seat",
+     "t": 31.855
+    },
+    {
+     "w": "at",
+     "t": 32.235
+    },
+    {
+     "w": "the",
+     "t": 32.525
+    },
+    {
+     "w": "table",
+     "t": 32.86
+    },
+    {
+     "w": "sixty",
+     "t": 33.285
+    },
+    {
+     "w": "centimetres",
+     "t": 33.71
+    },
+    {
+     "w": "of",
+     "t": 34.405
+    },
+    {
+     "w": "width.",
+     "t": 34.695
+    }
+   ]
+  },
+  {
+   "id": "walk",
+   "text": "Five. Keep walkways at least ninety centimetres wide. That's the kitchen planners' minimum.",
+   "from": 35.71,
+   "to": 42.17,
+   "words": [
+    {
+     "w": "Five.",
+     "t": 35.71
+    },
+    {
+     "w": "Keep",
+     "t": 36.33
+    },
+    {
+     "w": "walkways",
+     "t": 36.71
+    },
+    {
+     "w": "at",
+     "t": 37.27
+    },
+    {
+     "w": "least",
+     "t": 37.56
+    },
+    {
+     "w": "ninety",
+     "t": 37.985
+    },
+    {
+     "w": "centimetres",
+     "t": 38.455
+    },
+    {
+     "w": "wide.",
+     "t": 39.15
+    },
+    {
+     "w": "That's",
+     "t": 39.77
+    },
+    {
+     "w": "the",
+     "t": 40.24
+    },
+    {
+     "w": "kitchen",
+     "t": 40.575
+    },
+    {
+     "w": "planners'",
+     "t": 41.09
+    },
+    {
+     "w": "minimum.",
+     "t": 41.695
+    }
+   ]
+  },
+  {
+   "id": "recap",
+   "text": "Screenshot this cheat sheet.",
+   "from": 43.4,
+   "to": 45.24,
+   "words": [
+    {
+     "w": "Screenshot",
+     "t": 43.4
+    },
+    {
+     "w": "this",
+     "t": 44.05
+    },
+    {
+     "w": "cheat",
+     "t": 44.43
+    },
+    {
+     "w": "sheet.",
+     "t": 44.855
+    }
+   ]
+  },
+  {
+   "id": "cta",
+   "text": "Follow Rimal Interiors for a new design rule every day.",
+   "from": 45.87,
+   "to": 49.855,
+   "words": [
+    {
+     "w": "Follow",
+     "t": 45.87
+    },
+    {
+     "w": "Rimal",
+     "t": 46.34
+    },
+    {
+     "w": "Interiors",
+     "t": 46.765
+    },
+    {
+     "w": "for",
+     "t": 47.37
+    },
+    {
+     "w": "a",
+     "t": 47.705
+    },
+    {
+     "w": "new",
+     "t": 47.95
+    },
+    {
+     "w": "design",
+     "t": 48.285
+    },
+    {
+     "w": "rule",
+     "t": 48.755
+    },
+    {
+     "w": "every",
+     "t": 49.135
+    },
+    {
+     "w": "day.",
+     "t": 49.56
+    }
+   ]
+  }
+ ],
+ "scenes": [
+  {
+   "id": "hook",
+   "start": 0.0,
+   "end": 6.135,
+   "beats": {
+    "tape": 0.0,
+    "save": 4.905
+   },
+   "transitionOut": {
+    "type": "hard cut + colour flip",
+    "why": "chapter cut on the spoken 'One'"
+   }
+  },
+  {
+   "id": "art",
+   "start": 6.135,
+   "end": 15.75,
+   "beats": {
+    "cut": 6.135,
+    "draw": 6.83,
+    "count": 9.065,
+    "land": 11.22,
+    "rule": 13.825
+   },
+   "transitionOut": {
+    "type": "hard cut + colour flip",
+    "why": "chapter cut on 'Two'"
+   }
+  },
+  {
+   "id": "coffee",
+   "start": 15.75,
+   "end": 24.065,
+   "beats": {
+    "cut": 15.75,
+    "draw": 17.205,
+    "count": 18.1,
+    "land": 19.895,
+    "cup": 23.26
+   },
+   "transitionOut": {
+    "type": "hard cut + colour flip",
+    "why": "chapter cut on 'Three'"
+   }
+  },
+  {
+   "id": "pendant",
+   "start": 24.065,
+   "end": 30.31,
+   "beats": {
+    "cut": 24.065,
+    "draw": 25.475,
+    "count": 25.99,
+    "land": 28.145,
+    "table": 29.415
+   },
+   "transitionOut": {
+    "type": "hard cut + colour flip",
+    "why": "chapter cut on 'Four'"
+   }
+  },
+  {
+   "id": "dining",
+   "start": 30.31,
+   "end": 35.59,
+   "beats": {
+    "cut": 30.31,
+    "draw": 31.855,
+    "count": 33.285,
+    "land": 34.365
+   },
+   "transitionOut": {
+    "type": "hard cut + colour flip",
+    "why": "chapter cut on 'Five'"
+   }
+  },
+  {
+   "id": "walk",
+   "start": 35.59,
+   "end": 43.28,
+   "beats": {
+    "cut": 35.59,
+    "draw": 36.71,
+    "count": 37.985,
+    "land": 39.49,
+    "source": 40.575
+   },
+   "transitionOut": {
+    "type": "slam to cheat sheet",
+    "why": "the five rules collect into one cheat sheet (payoff)"
+   }
+  },
+  {
+   "id": "recap",
+   "start": 43.28,
+   "end": 52.25,
+   "beats": {
+    "cut": 43.28,
+    "hero": 43.4,
+    "follow": 45.87,
+    "still": 50.155
+   }
+  }
+ ],
+ "cuts": [
+  6.135,
+  15.75,
+  24.065,
+  30.31,
+  35.59,
+  43.28
+ ],
+ "hero": {
+  "t": 43.4,
+  "what": "all five rules slam into one cheat-sheet card"
+ },
+ "silences": [
+  {
+   "from": 42.32,
+   "to": 43.38
+  }
+ ],
+ "texts": [
+  {
+   "id": "hook",
+   "text": "5 measurements",
+   "from": 0.0,
+   "to": 6.085,
+   "role": "hook",
+   "px": 112
+  },
+  {
+   "id": "hook2",
+   "text": "that make any room look designed",
+   "from": 0.0,
+   "to": 6.085,
+   "role": null,
+   "px": 58
+  },
+  {
+   "id": "cta0",
+   "text": "@rimalinterior",
+   "from": 0.0,
+   "to": 6.085,
+   "role": "cta",
+   "px": 50
+  },
+  {
+   "id": "r1",
+   "text": "145 cm",
+   "from": 11.22,
+   "to": 15.75,
+   "role": null,
+   "px": 230
+  },
+  {
+   "id": "rule",
+   "text": "57-inch rule",
+   "from": 14.075,
+   "to": 15.75,
+   "role": "term",
+   "px": 64
+  },
+  {
+   "id": "r2",
+   "text": "40–50 cm",
+   "from": 19.895,
+   "to": 24.065,
+   "role": null,
+   "px": 200
+  },
+  {
+   "id": "r3",
+   "text": "75–90 cm",
+   "from": 28.145,
+   "to": 30.31,
+   "role": null,
+   "px": 200
+  },
+  {
+   "id": "r4",
+   "text": "60 cm",
+   "from": 34.365,
+   "to": 35.59,
+   "role": null,
+   "px": 230
+  },
+  {
+   "id": "r5",
+   "text": "90 cm",
+   "from": 39.49,
+   "to": 43.28,
+   "role": null,
+   "px": 230
+  },
+  {
+   "id": "walkway",
+   "text": "walkway",
+   "from": 36.51,
+   "to": 43.28,
+   "role": "term",
+   "px": 72
+  },
+  {
+   "id": "sheet",
+   "text": "Cheat sheet",
+   "from": 44.0,
+   "to": 52.25,
+   "role": null,
+   "px": 96
+  },
+  {
+   "id": "cta1",
+   "text": "@rimalinterior",
+   "from": 46.269999999999996,
+   "to": 52.25,
+   "role": "cta",
+   "px": 56
+  }
+ ],
+ "terms": [
+  "57-inch rule",
+  "walkway"
+ ],
+ "sfx": [
+  {
+   "at": "art.cut",
+   "offset": 0.0,
+   "src": "whoosh-thud",
+   "gain": 0.25,
+   "why": "chapter slam"
+  },
+  {
+   "at": "coffee.cut",
+   "offset": 0.0,
+   "src": "whoosh-thud",
+   "gain": 0.25,
+   "why": "chapter slam"
+  },
+  {
+   "at": "pendant.cut",
+   "offset": 0.0,
+   "src": "whoosh-thud",
+   "gain": 0.25,
+   "why": "chapter slam"
+  },
+  {
+   "at": "dining.cut",
+   "offset": 0.0,
+   "src": "whoosh-thud",
+   "gain": 0.25,
+   "why": "chapter slam"
+  },
+  {
+   "at": "walk.cut",
+   "offset": 0.0,
+   "src": "whoosh-thud",
+   "gain": 0.25,
+   "why": "chapter slam"
+  },
+  {
+   "at": "recap.hero",
+   "offset": 0.0,
+   "src": "big impact",
+   "gain": 0.35,
+   "why": "payoff, loudest non-voice"
+  }
+ ],
+ "facts": "FACTS.md"
+}
