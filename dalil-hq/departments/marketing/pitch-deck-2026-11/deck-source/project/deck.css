@@ -32,6 +32,10 @@ p { font-size: 32px; line-height: 1.45; }
 .accent .foot { color: #3A3000; }
 .pnum::after { content: counter(page); }
 
+/* logo: full lockup on cover and close, the mark alone on content slides */
+.logo-cover { position: absolute; left: 1632px; top: 96px; width: 160px; height: 275px; object-fit: contain; }
+.logo-mark { position: absolute; left: 1712px; top: 92px; width: 80px; height: 71px; object-fit: contain; }
+
 /* cover */
 .cover-band { position: absolute; left: 0; top: 400px; width: 1920px; height: 680px; object-fit: cover; }
 .cover-text { position: absolute; left: 128px; top: 112px; width: 1664px; }
