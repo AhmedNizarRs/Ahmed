@@ -36,9 +36,12 @@ Never use blindness as a metaphor ("blind spot", "turning a blind eye") in DALIL
 - The handrail is already in their hand. It is completely blank.
 - No app. No battery. No renovation.
 - One tactile grammar. Any message.
-- When the lights fail, it still speaks.
 - Cheaper. Faster. No apps, no batteries.
 - Two founders. One city. Every handrail can speak.
+- Every door, rail and wall, readable by touch. (sticker range, 2026-11-26)
+- Every building should speak to every hand.
+
+Retired with the clip (2026-11-26): "When the lights fail, it still speaks." The sticker has no glow.
 - Help us make the UAE a more accessible country.
 
 ## Visual identity

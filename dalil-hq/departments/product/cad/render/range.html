@@ -1,0 +1,117 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;background:#0B0C0E;overflow:hidden}canvas{display:block}</style>
+<script type="importmap">{"imports":{"three":"/node_modules/three/build/three.module.js","three/addons/":"/node_modules/three/examples/jsm/"}}</script>
+</head><body>
+<script type="module">
+import * as THREE from 'three';
+import {STLLoader} from 'three/addons/loaders/STLLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+import {mergeVertices, toCreasedNormals} from 'three/addons/utils/BufferGeometryUtils.js';
+
+const q = new URLSearchParams(location.search);
+const name = q.get('scene'), view = q.get('view') || 'wide';
+const W = +q.get('w') || 1920, H = +q.get('h') || 1080;
+const renderer = new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+renderer.setSize(W, H); renderer.setPixelRatio(1);
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.NeutralToneMapping;
+document.body.appendChild(renderer.domElement);
+const scene = new THREE.Scene();
+scene.environment = new THREE.PMREMGenerator(renderer).fromScene(new RoomEnvironment(), 0.04).texture;
+scene.environmentIntensity = 0.7;
+
+const loader = new STLLoader();
+const load = url => new Promise(res => loader.load(url, g0 => res(toCreasedNormals(mergeVertices(g0, 1e-4), Math.PI/6))));
+const YELLOW = 0xFFC700;
+const matte = (c, r=0.85) => new THREE.MeshStandardMaterial({color:c, metalness:0, roughness:r});
+const steel = (c=0xc9cdd1, r=0.3) => new THREE.MeshStandardMaterial({color:c, metalness:1, roughness:r});
+// one printed material: the dots are the same yellow as the sticker, slightly smoother
+const sticker = () => new THREE.MeshStandardMaterial({color:YELLOW, metalness:0, roughness:0.45});
+const put = (o, pos, rot) => { o.position.set(...pos); if (rot) o.rotation.set(...rot); o.castShadow = true; o.receiveShadow = true; scene.add(o); return o; };
+const box = (w,d,h,pos,mat) => put(new THREE.Mesh(new THREE.BoxGeometry(w,d,h), mat), pos);
+const cyl = (r,len,pos,rot,mat,seg=96) => put(new THREE.Mesh(new THREE.CylinderGeometry(r,r,len,seg), mat), pos, rot);
+const sph = (r,pos,mat) => put(new THREE.Mesh(new THREE.SphereGeometry(r,48,32), mat), pos);
+function tube(p0, p1, r, mat) { const a = new THREE.Vector3(...p0), b = new THREE.Vector3(...p1), d = b.clone().sub(a);
+  const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, d.length(), 96), mat); m.position.copy(a.clone().add(b).multiplyScalar(0.5));
+  m.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0), d.normalize()); m.castShadow = m.receiveShadow = true; scene.add(m); return m; }
+function sun(pos, i, size, tgt=[0,0,0], nb=0.6) { const l = new THREE.DirectionalLight(0xfff4e6, i); l.position.set(...pos); l.castShadow = true; l.shadow.mapSize.set(4096,4096);
+  const c = l.shadow.camera; c.left=-size; c.right=size; c.top=size; c.bottom=-size; c.near=1; c.far=20000; l.shadow.bias=-0.0002; l.shadow.normalBias=nb;
+  l.target.position.set(...tgt); scene.add(l.target); scene.add(l); return l; }
+const cam = (fov, pos, look) => { const c = new THREE.PerspectiveCamera(fov, W/H, 1, 40000); c.up.set(0,0,1); c.position.set(...pos); c.lookAt(...look); return c; };
+const X90 = [Math.PI/2, 0, 0];
+// the wall sticker's small printed installer ID: flat ink, not tactile (lies on the 0.5 mm flat top)
+function idLabel(text, w, h) {
+  const cv = document.createElement('canvas'); cv.width = 2048; cv.height = Math.round(2048*h/w);
+  const x = cv.getContext('2d'); x.fillStyle = '#2B2E33'; x.font = `600 ${Math.round(cv.height*0.72)}px "DejaVu Sans", Arial, sans-serif`;
+  x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(text, cv.width/2, cv.height/2);
+  const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 8; tex.colorSpace = THREE.SRGBColorSpace;
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({map:tex, transparent:true, roughness:0.6}));
+  return m;
+}
+async function wallSticker() {
+  const g = await load('stl/dalil-sticker-L-wall_prayer-room_flat.stl');
+  const grp = new THREE.Group(); const m = new THREE.Mesh(g, sticker()); m.castShadow = m.receiveShadow = true; grp.add(m);
+  const lab = idLabel('DALIL  W-PR-02  ·  PRAYER ROOM  ·  L2', 50, 2.6); lab.position.set(0, -8.75, 0.505); grp.add(lab);
+  return grp;
+}
+
+let camera;
+const marks = {};
+
+if (name === 'hero') {                 // the three sizes on a stairwell-black slate
+  scene.background = new THREE.Color(0x0B0C0E); scene.environmentIntensity = 0.35;
+  box(900,900,20,[0,0,-10],matte(0x17191D,0.9));
+  const S = await load('stl/dalil-sticker-S-door_15_flat.stl'), M = await load('stl/dalil-sticker-M-rail_floor-2_flat.stl');
+  put(new THREE.Mesh(S, sticker()), [-62,-6,0], [0,0,0.06]);
+  put(new THREE.Mesh(M, sticker()), [-8,26,0], [0,0,-0.04]);
+  const L = await wallSticker(); L.position.set(30,-24,0); L.rotation.z = 0.03; L.traverse(o=>{o.castShadow=o.receiveShadow=true}); scene.add(L);
+  sun([-260,-120,150], 3.0, 300, [0,0,0], 0.05);
+  const rim = new THREE.DirectionalLight(0xbfd4ff, 0.6); rim.position.set(200,300,120); scene.add(rim);
+  camera = cam(26,[-4,-178,150],[-4,0,-2]);
+}
+else if (name === 'door') {           // classroom door: S on the lever, L on the wall at the latch side
+  scene.background = new THREE.Color(0xE6E4DF);
+  box(5200,4000,50,[0,-1700,-25],matte(0xCBCCC9,0.6));
+  box(4200,100,2800,[0,50,1400],matte(0xE8E6DF));
+  box(1040,10,2160,[0,1,1080],matte(0x7C8085)); box(900,40,2100,[0,6,1050],matte(0xCDB38B,0.65));
+  const s = steel(0xcfd2d6, 0.28);
+  cyl(26,7,[330,-17.5,1000],X90,s); cyl(9.5,35,[330,-38.5,1000],X90,s);
+  cyl(9.5,150,[255,-56,1000],[0,0,Math.PI/2],s); sph(9.5,[180,-56,1000],s); sph(9.5,[330,-56,1000],s);
+  const lev = await load('stl/dalil-sticker-S-door_15_on-lever-d19.stl');
+  put(new THREE.Mesh(lev, sticker()), [262,-56,1009.5]); marks.lever = new THREE.Vector3(262,-56,1012);
+  const L = await wallSticker(); L.rotation.set(...X90); L.position.set(700,0,1400); L.traverse(o=>{o.castShadow=o.receiveShadow=true}); scene.add(L);
+  marks.plate = new THREE.Vector3(700,-1,1400);
+  sun([-2500,-4000,4500], 2.3, 5000);
+  const views = {wide: cam(34,[450,-3500,1350],[150,0,1120]), lever: cam(18,[262,-300,1150],[262,-56,1009]), plate: cam(20,[700,-330,1440],[700,0,1400])};
+  camera = views[view];
+}
+else if (name === 'rail') {           // stair handrail: M on the level stretch of a 40 mm rail
+  scene.background = new THREE.Color(0xE9E7DF);
+  box(6400,100,3300,[2200,-700,1650],matte(0xE9E7DF)); box(6400,1300,50,[2200,0,-25],matte(0x8A8882));
+  for (let i=0;i<9;i++) box(280,1300,170*(i+1),[280*i+140,0,85*(i+1)],matte(0x9C9A94,0.9));
+  box(1500,1300,1530,[3270,0,765],matte(0x9C9A94,0.9));
+  const r = steel(0xc9cdd1,0.28);
+  tube([0,-580,900],[2520,-580,2430],20,r); tube([2520,-580,2430],[3900,-580,2430],20,r); sph(20,[2520,-580,2430],r); sph(20,[3900,-580,2430],r);
+  for (const x of [3000,3700]) tube([x,-650,2430],[x,-580,2430],8,r);
+  const M = await load('stl/dalil-sticker-M-rail_floor-2_on-rail-d40.stl');
+  put(new THREE.Mesh(M, sticker()), [3150,-580,2450]); marks.sticker = new THREE.Vector3(3150,-580,2455);
+  sun([-2500,4000,5000], 2.4, 5000);
+  camera = view==='wide' ? cam(40,[2300,4300,2100],[2300,-600,1650]) : cam(22,[3030,-330,2640],[3150,-580,2452]);
+}
+else if (name === 'family') {         // the range at true scale, orthographic, on a wall
+  scene.background = new THREE.Color(0xE4E2DA); scene.environmentIntensity = 0.6;
+  box(2400,100,1400,[0,50,0],matte(0xE2E0D8,0.95));
+  const S = await load('stl/dalil-sticker-S-door_15_flat.stl'), M = await load('stl/dalil-sticker-M-rail_floor-2_flat.stl');
+  put(new THREE.Mesh(S, sticker()), [-95,0,0], X90); put(new THREE.Mesh(M, sticker()), [-15,0,0], X90);
+  const L = await wallSticker(); L.rotation.set(...X90); L.position.set(85,0,0); L.traverse(o=>{o.castShadow=o.receiveShadow=true}); scene.add(L);
+  sun([-150,-400,260], 2.2, 300, [0,0,0], 0.08);
+  const c = new THREE.OrthographicCamera(-150,150,84.375,-84.375,1,5000); c.up.set(0,0,1); c.position.set(0,-1000,-5); c.lookAt(0,0,-5); camera = c;
+}
+else throw new Error('unknown scene');
+
+renderer.render(scene, camera);
+const proj = v => { const p = v.clone().project(camera); return [(p.x*0.5+0.5)*W, (1-(p.y*0.5+0.5))*H]; };
+window.__px = Object.fromEntries(Object.entries(marks).map(([k,v]) => [k, proj(v)]));
+window.__done = true;
+</script></body></html>

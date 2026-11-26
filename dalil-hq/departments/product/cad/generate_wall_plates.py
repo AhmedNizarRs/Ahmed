@@ -164,5 +164,64 @@ def main():
     print(json.dumps(rep, indent=2))
 
 
-if __name__ == "__main__":
+if __name__ == "__main__" and len(sys.argv) == 1:
     main()
+
+
+# ---------------------------------------------------------------------------
+# Sticker-only range (decision 2026-11-26): braille only. Large wall stickers
+# carry a small FLAT printed ID line for installers (not tactile, not in the STL).
+# ---------------------------------------------------------------------------
+ID_BAND = 6.0   # mm strip under the braille reserved for the printed installer ID
+
+
+def build_braille_plate(lines, dot_h=0.5, base_t=g.BASE_T, id_band=ID_BAND):
+    """Braille-only plate with several lines (ISO 17049 line pitch 10 mm) and an ID band below."""
+    n = max(len(l) for l in lines)
+    blen = (n - 1) * g.CELL_PITCH + g.DOT_SPACING + g.DOT_D
+    pitch = 10.0
+    ch = (len(lines) - 1) * pitch + 2 * g.DOT_SPACING + g.DOT_D + id_band
+    edge = g.RAMP + g.MARGIN
+    length, width = blen + 2 * edge, ch + 2 * edge
+    outer = Manifold.extrude(g.rounded_rect(length, width, g.CORNER_R), g.EDGE_T)
+    inner = Manifold.extrude(g.rounded_rect(length - 2 * g.RAMP, width - 2 * g.RAMP, max(g.CORNER_R - g.RAMP, 0.5)), base_t)
+    parts = [Manifold.batch_hull([outer, inner])]
+    ox = -blen / 2
+    top = ch / 2 - g.DOT_D / 2                    # centre of the first dot row
+    dome = g.dome(dot_h)
+    for li, line in enumerate(lines):
+        for i, chx in enumerate(line):
+            for d in g.dots_of(chx):
+                col = 0 if d < 3 else 1
+                row = d if d < 3 else d - 3
+                px = ox + g.DOT_D / 2 + i * g.CELL_PITCH + col * g.DOT_SPACING
+                py = top - li * pitch - row * g.DOT_SPACING
+                parts.append(dome.translate((px, py, base_t)))
+    id_box = {"x0": ox, "x1": -ox, "y0": -ch / 2, "y1": -ch / 2 + id_band - 1.0}
+    return Manifold.batch_boolean(parts, OpType.Add), {"length": length, "width": width, "id_box": id_box, "lines": len(lines), "cells": n}
+
+
+def sticker_range():
+    rep = {}
+    # S: small door sticker, braille only: "15"
+    m, i = g.build_flat(braille_en("15"), dot_h=0.5)
+    t = g.to_trimesh(m); t.export(os.path.join(HERE, "dalil-sticker-S-door_15_flat.stl"))
+    g.bend_onto_rail(m, 19.0).export(os.path.join(HERE, "dalil-sticker-S-door_15_on-lever-d19.stl"))
+    rep["S door"] = {"file": "dalil-sticker-S-door_15_flat.stl", "watertight": bool(t.is_watertight), "size_mm": [round(i["length"], 1), round(i["width"], 1)], "cells": 3}
+    # M: rail strip, braille only (Arabic demo "floor 2")
+    m, i = g.build_flat(g.DEMO_ARABIC, dot_h=0.5)
+    t = g.to_trimesh(m); t.export(os.path.join(HERE, "dalil-sticker-M-rail_floor-2_flat.stl"))
+    g.bend_onto_rail(m, 40.0).export(os.path.join(HERE, "dalil-sticker-M-rail_floor-2_on-rail-d40.stl"))
+    rep["M rail"] = {"file": "dalil-sticker-M-rail_floor-2_flat.stl", "watertight": bool(t.is_watertight), "size_mm": [round(i["length"], 1), round(i["width"], 1)], "cells": 9}
+    # L: wall sticker, two braille lines + ID band for the printed installer code
+    m, i = build_braille_plate([braille_en("prayer room"), braille_en("level 2")])
+    t = g.to_trimesh(m); t.export(os.path.join(HERE, "dalil-sticker-L-wall_prayer-room_flat.stl"))
+    rep["L wall"] = {"file": "dalil-sticker-L-wall_prayer-room_flat.stl", "watertight": bool(t.is_watertight), "size_mm": [round(i["length"], 1), round(i["width"], 1)],
+                     "cells": i["cells"], "lines": i["lines"], "printed_id": "DALIL W-PR-02 · PRAYER ROOM · L2", "id_box_mm": {k: round(v, 2) for k, v in i["id_box"].items()}}
+    with open(os.path.join(HERE, "sticker-range-check.json"), "w") as f:
+        json.dump(rep, f, indent=2)
+    print(json.dumps(rep, indent=2))
+
+
+if __name__ == "__main__" and len(sys.argv) > 1 and sys.argv[1] == "range":
+    sticker_range()

@@ -2,7 +2,7 @@
 
 Every DALIL agent reads this file before doing any work. If a number or claim is not here, do not invent it: mark it `[TO CONFIRM]` and ask a founder.
 
-Last updated: 2026-11-05. Source: the DALIL landing page (`dalil/site/index.html`), which follows the v7 investor deck.
+Last updated: 2026-11-26. Sources: founder decisions of 2026-11-26 (sticker-only product, registered company, IP in progress), the AcTax investment readiness review and cash-flow model (October 2026), and the DALIL landing page.
 
 > **Founders: keep this file current.** When a price, milestone or customer changes, change it here first. All six departments will pick it up.
 
@@ -10,13 +10,15 @@ Last updated: 2026-11-05. Source: the DALIL landing page (`dalil/site/index.html
 
 ## 1. One line
 
-**DALIL makes the existing path speak.** A 3D-printed clip that turns any handrail into braille, raised numbers and a glow in the dark. No app. No battery.
+**DALIL makes the existing path speak.** A thin braille sticker that makes any door handle, handrail or wall readable by touch. No app. No battery. No renovation.
+
+> **Product change, 2026-11-26 (founder decision):** DALIL now sells the **sticker only**. The 3D-printed clip, the door model and the handrail model are retired. The website (`dalil/site/`) still describes the clip and needs updating.
 
 - Arabic name: دليل ("guide")
 - Website: https://dalil-team.com (the old `dalil-invest.netlify.app` forwards there)
 - Public email: dalilwayfinding@gmail.com
 - Base: Sharjah, UAE. Founded at the University of Sharjah.
-- Stage: pre-revenue, pre-seed. Building the waitlist of investors, mentors and first buildings.
+- Stage: pre-revenue, pre-seed. **Registered company** (founder, 2026-11-26; AcTax noted a SPARK licence in progress in October 2026: confirm the licence details). **IP: trademark and design registration in progress**, not yet granted.
 
 ## 2. The problem
 
@@ -24,42 +26,22 @@ Last updated: 2026-11-05. Source: the DALIL landing page (`dalil/site/index.html
 - Floor numbers, exits and room names are on walls, out of reach of a hand. Independence ends at the door.
 - The handrail is already in their hand, and it is completely blank.
 
-## 3. The product
+## 3. The product (sticker range, from 2026-11-26)
 
-A small clip that snaps onto a handrail or handle and makes it readable.
+A thin adhesive sticker carrying **braille only**. It sticks on door handles, handrails and walls.
 
-**How it works: Clip, Find, Read**
-1. **Clip.** Snaps on in seconds. No tools.
-2. **Find.** A hand sliding along the rail meets it without searching.
-3. **Read.** Braille and a raised number, for example "Floor 2. Exit left."
+| Size | Use | Size (prototype geometry) | What is on it |
+|---|---|---|---|
+| **S, door** (the main product) | Lever handles | 26.4 x 14 mm for a 3-cell message | Braille only |
+| **M, rail** | Handrails, poles | 63.6 x 14 mm for 9 cells | Braille only |
+| **L, wall** | Beside doors and lifts | 76 x 32.5 mm for 2 lines | Braille, plus one small flat printed ID line for the installer (not for the reader) |
 
-**No app. No battery. No renovation.**
-
-**Tactile grammar.** Ribs on the clip tell the hand what kind of message it is before it reads:
-| Rib type | Example messages |
-|---|---|
-| Information | Lift ahead, Prayer room, Rooms 201 to 215 |
-| Safety | Ground floor, Exit, turn left |
-| End of stairs | End of stairs |
-
-**Every level of sight**
-- **Touch:** braille for people who are blind (Arabic braille built in).
-- **Sight:** high contrast and raised numbers for people with low vision.
-- **Darkness:** photoluminescent glow for everyone when the lights fail.
-
-**Where it goes (one module, same grammar)**
-| Place | Fits |
-|---|---|
-| Stairs | Stair handrails, Ø30–50 mm |
-| Schools | Classroom doors, lever handles |
-| Hospitals | Corridor rails: flat, oval, timber |
-| Metro | Carriage poles, platform rails |
-| Buses | Grab poles, Ø32 mm vertical |
-| Airports | Terminal and boarding-bridge rails |
-| Towers | Stair-core doors, lever handles |
-| Malls | Balustrade handrails |
-
-Each install is **measured on site and printed to fit**. Brand colour: safety yellow `#FFC700` (the real product colour).
+- Safety yellow `#FFC700`, one material: the dots are the same yellow.
+- 0.5 mm flat, 1.0 mm at a dot. Dots are rounded domes, 1.5 mm base, 0.5 mm high, 2.5 mm spacing, 6.2 mm cell pitch (inside ISO 17049). Tapered 3 mm edge.
+- Peel and press. No tools, no drilling. Each install is surveyed and printed to fit.
+- Arabic and English braille. Every message is checked by a braille reader before production.
+- **No glow, no raised numbers, no rib code, no print on S and M.** Those belonged to the retired clip.
+- Geometry and STL files: `departments/product/cad/` (`generate_wall_plates.py range`). Research: `departments/product/sticker-concept-research.md`.
 
 ## 4. Competition
 
@@ -68,10 +50,11 @@ Each install is **measured on site and printed to fit**. Brand colour: safety ye
 | Found by | The hand, on the rail | Searching a wall | A phone screen |
 | Cost | AED 130 | AED 180–400 | Hardware and an app |
 | Install time | 1 week | About 6 weeks | Weeks |
-| Works in a blackout | Yes, it glows | No | Only with a phone |
 | Arabic braille | Built in | Often English only | Audio only |
 
 Positioning: **Cheaper. Faster. No apps, no batteries.** Tone toward competitors: "We welcome competition."
+
+AcTax (October 2026): online ADA braille signs sell at AED 82 to 119 each before fitting, so the AED 180 to 400 comparison needs UAE quotes. Do not claim "first in the UAE". Handrail products exist abroad (Marahrens, Germany; JIS T 0921, Japan) and Dubai Municipality installed a 319 m braille handrail at Dubai Frame (2023).
 
 ## 5. Market (UAE only)
 
@@ -94,6 +77,7 @@ Positioning: **Cheaper. Faster. No apps, no batteries.** Tone toward competitors
 - Included: site visit and measuring, custom-fit clips and door tags, installation, accessibility map.
 - Plus a **yearly care plan**.
 - **AED 130 per clip** (website comparison table, against AED 180–400 per wall tactile sign). Quotes use AED 130 per point (clip or door tag) until a per-floor rate is set. Check: 138 points ≈ AED 18k average building; 669 points ≈ AED 87k hospital.
+- **AcTax recommendation (October 2026, used in the November 2026 pitch deck):** list AED 150 a point, AED 130 for the first 10 reference sites; average building AED 20,700 at 150 (63% margin) or AED 17,940 at 130 (58%); care plan 10% a year from year 2; survey AED 1,500 credited to the order; minimum AED 7,500 a site; government frameworks 10 to 15% off for 5+ buildings. Unit costs (AED 54.5 a point today) are clip-era estimates and must be re-quoted for the sticker `[TO CONFIRM]`.
 - Per-floor rate and care-plan price: `[TO CONFIRM]`. Door-tag price assumed AED 130, like a clip: `[TO CONFIRM]`. Set them in `dalil-hq/data/pricing.json`.
 
 ## 7. Roadmap (first 24 months)
@@ -112,6 +96,13 @@ Start date of month 1: `[TO CONFIRM]`.
 - Order: **our own campus (University of Sharjah) → Sharjah → the UAE.**
 - Sectors being approached: education, government, community, healthcare, transport, culture, real estate, innovation.
 - Desired partner: **Sheraa** (Sharjah Entrepreneurship Center) and investors.
+
+## 9a. Funding (AcTax plan, October 2026)
+
+- Ask: **AED 400k in two tranches**: AED 250k at closing, AED 150k around month 10 on milestones (braille certified; material and fire test with Civil Defence acceptance; three pilots live with a user-test report; AED 50k+ of paid orders or letters of intent).
+- Valuation: **AED 1.2M pre-money** (fair value about AED 1.0M, range 0.8 to 1.4M). Investor 17.2% after tranche 1, 22.1% after tranche 2, capped at 25%.
+- 24-month base case (cash-flow model, CF4): 22 paying buildings; revenue AED 15,750 in year 1 and AED 339,727 in year 2; lowest cash AED 51,953 in month 9; AED 119,698 at month 24.
+- Five-year base case (AcTax): buildings 1 + 2 pilots / 21 / 40 / 70 / 110; revenue AED 34k / 342k / 762k / 1,434k / 2,410k; EBITDA AED (221)k / 33k / 204k / 455k / 907k. Founders' estimates, unaudited.
 
 ## 9. Team
 
@@ -136,8 +127,8 @@ Closing line: "Two founders. One city. Every handrail can speak."
 
 - [ ] Per-floor price and yearly care-plan price (and confirm door tags are AED 130 like clips)
 - [ ] Funding ask: amount, instrument, use of funds (kept off the website on purpose)
-- [ ] Company legal setup: licence type, free zone or mainland, date
+- [x] Company registered (founder, 2026-11-26). Still to confirm: licence type and authority (AcTax: SPARK), and the mainland or government-vendor route.
 - [ ] Month-1 start date of the roadmap
 - [ ] Which fire and braille approvals exactly, and from which authority
-- [ ] IP status: design registration or patent filed?
+- [ ] IP: trademark and design registration in progress (founder, 2026-11-26). Filing numbers and dates `[TO CONFIRM]`.
 - [ ] Current pilots, letters of intent, or warm leads

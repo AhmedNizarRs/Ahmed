@@ -1,0 +1,37 @@
+{
+  "S door": {
+    "file": "dalil-sticker-S-door_15_flat.stl",
+    "watertight": true,
+    "size_mm": [
+      26.4,
+      14.0
+    ],
+    "cells": 3
+  },
+  "M rail": {
+    "file": "dalil-sticker-M-rail_floor-2_flat.stl",
+    "watertight": true,
+    "size_mm": [
+      63.6,
+      14.0
+    ],
+    "cells": 9
+  },
+  "L wall": {
+    "file": "dalil-sticker-L-wall_prayer-room_flat.stl",
+    "watertight": true,
+    "size_mm": [
+      76.0,
+      32.5
+    ],
+    "cells": 11,
+    "lines": 2,
+    "printed_id": "DALIL W-PR-02 \u00b7 PRAYER ROOM \u00b7 L2",
+    "id_box_mm": {
+      "x0": -33.0,
+      "x1": 33.0,
+      "y0": -11.25,
+      "y1": -6.25
+    }
+  }
+}
