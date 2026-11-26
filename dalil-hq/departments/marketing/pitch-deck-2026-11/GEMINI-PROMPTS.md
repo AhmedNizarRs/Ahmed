@@ -8,7 +8,7 @@ The reference renders in `gemini-references/` are built from the real STL files,
 
 1. Open a new Gemini chat for each image, so the rules are not lost.
 2. **Upload the reference render first** (REF-1 to REF-5 below). If you have a real photo of the place, for example a University of Sharjah corridor, a door or a stair, upload it second.
-3. Paste the **Lock block**, then the scene prompt.
+3. Paste the **Lock block**, then the **Space block**, then the scene prompt.
 4. Ask for a 16:9 image for slides or 4:5 for social posts.
 5. **Check every result against the reference** before you use it (checklist at the end). If anything changed, reply with the **Fix-up prompt**.
 6. Generate 3 to 4 versions of each scene and keep the most faithful one, not the prettiest.
@@ -43,6 +43,20 @@ You may ONLY change: the environment, lighting, camera realism, materials of the
 
 ---
 
+## Space block (paste right after the Lock block, in every prompt)
+
+```
+SPACE DIRECTION.
+Put the product in a REAL, believable space that looks sleek and modern, photographed as it would be for a top architecture magazine.
+The space: contemporary and minimal, clean lines, calm colour palette (warm white, light grey, pale stone, light oak, brushed or satin stainless steel, frosted glass), high-quality materials, flush details, no clutter, nothing old, worn, dirty or cheap.
+Light: natural daylight from large windows, plus soft, even architectural lighting; realistic shadows and reflections.
+Realism: true-to-life proportions and scale, real materials and textures, physically correct light; it must look like a real photograph, not a 3D render or an illustration. No warped lines, no fantasy architecture.
+The sticker stays small and true to scale (see the reference): a door sticker is about the width of two fingertips; the wall sticker is about the size of a business card.
+No people's faces, no logos or brand names of real companies, no extra signs or text anywhere in the scene.
+```
+
+---
+
 ## Scene prompts
 
 ### 1. Hero: the range (cover and product slides)
@@ -50,8 +64,9 @@ You may ONLY change: the environment, lighting, camera realism, materials of the
 
 ```
 [Lock block]
+[Space block]
 Make image 1 look like a premium product photograph. Keep the three yellow braille stickers exactly as they are, in the same positions and angles.
-Surface: honed dark slate or near-black stone (#0B0C0E to #17191D) with a fine natural texture.
+Surface: honed dark slate or near-black stone (#0B0C0E to #17191D) with a fine natural texture, in a minimal studio.
 Lighting: one soft warm key light from the low left that rakes across the stickers so every braille dot casts a tiny shadow and reads clearly; a faint cool rim light from the back right; deep, clean shadows.
 Camera: 100 mm macro lens, f/8, sharp from front to back, very slight film grain, no vignette.
 Style: minimal Apple-style product photography, editorial, calm. No props, no text, no hands.
@@ -63,8 +78,9 @@ Output 16:9, 4K.
 
 ```
 [Lock block]
-Turn image 1 into a real photograph of a classroom door in a modern UAE university building. Keep the brushed stainless-steel lever and the small yellow braille sticker on top of it exactly as in image 1: same position on the lever, same size, same dots.
-Door: warm light oak veneer; satin stainless rose; a clean light-grey painted corridor wall. Soft natural daylight from a corridor window on the left, gentle shadows.
+[Space block]
+Turn image 1 into a real photograph of a classroom door in a sleek, newly built UAE university building. Keep the brushed stainless-steel lever and the small yellow braille sticker on top of it exactly as in image 1: same position on the lever, same size, same dots.
+Door: full-height light oak veneer door with a slim flush frame; satin stainless rose; a smooth warm-white corridor wall with a thin shadow-gap skirting; polished concrete or large-format stone floor. Soft natural daylight from a corridor window on the left, gentle shadows.
 Camera: 85 mm lens, eye level slightly above the lever, f/4, background softly out of focus, the sticker in sharp focus.
 Style: architectural interior photography, Dezeen / Architectural Digest quality, realistic materials, no people.
 Output 16:9.
@@ -75,9 +91,10 @@ Output 16:9.
 
 ```
 [Lock block]
+[Space block]
 Photograph of an adult's hand resting naturally on the door lever from image 1, with the index fingertip lightly touching the yellow braille sticker as if reading it. Keep the sticker and its dots exactly as in image 1 and fully visible beside the fingertip; do not cover the sticker with the hand.
 The hand: natural, relaxed, any skin tone, short clean nails, a plain sleeve. Do not show the person's face. No dark glasses, no white cane, no clichés.
-Setting: modern UAE university corridor, oak door, soft daylight.
+Setting: sleek modern UAE university corridor, full-height oak door, smooth warm-white walls, soft daylight.
 Camera: 100 mm macro, f/5.6, shallow depth of field on the fingertip and sticker.
 Tone: respectful, calm, independent.
 Output 16:9.
@@ -88,8 +105,9 @@ Output 16:9.
 
 ```
 [Lock block]
-Make image 1 a real photograph: the yellow wall sticker mounted on a smooth painted wall (warm light grey) beside a door frame, at the latch side, at about 1.4 m height. Keep the sticker, both lines of braille dots and the small printed installer line exactly as shown. Do not add any other sign, word, or room name.
-Include a slim grey aluminium door frame edge at the left of the frame.
+[Space block]
+Make image 1 a real photograph: the yellow wall sticker mounted on a smooth, flawless warm-white plaster wall in a modern building beside a slim flush door frame, at the latch side, at about 1.4 m height. Keep the sticker, both lines of braille dots and the small printed installer line exactly as shown. Do not add any other sign, word, or room name.
+Include the edge of a slim dark-bronze or satin aluminium door frame at the left of the picture.
 Lighting: soft even corridor light with a slight raking angle so the dots read.
 Camera: 70 mm, straight-on, f/5.6, sharp.
 Style: clean architectural detail photography.
@@ -101,8 +119,9 @@ Output 16:9.
 
 ```
 [Lock block]
-Make image 1 a real photograph of a stair handrail in a modern UAE university stairwell. Keep the round brushed-steel handrail and the yellow braille sticker on top of it exactly as in image 1: same angle, same position, same dots.
-Setting: light concrete or terrazzo stairs going down in the background, a pale wall, daylight from a tall window, calm and clean.
+[Space block]
+Make image 1 a real photograph of a stair handrail in a sleek, modern UAE university stairwell. Keep the round brushed-steel handrail and the yellow braille sticker on top of it exactly as in image 1: same angle, same position, same dots.
+Setting: floating light terrazzo or fair-faced concrete stairs going down in the background, a seamless pale wall, a tall slot window with soft daylight, minimal and calm.
 Camera: 85 mm, slightly above the rail, f/4, background out of focus, sticker sharp.
 Style: architectural interior photography, realistic metal reflections.
 Output 16:9.
@@ -113,7 +132,8 @@ Output 16:9.
 
 ```
 [Lock block]
-Place the exact handrail-and-sticker detail from image 1 on a wall-mounted corridor handrail in a bright modern hospital or university library corridor. Keep the sticker's size, shape, colour and dots exactly the same. The rail may be brushed steel or light timber; the sticker sits on top of the rail exactly as in image 1.
+[Space block]
+Place the exact handrail-and-sticker detail from image 1 on a wall-mounted corridor handrail in a bright, sleek modern hospital or university library corridor (white and light oak, linear ceiling lights, polished floor). Keep the sticker's size, shape, colour and dots exactly the same. The rail may be brushed steel or light timber; the sticker sits on top of the rail exactly as in image 1.
 Wide view along the corridor at eye level, 35 mm lens, f/5.6, soft daylight and ceiling light, clean floors, no people, no extra signs with text.
 Output 16:9.
 ```
@@ -123,6 +143,7 @@ Output 16:9.
 
 ```
 [Lock block]
+[Space block]
 Extreme macro photograph of the yellow braille sticker on the steel lever from image 1. Keep the dot pattern exactly the same. Raking light from the left so each 1.5 mm dome shows a highlight and a small shadow; the matte yellow surface shows a very fine print texture. 
 Camera: 100 mm macro at 1:1, f/11, focus stacked, ultra sharp.
 Output 16:9.
@@ -133,7 +154,8 @@ Output 16:9.
 
 ```
 [Lock block]
-Create a clean 2×2 grid of four photographs, each showing the same yellow braille sticker family from image 1 in a different building: (1) a university classroom door lever, (2) a hospital corridor handrail, (3) a metro or bus grab pole, (4) a hotel lift lobby wall beside a door. Keep each sticker's shape, size (use image 2 for true scale), colour and braille dots exactly as in the references; small stickers stay braille only. Consistent warm daylight, architectural photography, no people's faces, no extra text anywhere.
+[Space block]
+Create a clean 2×2 grid of four photographs, each showing the same yellow braille sticker family from image 1 in a different building: (1) a university classroom door lever, (2) a hospital corridor handrail, (3) a metro or bus grab pole, (4) a hotel lift lobby wall beside a door. Every space sleek, modern and real: clean materials, daylight, no clutter. Keep each sticker's shape, size (use image 2 for true scale), colour and braille dots exactly as in the references; small stickers stay braille only. Consistent warm daylight, architectural photography, no people's faces, no extra text anywhere.
 Output 16:9.
 ```
 
