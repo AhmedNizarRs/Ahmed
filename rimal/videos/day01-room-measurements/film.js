@@ -271,7 +271,7 @@
       const pi = clamp(p * 3 - i);
       if (pi <= 0) continue;
       const a = x0 + seg * i + 8, z = a + (seg - 16) * eOut(pi);
-      const yy = 1440;
+      const yy = 1475;
       line(a, yy, z, yy, th.ink, 6); line(a, yy - 22, a, yy + 22, th.ink, 6);
       if (pi >= 1) line(a + seg - 16, yy - 22, a + seg - 16, yy + 22, th.ink, 6);
     }
