@@ -4,8 +4,9 @@
   "description": "DALIL Mapper and visitor app. No build step; Playwright is only for tests.",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/test_visitor_app.mjs",
-    "serve": "python3 -m http.server 8080"
+    "test": "node --test tests/test_mapping_units.mjs tests/test_visitor_app.mjs tests/test_mapping_flows.mjs",
+    "serve": "node tools/serve.mjs",
+    "test:mapping": "node --test tests/test_mapping_units.mjs tests/test_mapping_flows.mjs"
   },
   "devDependencies": {
     "playwright": "^1.50.0"

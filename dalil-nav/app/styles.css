@@ -514,7 +514,7 @@ html.reduce-motion .route-flow { animation: none; }
 @keyframes pulse { from { transform: scale(1); opacity: .8; } to { transform: scale(3.2); opacity: 0; } }
 
 /* ---------- Kiosk (a fixed screen in the building) ---------- */
-html.kiosk #btnFrom, html.kiosk #btnStartCam, html.kiosk #btnView, html.kiosk .rows.more li:has(#btnScanHome, #btnSettings) { display: none !important; }
+html.kiosk #btnFrom, html.kiosk #btnStartCam, html.kiosk #btnView, html.kiosk .rows.more li:has(#btnScanHome, #btnSettings, #btnMakeHome) { display: none !important; }
 :root.contrast .tile, :root.contrast .row-btn, :root.contrast .switch-row, :root.contrast .btn.tertiary, :root.contrast .stat { border: 2px solid #FFF; }
 
 /* ---------- Reduced motion ---------- */
@@ -914,3 +914,108 @@ html.contrast .hm-handle::before, html.contrast .hm-handle span { background: #f
 html.contrast .nc-go { background: #000; border: 2px solid #fff; color: #fff; }
 html.contrast .nc-go .r-sub { color: #FFE600; }
 html.contrast .nc-btn { background: #FFE600; color: #000; }
+
+/* =========================================================================
+   Mapping, round 2 (Nov 2026): Add a building (hub), Put it on the real map, Draw it on the satellite photo.
+   One pattern for both map tools: the picture moves under a fixed cross; a panel at the bottom says what to do
+   in one line and holds one main button.
+   ========================================================================= */
+/* Add a building */
+.make { gap: .75rem; }
+.make .sec-title { margin: .625rem 0 0; }
+.gt-card { position: relative; display: flex; align-items: center; gap: .875rem; width: 100%; min-height: 5.25rem; padding: .875rem 1rem; border-radius: var(--r-lg); border: 1px solid var(--line); background: var(--bg-1); color: var(--ink); text-align: start; cursor: pointer; box-shadow: 0 1px 2px rgba(0, 0, 0, .05); transition: transform .12s var(--ease), background-color .15s, border-color .15s; }
+.gt-card:hover { border-color: var(--line-3); }
+.gt-card:active { transform: scale(.985); background: var(--bg-2); }
+.gt-card:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 2px; }
+.gt-ico { flex: none; display: grid; place-items: center; width: 3.25rem; height: 3.25rem; border-radius: 1rem; background: var(--brand); color: var(--on-brand); }
+.gt-ico.sat { background: #1A73E8; color: #fff; }
+.gt-ico svg { width: 1.625rem; height: 1.625rem; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.gt-text { flex: 1; min-width: 0; display: grid; gap: .125rem; }
+.gt-text strong { font-size: 1.125rem; font-weight: 700; letter-spacing: -.005em; }
+.gt-text small { font-size: .9375rem; line-height: 1.35; color: var(--ink-3); }
+.gt-tag { justify-self: start; margin-top: .25rem; padding: .125rem .5rem; border-radius: 1rem; background: var(--bg-2); color: var(--ink-2); font-style: normal; font-size: .8125rem; font-weight: 700; }
+.gt-tag.new { background: #E8F0FE; color: #174EA6; }
+.gt-card .r-chev { flex: none; color: var(--ink-3); }
+#myMaps .r-sub.placed { color: var(--ok); font-weight: 600; }
+.gt-acts { display: grid; gap: .625rem; }
+.gt-rename { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: end; }
+.gt-rename .btn { width: auto; padding-inline: 1.125rem; }
+.btn.danger-fill { background: var(--warn); color: #fff; }
+.gt .field input, .gt-rename input, .make .field input { min-height: var(--tap); width: 100%; padding: .625rem .875rem; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--bg-1); color: var(--ink); font-size: 1.0625rem; }
+.gt .field input:focus-visible, .gt-rename input:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+
+/* The two map tools */
+.gt { overflow: hidden; background: #DADCE0; }
+#plMap, #skMap { position: absolute; inset: 0; }
+.gt-plan { position: absolute; inset: 0; z-index: 2; width: 100%; height: 100%; background: var(--bg-2); touch-action: none; cursor: grab; }
+.gt-plan:active { cursor: grabbing; }
+.gt-plan:focus-visible { outline: 3px solid var(--focus); outline-offset: -3px; }
+.gt-cross { position: absolute; z-index: 6; left: 50%; top: 42%; width: 4.5rem; height: 4.5rem; transform: translate(-50%, -50%); pointer-events: none;
+  background: center / contain no-repeat url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cpath d='M36 5v21M36 46v21M5 36h21M46 36h21' stroke='%23fff' stroke-width='6.5'/%3E%3Cpath d='M36 5v21M36 46v21M5 36h21M46 36h21' stroke='%231F1F1F' stroke-width='2.5'/%3E%3Ccircle cx='36' cy='36' r='3.2' fill='%23FFC700' stroke='%231F1F1F' stroke-width='1.5'/%3E%3C/g%3E%3C/svg%3E"); filter: drop-shadow(0 1px 2px rgba(0, 0, 0, .35)); }
+#pgSketch .gt-cross { top: 40%; }
+.gt-side { position: absolute; z-index: 12; inset-inline-end: .75rem; top: calc(5.25rem + var(--safe-t)); display: grid; gap: .5rem; }
+.gt-thumb { position: absolute; z-index: 12; inset-inline-start: .75rem; top: calc(5.25rem + var(--safe-t)); border-radius: 1rem; overflow: hidden; border: 2px solid #fff; background: #fff; box-shadow: 0 4px 16px rgba(0, 0, 0, .3); }
+.gt-thumb canvas { display: block; width: 6.5rem; height: 6.5rem; }
+.gt-panel { position: absolute; z-index: 15; inset-inline: 0; bottom: 0; display: grid; gap: .625rem; max-width: 40rem; max-height: 52vh; margin: 0 auto; padding: 1rem var(--gut) calc(.875rem + var(--safe-b)); overflow-y: auto; overscroll-behavior: contain; border-radius: 1.5rem 1.5rem 0 0; background: var(--bg-1); color: var(--ink); box-shadow: 0 -6px 24px rgba(0, 0, 0, .2); }
+.gt-step { margin: 0; font-size: .9375rem; font-weight: 700; color: var(--info); }
+/* Never taller than about half the screen, whatever the text size: the cross (40 to 42 % down) stays in view and the panel scrolls. */
+.gt-hint { margin: 0; font-size: 1.125rem; font-weight: 600; line-height: 1.35; }
+.gt-ctl { display: grid; gap: .625rem; }
+.gt-ctl:empty { display: none; }
+.gt-result { margin: 0; padding: .625rem .875rem; border-radius: var(--r); background: #E8F0FE; color: #174EA6; font-weight: 700; }
+.gt-result.gt-good { background: #E6F4EA; color: #0D652D; }
+.gt-result.gt-rough { background: #FCE8E6; color: #A50E0E; }
+.gt-find { display: grid; grid-template-columns: 1fr auto; gap: .5rem; align-items: end; }
+.gt-find .btn { width: auto; padding-inline: 1.25rem; }
+.gt-tune { border: 1px solid var(--line); border-radius: var(--r); }
+.gt-tune summary { display: flex; align-items: center; min-height: 3rem; padding: 0 .875rem; font-weight: 650; cursor: pointer; list-style: none; }
+.gt-tune summary::-webkit-details-marker { display: none; }
+.gt-tune summary::after { content: ""; margin-inline-start: auto; width: .5rem; height: .5rem; border: solid var(--ink-2); border-width: 0 2px 2px 0; transform: rotate(45deg); transition: transform .2s; }
+.gt-tune[open] summary::after { transform: rotate(-135deg); }
+.gt-tune-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: .5rem; padding: 0 .625rem .625rem; }
+.gt-tune-grid .pill { display: grid; justify-items: center; gap: 0; min-height: 3.5rem; padding: .25rem; border-radius: var(--r); line-height: 1.1; }
+.gt-tune-grid .pill span { font-size: 1.375rem; }
+.gt-tune-grid .pill small { font-size: .8125rem; font-weight: 600; color: var(--ink-3); }
+.gt-check { display: flex; align-items: center; gap: .625rem; min-height: var(--tap); font-weight: 600; cursor: pointer; }
+.gt-check input { flex: none; width: 1.5rem; height: 1.5rem; margin: 0; accent-color: var(--brand); }
+.gt-seg { display: grid; grid-template-columns: 1fr 1fr; gap: .25rem; padding: .25rem; border-radius: 1rem; background: var(--bg-2); }
+.gt-seg button { display: flex; align-items: center; justify-content: center; gap: .5rem; min-height: 3rem; border: 0; border-radius: .75rem; background: transparent; color: var(--ink-2); font-weight: 650; font-size: 1.0625rem; }
+.gt-seg button[aria-selected="true"] { background: var(--bg-1); color: var(--ink); box-shadow: 0 1px 3px rgba(0, 0, 0, .18); }
+.gt-seg small { min-width: 1.5rem; padding: 0 .375rem; border-radius: 1rem; background: var(--bg-3); font-size: .8125rem; font-weight: 700; }
+.trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .5rem; }
+.trio .btn { padding-inline: .375rem; font-size: 1rem; gap: .375rem; }
+.trio .btn .ico svg { width: 1.25rem; height: 1.25rem; }
+.gt-nav .btn { min-height: 3.25rem; }
+.sk-quick .sv-qbtn { min-height: 4.25rem; }
+/* places drawn on the satellite photo */
+.sk-place { display: grid; justify-items: center; gap: .125rem; padding: 0; border: 0; background: none; cursor: pointer; }
+.skp-ico { display: grid; place-items: center; width: 2rem; height: 2rem; border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--brand); color: #1F1F1F; border: 2px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, .45); order: 2; }
+.skp-ico svg { width: 1.0625rem; height: 1.0625rem; transform: rotate(45deg); fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.skp-name { order: 1; max-width: 9rem; padding: .0625rem .4375rem; border-radius: .5rem; background: rgba(11, 13, 16, .82); color: #fff; font-size: .75rem; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-place.cat-entrance .skp-ico, .sk-place.cat-exit .skp-ico { background: #fff; border-color: var(--brand); }
+.sk-place.cat-lift .skp-ico, .sk-place.cat-stairs .skp-ico { background: #3DDC97; }
+.sk-place.cat-toilet .skp-ico, .sk-place.cat-toilet_acc .skp-ico { background: #7AA7FF; }
+html.contrast .gt-panel { background: #000; border-top: 2px solid #fff; }
+html.contrast .gt-result, html.contrast .gt-tag, html.contrast .gt-tag.new { background: #000; color: #FFE600; border: 2px solid #FFE600; }
+html.contrast .gt-card { border: 2px solid #fff; } html.contrast .gt-text small { color: #fff; }
+html.contrast .gt-ico, html.contrast .gt-ico.sat { background: #FFE600; color: #000; }
+html.contrast .gt-seg button[aria-selected="true"] { background: #FFE600; color: #000; }
+:root[data-theme="dark"] .gt-result { background: rgba(76, 141, 246, .18); color: #C6DAFC; }
+:root[data-theme="dark"] .gt-result.gt-good { background: rgba(24, 128, 56, .22); color: #A8DAB5; }
+:root[data-theme="dark"] .gt-tag.new { background: rgba(76, 141, 246, .2); color: #C6DAFC; }
+
+/* Import a floor plan: progress, the recommended way first, a magnifier under the finger */
+.sn-dots { display: flex; gap: .375rem; margin: 0; padding: 0; list-style: none; }
+.sn-dots li { flex: 1; height: .3125rem; border-radius: 1rem; background: var(--bg-3); }
+.sn-dots li.on { background: var(--brand); } .sn-dots li.done { background: #188038; }
+.sn-card.best { border: 2px solid #1A73E8; background: rgba(26, 115, 232, .05); }
+.sn-card.best strong { font-size: 1.125rem; }
+.sn-other { margin: .25rem 0 0; font-weight: 650; color: var(--ink-2); }
+.sn-wrap { position: relative; }
+.sv-match { display: grid; gap: .375rem; }
+html.contrast .sn-card.best { border-color: #FFE600; background: #000; }
+
+/* Map and layers on Home: the same quiet groups as on the real-map page */
+.lay-body fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: .375rem; min-width: 0; }
+.lay-body legend { padding: 0; margin-bottom: .375rem; font-size: .9375rem; font-weight: 650; color: var(--ink-3); }
+.lay-body { padding: 0; }

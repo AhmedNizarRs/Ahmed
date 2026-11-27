@@ -88,8 +88,7 @@
         <li><button id="btnAddPlaceHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="plus"></span></span><span class="r-main"><span class="r-name" data-i18n="addPlaceRow">Add a missing place</span><span class="r-sub" data-i18n="addPlaceRowSub">A room with no name? Tap it on the map and name it</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li id="liGettingHere" hidden><button id="btnGettingHere" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="building"></span></span><span class="r-main"><span class="r-name" data-i18n="gettingHere">Getting here</span><span id="ghSub" class="r-sub" data-i18n="gettingHereSub">Street map and directions to the entrance</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li><button id="btnScanHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="qr"></span></span><span class="r-main"><span class="r-name" data-i18n="scanSign">Scan a DALIL sign</span><span class="r-sub" data-i18n="scanSignSub">Tells the app exactly where you are</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
-        <li><button id="btnSurveyHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="walk"></span></span><span class="r-main"><span class="r-name" data-i18n="surveyBtn">Map a building by walking it</span><span class="r-sub" data-i18n="surveyRowSub">No floor plan needed</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
-        <li><button id="btnSnapHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="camera"></span></span><span class="r-main"><span class="r-name" data-i18n="snRow">Map from a photo of the wall plan</span><span class="r-sub" data-i18n="snRowSub">The fire evacuation plan near the lifts is enough</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnMakeHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="building"></span></span><span class="r-main"><span class="r-name" data-i18n="mkRow">Add a building</span><span class="r-sub" data-i18n="mkRowSub">From a floor plan, the satellite photo or a walk</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
         <li><button id="btnSettings" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="gear"></span></span><span class="r-main"><span class="r-name" data-i18n="settings">Settings</span><span class="r-sub" data-i18n="settingsSub">Language, text size, voice</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
       </ul>
       <p class="fine" data-i18n="aboutShort">DALIL helps you find your way inside. Building signs and staff always come first.</p>
@@ -106,17 +105,98 @@
 
   <dialog id="dlgLayers" class="sheet-dlg" aria-labelledby="dlgLayersTitle">
     <div class="dlg-head"><h2 id="dlgLayersTitle" data-i18n="mapLayers">Map and layers</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
-    <div class="out-layers-body">
+    <div class="out-layers-body lay-body">
       <fieldset><legend data-i18n="baseMap">Base map</legend><div id="homeBases" class="opt-list" role="radiogroup"></div><p id="homeKeyNote" class="muted small" hidden></p></fieldset>
       <fieldset><legend data-i18n="layersTitle">Layers</legend><div id="homeChecks" class="opt-list"></div></fieldset>
     </div>
   </dialog>
 
-  <!-- ================= SURVEY: map a building by walking it (no floor plan) ================= -->
+  <!-- ================= ADD A BUILDING: every way to make a map, and the maps kept on this phone ================= -->
+  <section id="pgMake" class="page" data-page="make" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="mkTitle">Add a building</h1>
+    </header>
+    <main class="page-body make">
+      <p class="sv-lead" data-i18n="mkLead">Choose how to map it. Every way ends in the same thing: search, routes and spoken directions.</p>
+      <h2 class="sec-title" data-i18n="mkHavePlan">You have a floor plan</h2>
+      <button id="btnSnapHome" class="gt-card" type="button"><span class="gt-ico"><span class="ico" data-ico="camera"></span></span><span class="gt-text"><strong data-i18n="mkSnap">Photo or picture of the plan</strong><small data-i18n="mkSnapSub">A drawing, a screenshot, or the evacuation plan on the wall. Real walls and rooms.</small><em class="gt-tag" data-i18n="mkSnapTag">Most detail</em></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button>
+      <label class="gt-card file-btn"><span class="gt-ico"><span class="ico" data-ico="map"></span></span><span class="gt-text"><strong data-i18n="mkFile">A DALIL map file</strong><small data-i18n="mkFileSub">From the DALIL Mapper: a CAD drawing or a 3D scan</small></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span><input id="fileMap" type="file" accept=".json,application/json"></label>
+      <p id="loadMsg" class="muted" role="status"></p>
+      <h2 class="sec-title" data-i18n="mkNoPlan">No floor plan</h2>
+      <button id="btnSketchHome" class="gt-card" type="button"><span class="gt-ico sat"><span class="ico" data-ico="layers"></span></span><span class="gt-text"><strong data-i18n="mkSketch">Draw it on the satellite photo</strong><small data-i18n="mkSketchSub">Trace the roof, then draw or walk the corridors. Always in the right place on the real map.</small><em class="gt-tag new" data-i18n="mkSketchTag">New · most exact</em></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button>
+      <button id="btnSurveyHome" class="gt-card" type="button"><span class="gt-ico"><span class="ico" data-ico="walk"></span></span><span class="gt-text"><strong data-i18n="mkWalk">Walk it</strong><small data-i18n="mkWalkSub">Quickest. Your steps and compass draw the corridors.</small></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button>
+      <h2 class="sec-title" data-i18n="mkMine">Maps on this phone</h2>
+      <ul id="myMaps" class="rows"></ul>
+      <p id="myMapsEmpty" class="muted" data-i18n="mkMineEmpty">Maps you make or load are kept here.</p>
+    </main>
+  </section>
+
+  <dialog id="dlgMapAct" class="sheet-dlg" aria-labelledby="mapActTitle">
+    <div class="dlg-head"><h2 id="mapActTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="mapActSub" class="muted"></p>
+    <div id="mapActMain" class="gt-acts">
+      <button id="maOpen" class="btn primary" type="button" data-i18n="mmOpen">Open it</button>
+      <button id="maPlace" class="btn secondary" type="button"><span class="ico" data-ico="gps"></span><span id="maPlaceText"></span></button>
+      <button id="maEdit" class="btn secondary" type="button" hidden><span class="ico" data-ico="edit"></span><span data-i18n="mmEdit">Edit the drawing</span></button>
+      <button id="maShare" class="btn secondary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="mmShare">Share the map file</span></button>
+      <form id="maRenameForm" class="gt-rename"><label class="field"><span data-i18n="mmNewName">Building name</span><input id="maName" type="text" maxlength="60" autocomplete="off"></label><button class="btn secondary" type="submit" data-i18n="mmRename">Rename</button></form>
+      <button id="maDelete" class="btn tertiary danger" type="button"><span class="ico" data-ico="close"></span><span data-i18n="mmDelete">Delete</span></button>
+    </div>
+    <div id="mapActSure" class="gt-acts" hidden>
+      <p id="maSureText" class="route-msg warn"></p>
+      <div class="pair"><button id="maDeleteYes" class="btn primary danger-fill" type="button" data-i18n="mmDeleteYes">Yes, delete it</button><button id="maDeleteNo" class="btn secondary" type="button" data-i18n="cancel">Cancel</button></div>
+    </div>
+  </dialog>
+
+  <!-- ================= PUT IT ON THE REAL MAP: match corners between the plan and the satellite photo ================= -->
+  <section id="pgPlace" class="page page-full gt" data-page="place" hidden>
+    <div id="plMap" class="gt-map" role="region" data-i18n-aria="mapLabel"></div>
+    <canvas id="plPlan" class="gt-plan" tabindex="0" role="img" data-i18n-aria="plPlanAria"></canvas>
+    <div class="gt-cross" aria-hidden="true"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="plTitle" class="map-title"></p>
+    </header>
+    <div class="gt-side">
+      <button id="plLocate" class="hm-fab sm" type="button" data-i18n-aria="showMyLocation"><span class="ico" data-ico="gps"></span></button>
+      <button id="plZoomIn" class="hm-fab sm" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
+      <button id="plZoomOut" class="hm-fab sm" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+    </div>
+    <div id="plThumb" class="gt-thumb" hidden><canvas aria-hidden="true"></canvas></div>
+    <div class="gt-panel">
+      <p id="plStep" class="gt-step"></p>
+      <p id="plHint" class="gt-hint" role="status"></p>
+      <div id="plCtl" class="gt-ctl"></div>
+    </div>
+  </section>
+
+  <!-- ================= DRAW IT ON THE SATELLITE PHOTO: a map for a building with no floor plan ================= -->
+  <section id="pgSketch" class="page page-full gt" data-page="sketch" hidden>
+    <div id="skMap" class="gt-map" role="region" data-i18n-aria="mapLabel"></div>
+    <div class="gt-cross" aria-hidden="true"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="skTitle" class="map-title"></p>
+    </header>
+    <div class="gt-side">
+      <button id="skLocate" class="hm-fab sm" type="button" data-i18n-aria="showMyLocation"><span class="ico" data-ico="gps"></span></button>
+      <button id="skZoomIn" class="hm-fab sm" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
+      <button id="skZoomOut" class="hm-fab sm" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+    </div>
+    <div class="gt-panel">
+      <p id="skStep" class="gt-step"></p>
+      <p id="skHint" class="gt-hint" role="status"></p>
+      <div id="skCtl" class="gt-ctl"></div>
+      <div id="skNav" class="pair gt-nav"><button id="skPrev" class="btn secondary" type="button">Back</button><button id="skNext" class="btn primary" type="button">Next</button></div>
+    </div>
+  </section>
+
+  <!-- ================= IMPORT A FLOOR PLAN from a photo or picture ================= -->
   <section id="pgSnap" class="page" data-page="snap" hidden>
     <header class="bar">
       <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
-      <h1 class="bar-title" data-i18n="snTitle">Map from the wall plan</h1>
+      <h1 class="bar-title" data-i18n="snTitle">Import a floor plan</h1>
     </header>
     <main class="page-body snap">
       <div id="snPick">
@@ -133,13 +213,15 @@
       <div id="snWork" hidden>
         <p id="snTitle" class="sn-title"></p>
         <p id="snHint" class="muted"></p>
+        <ol id="snDots" class="sn-dots" aria-hidden="true"></ol>
         <div class="sn-wrap"><canvas id="snCanvas" class="sn-canvas" aria-label="Plan"></canvas></div>
         <div id="snCtl" class="sn-ctl"></div>
       </div>
     </main>
-    <div id="snBar" class="cta-bar sn-bar"><button id="snBackStep" class="btn secondary" type="button" data-i18n="snPrev">Back</button><button id="snNext" class="btn primary" type="button">Next</button></div>
+    <div id="snBar" class="cta-bar sn-bar" hidden><button id="snBackStep" class="btn secondary" type="button" data-i18n="snPrev">Back</button><button id="snNext" class="btn primary" type="button">Next</button></div>
   </section>
 
+  <!-- ================= SURVEY: map a building by walking it (no floor plan) ================= -->
   <section id="pgSurvey" class="page" data-page="survey" hidden>
     <header class="bar">
       <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
@@ -183,6 +265,10 @@
       <div id="svReview" hidden>
         <h2 data-i18n="svReviewTitle">Check your map</h2>
         <div id="svQuality" class="sv-quality"></div>
+        <section class="sv-match">
+          <button id="btnSvMatch" class="btn secondary" type="button"><span class="ico" data-ico="gps"></span><span data-i18n="svMatch">Match two corners on the satellite photo</span></button>
+          <p class="muted small" data-i18n="svMatchHint">Most exact: it sets where the map is, which way it faces and its size.</p>
+        </section>
         <section id="svAlignSec" hidden>
           <h3 data-i18n="svAlign">Line it up with the satellite photo</h3>
           <p class="muted small" data-i18n="svAlignHint">Turn and move the map until the corridors sit inside the building.</p>
@@ -386,10 +472,7 @@
       <fieldset class="set-group" id="setMapSec"><legend data-i18n="mapData">Building map</legend>
         <label class="field"><span data-i18n="building">Building</span><select id="setBuilding"></select></label>
         <label class="field"><span data-i18n="mapStyle">Street map</span><select id="setProvider"></select></label>
-        <button id="btnSnap" class="btn secondary" type="button"><span class="ico" data-ico="camera"></span><span data-i18n="snRow">Map from a photo of the wall plan</span></button>
-        <button id="btnSurvey" class="btn secondary" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="surveyBtn">Map a building by walking it</span></button>
-        <label class="btn secondary file-btn"><span class="ico" data-ico="map"></span><span data-i18n="loadMap">Load a map file</span><input id="fileMap" type="file" accept=".json,application/json"></label>
-        <p id="loadMsg" class="muted" role="status"></p>
+        <button id="btnMakeSet" class="btn secondary" type="button"><span class="ico" data-ico="building"></span><span data-i18n="mkSetBtn">Add a building · manage maps</span></button>
         <p id="addedInfo" class="muted"></p>
         <button id="btnExportPlaces" class="btn secondary" type="button" hidden><span class="ico" data-ico="share"></span><span data-i18n="exportPlaces">Export places you added</span></button>
       </fieldset>

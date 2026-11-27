@@ -199,14 +199,16 @@ export function surveyGeo(origin, ox, oy, align = { rot: 0, dx: 0, dy: 0, scale:
   return { origin: [origin.lng + e / mlng, origin.lat + n / mlat], bearing: align.rot || 0, scale: k };
 }
 
-export function buildFloorMap({ building, floor, lines, places, origin, align, quality, when = new Date().toISOString() }) {
-  const pts = lines.flat().concat(places.map(p => [p.x, p.y]));
+// walls (optional): outline polylines drawn with the plan (the building's edge traced on the satellite photo).
+// source / geoSource / context (optional): what made the map, how it was placed, and building_context to carry.
+export function buildFloorMap({ building, floor, lines, places, origin, align, quality, walls = [], source = null, geoSource = null, context = null, when = new Date().toISOString() }) {
+  const pts = lines.flat().concat(places.map(p => [p.x, p.y]), walls.flat());
   if (!pts.length) pts.push([0, 0]);
   let a = Infinity, b = Infinity, c = -Infinity, d = -Infinity;
   for (const [x, y] of pts) { a = Math.min(a, x); b = Math.min(b, y); c = Math.max(c, x); d = Math.max(d, y); }
   // Move the plan so its corner (with a 3 m margin) is 0,0, as the Mapper does; the GPS origin moves with it.
   const ox = Math.floor(a - 3), oy = Math.floor(b - 3), sh = ([x, y]) => [x - ox, y - oy];
-  lines = lines.map(L => L.map(sh)); places = places.map(p => ({ ...p, x: p.x - ox, y: p.y - oy }));
+  lines = lines.map(L => L.map(sh)); walls = walls.map(L => L.map(sh)); places = places.map(p => ({ ...p, x: p.x - ox, y: p.y - oy }));
   const W = Math.ceil((c + 3 - ox) / CELL), H = Math.ceil((d + 3 - oy) / CELL);
   const grid = r => {
     const occ = new Uint8Array(W * H).fill(1);
@@ -223,11 +225,12 @@ export function buildFloorMap({ building, floor, lines, places, origin, align, q
   return {
     format: 'dalil-map', version: 2, generated: when,
     building, floor, units: 'm',
-    source: { type: 'survey', version: 2, method: 'walked with a phone: compass snapped to the building grid, steps from height, loops solved together', note: 'Corridors are where the surveyor walked; walls are not mapped.', ...(quality ? { quality: { rating: quality.rating, drift: quality.drift == null ? null : Math.round(quality.drift * 1000) / 1000, loops: quality.loops, distance_m: Math.round(quality.dist) } } : {}) },
+    source: source || { type: 'survey', version: 2, method: 'walked with a phone: compass snapped to the building grid, steps from height, loops solved together', note: 'Corridors are where the surveyor walked; walls are not mapped.', ...(quality ? { quality: { rating: quality.rating, drift: quality.drift == null ? null : Math.round(quality.drift * 1000) / 1000, loops: quality.loops, distance_m: Math.round(quality.dist) } } : {}) },
     clearance: { walk: 0, wheelchair: 0 }, grid: { cell: CELL },
-    points: places.map((p, i) => ({ id: p.id || 'P' + String(i + 1).padStart(3, '0'), nameEn: p.nameEn, nameAr: p.nameAr || '', category: p.category, dalilNode: p.category === 'entrance', facingDeg: 90, x: r2(p.x), y: r2(p.y), ...(p.link ? { link: p.link } : {}) })),
-    plan: { walls: [], doors: [], corridors: lines.map(L => L.map(([x, y]) => [r2(x), r2(y)])), corridorWidth: CORRIDOR * 2 },
-    ...(geo ? { geo: { ...geo, source: `DALIL survey: GPS at the start (±${Math.round(origin.acc)} m), compass snapped to the building grid${align && (align.rot || align.dx || align.dy || align.scale !== 1) ? ', lined up by hand with the satellite photo' : ''}` } } : {}),
+    points: places.map((p, i) => ({ id: p.id || 'P' + String(i + 1).padStart(3, '0'), nameEn: p.nameEn, nameAr: p.nameAr || '', category: p.category, ...(p.gender ? { gender: p.gender } : {}), ...(p.doors ? { doors: p.doors } : {}), dalilNode: p.category === 'entrance', facingDeg: 90, x: r2(p.x), y: r2(p.y), ...(p.link ? { link: p.link } : {}) })),
+    plan: { walls: walls.map(L => L.map(([x, y]) => [r2(x), r2(y)])), doors: [], corridors: lines.map(L => L.map(([x, y]) => [r2(x), r2(y)])), corridorWidth: CORRIDOR * 2 },
+    ...(context ? { building_context: context } : {}),
+    ...(geo ? { geo: { ...geo, source: geoSource || `DALIL survey: GPS at the start (±${Math.round(origin.acc)} m), compass snapped to the building grid${align && (align.rot || align.dx || align.dy || align.scale !== 1) ? ', lined up by hand with the satellite photo' : ''}` } } : {}),
     closures: [],
     nav: { encoding: 'rle-varint-base64', cell: CELL, x0: 0, y0: 0, W, H, speed: { walk: 1.1, chair: 0.8 }, walk: encodeGrid(grid(CORRIDOR)), chair: encodeGrid(grid(CORRIDOR - 0.15)) },
     routes: { walk: {}, chair: {} },

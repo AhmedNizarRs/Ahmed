@@ -33,7 +33,7 @@ export function floorGeoJSON(map) {
   const corridors = (map.plan.corridors || []).filter(w => w.length > 1).map(w => ({ type: 'Feature', properties: { kind: 'corridor' }, geometry: { type: 'LineString', coordinates: w.map(([x, y]) => T(x, y)) } }));
   for (const f of corridors) for (const c of f.geometry.coordinates) all.push(c);
   let ring = map.building_context?.footprint;
-  if (!ring) { const h = hull(all.filter((_, i) => i % 3 === 0)); ring = h.concat([h[0]]); }
+  if (!ring) { const h = hull(all.length > 900 ? all.filter((_, i) => i % 3 === 0) : all); ring = h.concat([h[0]]); }   // every third point is enough for a dense plan; a sparse one (a walked or drawn map) needs them all
   const doors = (map.plan.doors || []).filter(w => w.length > 1).map(w => ({ type: 'Feature', properties: { kind: 'door' }, geometry: { type: 'LineString', coordinates: w.map(([x, y]) => T(x, y)) } }));
   const places = map.points.filter(p => !p.virtual && p.nameEn).map(p => ({ id: p.id, nameEn: p.nameEn, nameAr: p.nameAr || p.nameEn, category: p.category, lngLat: T(p.x, p.y) }));
   const entrances = map.points.filter(p => p.category === 'entrance' || p.category === 'exit')
@@ -78,6 +78,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     // Start as the small (i) button: the credits open on tap, so they never cover the map.
     const fold = () => el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'); fold(); setTimeout(fold, 0); m.once('load', fold); };
   setAttribution();
+  m.on('resize', () => setTimeout(() => el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'), 0));   // MapLibre re-opens the credits on a resize
   const accent = '#FFC700', ink = dark ? '#E9E7E1' : '#2B2E33', OURS = new Set(['outline', 'walls', 'doors', 'corridors', 'entrances', 'me', 'route']);
   let meData = { type: 'FeatureCollection', features: [] };
   // DALIL's own layers go on top of whichever street map is showing (again after every style switch).

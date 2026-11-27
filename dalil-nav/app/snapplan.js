@@ -35,9 +35,13 @@ export function warpSize(corners, long = 1000) {
 export function warp(src, corners, W, H) {
   const out = new ImageData(W, H), Hm = homography([[0, 0], [W, 0], [W, H], [0, H]], corners), s = src.data, o = out.data, sw = src.width, sh = src.height;
   for (let j = 0; j < H; j++) for (let i = 0; i < W; i++) {
-    const [x, y] = applyH(Hm, i + 0.5, j + 0.5), xi = Math.floor(x), yi = Math.floor(y), k = (j * W + i) * 4;
-    if (xi < 0 || yi < 0 || xi >= sw || yi >= sh) { o[k] = o[k + 1] = o[k + 2] = 255; o[k + 3] = 255; continue; }
-    const q = (yi * sw + xi) * 4; o[k] = s[q]; o[k + 1] = s[q + 1]; o[k + 2] = s[q + 2]; o[k + 3] = 255;
+    const [x, y] = applyH(Hm, i + 0.5, j + 0.5), k = (j * W + i) * 4;
+    if (x < 0 || y < 0 || x >= sw || y >= sh) { o[k] = o[k + 1] = o[k + 2] = 255; o[k + 3] = 255; continue; }
+    // Bilinear: blend the 4 source pixels around the spot, so thin wall lines stay smooth instead of stair-stepped.
+    const fx = Math.max(0, Math.min(sw - 1, x - 0.5)), fy = Math.max(0, Math.min(sh - 1, y - 0.5)), x0 = Math.floor(fx), y0 = Math.floor(fy), x1 = Math.min(sw - 1, x0 + 1), y1 = Math.min(sh - 1, y0 + 1), ax = fx - x0, ay = fy - y0;
+    const q00 = (y0 * sw + x0) * 4, q10 = (y0 * sw + x1) * 4, q01 = (y1 * sw + x0) * 4, q11 = (y1 * sw + x1) * 4;
+    for (let c = 0; c < 3; c++) o[k + c] = (s[q00 + c] * (1 - ax) + s[q10 + c] * ax) * (1 - ay) + (s[q01 + c] * (1 - ax) + s[q11 + c] * ax) * ay;
+    o[k + 3] = 255;
   }
   return out;
 }

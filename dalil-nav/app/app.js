@@ -11,6 +11,9 @@ import { availableProviders, allProviders } from './providers.js';
 import { Locator, planFromGeo, locationGranted } from './locate.js';
 import { Survey, strideFromHeight } from './survey.js';
 import { warp, warpSize, traceWalls, combine, maskToMap } from './snapplan.js';
+import { fitGeo, planBox as geoBox, planToWorld, carryGeo, moveRing } from './georef.js';
+import { openPlacer, closePlacer, placerState } from './placeui.js';
+import { openSketch, closeSketch, sketchState, keptSketches } from './sketchui.js';
 
 /* =========================================================================
    Settings, storage and the building's config (every read/write guarded: private mode may throw)
@@ -251,20 +254,24 @@ async function loadBundled() {
   for (const m of maps) if (isMap(m)) addMap(m);
   for (const m of store.get('dalil.userMaps', [])) if (isMap(m)) addMap(m);
 }
+// One floor (a dalil-map file from the Mapper), or several floors in one file (what "Share the map file" makes for a
+// building mapped on the phone: { format: 'dalil-maps', maps: [...] }).
 async function loadFile(file) {
-  let m; try { m = JSON.parse(await file.text()); } catch { m = null; }
-  if (!isMap(m)) { $('#loadMsg').textContent = t('mapBad'); return; }
-  addMap(m);
-  const user = store.get('dalil.userMaps', []).filter(o => !(o.building.id === m.building.id && o.floor.id === m.floor.id)); user.push(m);
-  const kept = store.set('dalil.userMaps', user);
-  $('#loadMsg').textContent = t('mapLoaded', `${bname(m.building)} · ${floorName(m.floor)}`) + (kept ? '' : ' ' + t('mapSessionOnly'));
-  selectFloor(m);
+  let d; try { d = JSON.parse(await file.text()); } catch { d = null; }
+  const maps = (d?.format === 'dalil-maps' && Array.isArray(d.maps) ? d.maps : [d]).filter(isMap);
+  if (!maps.length) { $('#loadMsg').textContent = t('mapBad'); return; }
+  let user = store.get('dalil.userMaps', []);
+  for (const m of maps) { user = user.filter(o => !(o.building.id === m.building.id && o.floor.id === m.floor.id)); user.push(JSON.parse(JSON.stringify(m))); addMap(m); }
+  const kept = store.set('dalil.userMaps', user), m = maps[0];
+  $('#loadMsg').textContent = t('mapLoaded', maps.length > 1 ? `${bname(m.building)} · ${t('mmFloors', maps.length)}` : `${bname(m.building)} · ${floorName(m.floor)}`) + (kept ? '' : ' ' + t('mapSessionOnly'));
+  memo.clear(); dropHomeMap(); homeFloor = null; state.fromManualBuilding = true; selectFloor(m); renderMake();
+  announce($('#loadMsg').textContent);
 }
 
 /* =========================================================================
    Pages: one at a time, each with a Back button; the phone's back button works too
    ========================================================================= */
-const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav', survey: '#pgSurvey', snap: '#pgSnap' };
+const PAGES = { home: '#pgHome', search: '#pgSearch', route: '#pgRoute', where: '#pgWhere', map: '#pgMap', settings: '#pgSettings', outdoor: '#pgOutdoor', nav: '#nav', survey: '#pgSurvey', snap: '#pgSnap', make: '#pgMake', place: '#pgPlace', sketch: '#pgSketch' };
 const stack = ['home'];
 let pageNow = 'home', histOK = true, skipPop = 0;
 function display(name) {
@@ -310,10 +317,13 @@ function enterPage(name, prev) {
   else if (name === 'settings') renderSettings();
   else if (name === 'outdoor') openOutdoor();
   else if (name === 'survey') renderSurvey();
+  else if (name === 'make') renderMake();
   if (!['nav', 'route', 'search', 'home'].includes(name) && prev !== name) requestAnimationFrame(() => $(PAGES[name]).querySelector('[data-back]')?.focus?.({ preventScroll: true }));
 }
-function leavePage(name) {
-  if (name === 'survey') svStop();
+function leavePage(name, next) {
+  if (name === 'survey' && next !== 'place') svStop();     // matching the walk with the satellite photo is still the survey
+  if (name === 'place') closePlacer();
+  if (name === 'sketch') closeSketch();
   if (name === 'where') stopWhere();
   if (name === 'map') { pinPoint = null; $('#pinCard').hidden = true; state.addMode = false; renderAddMode(); }
   if (name === 'outdoor') { outdoorSeq++; outdoorCtl?.destroy(); outdoorCtl = null; }
@@ -426,7 +436,7 @@ async function renderHomeMap(from = pt(state.fromId)) {
   }
   const bid = state.map.building.id;
   if (homeCtl && homeCtlFor !== bid) {                    // another DALIL building on the same map: move there
-    homeCtlFor = bid; homeCtl.setFloor(homeFloor); homeFrame(); renderBuildings();
+    homeCtlFor = bid; homeCtl.resize(); homeCtl.setFloor(homeFloor); homeFrame(); renderBuildings();   // resize first: Home may have been hidden when the building changed (framing a 0 × 0 map showed the whole world)
   }
   if (!homeCtl || homeCtlFor !== bid) {
     if (homeLoading === bid) return;                      // one map at a time per building (a second call waits for it)
@@ -1720,7 +1730,7 @@ async function openOutdoor() {
   $('#lnkAmaps').href = `https://maps.apple.com/?daddr=${ll}&dirflg=w`;
   try {
     const { createOutdoorMap } = await import('./outdoor.js');
-    const attribution = [t('attrPlan'), map.building_context ? t('attrOverture') : ''].filter(Boolean).join(' · ');
+    const attribution = [t('attrPlan'), /overture/i.test(map.building_context?.source || '') ? t('attrOverture') : ''].filter(Boolean).join(' · ');   // credit Overture only for an outline that came from it
     outdoorCtl?.destroy(); outdoorCtl = null;
     const ctl = await createOutdoorMap($('#outMap'), { map, dark: document.documentElement.dataset.theme === 'dark' || settings.contrast, lang: settings.lang, attribution, onStatus: outStatus,
       onProvider: (p, failed) => { $('#outStatus').textContent = providerLine(p, failed); }, providers: { choice: settings.mapProvider, cfg: cfg.maps },
@@ -1945,17 +1955,18 @@ async function snLoad(file) {
   let bmp; try { bmp = await createImageBitmap(file); } catch { toast(t('snBadPhoto')); return; }
   const k = Math.min(1, 1400 / Math.max(bmp.width, bmp.height)), w = Math.round(bmp.width * k), h = Math.round(bmp.height * k);
   const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d'); x.drawImage(bmp, 0, 0, w, h);
-  Object.assign(sn, { photo: x.getImageData(0, 0, w, h), photoCanvas: c, pw: w, ph: h, corners: [[w * .06, h * .06], [w * .94, h * .06], [w * .94, h * .94], [w * .06, h * .94]], img: null, traced: null, edit: null, undo: [], strength: 0.5, tool: 'erase', a: null, b: null, mpp: null, how: null, beta: null, places: [], walk: null });
+  Object.assign(sn, { photo: x.getImageData(0, 0, w, h), photoCanvas: c, pw: w, ph: h, corners: [[w * .06, h * .06], [w * .94, h * .06], [w * .94, h * .94], [w * .06, h * .94]], img: null, traced: null, edit: null, undo: [], strength: 0.5, tool: 'erase', a: null, b: null, mpp: null, how: null, beta: null, places: [], walk: null, geoFit: null, loupe: null });
   snGo('corners');
 }
 function snGo(step) {
   sn.step = step;
   if (step === 'walls' && (!sn.img || sn.cornersDirty)) {
     const { W, H } = warpSize(sn.corners, 1000); sn.W = W; sn.H = H; sn.img = warp(sn.photo, sn.corners, W, H);
-    sn.edit = new Uint8Array(W * H); sn.undo = []; sn.cornersDirty = false; sn.a = sn.b = null; sn.mpp = null; sn.places = []; snTrace();
+    sn.edit = new Uint8Array(W * H); sn.undo = []; sn.cornersDirty = false; sn.a = sn.b = null; sn.mpp = null; sn.geoFit = null; sn.places = []; snTrace();
   }
   $('#snPick').hidden = step !== 'pick'; $('#snWork').hidden = step === 'pick'; $('#snBar').hidden = step === 'pick';
   const i = SN_STEPS.indexOf(step);
+  $('#snDots').innerHTML = SN_STEPS.map((_, k) => `<li class="${k < i ? 'done' : k === i ? 'on' : ''}"></li>`).join('');
   $('#snTitle').textContent = i >= 0 ? `${t('snStepN', i + 1, SN_STEPS.length)} · ${t('snT_' + step)}` : '';
   $('#snHint').textContent = i >= 0 ? t('snH_' + step) : '';
   $('#snNext').textContent = t(step === 'save' ? 'snSave' : 'snNext');
@@ -1969,16 +1980,19 @@ function snControls() {
   else if (s === 'walls') c.innerHTML = `<label class="field sn-range"><span>${esc(t('snStrength'))}</span><input id="snStrength" type="range" min="0" max="1" step="0.05" value="${sn.strength}"></label>
     <div class="sn-tools" role="group"><button class="chip" type="button" data-tool="erase" aria-pressed="${sn.tool === 'erase'}">${esc(t('snErase'))}</button><button class="chip" type="button" data-tool="draw" aria-pressed="${sn.tool === 'draw'}">${esc(t('snDraw'))}</button><button id="snUndo" class="chip" type="button" ${sn.undo.length ? '' : 'disabled'}>${esc(t('snUndo'))}</button></div>`;
   else if (s === 'size') {
-    const scale = sn.mpp ? `<p class="sn-scale">${esc(t('snScaleIs', Math.round(sn.W * sn.mpp), Math.round(sn.H * sn.mpp)))}</p>` : '';
-    const walking = sn.walk && sn.walk.on;
-    c.innerHTML = `${scale}<div class="sn-card"><strong>${esc(t('snWalkTitle'))}</strong><p class="muted">${esc(t(!sn.a ? 'snWalk1' : walking ? 'snWalk3' : 'snWalk2'))}</p>
+    const size = sn.mpp ? [Math.round(sn.W * sn.mpp), Math.round(sn.H * sn.mpp)] : null, walking = sn.walk && sn.walk.on, onMap = !!sn.geoFit;
+    // The satellite match comes first: one step gives the size and the place on Earth. Walking or a typed length set the size only.
+    c.innerHTML = `<div class="sn-card best"><strong>${esc(t('snMatchTitle'))}</strong><p class="muted">${esc(t('snMatchHint'))}</p>
+      ${onMap ? `<p class="sn-scale" id="snOnMap">${esc(t('snMatched', size[0], size[1]))}</p>` : ''}<button id="snMatch" class="btn ${onMap ? 'secondary' : 'primary'}" type="button"><span class="ico">${ico('gps')}</span><span>${esc(t(onMap ? 'snMatchRedo' : 'snMatchGo'))}</span></button></div>
+      <p class="sn-other">${esc(t('snOther'))}</p>${size && !onMap ? `<p class="sn-scale">${esc(t('snScaleIs', size[0], size[1]))}</p>` : ''}
+      <div class="sn-card"><strong>${esc(t('snWalkTitle'))}</strong><p class="muted">${esc(t(!sn.a ? 'snWalk1' : walking ? 'snWalk3' : 'snWalk2'))}</p>
       ${walking ? `<p class="sn-steps num">${esc(t('snStepsN', sn.walk.n))}</p><button id="snWalkDone" class="btn primary" type="button" ${sn.b ? '' : 'disabled'}>${esc(t('snWalkDone'))}</button>` : `<button id="snWalkGo" class="btn secondary" type="button" ${sn.a ? '' : 'disabled'}>${esc(t('snWalkGo'))}</button>`}</div>
       <div class="sn-card"><strong>${esc(t('snTypeTitle'))}</strong><p class="muted">${esc(t('snTypeHint'))}</p><label class="field"><span>${esc(t('snMetres'))}</span><input id="snLen" type="number" inputmode="decimal" min="0.3" step="0.1" placeholder="0.9"></label><button id="snLenGo" class="btn secondary" type="button" ${sn.a && sn.b ? '' : 'disabled'}>${esc(t('snUseLen'))}</button></div>`;
   } else if (s === 'places') {
     const bad = snUnreachable();
     c.innerHTML = (bad.length ? `<p class="route-msg warn" role="status">${esc(t('snUnreach', bad.join(', ')))}</p>` : '')
       + `<ul class="rows sn-places">${sn.places.map((p, i) => `<li><button class="row-btn" type="button" data-sp="${i}"><span class="r-ico">${catIco(p.category)}</span><span class="r-main"><span class="r-name">${esc(pname(p))}</span><span class="r-sub">${esc(catName(p.category))}${p.gender ? ' · ' + esc(t('gender_' + p.gender)) : ''}</span></span></button></li>`).join('')}</ul>`;
-  } else if (s === 'save') c.innerHTML = `<label class="field"><span>${esc(t('svBuildingName'))}</span><input id="snBld" type="text" maxlength="60" value="${esc(sn.bname || '')}"></label><label class="field"><span>${esc(t('snFloorName'))}</span><input id="snFloor" type="text" maxlength="40" value="${esc(sn.fname || t('snGround'))}"></label><p class="muted">${esc(t('snSaveNote', sn.places.length))}</p>`;
+  } else if (s === 'save') c.innerHTML = `<label class="field"><span>${esc(t('svBuildingName'))}</span><input id="snBld" type="text" maxlength="60" value="${esc(sn.bname || '')}"></label><label class="field"><span>${esc(t('snFloorName'))}</span><input id="snFloor" type="text" maxlength="40" value="${esc(sn.fname || t('snGround'))}"></label><p class="muted">${esc(t('snSaveNote', sn.places.length))}</p>${sn.geoFit ? '' : `<p class="route-msg warn">${esc(t('snNoGeoNote'))}</p>`}`;
 }
 function snDraw() {
   const cv = $('#snCanvas'); if (!cv || sn.step === 'pick') return;
@@ -1988,25 +2002,42 @@ function snDraw() {
     const r = Math.max(sn.pw, sn.ph) * 0.025, C = sn.corners;
     x.fillStyle = 'rgba(0,0,0,.35)'; x.beginPath(); x.rect(0, 0, sn.pw, sn.ph); x.moveTo(...C[0]); for (const p of [C[3], C[2], C[1], C[0]]) x.lineTo(...p); x.fill('evenodd');
     x.strokeStyle = '#FFC700'; x.lineWidth = r * 0.25; x.beginPath(); x.moveTo(...C[0]); for (const p of C.slice(1)) x.lineTo(...p); x.closePath(); x.stroke();
-    for (const p of C) { x.beginPath(); x.arc(p[0], p[1], r, 0, 7); x.fillStyle = '#FFC700'; x.fill(); x.lineWidth = r * 0.2; x.strokeStyle = '#1F1F1F'; x.stroke(); }
-    return;
+    for (const p of C) snRing(x, p, r);
+    snLoupe(x, cv); return;
   }
   cv.width = sn.W; cv.height = sn.H;
   if (!sn.overlay) {   // the photo, faded, with the walls the app found in blue
     const o = new ImageData(sn.W, sn.H), d = sn.img.data, m = snMask(), od = o.data;
     for (let k = 0; k < m.length; k++) { const q = k * 4; if (m[k]) { od[q] = 26; od[q + 1] = 115; od[q + 2] = 232; } else { od[q] = 255 - (255 - d[q]) * 0.35; od[q + 1] = 255 - (255 - d[q + 1]) * 0.35; od[q + 2] = 255 - (255 - d[q + 2]) * 0.35; } od[q + 3] = 255; }
-    sn.overlay = o;
+    sn.overlay = o; const oc = sn.overlayCanvas ||= document.createElement('canvas'); oc.width = sn.W; oc.height = sn.H; oc.getContext('2d').putImageData(o, 0, 0);
   }
   x.putImageData(sn.overlay, 0, 0);
   const u = Math.max(sn.W, sn.H) / 100;
   if (sn.step === 'size' || sn.step === 'walls') {
-    for (const [p, lab] of [[sn.a, 'A'], [sn.b, 'B']]) if (p && sn.step === 'size') { x.beginPath(); x.arc(p[0], p[1], u * 1.6, 0, 7); x.fillStyle = '#FFC700'; x.fill(); x.lineWidth = u * .3; x.strokeStyle = '#1F1F1F'; x.stroke(); x.fillStyle = '#1F1F1F'; x.font = `700 ${u * 1.8}px sans-serif`; x.textAlign = 'center'; x.textBaseline = 'middle'; x.fillText(lab, p[0], p[1]); }
+    for (const [p, lab] of [[sn.a, 'A'], [sn.b, 'B']]) if (p && sn.step === 'size') { snRing(x, p, u * 1.8); x.font = `700 ${u * 2.2}px sans-serif`; x.textAlign = 'center'; x.textBaseline = 'bottom'; x.lineWidth = u * .6; x.strokeStyle = '#fff'; x.strokeText(lab, p[0], p[1] - u * 2.2); x.fillStyle = '#1F1F1F'; x.fillText(lab, p[0], p[1] - u * 2.2); }
     if (sn.a && sn.b && sn.step === 'size') { x.setLineDash([u, u * .6]); x.strokeStyle = '#1F1F1F'; x.lineWidth = u * .35; x.beginPath(); x.moveTo(...sn.a); x.lineTo(...sn.b); x.stroke(); x.setLineDash([]); }
   }
   if (sn.step === 'places' || sn.step === 'save') for (const p of sn.places) {
     x.beginPath(); x.arc(p.px, p.py, u * 1.3, 0, 7); x.fillStyle = '#FFC700'; x.fill(); x.lineWidth = u * .3; x.strokeStyle = '#1F1F1F'; x.stroke();
     x.font = `600 ${u * 1.9}px sans-serif`; x.textAlign = 'center'; x.textBaseline = 'top'; x.lineWidth = u * .5; x.strokeStyle = '#fff'; x.strokeText(pname(p), p.px, p.py + u * 1.6); x.fillStyle = '#1F1F1F'; x.fillText(pname(p), p.px, p.py + u * 1.6);
   }
+  snLoupe(x, cv);
+}
+// A handle you can see through: a yellow ring with a dark edge and a dot on the exact spot.
+function snRing(x, p, r) {
+  x.beginPath(); x.arc(p[0], p[1], r, 0, 7); x.lineWidth = r * 0.42; x.strokeStyle = '#1F1F1F'; x.stroke(); x.lineWidth = r * 0.26; x.strokeStyle = '#FFC700'; x.stroke();
+  x.beginPath(); x.arc(p[0], p[1], Math.max(1.5, r * 0.1), 0, 7); x.fillStyle = '#1F1F1F'; x.fill();
+}
+// While a finger is on a corner or a size point it hides the very spot it is placing: show that spot 3× larger in the
+// top corner away from the finger, with a cross on the exact pixel.
+function snLoupe(x, cv) {
+  const l = sn.loupe; if (!l) return;
+  const R = Math.max(cv.width, cv.height) * 0.14, Z = 3, cx = l[0] < cv.width / 2 ? cv.width - R - 10 : R + 10, cy = R + 10;
+  x.save(); x.beginPath(); x.arc(cx, cy, R, 0, 7); x.clip(); x.fillStyle = '#fff'; x.fillRect(cx - R, cy - R, 2 * R, 2 * R);
+  x.imageSmoothingEnabled = true; x.drawImage(sn.step === 'corners' ? sn.photoCanvas : sn.overlayCanvas || cv, l[0] - R / Z, l[1] - R / Z, 2 * R / Z, 2 * R / Z, cx - R, cy - R, 2 * R, 2 * R); x.restore();
+  x.beginPath(); x.arc(cx, cy, R, 0, 7); x.lineWidth = R * 0.06; x.strokeStyle = '#1F1F1F'; x.stroke();
+  x.beginPath(); x.moveTo(cx - R * .35, cy); x.lineTo(cx - R * .08, cy); x.moveTo(cx + R * .08, cy); x.lineTo(cx + R * .35, cy); x.moveTo(cx, cy - R * .35); x.lineTo(cx, cy - R * .08); x.moveTo(cx, cy + R * .08); x.lineTo(cx, cy + R * .35);
+  x.lineWidth = R * 0.05; x.strokeStyle = '#fff'; x.stroke(); x.lineWidth = R * 0.025; x.strokeStyle = '#D93025'; x.stroke();
 }
 function snPos(e) { const cv = $('#snCanvas'), r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * cv.width / r.width, (e.clientY - r.top) * cv.height / r.height]; }
 function snBrush([px, py]) {
@@ -2018,9 +2049,9 @@ function snBind() {
   const cv = $('#snCanvas'); let drag = null;
   cv.addEventListener('pointerdown', e => {
     const p = snPos(e);
-    if (sn.step === 'corners') { const r = Math.max(sn.pw, sn.ph) * 0.07; let bi = -1, bd = r; sn.corners.forEach((c, i) => { const d = Math.hypot(c[0] - p[0], c[1] - p[1]); if (d < bd) { bd = d; bi = i; } }); if (bi >= 0) { drag = { corner: bi }; cv.setPointerCapture(e.pointerId); } }
+    if (sn.step === 'corners') { const r = Math.max(sn.pw, sn.ph) * 0.07; let bi = -1, bd = r; sn.corners.forEach((c, i) => { const d = Math.hypot(c[0] - p[0], c[1] - p[1]); if (d < bd) { bd = d; bi = i; } }); if (bi >= 0) { drag = { corner: bi }; cv.setPointerCapture(e.pointerId); sn.loupe = sn.corners[bi]; snDraw(); } }
     else if (sn.step === 'walls' && sn.tool) { sn.undo.push(sn.edit.slice()); if (sn.undo.length > 12) sn.undo.shift(); drag = { brush: true }; cv.setPointerCapture(e.pointerId); snBrush(p); snDraw(); }
-    else if (sn.step === 'size') { if (!sn.a || (sn.a && sn.b && Math.hypot(sn.a[0] - p[0], sn.a[1] - p[1]) < Math.hypot(sn.b[0] - p[0], sn.b[1] - p[1]))) sn.a = p; else sn.b = p; snControls(); snDraw(); }
+    else if (sn.step === 'size') { const which = !sn.a || (sn.a && sn.b && Math.hypot(sn.a[0] - p[0], sn.a[1] - p[1]) < Math.hypot(sn.b[0] - p[0], sn.b[1] - p[1])) ? 'a' : 'b'; sn[which] = p; drag = { size: which }; cv.setPointerCapture(e.pointerId); sn.loupe = p; snDraw(); }
     else if (sn.step === 'places') {
       const hit = sn.places.findIndex(q => Math.hypot(q.px - p[0], q.py - p[1]) < Math.max(sn.W, sn.H) * 0.025);
       if (hit >= 0) snEditPlace(hit); else openPlaceDlg(null, { x: 0, y: 0 }, null, { where: t('snT_places'), onSave: rec => { sn.places.push({ ...rec, px: Math.round(p[0]), py: Math.round(p[1]) }); sn.draft = null; snControls(); snDraw(); announce(t('placeAdded', pname(rec))); } });
@@ -2028,10 +2059,11 @@ function snBind() {
   });
   cv.addEventListener('pointermove', e => {
     if (!drag) return; const p = snPos(e);
-    if (drag.corner != null) { sn.corners[drag.corner] = [Math.max(0, Math.min(sn.pw, p[0])), Math.max(0, Math.min(sn.ph, p[1]))]; sn.cornersDirty = true; snDraw(); }
+    if (drag.corner != null) { sn.corners[drag.corner] = [Math.max(0, Math.min(sn.pw, p[0])), Math.max(0, Math.min(sn.ph, p[1]))]; sn.cornersDirty = true; sn.loupe = sn.corners[drag.corner]; snDraw(); }
+    else if (drag.size) { sn[drag.size] = [Math.max(0, Math.min(sn.W, p[0])), Math.max(0, Math.min(sn.H, p[1]))]; sn.loupe = sn[drag.size]; snDraw(); }
     else if (drag.brush) { snBrush(p); if (!drag.raf) drag.raf = requestAnimationFrame(() => { drag && (drag.raf = 0); snDraw(); }); }
   });
-  const up = () => { if (drag?.brush) snControls(); drag = null; };
+  const up = () => { if (drag?.brush || drag?.size) snControls(); const had = sn.loupe; drag = null; sn.loupe = null; if (had) snDraw(); };
   cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
   $('#snCtl').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
@@ -2040,6 +2072,7 @@ function snBind() {
     else if (b.id === 'snUndo' && sn.undo.length) { sn.edit = sn.undo.pop(); sn.mask = null; sn.overlay = null; sn.draft = null; snControls(); snDraw(); }
     else if (b.id === 'snLenGo') { const L = parseFloat($('#snLen').value); if (!(L > 0.2) || !sn.a || !sn.b) { toast(t('snNeedLen')); return; } snSetScale(L / Math.hypot(sn.b[0] - sn.a[0], sn.b[1] - sn.a[1]), 'a known length'); }
     else if (b.id === 'snWalkGo') snWalkStart();
+    else if (b.id === 'snMatch') snMatch();
     else if (b.id === 'snWalkDone') snWalkDone();
     else if (b.dataset.sp != null) snEditPlace(+b.dataset.sp);
   });
@@ -2097,11 +2130,12 @@ function snNextStep() {
   const bid = `${slug(name)}-${Date.now().toString(36)}`, fid = slug(fl) === 'plan' ? 'floor-1' : slug(fl);
   const m = maskToMap({ mask: snMask(), W: sn.W, H: sn.H, mpp: sn.mpp, places: sn.places, building: { id: bid, name }, floor: { id: fid, name: fl }, calibration: { how: sn.how } });
   delete m._slug;
+  const g = snGeo(); if (g) m.geo = g;
+  const user = store.get('dalil.userMaps', []); user.push(JSON.parse(JSON.stringify(m))); const kept = store.set('dalil.userMaps', user);
   addMap(m);
-  const user = store.get('dalil.userMaps', []); user.push(m); const kept = store.set('dalil.userMaps', user);
   if (sn.beta != null) { const all = store.get('dalil.cal', {}); all[`${bid}|${fid}`] = { beta: Math.round(sn.beta * 10) / 10, abs: tracker.absolute, t: Date.now() }; store.set('dalil.cal', all); }
   analytics.add('snap_done', { places: sn.places.length });
-  sn.step = 'pick'; selectFloor(m); go('home');
+  sn.step = 'pick'; homeFloor = null; state.fromManualBuilding = true; selectFloor(m); goHome();
   const msg = t('snSaved', name, sn.places.length) + (kept ? '' : ' ' + t('mapSessionOnly')); toast(msg, 6000); announce(msg);
 }
 function svSaveMaps() {
@@ -2119,10 +2153,11 @@ function svSaveMaps() {
   renderSurvey(); announce(t('svDoneTitle'));
   analytics.add('survey_done', { floors: maps.length, places: svPlaces().length });
 }
-function svShare() {
-  const maps = sv.maps; if (!maps) return;
+function svShare() { shareMaps(sv.maps); }
+function shareMaps(maps) {
+  if (!maps?.length) return;
   const body = JSON.stringify(maps.length === 1 ? maps[0] : { format: 'dalil-maps', maps }, null, 1);
-  const name = `dalil-map_${maps[0].building.id}_survey.json`, file = new File([body], name, { type: 'application/json' });
+  const name = `dalil-map_${maps[0].building.id}.json`, file = new File([body], name, { type: 'application/json' });
   if (navigator.canShare?.({ files: [file] })) { navigator.share({ files: [file], title: maps[0].building.name }).catch(() => {}); return; }
   const a = document.createElement('a'); a.href = URL.createObjectURL(file); a.download = name; document.body.append(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
@@ -2134,8 +2169,11 @@ function svOpenMap() {
   if (homeCtl) homeCtl.frame();
 }
 function bindSurvey() {
-  $('#btnSurvey').onclick = $('#btnSurveyHome').onclick = () => { sv.maps = null; go('survey'); };
-  $('#btnSnap').onclick = $('#btnSnapHome').onclick = () => { sn.step = 'pick'; go('snap'); snGo('pick'); };
+  $('#btnSurveyHome').onclick = () => { sv.maps = null; go('survey'); };
+  $('#btnSnapHome').onclick = () => { sn.step = 'pick'; go('snap'); snGo('pick'); };
+  $('#btnMakeHome').onclick = $('#btnMakeSet').onclick = () => go('make');
+  $('#btnSketchHome').onclick = () => startSketch();
+  bindMake();
   snBind();
   $('#btnSvStart').onclick = () => svStart(false);
   $('#btnSvResume').onclick = () => svStart(true);
@@ -2143,6 +2181,7 @@ function bindSurvey() {
   $('#svQuick').addEventListener('click', e => { const b = e.target.closest('[data-svq]'); if (b) svQuickAdd(b.dataset.svq); });
   $('#btnSvNear').onclick = () => { if (!sv.nearId) return; const err = sv.s.backAt(sv.nearId); $('#btnSvNear').hidden = true; sv.nearId = null; svSave(); svDraw(); const msg = t('svFixed', fmtM(err)); svStatus(msg); announce(msg); buzz(40); };
   $('#btnSvSaveMap').onclick = svSaveMaps;
+  $('#btnSvMatch').onclick = svMatch;
   $('#btnSvKeepWalking').onclick = () => { sv.review = false; try { sv.alignCtl?.destroy(); } catch { } sv.alignCtl = null; renderSurvey(); };
   $('#svReview').addEventListener('click', e => { const b = e.target.closest('[data-al]'); if (!b) return; const [k, v] = b.dataset.al.split(':'); svAlignBy(k, +v); });
   $('#btnSvSave').onclick = svSavePlace;
@@ -2155,6 +2194,166 @@ function bindSurvey() {
   $('#btnSvOpen').onclick = svOpenMap;
   $('#svCats').addEventListener('click', e => { const b = e.target.closest('[data-svcat]'); if (!b) return; sv.cat = b.dataset.svcat; $$('#svCats [data-svcat]').forEach(x => x.setAttribute('aria-checked', x === b)); if (!$('#svName').value) $('#svName').focus(); });
   $('#svPickList').addEventListener('click', e => { const b = e.target.closest('[data-svplace]'); if (b) svPicked(b.dataset.svplace); });
+}
+
+/* =========================================================================
+   Add a building: every way to make a map in one place (#pgMake), the maps kept on this phone, and "Put it on
+   the real map" (placeui.js), which gives any of them its position on Earth so the inside map and the outside
+   map are one picture (founder, Nov 2026: "the location should be accurate and synced between the exterior
+   maps and the interior maps").
+   ========================================================================= */
+const mapCtx = () => ({
+  t, toast, announce, buzz, pname, cfg: cfg.maps, dark: document.documentElement.dataset.theme === 'dark' && !settings.contrast,
+  fix: () => locator.fresh(120000), askLocation: () => { gps.userAsked = true; gpsStart(); toast(t('mkLocating')); },
+  lastCenter: () => buildingsList().find(b => b.id === state.map?.building.id)?.at || null,
+});
+/** Open the real-map step for a plan. onDone({ geo, pairs, rms, rating, size }) runs after the page has closed. */
+function placeOnRealMap(map, { bg = null, title = '', onDone }) {
+  go('place');
+  openPlacer({ map, bg, ctx: mapCtx(), title: title || t('plTitle'), onDone: res => { if (pageNow === 'place') back(); onDone(res); } });
+}
+const geoNote = res => (res.pairs.length ? `${res.pairs.length} matched corners${!res.manual && res.rms != null && res.pairs.length > 2 ? `, agreeing within ${res.rms.toFixed(1)} m` : ''}` : '') + (res.manual ? `${res.pairs.length ? ', then ' : ''}fine-tuned by hand` : '');
+
+/* ---------- Import a floor plan: the real-map step ---------- */
+function snMatch() {
+  const mpp0 = sn.mpp || 0.05;
+  const draft = maskToMap({ mask: snMask(), W: sn.W, H: sn.H, mpp: mpp0, places: sn.places, building: { id: 'draft', name: 'draft' }, floor: { id: 'draft', name: 'draft' } });
+  if (sn.geoFit) draft.geo = { ...sn.geoFit.geo, scale: sn.geoFit.geo.scale * sn.geoFit.mpp0 / mpp0 };    // start from the last match
+  if (!sn.overlayCanvas) snDraw();
+  placeOnRealMap(draft, { bg: { image: sn.overlayCanvas, w: sn.W * mpp0, h: sn.H * mpp0 }, onDone: res => {
+    const before = sn.mpp ? Math.round(Math.max(sn.W, sn.H) * sn.mpp) : null;
+    sn.geoFit = { geo: res.geo, mpp0, note: geoNote(res) }; sn.mpp = mpp0 * res.geo.scale; sn.how = 'matched to the satellite photo'; sn.draft = null;
+    const after = Math.round(Math.max(sn.W, sn.H) * sn.mpp), msg = before && Math.abs(after - before) / after > 0.05 ? t('snSizeChanged', before, after) : t('snMatched', Math.round(sn.W * sn.mpp), Math.round(sn.H * sn.mpp));
+    snControls(); snDraw(); toast(msg, 5000); announce(msg);
+  } });
+}
+// The plan's position on Earth at its final size. The match gave real metres per picture pixel; if the size was then
+// set another way (a typed length), the two are kept honest by `scale` (real metres per plan metre).
+function snGeo() {
+  const f = sn.geoFit; if (!f) return null;
+  const real = f.mpp0 * f.geo.scale;
+  return { origin: f.geo.origin, bearing: f.geo.bearing, scale: Math.round(real / sn.mpp * 1e5) / 1e5, source: `Matched to satellite imagery in the DALIL app (${f.note})` };
+}
+
+/* ---------- The walked survey: the same step, instead of nudging by eye ---------- */
+function svMatch() {
+  const s = sv.s; if (!s) return;
+  for (const inp of $$('#svNameList input')) { const p = s.floors[+inp.dataset.fi].places[+inp.dataset.pi], v = inp.value.trim(); if (v && v !== p.nameEn) { p.nameEn = v; p.nameAr = ''; } }
+  const m = s.toMaps()[0], p0 = s.floors[0].places[0], at = s.placeXY(p0, 0), q = m.points[0];
+  const ox = at.x - q.x, oy = at.y - q.y;                       // the map's corner in the walk's own metres
+  placeOnRealMap(m, { onDone: res => {
+    const w = planToWorld(res.geo)(-ox, -oy);                   // where the walk began (its 0,0) on Earth
+    s.origin = { lng: w[0], lat: w[1], acc: res.rms != null ? Math.max(1, Math.round(res.rms)) : 2 };
+    s.align = { rot: res.geo.bearing, dx: 0, dy: 0, scale: res.geo.scale };
+    svSave(); try { sv.alignCtl?.destroy(); } catch { } sv.alignCtl = null; svRenderReview();
+    const msg = t('svMatched', Math.round(res.size[0]), Math.round(res.size[1])); toast(msg, 5000); announce(msg);
+  } });
+}
+
+/* ---------- Maps kept on this phone ---------- */
+const userMaps = () => store.get('dalil.userMaps', []).filter(isMap);
+function myBuildings() {
+  const by = new Map();
+  for (const m of userMaps()) { const b = by.get(m.building.id) || { id: m.building.id, name: m.building.name, maps: [] }; b.maps.push(m); by.set(b.id, b); }
+  return [...by.values()];
+}
+function renderMake() {
+  const list = myBuildings(); $('#myMapsEmpty').hidden = !!list.length;
+  $('#myMaps').innerHTML = list.map(b => {
+    const placed = b.maps.some(m => m.geo);
+    return `<li><button class="row-btn" type="button" data-mymap="${esc(b.id)}"><span class="r-ico"><span class="ico">${svgIco(UI.building)}</span></span><span class="r-main"><span class="r-name">${esc(b.name)}</span><span class="r-sub${placed ? ' placed' : ''}">${esc(t('mmFloors', b.maps.length))} · ${esc(t(placed ? 'mmPlaced' : 'mmNotPlaced'))}</span></span><span class="ico r-chev flip-rtl">${svgIco(UI.fwd)}</span></button></li>`;
+  }).join('');
+}
+/** Keep these floors (replacing the building's earlier ones). Returns whether they fit in the phone's storage. */
+function saveBuildingMaps(maps) {
+  const bid = maps[0].building.id, cur = state.map?.building.id === bid ? state.map.floor.id : null;
+  const user = store.get('dalil.userMaps', []).filter(o => o.building.id !== bid).concat(JSON.parse(JSON.stringify(maps)));
+  const kept = store.set('dalil.userMaps', user);
+  state.maps = state.maps.filter(o => o.building.id !== bid); for (const m of maps) addMap(m);
+  memo.clear(); dropHomeMap();
+  if (cur != null) selectFloor(state.maps.find(o => o.building.id === bid && o.floor.id === cur) || maps[0], { keepFrom: true });
+  return kept;
+}
+function dropHomeMap() { try { homeCtl?.destroy(); } catch { } homeCtl = null; homeCtlFor = null; for (const v of [homeMap, routeMap, mainMap, navMap]) if (v) v.map = null; }
+function openUserBuilding(bid, fid = null) {
+  const m = state.maps.find(o => o.building.id === bid && (!fid || o.floor.id === fid)) || state.maps.find(o => o.building.id === bid); if (!m) return;
+  sv.maps = null; goHome(); homeFloor = null; state.fromManualBuilding = true; selectFloor(m); state.fromManual = false; setSheet(false);
+  if (homeCtl) homeFrame();
+}
+// A floor's new position, written to the map in use and to the copy kept on the phone. The building's other floors
+// follow: by the same move when they were placed before, or through a shared lift or staircase (one `link` code).
+function setBuildingGeo(m, geo, note) {
+  const old = m.geo ? { ...m.geo } : null, source = `Matched to satellite imagery in the DALIL app (${note})`, user = store.get('dalil.userMaps', []);
+  for (const sm of state.maps.filter(o => o.building.id === m.building.id)) {
+    let g = null;
+    if (sm === m) g = geo;
+    else if (old && sm.geo) g = carryGeo(old, geo, sm.geo, geoBox(sm));
+    else if (!sm.geo) { const a = m.points.find(p => p.link && sm.points.some(q => q.link === p.link)), b = a && sm.points.find(q => q.link === a.link); if (a) g = fitGeo([{ plan: [b.x, b.y], world: planToWorld(geo)(a.x, a.y) }], { bearing: geo.bearing, scale: geo.scale }).geo; }
+    if (!g) continue;
+    // An outline traced with the plan (a drawn building) moves with it; one from a public dataset is the real building and stays.
+    const ctxt = sm.building_context, ring = sm.geo && ctxt?.footprint && !/overture|openstreetmap/i.test(ctxt.source || '') ? moveRing(ctxt.footprint, sm.geo, g) : null;
+    const kept = user.find(o => o.building.id === sm.building.id && o.floor.id === sm.floor.id);
+    for (const o of [sm, kept]) if (o) { o.geo = { ...g, source }; if (ring) o.building_context = { ...o.building_context, footprint: ring }; }
+  }
+  store.set('dalil.userMaps', user); dropHomeMap(); renderAll();
+}
+let actB = null;
+function openMapActions(id) {
+  const b = myBuildings().find(x => x.id === id); if (!b) return; actB = b;
+  const placed = b.maps.some(m => m.geo);
+  $('#mapActTitle').textContent = b.name; $('#mapActSub').textContent = `${t('mmFloors', b.maps.length)} · ${t(placed ? 'mmPlaced' : 'mmNotPlaced')}`;
+  $('#maPlaceText').textContent = t(placed ? 'mmAdjust' : 'mmPlace'); $('#maName').value = b.name;
+  $('#maEdit').hidden = !keptSketches(store)[id];
+  $('#mapActMain').hidden = false; $('#mapActSure').hidden = true;
+  openDlg($('#dlgMapAct'));
+}
+function deleteUserBuilding(b) {
+  store.set('dalil.userMaps', store.get('dalil.userMaps', []).filter(o => o.building.id !== b.id));
+  const sk = keptSketches(store); if (sk[b.id]) { delete sk[b.id]; store.set('dalil.sketches', sk); }
+  const added = addedAll(), cal = store.get('dalil.cal', {});
+  for (const k of Object.keys(added)) if (k.startsWith(b.id + '|')) delete added[k];
+  for (const k of Object.keys(cal)) if (k.startsWith(b.id + '|')) delete cal[k];
+  store.set('dalil.added', added); store.set('dalil.cal', cal);
+  state.maps = state.maps.filter(o => o.building.id !== b.id); memo.clear();
+  if (state.map?.building.id === b.id && state.maps.length) { dropHomeMap(); homeFloor = null; state.toKey = null; selectFloor(state.maps[0]); }
+  renderMake(); renderSettings();
+  const msg = t('mmDeleted', b.name); toast(msg); announce(msg);
+}
+function startSketch(edit = null) {
+  go('sketch');
+  openSketch({ edit, ctx: { ...mapCtx(), tracker, store, catIco, ico, back, stride: myStride, navActive: () => nav.active,
+    catName: (c, lang) => lang ? (STR[lang].cats[c] || c) : catName(c),
+    placeDialog: (rec, { onSave, onDelete }) => openPlaceDlg(null, { x: 0, y: 0 }, rec, { where: t('skTitle'), onSave, onDelete }),
+    unreachable: m => { const R = new Router(m), P = m.points, bad = []; for (let i = 1; i < P.length; i++) if (R.distance('walk', P[0], P[i]) == null) bad.push(pname(P[i])); return bad; },
+    saveMaps: maps => { const kept = saveBuildingMaps(maps); analytics.add('sketch_done', { floors: maps.length, places: maps.reduce((a, m) => a + m.points.length, 0) }); return kept; },
+    openMap: m => openUserBuilding(m.building.id, m.floor.id), share: shareMaps } });
+}
+function bindMake() {
+  $('#myMaps').addEventListener('click', e => { const b = e.target.closest('[data-mymap]'); if (b) openMapActions(b.dataset.mymap); });
+  const done = () => $('#dlgMapAct').close();
+  $('#maOpen').onclick = () => { const b = actB; done(); if (b) openUserBuilding(b.id); };
+  $('#maShare').onclick = () => { if (actB) shareMaps(userMaps().filter(m => m.building.id === actB.id)); };
+  $('#maEdit').onclick = () => { const sk = actB && keptSketches(store)[actB.id]; done(); if (sk) startSketch(sk); };
+  $('#maPlace').onclick = () => {
+    const b = actB; done(); if (!b) return;
+    // The floor you have open if it is this building's, else the first one that is already placed, else the lowest.
+    const mine = state.maps.filter(o => o.building.id === b.id), m = mine.find(o => o === state.map) || mine.find(o => o.geo) || mine[0]; if (!m) return;
+    placeOnRealMap(m, { title: `${bname(m.building)}${mine.length > 1 ? ' · ' + floorName(m.floor) : ''}`, onDone: res => {
+      setBuildingGeo(m, res.geo, geoNote(res)); renderMake();
+      const msg = t('mmPlacedDone', Math.round(res.size[0]), Math.round(res.size[1])); toast(msg, 5000); announce(msg);
+    } });
+  };
+  $('#maRenameForm').addEventListener('submit', e => {
+    e.preventDefault(); const b = actB, name = $('#maName').value.trim().slice(0, 60); if (!b || !name || name === b.name) return;
+    const user = store.get('dalil.userMaps', []); for (const o of user) if (o.building.id === b.id) { o.building.name = name; delete o.building.nameAr; }
+    store.set('dalil.userMaps', user);
+    for (const o of state.maps) if (o.building.id === b.id) { o.building.name = name; delete o.building.nameAr; }
+    const sk = keptSketches(store); if (sk[b.id]) { sk[b.id].name = name; store.set('dalil.sketches', sk); }
+    done(); renderMake(); renderAll(); toast(t('mmRenamed')); announce(t('mmRenamed'));
+  });
+  $('#maDelete').onclick = () => { $('#maSureText').textContent = t('mmDeleteSure', actB?.name || ''); $('#mapActMain').hidden = true; $('#mapActSure').hidden = false; $('#maDeleteNo').focus(); };
+  $('#maDeleteNo').onclick = () => { $('#mapActMain').hidden = false; $('#mapActSure').hidden = true; };
+  $('#maDeleteYes').onclick = () => { const b = actB; done(); if (b) deleteUserBuilding(b); };
 }
 
 /* =========================================================================
@@ -2350,6 +2549,6 @@ async function init() {
 }
 
 window.DALIL_APP = { state, settings, spoken, nav, tracker, analytics, parseLink, buildSteps, routeFor, pointOf, go, page: () => pageNow, config: () => cfg,
-  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, homeMap: () => homeCtl, survey: () => sv, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
+  views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, homeMap: () => homeCtl, survey: () => sv, snap: () => sn, placer: placerState, sketch: sketchState, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
 
 if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));

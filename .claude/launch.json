@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dalil-nav",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["dalil-nav/tools/serve.mjs", "8080"],
+      "port": 8080
+    }
+  ]
+}

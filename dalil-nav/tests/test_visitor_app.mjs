@@ -202,7 +202,16 @@ test('moving arrow: learns the compass from your walk, counts down to the next t
 });
 
 test('motion off: the app says so (never "tap Next"), offers Allow motion, signs only, or a labelled preview', async () => {
-  const { ctx, page, errors } = await open('#at-P001&to-P008');   // no sensor permission in this browser
+  const { ctx, page, errors } = await open('#at-P001&to-P008');   // no motion sensors in this browser
+  await page.click('#btnStart');
+  await page.waitForSelector('#motionCard:not([hidden])', { timeout: 5000 });
+  // A device with no motion sensors: asking again can never work, so there is no Allow button; the preview is the main one.
+  assert.match(await page.textContent('#motionCard'), /Can’t feel your steps here/);
+  assert.match(await page.textContent('#motionBody'), /This device has no motion sensors/);
+  assert.ok(await page.isHidden('#btnAllowMotion') && await page.isVisible('#btnPreview') && await page.isVisible('#btnSignsOnly'));
+  // A phone that refused the motion permission (iPhone asks; here it answers "denied"): Allow motion is offered.
+  await page.addInitScript(() => { for (const E of [window.DeviceOrientationEvent, window.DeviceMotionEvent]) if (E) E.requestPermission = async () => 'denied'; });
+  await page.reload(); await page.evaluate(() => window.DALIL_APP.ready);
   await page.click('#btnStart');
   await page.waitForSelector('#motionCard:not([hidden])', { timeout: 5000 });
   assert.match(await page.textContent('#motionCard'), /Turn on motion/);
@@ -1076,7 +1085,8 @@ test('no floor plan: walk the building to map it (survey); places, back-at-a-pla
   await page.click('#btnSvFinish');
   // Review before saving: quality per floor, names to edit, the line-up map (GPS at the door)
   await page.waitForSelector('#svReview:not([hidden])');
-  assert.match(await page.textContent('#svQuality'), /Ground floor: \d+ m walked · 1 loops.*(Good|OK): the loops were off by/s);
+  // Good or OK: the simulated walk overshoots by half a second, which is one step or none depending on where in a stride it ends.
+  assert.match(await page.textContent('#svQuality'), /Ground floor: \d+ m walked · 1 loops.*(Good: the loops you closed were off by only|OK: the loops were off by)/s);
   assert.equal(await page.$$eval('#svNameList input', i => i.length), 5);
   assert.ok(await page.isVisible('#svAlignSec'));
   await page.click('[data-al="rot:1"]');
