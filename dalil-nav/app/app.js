@@ -1822,7 +1822,7 @@ async function svStart(resume = false) {
   }
   if (!s) return;
   const res = await tracker.start();        // inside the tap: the iPhone asks for motion here
-  if (!(res.orientation && res.motion)) { tracker.stop(); motionHelp(res, () => svStart(resume)); return; }
+  if (!(res.orientation && res.motion)) { tracker.stop(); motionHelp(res, () => svStart(resume), () => startSketch()); return; }
   // Location is asked for after motion has answered: two system questions at once can cancel each other on an iPhone.
   if (!locator.on && settings.gps && navigator.geolocation) locator.start(onFix, onGpsError);
   if (!resume) {
@@ -2179,6 +2179,7 @@ function bindSurvey() {
   $('#btnSnapHome').onclick = () => { sn.step = 'pick'; go('snap'); snGo('pick'); };
   $('#btnMakeHome').onclick = $('#btnMakeSet').onclick = () => go('make');
   $('#btnMotionRetry').onclick = () => { const again = motionRetry; motionRetry = null; $('#dlgMotion').close(); again?.(); };   // this tap is the new permission request
+  $('#btnMotionAlt').onclick = () => { const alt = motionAlt; motionAlt = null; $('#dlgMotion').close(); alt?.(); };
   // An iPhone asks before it shares motion; say so first, so the system question is expected and gets "Allow".
   for (const el of $$('[data-ios-motion]')) el.hidden = typeof globalThis.DeviceMotionEvent?.requestPermission !== 'function';
   $('#btnSketchHome').onclick = () => startSketch();
@@ -2265,17 +2266,22 @@ function svMatch() {
    denied   an iPhone was asked and the answer was no; Safari keeps that answer until it is closed
    silent   allowed (or never asked), but no readings came: a computer, or motion sensors switched off for the site
    insecure the page is not on https
-   retry runs inside the tap on "Try again", so the phone can ask again. */
-let motionRetry = null;
-function motionHelp(res, retry) {
-  const ios = !!res.asked, why = embedded ? 'embedded' : res.reason || 'silent';
-  const steps = why === 'denied' ? ['mhIos1', 'mhIos2', 'mhIos3'] : why === 'silent' && !ios ? ['mhAnd1', 'mhAnd2'] : [];
-  $('#motionHelpTitle').textContent = t({ denied: 'mhTitleDenied', insecure: 'mhTitleInsecure', embedded: 'mhTitleEmbedded' }[why] || 'mhTitleSilent');
-  $('#motionHelpBody').textContent = t({ denied: 'mhBodyDenied', insecure: 'mhBodyInsecure', embedded: 'motionEmbedded' }[why] || (ios ? 'mhBodySilentIos' : 'mhBodySilent'));
+   retry runs inside the tap on "Try again", so the phone can ask again.
+   unasked  (founder's iPhone, second try: "denied" for both) the "no" came back too fast for a person to have
+            tapped it, so the iPhone never showed its question: the Settings switch comes first, then closing Safari.
+   alt      another way to do the job without motion (Walk it → draw the building on the satellite photo). */
+let motionRetry = null, motionAlt = null;
+function motionHelp(res, retry, alt = null) {
+  const ios = !!res.asked, why0 = embedded ? 'embedded' : res.reason || 'silent', why = why0 === 'denied' && res.unasked ? 'unasked' : why0;
+  const steps = why === 'unasked' ? ['mhSet1', 'mhIos1', 'mhIos2', 'mhIos3'] : why === 'denied' ? ['mhIos1', 'mhIos2', 'mhIos3'] : why === 'silent' && !ios ? ['mhAnd1', 'mhAnd2'] : [];
+  $('#motionHelpTitle').textContent = t({ unasked: 'mhTitleUnasked', denied: 'mhTitleDenied', insecure: 'mhTitleInsecure', embedded: 'mhTitleEmbedded' }[why] || 'mhTitleSilent');
+  $('#motionHelpBody').textContent = t({ unasked: 'mhBodyUnasked', denied: 'mhBodyDenied', insecure: 'mhBodyInsecure', embedded: 'motionEmbedded' }[why] || (ios ? 'mhBodySilentIos' : 'mhBodySilent'));
   $('#motionHelpSteps').innerHTML = steps.map(k => `<li>${esc(t(k))}</li>`).join(''); $('#motionHelpSteps').hidden = !steps.length;
   const ans = Object.entries(res.answers || {}).map(([k, v]) => `${k} ${v}`).join(', ') || 'not asked';
-  $('#motionHelpDetails').textContent = t('mhDetails', `${why} · ${ans} · readings: compass ${res.orientation ? 'yes' : 'no'}, steps ${res.motion ? 'yes' : 'no'} · https ${window.isSecureContext ? 'yes' : 'no'}`);
+  const ms = res.asked && res.answerMs != null ? ` in ${res.answerMs} ms` : '';
+  $('#motionHelpDetails').textContent = t('mhDetails', `${why} · ${ans}${ms} · readings: compass ${res.orientation ? 'yes' : 'no'}, steps ${res.motion ? 'yes' : 'no'} · https ${window.isSecureContext ? 'yes' : 'no'}`);
   motionRetry = retry; $('#btnMotionRetry').hidden = why === 'embedded' || why === 'insecure';
+  motionAlt = alt; $('#btnMotionAlt').hidden = !alt;
   openDlg($('#dlgMotion')); announce(`${$('#motionHelpTitle').textContent}. ${$('#motionHelpBody').textContent}`, true);
   analytics.add('motion_help', { why });
 }

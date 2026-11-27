@@ -114,23 +114,39 @@ test('walk mapping when the phone gives no motion: the app says why and what to 
   assert.equal(await page.$$eval('#motionHelpSteps li', l => l.length), 2);
   assert.match(await page.textContent('#motionHelpDetails'), /For support: silent · not asked · readings: compass no, steps no · https yes/);
   await page.click('#dlgMotion [data-close]');
-  // An iPhone: it must be asked, and this one says no (Safari keeps a "no" until it is closed)
-  await page.addInitScript(() => { window.__motion ??= 'denied'; for (const E of [window.DeviceOrientationEvent, window.DeviceMotionEvent]) if (E) E.requestPermission = async () => window.__motion; });
+  // An iPhone that says no at once: no person can tap that fast, so the iPhone never showed its question
+  // (founder's iPhone, 27 Nov 2026). The Settings switch comes first, and drawing on the satellite photo is offered.
+  await page.addInitScript(() => { window.__motion ??= 'denied'; for (const E of [window.DeviceOrientationEvent, window.DeviceMotionEvent]) if (E) E.requestPermission = () => new Promise(r => setTimeout(() => r(window.__motion), window.__motionMs || 0)); });
   await page.reload(); await page.evaluate(() => window.DALIL_APP.ready);
   await page.evaluate(() => document.querySelector('#btnSurveyHome').click()); await pageIs(page, 'survey');
   assert.match(await page.textContent('#pgSurvey [data-ios-motion]'), /Your iPhone will ask for Motion & Orientation Access\. Tap Allow\./);
   assert.ok(await page.isVisible('#pgSurvey [data-ios-motion]'), 'the iPhone is told what its question will be, before it asks');
   await page.fill('#svBuilding', 'Motion Hall'); await page.click('#btnSvStart');
   await page.waitForSelector('#dlgMotion[open]');
+  const firstWords = () => page.$$eval('#motionHelpSteps li', l => l.map(x => x.textContent.split(':')[0].split(' ').slice(0, 2).join(' ')));
+  assert.equal(await page.textContent('#motionHelpTitle'), 'Your iPhone said no without asking you');
+  assert.deepEqual(await firstWords(), ['Open the', 'Close Safari', 'Open DALIL', 'When the']);
+  assert.match(await page.textContent('#motionHelpDetails'), /unasked · compass denied, steps denied in \d+ ms/);
+  assert.ok(await page.isVisible('#btnMotionAlt'), 'another way to map without motion is offered');
+  // Asked this time, and the person tapped Don't Allow (a slow answer): Safari keeps that until it is closed
+  await page.evaluate(() => { window.__motionMs = 900; });
+  await page.click('#btnMotionRetry');
+  await page.waitForSelector('#dlgMotion[open]');
   assert.equal(await page.textContent('#motionHelpTitle'), 'Your phone is blocking motion');
-  assert.deepEqual(await page.$$eval('#motionHelpSteps li', l => l.map(x => x.textContent.split(':')[0].split(' ').slice(0, 2).join(' '))), ['Close Safari', 'Open DALIL', 'When the']);
-  assert.match(await page.textContent('#motionHelpDetails'), /denied · compass denied, steps denied/);
+  assert.deepEqual(await firstWords(), ['Close Safari', 'Open DALIL', 'When the']);
+  assert.match(await page.textContent('#motionHelpDetails'), /denied · compass denied, steps denied in \d+ ms/);
   assert.ok(await page.isHidden('#svLive'), 'the walk has not started');
   // Allowed now (after Safari was reopened): Try again is the tap that asks, and the walk starts
   await page.evaluate(() => { window.__motion = 'granted'; window.__sv = setInterval(() => { window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { alpha: 10, beta: 60, gamma: 0 })); window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.81, z: 0.3 }, interval: 20 })); }, 20); });
   await page.click('#btnMotionRetry');
   await page.waitForSelector('#svLive:not([hidden])'); await page.evaluate(() => clearInterval(window.__sv));
   assert.ok(await page.isHidden('#dlgMotion'));
+  // No motion at all: the other button opens Draw it on the satellite photo
+  await page.evaluate(() => { localStorage.removeItem('dalil.survey'); }); await page.reload(); await page.evaluate(() => window.DALIL_APP.ready);
+  await page.evaluate(() => document.querySelector('#btnSurveyHome').click()); await pageIs(page, 'survey');
+  await page.fill('#svBuilding', 'Motion Hall'); await page.click('#btnSvStart');
+  await page.waitForSelector('#dlgMotion[open]'); await page.click('#btnMotionAlt');
+  await pageIs(page, 'sketch'); assert.ok(await page.isHidden('#dlgMotion'));
   assert.deepEqual(errors, []);
   await ctx.close();
 });
