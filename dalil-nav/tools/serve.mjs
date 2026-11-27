@@ -1,7 +1,7 @@
 // Serve the project folder for local work: `npm run serve`, then open http://localhost:8080/app/
 // (the app needs the project folder, not app/ alone: its bundled maps live in ../data/).
-// Works on Windows, macOS and Linux with Node alone. Tag links (/app/t/<building>/<floor>/<point>) open the app,
-// as a real host must do too (docs/institution-setup.md).
+// Works on Windows, macOS and Linux with Node alone. Sign links (/app/t/<building>/<floor>/<point>) are sent on to
+// /app/#t/<building>/<floor>/<point>, as a real host must do too (docs/institution-setup.md).
 //
 // A phone on the same Wi-Fi can open the "On your network" address to look at the screens, but the camera, motion
 // sensors and location only work on HTTPS (or on this computer's own localhost). For a real walk test, publish
@@ -20,7 +20,8 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; ch
 http.createServer((req, res) => {
   let p; try { p = decodeURIComponent(new URL(req.url, 'http://x').pathname); } catch { res.writeHead(400); return res.end(); }
   if (p === '/') { res.writeHead(302, { Location: '/app/' }); return res.end(); }
-  if (/^\/app\/t\/[^/]+\/[^/]+\/[^/]+$/.test(p)) p = '/app/index.html';
+  const tag = p.match(/^\/app\/t\/([^/]+)\/([^/]+)\/([^/]+)\/?$/);      // a DALIL sign's link: on to the app, the three parts after the #
+  if (tag) { res.writeHead(302, { Location: `/app/#t/${tag[1]}/${tag[2]}/${tag[3]}` }); return res.end(); }
   if (p.endsWith('/')) p += 'index.html';
   const f = path.join(ROOT, p);
   if (!f.startsWith(ROOT + path.sep) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404, { 'Content-Type': 'text/plain' }); return res.end('Not found'); }

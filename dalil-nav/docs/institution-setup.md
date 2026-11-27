@@ -6,7 +6,10 @@ What the DALIL team does for each client site after the floors are mapped in the
 
 Publish `app/` and `data/` side by side on an **HTTPS** host (camera, motion sensors, NFC and the offline
 cache only work on HTTPS). List the client's floors in `app/maps.json`, bottom floor first. Make the host
-serve `app/index.html` for `/t/<building>/<floor>/<point>` (the URL written on tags and signs).
+**redirect** `…/app/t/<building>/<floor>/<point>` (the URL written on tags and signs) to
+`…/app/#t/<building>/<floor>/<point>`. Do not serve `app/index.html` at the sign's own address: the app's
+styles and scripts are relative, so they would be asked for under `/t/<building>/<floor>/` and not found.
+On a host with no redirects (GitHub Pages) a `404.html` does it: `node tools/build-pages.mjs` writes one.
 
 ## 2. `app/config.json`
 

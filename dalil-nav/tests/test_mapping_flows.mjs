@@ -86,6 +86,23 @@ const drawing = page => page.evaluate(() => {
 // The drawing's metres (x along the top wall, y down) on Earth: its top-left corner is the site point.
 const drawnAt = (mx, my) => onSite(mx, -my);
 
+test('a DALIL sign link (…/t/building/floor/place) opens the app at that place, also for a returning visitor whose app is cached', async () => {
+  const ctx = await browser.newContext({ ...devices['Pixel 7'] }), page = await ctx.newPage(), errors = [], missing = [];
+  page.on('pageerror', e => errors.push(e.message));
+  page.on('response', r => { if (r.status() === 404) missing.push(new URL(r.url()).pathname); });
+  await page.goto(base); await page.evaluate(() => window.DALIL_APP.ready);
+  await page.evaluate(() => navigator.serviceWorker.ready);
+  await page.waitForFunction(() => !!navigator.serviceWorker.controller);
+  await page.goto(base + 't/sample-hospital/ground/P013');           // what a sign's QR code or NFC tag holds
+  await page.waitForFunction(() => window.DALIL_APP?.ready); await page.evaluate(() => window.DALIL_APP.ready);
+  assert.equal(await page.textContent('#fromName'), 'Corridor East');
+  assert.match(page.url(), /\/app\/#t\/sample-hospital\/ground\/P013$/, 'sent on to the app, not served at the address on the sign');
+  assert.deepEqual(missing, [], 'no style, script or font asked for under /t/…');
+  assert.ok(await page.evaluate(() => getComputedStyle(document.querySelector('#app')).position === 'fixed'), 'the page is styled');
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('Add a building: every way to map in one place; the old shortcuts lead there', async () => {
   const { ctx, page, errors } = await open();
   await page.click('#btnSheet'); await page.click('#btnMakeHome'); await pageIs(page, 'make');
