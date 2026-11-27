@@ -82,17 +82,26 @@ export class Tracker {
   }
   /** Call from a tap: iOS shows its permission prompt here. Resolves once it knows which sensors send data. */
   start() {
-    const asks = [];
-    for (const E of [globalThis.DeviceOrientationEvent, globalThis.DeviceMotionEvent]) {
-      try { if (typeof E?.requestPermission === 'function') asks.push(E.requestPermission()); } catch { /* not in a gesture */ }
+    const asks = [], names = [];
+    for (const [name, E] of [['compass', globalThis.DeviceOrientationEvent], ['steps', globalThis.DeviceMotionEvent]]) {
+      if (typeof E?.requestPermission !== 'function') continue;
+      names.push(name);
+      try { asks.push(E.requestPermission()); } catch (err) { asks.push(Promise.reject(err)); }   // thrown when not in a tap
     }
+    this.asked = asks.length > 0;              // an iPhone: it has to be asked, and may say no
     this.listen();
     return (async () => {
       const res = await Promise.allSettled(asks);
+      // What the phone answered, per sensor: 'granted', 'denied', or the error's name (kept for the help screen).
+      this.answers = Object.fromEntries(res.map((r, i) => [names[i], r.status === 'fulfilled' ? String(r.value) : (r.reason?.name || 'error')]));
       this.denied = res.some(r => r.status === 'rejected' || (r.value && r.value !== 'granted'));
-      const t0 = this.now();
-      while (this.now() - t0 < 1500 && !(this.orientSeen && this.motionSeen)) await new Promise(r => setTimeout(r, 100));
-      return { orientation: this.orientSeen, motion: this.motionSeen, denied: this.denied };
+      // An iPhone that has just said yes can take a moment to send its first readings (a founder's first try on the
+      // phone build failed at 1.5 s, Nov 2026); a refusal, or a device that is never asked, is known sooner.
+      const t0 = this.now(), wait = this.asked && !this.denied ? 4000 : 1500;
+      while (this.now() - t0 < wait && !(this.orientSeen && this.motionSeen)) await new Promise(r => setTimeout(r, 100));
+      const ok = this.orientSeen && this.motionSeen, secure = typeof isSecureContext === 'undefined' ? true : isSecureContext;
+      return { orientation: this.orientSeen, motion: this.motionSeen, denied: this.denied, asked: this.asked, answers: this.answers,
+        reason: ok ? null : !secure ? 'insecure' : this.denied ? 'denied' : 'silent' };
     })();
   }
   listen() {

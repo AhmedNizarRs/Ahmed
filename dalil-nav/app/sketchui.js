@@ -127,7 +127,7 @@ function closeEnough() {
 async function walkStart() {
   const { tracker, toast, t } = K.ctx; if (!closeEnough()) return;
   const res = await tracker.start(); if (!K) return;
-  if (!(res.orientation && res.motion)) { tracker.stop(); toast(t('skNoMotion'), 6000); return; }
+  if (!(res.orientation && res.motion)) { tracker.stop(); if (K.ctx.motionHelp) K.ctx.motionHelp(res, walkStart); else toast(t('skNoMotion'), 6000); return; }
   snapshot();
   const at = target().pt; if (!K.cur?.length) K.cur = [at]; else if (Math.hypot(K.cur[K.cur.length - 1][0] - at[0], K.cur[K.cur.length - 1][1] - at[1]) > 0.5) K.cur.push(at);
   K.walk = { on: true, n: 0, from: K.cur.length - 1, bias: K.walk?.bias || 0, stride: K.walk?.stride || K.ctx.stride(), prev: tracker.onStep };

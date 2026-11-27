@@ -1,6 +1,6 @@
 // DALIL visitor app service worker: works offline once loaded.
 // Bump VERSION whenever app files change.
-const VERSION = 'dalil-app-v41';
+const VERSION = 'dalil-app-v42';
 const SHELL = [
   './', 'index.html', 'styles.css', 'app.js', 'i18n.js', 'mapview.js', 'router.js', 'outdoor.js', 'providers.js', 'tracker.js', 'camera.js', 'locate.js', 'survey.js', 'snapplan.js', 'georef.js', 'geomap.js', 'placeui.js', 'sketch.js', 'sketchui.js', 'vendor/maplibre/maplibre-gl.js', 'vendor/maplibre/maplibre-gl.css',
   'vendor/qrcode.js', 'vendor/jsqr/jsQR.js', 'maps.json', 'config.json', 'manifest.webmanifest',
@@ -11,7 +11,7 @@ const SHELL = [
 self.addEventListener('install', e => {
   e.waitUntil((async () => {
     const c = await caches.open(VERSION);
-    await c.addAll(SHELL);
+    await c.addAll(SHELL.map(u => new Request(u, { cache: 'reload' })));   // straight from the host: its 10-minute browser cache must not hand a new version old files
     // Bundled demo maps, listed in maps.json.
     try {
       const list = await (await fetch('maps.json')).json();

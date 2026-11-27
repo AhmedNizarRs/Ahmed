@@ -239,6 +239,7 @@
         <label class="field"><span data-i18n="svBuildingName">Building name</span><input id="svBuilding" type="text" autocomplete="off"></label>
         <label class="field"><span data-i18n="svFloorName">Floor</span><input id="svFloor" type="text" autocomplete="off"></label>
         <label class="field"><span data-i18n="svHeight">Your height in cm (optional: sets your step length)</span><input id="svHeight" type="number" inputmode="numeric" min="120" max="220" autocomplete="off"></label>
+        <p class="ios-motion" data-ios-motion hidden><span class="ico" data-ico="motion"></span><span data-i18n="motionIosHint">Your iPhone will ask for Motion &amp; Orientation Access. Tap Allow.</span></p>
         <button id="btnSvStart" class="btn primary xl" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="svStart">Start here</span></button>
         <button id="btnSvResume" class="btn secondary" type="button" hidden><span class="ico" data-ico="play"></span><span data-i18n="svResume">Continue the unfinished walk</span></button>
         <p class="muted small" data-i18n="svNote">It maps where you walk, not the walls. Your location stays on your phone until you share the map.</p>
@@ -627,6 +628,15 @@
     <ol id="stepList" class="step-rows"></ol>
     <button id="btnSim" class="btn secondary" type="button" aria-pressed="false"><span class="ico" data-ico="play"></span><span class="ctrl-txt" data-i18n="previewWalk">Watch a preview walk</span></button>
     <p class="muted small" data-i18n="previewNote">The preview walks the route for you. It is not your real position.</p>
+  </dialog>
+
+  <!-- Motion would not start: why, what to do, try again -->
+  <dialog id="dlgMotion" class="sheet-dlg" aria-labelledby="motionHelpTitle">
+    <div class="dlg-head"><h2 id="motionHelpTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="motionHelpBody"></p>
+    <ol id="motionHelpSteps" class="mh-steps"></ol>
+    <button id="btnMotionRetry" class="btn primary xl" type="button"><span class="ico" data-ico="motion"></span><span data-i18n="mhRetry">Try again</span></button>
+    <p id="motionHelpDetails" class="muted small"></p>
   </dialog>
 
   <!-- Help -->

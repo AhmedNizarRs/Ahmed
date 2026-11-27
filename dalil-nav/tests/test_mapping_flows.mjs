@@ -103,6 +103,38 @@ test('a DALIL sign link (…/t/building/floor/place) opens the app at that place
   await ctx.close();
 });
 
+test('walk mapping when the phone gives no motion: the app says why and what to do (not a passing toast), and Try again works once the phone allows it', async () => {
+  const { ctx, page, errors } = await open();
+  // A device that is never asked and sends nothing (a computer, or motion sensors switched off for the site)
+  await page.evaluate(() => document.querySelector('#btnSurveyHome').click()); await pageIs(page, 'survey');
+  assert.ok(await page.isHidden('#pgSurvey [data-ios-motion]'), 'no iPhone note on a device that is not asked');
+  await page.fill('#svBuilding', 'Motion Hall'); await page.click('#btnSvStart');
+  await page.waitForSelector('#dlgMotion[open]');
+  assert.equal(await page.textContent('#motionHelpTitle'), 'No readings from the motion sensors');
+  assert.equal(await page.$$eval('#motionHelpSteps li', l => l.length), 2);
+  assert.match(await page.textContent('#motionHelpDetails'), /For support: silent · not asked · readings: compass no, steps no · https yes/);
+  await page.click('#dlgMotion [data-close]');
+  // An iPhone: it must be asked, and this one says no (Safari keeps a "no" until it is closed)
+  await page.addInitScript(() => { window.__motion ??= 'denied'; for (const E of [window.DeviceOrientationEvent, window.DeviceMotionEvent]) if (E) E.requestPermission = async () => window.__motion; });
+  await page.reload(); await page.evaluate(() => window.DALIL_APP.ready);
+  await page.evaluate(() => document.querySelector('#btnSurveyHome').click()); await pageIs(page, 'survey');
+  assert.match(await page.textContent('#pgSurvey [data-ios-motion]'), /Your iPhone will ask for Motion & Orientation Access\. Tap Allow\./);
+  assert.ok(await page.isVisible('#pgSurvey [data-ios-motion]'), 'the iPhone is told what its question will be, before it asks');
+  await page.fill('#svBuilding', 'Motion Hall'); await page.click('#btnSvStart');
+  await page.waitForSelector('#dlgMotion[open]');
+  assert.equal(await page.textContent('#motionHelpTitle'), 'Your phone is blocking motion');
+  assert.deepEqual(await page.$$eval('#motionHelpSteps li', l => l.map(x => x.textContent.split(':')[0].split(' ').slice(0, 2).join(' '))), ['Close Safari', 'Open DALIL', 'When the']);
+  assert.match(await page.textContent('#motionHelpDetails'), /denied · compass denied, steps denied/);
+  assert.ok(await page.isHidden('#svLive'), 'the walk has not started');
+  // Allowed now (after Safari was reopened): Try again is the tap that asks, and the walk starts
+  await page.evaluate(() => { window.__motion = 'granted'; window.__sv = setInterval(() => { window.dispatchEvent(new DeviceOrientationEvent('deviceorientation', { alpha: 10, beta: 60, gamma: 0 })); window.dispatchEvent(new DeviceMotionEvent('devicemotion', { accelerationIncludingGravity: { x: 0, y: 9.81, z: 0.3 }, interval: 20 })); }, 20); });
+  await page.click('#btnMotionRetry');
+  await page.waitForSelector('#svLive:not([hidden])'); await page.evaluate(() => clearInterval(window.__sv));
+  assert.ok(await page.isHidden('#dlgMotion'));
+  assert.deepEqual(errors, []);
+  await ctx.close();
+});
+
 test('Add a building: every way to map in one place; the old shortcuts lead there', async () => {
   const { ctx, page, errors } = await open();
   await page.click('#btnSheet'); await page.click('#btnMakeHome'); await pageIs(page, 'make');
