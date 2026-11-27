@@ -1015,6 +1015,16 @@ html.contrast .gt-seg button[aria-selected="true"] { background: #FFE600; color:
 .sv-match { display: grid; gap: .375rem; }
 html.contrast .sn-card.best { border-color: #FFE600; background: #000; }
 
+/* Motion help, and the line that prepares for the iPhone's own question */
+.mh-steps { margin: 0; padding-inline-start: 1.5rem; display: grid; gap: .5rem; font-weight: 550; }
+.mh-steps li::marker { font-weight: 700; color: var(--info); }
+#motionHelpBody { margin: 0; font-size: 1.125rem; }
+#motionHelpDetails { margin: 0; overflow-wrap: anywhere; }
+.ios-motion { display: flex; align-items: center; gap: .625rem; margin: 0; padding: .625rem .875rem; border-radius: var(--r); background: #E8F0FE; color: #174EA6; font-weight: 600; }
+.ios-motion .ico { flex: none; }
+:root[data-theme="dark"] .ios-motion { background: rgba(76, 141, 246, .18); color: #C6DAFC; }
+html.contrast .ios-motion { background: #000; color: #FFE600; border: 2px solid #FFE600; }
+
 /* Map and layers on Home: the same quiet groups as on the real-map page */
 .lay-body fieldset { border: 0; margin: 0; padding: 0; display: grid; gap: .375rem; min-width: 0; }
 .lay-body legend { padding: 0; margin-bottom: .375rem; font-size: .9375rem; font-weight: 650; color: var(--ink-3); }

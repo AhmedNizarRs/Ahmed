@@ -1821,10 +1821,10 @@ async function svStart(resume = false) {
     const cm = +$('#svHeight').value; s = new Survey({ building: name, stride: cm >= 120 && cm <= 220 ? strideFromHeight(cm) : STRIDE[settings.pace] });
   }
   if (!s) return;
-  const sensors = tracker.start();          // inside the tap: the iPhone asks for motion here
+  const res = await tracker.start();        // inside the tap: the iPhone asks for motion here
+  if (!(res.orientation && res.motion)) { tracker.stop(); motionHelp(res, () => svStart(resume)); return; }
+  // Location is asked for after motion has answered: two system questions at once can cancel each other on an iPhone.
   if (!locator.on && settings.gps && navigator.geolocation) locator.start(onFix, onGpsError);
-  const res = await sensors;
-  if (!(res.orientation && res.motion)) { tracker.stop(); toast(t('svNeedSensors'), 6000); return; }
   if (!resume) {
     const f = locator.fresh(30000);
     s.startFloor($('#svFloor').value.trim() || t('svFloorDefault'), { origin: f && f.acc <= 50 ? { lng: f.lng, lat: f.lat, acc: f.acc } : null });
@@ -1934,13 +1934,19 @@ function svRenderReview() {
   $('#svAlignSec').hidden = !s.origin;
   if (s.origin) svAlignMap();
 }
+// One preview map at a time: a second call while the first is still loading (a nudge tapped early, or the review
+// drawn again after a match) waits for it, and a map that finishes loading after the review was left is thrown away.
 async function svAlignMap() {
   const m = sv.s.toMaps()[0];
   if (sv.alignCtl) { sv.alignCtl.setFloor(m); return; }
+  if (sv.alignBusy) { sv.alignAgain = true; return; }
+  sv.alignBusy = true; sv.alignAgain = false;
   try {
     const { createOutdoorMap } = await import('./outdoor.js');
-    sv.alignCtl = await createOutdoorMap($('#svAlignMap'), { map: m, lang: settings.lang, attribution: t('attrPlan'), providers: { choice: cfg.maps?.homeBase || 'esri-imagery-labels', cfg: cfg.maps }, padding: 30 });
-  } catch { $('#svAlignSec').hidden = true; }
+    const ctl = await createOutdoorMap($('#svAlignMap'), { map: m, lang: settings.lang, attribution: t('attrPlan'), providers: { choice: cfg.maps?.homeBase || 'esri-imagery-labels', cfg: cfg.maps }, padding: 30 });
+    if (!sv.s || !sv.review || sv.maps || sv.alignCtl) { try { ctl.destroy(); } catch { } }
+    else { sv.alignCtl = ctl; if (sv.alignAgain) ctl.setFloor(sv.s.toMaps()[0]); }
+  } catch { $('#svAlignSec').hidden = true; } finally { sv.alignBusy = false; sv.alignAgain = false; }
 }
 function svAlignBy(k, v) {
   const a = sv.s.align; if (k === 'scale') a.scale = Math.max(0.8, Math.min(1.2, (a.scale || 1) + v)); else a[k] = (a[k] || 0) + v;
@@ -2094,7 +2100,7 @@ function snSetScale(mpp, how, beta = null) {
 // length give the size, and the compass while you walked gives the plan's direction (so directions point the right way).
 async function snWalkStart() {
   const res = await tracker.start();
-  if (!(res.motion)) { toast(t('svNeedSensors'), 6000); return; }
+  if (!(res.motion)) { motionHelp(res, snWalkStart); return; }
   sn.walk = { on: true, n: 0, hx: 0, hy: 0, prev: tracker.onStep };
   tracker.onStep = () => { sn.walk.n++; const H = tracker.heading; if (H != null) { sn.walk.hx += Math.cos(H * Math.PI / 180); sn.walk.hy += Math.sin(H * Math.PI / 180); } const el = $('.sn-steps'); if (el) el.textContent = t('snStepsN', sn.walk.n); };
   sn.b = null; snControls(); snDraw();
@@ -2172,6 +2178,9 @@ function bindSurvey() {
   $('#btnSurveyHome').onclick = () => { sv.maps = null; go('survey'); };
   $('#btnSnapHome').onclick = () => { sn.step = 'pick'; go('snap'); snGo('pick'); };
   $('#btnMakeHome').onclick = $('#btnMakeSet').onclick = () => go('make');
+  $('#btnMotionRetry').onclick = () => { const again = motionRetry; motionRetry = null; $('#dlgMotion').close(); again?.(); };   // this tap is the new permission request
+  // An iPhone asks before it shares motion; say so first, so the system question is expected and gets "Allow".
+  for (const el of $$('[data-ios-motion]')) el.hidden = typeof globalThis.DeviceMotionEvent?.requestPermission !== 'function';
   $('#btnSketchHome').onclick = () => startSketch();
   bindMake();
   snBind();
@@ -2250,6 +2259,27 @@ function svMatch() {
   } });
 }
 
+/* ---------- Motion would not start: say why, say what to do, offer to try again ----------
+   (founder's first try on his iPhone, Nov 2026: a toast said "this needs the phone's compass and motion sensors"
+   and that was all). The reasons a phone gives no readings are different problems with different cures:
+   denied   an iPhone was asked and the answer was no; Safari keeps that answer until it is closed
+   silent   allowed (or never asked), but no readings came: a computer, or motion sensors switched off for the site
+   insecure the page is not on https
+   retry runs inside the tap on "Try again", so the phone can ask again. */
+let motionRetry = null;
+function motionHelp(res, retry) {
+  const ios = !!res.asked, why = embedded ? 'embedded' : res.reason || 'silent';
+  const steps = why === 'denied' ? ['mhIos1', 'mhIos2', 'mhIos3'] : why === 'silent' && !ios ? ['mhAnd1', 'mhAnd2'] : [];
+  $('#motionHelpTitle').textContent = t({ denied: 'mhTitleDenied', insecure: 'mhTitleInsecure', embedded: 'mhTitleEmbedded' }[why] || 'mhTitleSilent');
+  $('#motionHelpBody').textContent = t({ denied: 'mhBodyDenied', insecure: 'mhBodyInsecure', embedded: 'motionEmbedded' }[why] || (ios ? 'mhBodySilentIos' : 'mhBodySilent'));
+  $('#motionHelpSteps').innerHTML = steps.map(k => `<li>${esc(t(k))}</li>`).join(''); $('#motionHelpSteps').hidden = !steps.length;
+  const ans = Object.entries(res.answers || {}).map(([k, v]) => `${k} ${v}`).join(', ') || 'not asked';
+  $('#motionHelpDetails').textContent = t('mhDetails', `${why} · ${ans} · readings: compass ${res.orientation ? 'yes' : 'no'}, steps ${res.motion ? 'yes' : 'no'} · https ${window.isSecureContext ? 'yes' : 'no'}`);
+  motionRetry = retry; $('#btnMotionRetry').hidden = why === 'embedded' || why === 'insecure';
+  openDlg($('#dlgMotion')); announce(`${$('#motionHelpTitle').textContent}. ${$('#motionHelpBody').textContent}`, true);
+  analytics.add('motion_help', { why });
+}
+
 /* ---------- Maps kept on this phone ---------- */
 const userMaps = () => store.get('dalil.userMaps', []).filter(isMap);
 function myBuildings() {
@@ -2321,7 +2351,7 @@ function deleteUserBuilding(b) {
 }
 function startSketch(edit = null) {
   go('sketch');
-  openSketch({ edit, ctx: { ...mapCtx(), tracker, store, catIco, ico, back, stride: myStride, navActive: () => nav.active,
+  openSketch({ edit, ctx: { ...mapCtx(), tracker, store, catIco, ico, back, stride: myStride, navActive: () => nav.active, motionHelp,
     catName: (c, lang) => lang ? (STR[lang].cats[c] || c) : catName(c),
     placeDialog: (rec, { onSave, onDelete }) => openPlaceDlg(null, { x: 0, y: 0 }, rec, { where: t('skTitle'), onSave, onDelete }),
     unreachable: m => { const R = new Router(m), P = m.points, bad = []; for (let i = 1; i < P.length; i++) if (R.distance('walk', P[0], P[i]) == null) bad.push(pname(P[i])); return bad; },
@@ -2551,4 +2581,15 @@ async function init() {
 window.DALIL_APP = { state, settings, spoken, nav, tracker, analytics, parseLink, buildSteps, routeFor, pointOf, go, page: () => pageNow, config: () => cfg,
   views: () => ({ routeMap, mainMap, navMap, floorMap: mainMap }), outdoor: () => outdoorCtl, homeMap: () => homeCtl, survey: () => sv, snap: () => sn, placer: placerState, sketch: sketchState, camera: () => camGuide, gps: () => ({ ...gps, on: locator.on, state: locator.state }), ready: init() };
 
-if ('serviceWorker' in navigator && location.protocol !== 'file:') window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+  // A new version of the app took over while this page was open. On Home with nothing in progress, show it at once
+  // (otherwise the old screens stay until the page is opened a second time); anywhere else, say so and leave the
+  // person's work alone.
+  const had = !!navigator.serviceWorker.controller; let swapped = false;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    if (!had || swapped) return; swapped = true;
+    if (pageNow === 'home' && !nav.active && !document.querySelector('dialog[open]')) location.reload();
+    else toast(t('appUpdated'), 8000);
+  });
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => { }));
+}
