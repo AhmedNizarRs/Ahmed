@@ -3,8 +3,8 @@
 <title>DALIL · دليل</title>
 <meta name="robots" content="noindex">
 <script>
-  // GitHub Pages has no rewrites. A DALIL sign's link (…/app/t/<building>/<floor>/<place>) lands here and is
-  // sent on to the app, which reads the same three parts from the # part of the address.
+  // A DALIL sign's link (…/app/t/<building>/<floor>/<place>) is sent on to the app, which reads the same three
+  // parts from the # part of the address. Anything else unknown opens the app.
   var m = location.pathname.match(/^(.*\/app)\/t\/([^/]+)\/([^/]+)\/([^/]+)\/?$/);
   location.replace(m ? m[1] + '/#t/' + m[2] + '/' + m[3] + '/' + m[4] : (location.pathname.split('/').slice(0, 2).join('/') || '') + '/app/');
 </script>
