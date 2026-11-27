@@ -82,7 +82,7 @@ export class Tracker {
   }
   /** Call from a tap: iOS shows its permission prompt here. Resolves once it knows which sensors send data. */
   start() {
-    const asks = [], names = [];
+    const asks = [], names = [], asked0 = this.now();
     for (const [name, E] of [['compass', globalThis.DeviceOrientationEvent], ['steps', globalThis.DeviceMotionEvent]]) {
       if (typeof E?.requestPermission !== 'function') continue;
       names.push(name);
@@ -92,6 +92,10 @@ export class Tracker {
     this.listen();
     return (async () => {
       const res = await Promise.allSettled(asks);
+      // How long the answer took. A person needs well over half a second to read the iPhone's question and tap,
+      // so a "no" faster than that came without a question (an earlier "no" Safari still remembers, or motion
+      // switched off for websites in Settings). Founder's iPhone, 27 Nov 2026: "denied" for both, help screen shown.
+      this.answerMs = Math.round(this.now() - asked0);
       // What the phone answered, per sensor: 'granted', 'denied', or the error's name (kept for the help screen).
       this.answers = Object.fromEntries(res.map((r, i) => [names[i], r.status === 'fulfilled' ? String(r.value) : (r.reason?.name || 'error')]));
       this.denied = res.some(r => r.status === 'rejected' || (r.value && r.value !== 'granted'));
@@ -101,6 +105,7 @@ export class Tracker {
       while (this.now() - t0 < wait && !(this.orientSeen && this.motionSeen)) await new Promise(r => setTimeout(r, 100));
       const ok = this.orientSeen && this.motionSeen, secure = typeof isSecureContext === 'undefined' ? true : isSecureContext;
       return { orientation: this.orientSeen, motion: this.motionSeen, denied: this.denied, asked: this.asked, answers: this.answers,
+        answerMs: this.answerMs, unasked: this.denied && this.asked && this.answerMs < 600,
         reason: ok ? null : !secure ? 'insecure' : this.denied ? 'denied' : 'silent' };
     })();
   }
