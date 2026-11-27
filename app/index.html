@@ -1,0 +1,662 @@
+<!doctype html>
+<html lang="en" dir="ltr" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>DALIL · دليل</title>
+<meta name="description" content="Indoor directions that move with you: an arrow that turns as you walk, a guide line in the camera view, spoken steps.">
+<meta name="theme-color" content="#07090D">
+<meta name="robots" content="noindex">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="live" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+<div id="liveAssertive" class="sr-only" aria-live="assertive" aria-atomic="true"></div>
+
+<!-- ============ BOOT ============ -->
+<div id="boot" class="boot" role="status">
+  <svg class="boot-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
+  <p id="bootText" class="boot-text" data-i18n="loading">Loading building map…</p>
+  <div id="bootBar" class="boot-bar" aria-hidden="true"><span></span></div>
+  <div id="bootError" class="boot-error" hidden>
+    <p class="boot-err-title" data-i18n="loadFail">Couldn’t load the building map.</p>
+    <p class="muted" data-i18n="loadFailHint">Check your connection and try again.</p>
+    <button id="btnRetry" class="btn primary" type="button" data-i18n="retry">Try again</button>
+  </div>
+</div>
+
+<div id="app" class="app">
+
+  <!-- ================= HOME ================= -->
+  <section id="pgHome" class="page page-full home-map" data-page="home">
+    <div id="homeGL" class="home-gl" role="region" data-i18n-aria="mapLabel" hidden></div>
+    <div id="homeMap" class="map-view home-svg" aria-hidden="true"></div>
+
+    <div class="hm-top">
+      <div class="hm-search">
+        <button id="btnSearchOpen" class="hm-search-btn" type="button">
+          <svg class="hm-mark" viewBox="20 20 304 260" aria-hidden="true"><rect x="150" y="142" width="150" height="16" fill="currentColor"/><path d="M216.19,201.72 A84,84 0 1 1 216.19,98.28" fill="none" stroke="#FFC700" stroke-width="44"/><circle cx="150" cy="150" r="34" fill="currentColor"/></svg>
+          <span data-i18n="searchHere">Search here</span>
+        </button>
+        <button id="btnScanTop" class="hm-icon" type="button" data-i18n-aria="scanSign"><span class="ico" data-ico="qr"></span></button>
+        <button class="hm-icon hm-help" type="button" data-help data-i18n-aria="help"><span class="ico" data-ico="help"></span></button>
+      </div>
+      <div id="homeChips" class="hm-chips" role="group" data-i18n-aria="nearestTitle"></div>
+      <div id="nearCard" class="hm-near" role="status" hidden>
+        <span class="hm-near-ico"><span class="ico" data-ico="building"></span></span>
+        <span class="hm-near-text"><strong id="nearTitle"></strong><small id="nearSub"></small></span>
+        <button id="btnNearOpen" class="btn primary sm" type="button" data-i18n="openIndoor">Open</button>
+        <button id="btnNearClose" class="hm-icon sm" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button>
+      </div>
+    </div>
+
+    <div class="hm-right">
+      <button id="btnLayers" class="hm-fab sm" type="button" data-i18n-aria="mapLayers"><span class="ico" data-ico="layers"></span></button>
+      <div id="homeFloors" class="hm-floors" role="group" data-i18n-aria="floorLayer"></div>
+    </div>
+    <div class="hm-fabs">
+      <button id="btnLocateMe" class="hm-fab" type="button" data-i18n-aria="showMyLocation"><span class="ico" data-ico="gps"></span></button>
+      <button id="btnDirections" class="hm-fab primary" type="button" data-i18n-aria="directions"><span class="ico" data-ico="nav"></span></button>
+    </div>
+
+    <section id="homeSheet" class="hm-sheet" data-i18n-aria="homeTitle">
+      <button id="btnSheet" class="hm-handle" type="button" aria-expanded="false" aria-controls="homeSheetBody" data-i18n-aria="moreOptions"><span aria-hidden="true"></span></button>
+      <div id="homeSheetBody" class="hm-sheet-body">
+        <div class="hm-head">
+          <div class="hm-head-text">
+            <h1 id="bldName" class="hm-bld"></h1>
+            <p class="hm-here"><span class="eyebrow" id="fromEyebrow">You are here</span> <strong id="fromName">—</strong></p>
+          </div>
+          <button id="btnLang" class="pill lang-btn" type="button" data-i18n-aria="switchLang"><span data-i18n="langBtn">عربي</span></button>
+        </div>
+        <div class="hm-here-actions">
+          <button id="btnFrom" class="pill" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="change">Change</span></button>
+          <button id="btnLocate" class="pill" type="button" hidden><span class="ico" data-ico="gps"></span><span data-i18n="useLocation">Use my location</span></button>
+        </div>
+      <h2 class="sec-title" data-i18n="nearestTitle">Find the nearest</h2>
+      <ul id="tiles" class="tiles"></ul>
+      <section id="secBuildings" class="sec" hidden><h2 class="sec-title" data-i18n="indoorMaps">Indoor maps</h2><ul id="buildingList" class="rows"></ul></section>
+      <section id="secSaved" class="sec" hidden><h2 class="sec-title" data-i18n="secSaved">Saved places</h2><ul id="savedList" class="rows"></ul></section>
+      <section id="secRecent" class="sec" hidden><h2 class="sec-title" data-i18n="secRecent">Recent</h2><ul id="recentList" class="rows"></ul></section>
+      <ul class="rows more">
+        <li><button id="btnFloorMap" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="map"></span></span><span class="r-main"><span class="r-name" data-i18n="floorMap">Floor map</span><span class="r-sub" data-i18n="floorMapSub">See every floor and tap a place</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnAddPlaceHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="plus"></span></span><span class="r-main"><span class="r-name" data-i18n="addPlaceRow">Add a missing place</span><span class="r-sub" data-i18n="addPlaceRowSub">A room with no name? Tap it on the map and name it</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li id="liGettingHere" hidden><button id="btnGettingHere" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="building"></span></span><span class="r-main"><span class="r-name" data-i18n="gettingHere">Getting here</span><span id="ghSub" class="r-sub" data-i18n="gettingHereSub">Street map and directions to the entrance</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnScanHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="qr"></span></span><span class="r-main"><span class="r-name" data-i18n="scanSign">Scan a DALIL sign</span><span class="r-sub" data-i18n="scanSignSub">Tells the app exactly where you are</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnMakeHome" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="building"></span></span><span class="r-main"><span class="r-name" data-i18n="mkRow">Add a building</span><span class="r-sub" data-i18n="mkRowSub">From a floor plan, the satellite photo or a walk</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+        <li><button id="btnSettings" class="row-btn" type="button"><span class="r-ico"><span class="ico" data-ico="gear"></span></span><span class="r-main"><span class="r-name" data-i18n="settings">Settings</span><span class="r-sub" data-i18n="settingsSub">Language, text size, voice</span></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button></li>
+      </ul>
+      <p class="fine" data-i18n="aboutShort">DALIL helps you find your way inside. Building signs and staff always come first.</p>
+      </div>
+    </section>
+
+    <nav class="hm-tabs" data-i18n-aria="mainMenu">
+      <button class="hm-tab is-on" type="button" aria-current="page" id="tabExplore"><span class="ico" data-ico="pin"></span><span data-i18n="tabExplore">Explore</span></button>
+      <button class="hm-tab" type="button" id="tabSaved"><span class="ico" data-ico="bookmark"></span><span data-i18n="tabSaved">Saved</span></button>
+      <button class="hm-tab" type="button" id="tabScan"><span class="ico" data-ico="qr"></span><span data-i18n="tabScan">Scan</span></button>
+      <button class="hm-tab" type="button" id="tabSettings"><span class="ico" data-ico="gear"></span><span data-i18n="settings">Settings</span></button>
+    </nav>
+  </section>
+
+  <dialog id="dlgLayers" class="sheet-dlg" aria-labelledby="dlgLayersTitle">
+    <div class="dlg-head"><h2 id="dlgLayersTitle" data-i18n="mapLayers">Map and layers</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div class="out-layers-body lay-body">
+      <fieldset><legend data-i18n="baseMap">Base map</legend><div id="homeBases" class="opt-list" role="radiogroup"></div><p id="homeKeyNote" class="muted small" hidden></p></fieldset>
+      <fieldset><legend data-i18n="layersTitle">Layers</legend><div id="homeChecks" class="opt-list"></div></fieldset>
+    </div>
+  </dialog>
+
+  <!-- ================= ADD A BUILDING: every way to make a map, and the maps kept on this phone ================= -->
+  <section id="pgMake" class="page" data-page="make" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="mkTitle">Add a building</h1>
+    </header>
+    <main class="page-body make">
+      <p class="sv-lead" data-i18n="mkLead">Choose how to map it. Every way ends in the same thing: search, routes and spoken directions.</p>
+      <h2 class="sec-title" data-i18n="mkHavePlan">You have a floor plan</h2>
+      <button id="btnSnapHome" class="gt-card" type="button"><span class="gt-ico"><span class="ico" data-ico="camera"></span></span><span class="gt-text"><strong data-i18n="mkSnap">Photo or picture of the plan</strong><small data-i18n="mkSnapSub">A drawing, a screenshot, or the evacuation plan on the wall. Real walls and rooms.</small><em class="gt-tag" data-i18n="mkSnapTag">Most detail</em></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button>
+      <label class="gt-card file-btn"><span class="gt-ico"><span class="ico" data-ico="map"></span></span><span class="gt-text"><strong data-i18n="mkFile">A DALIL map file</strong><small data-i18n="mkFileSub">From the DALIL Mapper: a CAD drawing or a 3D scan</small></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span><input id="fileMap" type="file" accept=".json,application/json"></label>
+      <p id="loadMsg" class="muted" role="status"></p>
+      <h2 class="sec-title" data-i18n="mkNoPlan">No floor plan</h2>
+      <button id="btnSketchHome" class="gt-card" type="button"><span class="gt-ico sat"><span class="ico" data-ico="layers"></span></span><span class="gt-text"><strong data-i18n="mkSketch">Draw it on the satellite photo</strong><small data-i18n="mkSketchSub">Trace the roof, then draw or walk the corridors. Always in the right place on the real map.</small><em class="gt-tag new" data-i18n="mkSketchTag">New · most exact</em></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button>
+      <button id="btnSurveyHome" class="gt-card" type="button"><span class="gt-ico"><span class="ico" data-ico="walk"></span></span><span class="gt-text"><strong data-i18n="mkWalk">Walk it</strong><small data-i18n="mkWalkSub">Quickest. Your steps and compass draw the corridors.</small></span><span class="ico r-chev flip-rtl" data-ico="fwd"></span></button>
+      <h2 class="sec-title" data-i18n="mkMine">Maps on this phone</h2>
+      <ul id="myMaps" class="rows"></ul>
+      <p id="myMapsEmpty" class="muted" data-i18n="mkMineEmpty">Maps you make or load are kept here.</p>
+    </main>
+  </section>
+
+  <dialog id="dlgMapAct" class="sheet-dlg" aria-labelledby="mapActTitle">
+    <div class="dlg-head"><h2 id="mapActTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="mapActSub" class="muted"></p>
+    <div id="mapActMain" class="gt-acts">
+      <button id="maOpen" class="btn primary" type="button" data-i18n="mmOpen">Open it</button>
+      <button id="maPlace" class="btn secondary" type="button"><span class="ico" data-ico="gps"></span><span id="maPlaceText"></span></button>
+      <button id="maEdit" class="btn secondary" type="button" hidden><span class="ico" data-ico="edit"></span><span data-i18n="mmEdit">Edit the drawing</span></button>
+      <button id="maShare" class="btn secondary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="mmShare">Share the map file</span></button>
+      <form id="maRenameForm" class="gt-rename"><label class="field"><span data-i18n="mmNewName">Building name</span><input id="maName" type="text" maxlength="60" autocomplete="off"></label><button class="btn secondary" type="submit" data-i18n="mmRename">Rename</button></form>
+      <button id="maDelete" class="btn tertiary danger" type="button"><span class="ico" data-ico="close"></span><span data-i18n="mmDelete">Delete</span></button>
+    </div>
+    <div id="mapActSure" class="gt-acts" hidden>
+      <p id="maSureText" class="route-msg warn"></p>
+      <div class="pair"><button id="maDeleteYes" class="btn primary danger-fill" type="button" data-i18n="mmDeleteYes">Yes, delete it</button><button id="maDeleteNo" class="btn secondary" type="button" data-i18n="cancel">Cancel</button></div>
+    </div>
+  </dialog>
+
+  <!-- ================= PUT IT ON THE REAL MAP: match corners between the plan and the satellite photo ================= -->
+  <section id="pgPlace" class="page page-full gt" data-page="place" hidden>
+    <div id="plMap" class="gt-map" role="region" data-i18n-aria="mapLabel"></div>
+    <canvas id="plPlan" class="gt-plan" tabindex="0" role="img" data-i18n-aria="plPlanAria"></canvas>
+    <div class="gt-cross" aria-hidden="true"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="plTitle" class="map-title"></p>
+    </header>
+    <div class="gt-side">
+      <button id="plLocate" class="hm-fab sm" type="button" data-i18n-aria="showMyLocation"><span class="ico" data-ico="gps"></span></button>
+      <button id="plZoomIn" class="hm-fab sm" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
+      <button id="plZoomOut" class="hm-fab sm" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+    </div>
+    <div id="plThumb" class="gt-thumb" hidden><canvas aria-hidden="true"></canvas></div>
+    <div class="gt-panel">
+      <p id="plStep" class="gt-step"></p>
+      <p id="plHint" class="gt-hint" role="status"></p>
+      <div id="plCtl" class="gt-ctl"></div>
+    </div>
+  </section>
+
+  <!-- ================= DRAW IT ON THE SATELLITE PHOTO: a map for a building with no floor plan ================= -->
+  <section id="pgSketch" class="page page-full gt" data-page="sketch" hidden>
+    <div id="skMap" class="gt-map" role="region" data-i18n-aria="mapLabel"></div>
+    <div class="gt-cross" aria-hidden="true"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="skTitle" class="map-title"></p>
+    </header>
+    <div class="gt-side">
+      <button id="skLocate" class="hm-fab sm" type="button" data-i18n-aria="showMyLocation"><span class="ico" data-ico="gps"></span></button>
+      <button id="skZoomIn" class="hm-fab sm" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
+      <button id="skZoomOut" class="hm-fab sm" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+    </div>
+    <div class="gt-panel">
+      <p id="skStep" class="gt-step"></p>
+      <p id="skHint" class="gt-hint" role="status"></p>
+      <div id="skCtl" class="gt-ctl"></div>
+      <div id="skNav" class="pair gt-nav"><button id="skPrev" class="btn secondary" type="button">Back</button><button id="skNext" class="btn primary" type="button">Next</button></div>
+    </div>
+  </section>
+
+  <!-- ================= IMPORT A FLOOR PLAN from a photo or picture ================= -->
+  <section id="pgSnap" class="page" data-page="snap" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="snTitle">Import a floor plan</h1>
+    </header>
+    <main class="page-body snap">
+      <div id="snPick">
+        <p class="sv-lead" data-i18n="snLead">No floor plan? Almost every building has one on the wall: the fire evacuation plan near the lifts and stairs. Take a photo of it and DALIL turns it into a navigation map.</p>
+        <ol class="sv-how">
+          <li data-i18n="snHow1">Stand straight in front of the plan and take the photo.</li>
+          <li data-i18n="snHow2">Drag the 4 yellow corners to the plan's corners.</li>
+          <li data-i18n="snHow3">DALIL finds the walls. Open any doorway it closed with your finger.</li>
+          <li data-i18n="snHow4">Walk a few metres to set the size, then tap the rooms to name them.</li>
+        </ol>
+        <label class="btn primary xl file-btn"><span class="ico" data-ico="camera"></span><span data-i18n="snTake">Take a photo of the plan</span><input id="snFile" type="file" accept="image/*" capture="environment"></label>
+        <label class="btn secondary file-btn"><span class="ico" data-ico="map"></span><span data-i18n="snChoose">Choose a photo</span><input id="snFile2" type="file" accept="image/*"></label>
+      </div>
+      <div id="snWork" hidden>
+        <p id="snTitle" class="sn-title"></p>
+        <p id="snHint" class="muted"></p>
+        <ol id="snDots" class="sn-dots" aria-hidden="true"></ol>
+        <div class="sn-wrap"><canvas id="snCanvas" class="sn-canvas" aria-label="Plan"></canvas></div>
+        <div id="snCtl" class="sn-ctl"></div>
+      </div>
+    </main>
+    <div id="snBar" class="cta-bar sn-bar" hidden><button id="snBackStep" class="btn secondary" type="button" data-i18n="snPrev">Back</button><button id="snNext" class="btn primary" type="button">Next</button></div>
+  </section>
+
+  <!-- ================= SURVEY: map a building by walking it (no floor plan) ================= -->
+  <section id="pgSurvey" class="page" data-page="survey" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="surveyTitle">Map a building</h1>
+    </header>
+    <main class="page-body survey">
+      <div id="svSetup">
+        <p class="sv-lead" data-i18n="surveyIntro">No floor plan? Walk the building with your phone and DALIL draws the map.</p>
+        <ol class="sv-how">
+          <li data-i18n="surveyHow1">Stand at the main entrance and tap Start.</li>
+          <li data-i18n="surveyHow2">Walk along the middle of each corridor, phone held flat in front of you.</li>
+          <li data-i18n="surveyHow3">At each place (room, toilets, lift, stairs…) tap “Add place here”.</li>
+          <li data-i18n="surveyHow4">Come back past places you added: the app asks “Back at …?”, and one tap straightens the whole map.</li>
+        </ol>
+        <label class="field"><span data-i18n="svBuildingName">Building name</span><input id="svBuilding" type="text" autocomplete="off"></label>
+        <label class="field"><span data-i18n="svFloorName">Floor</span><input id="svFloor" type="text" autocomplete="off"></label>
+        <label class="field"><span data-i18n="svHeight">Your height in cm (optional: sets your step length)</span><input id="svHeight" type="number" inputmode="numeric" min="120" max="220" autocomplete="off"></label>
+        <button id="btnSvStart" class="btn primary xl" type="button"><span class="ico" data-ico="walk"></span><span data-i18n="svStart">Start here</span></button>
+        <button id="btnSvResume" class="btn secondary" type="button" hidden><span class="ico" data-ico="play"></span><span data-i18n="svResume">Continue the unfinished walk</span></button>
+        <p class="muted small" data-i18n="svNote">It maps where you walk, not the walls. Your location stays on your phone until you share the map.</p>
+      </div>
+      <div id="svLive" hidden>
+        <div class="sv-top"><strong id="svFloorNow"></strong><span id="svStats" class="num"></span></div>
+        <div class="sv-view"><svg id="svMap" aria-hidden="true"></svg></div>
+        <p id="svStatus" class="sv-status" role="status"></p>
+        <button id="btnSvNear" class="sv-near" type="button" hidden><span class="ico" data-ico="check"></span><span id="svNearText"></span></button>
+        <div class="sv-actions">
+          <p class="sv-qtitle" data-i18n="svQuick">Tap what is here</p>
+          <div id="svQuick" class="sv-quick"></div>
+          <button id="btnSvPlace" class="btn secondary" type="button"><span class="ico" data-ico="pin"></span><span data-i18n="svAddNamed">Add a place with its name</span></button>
+          <div class="pair">
+            <button id="btnSvBack" class="btn secondary" type="button" data-i18n="svBackAt">I’m back at a place</button>
+            <button id="btnSvFloor" class="btn secondary" type="button" data-i18n="svChangeFloor">Change floor</button>
+          </div>
+          <div class="pair">
+            <button id="btnSvPause" class="btn secondary" type="button" aria-pressed="false" data-i18n="svPause">Pause</button>
+            <button id="btnSvFinish" class="btn secondary" type="button" data-i18n="svFinish">Finish</button>
+          </div>
+        </div>
+      </div>
+      <div id="svReview" hidden>
+        <h2 data-i18n="svReviewTitle">Check your map</h2>
+        <div id="svQuality" class="sv-quality"></div>
+        <section class="sv-match">
+          <button id="btnSvMatch" class="btn secondary" type="button"><span class="ico" data-ico="gps"></span><span data-i18n="svMatch">Match two corners on the satellite photo</span></button>
+          <p class="muted small" data-i18n="svMatchHint">Most exact: it sets where the map is, which way it faces and its size.</p>
+        </section>
+        <section id="svAlignSec" hidden>
+          <h3 data-i18n="svAlign">Line it up with the satellite photo</h3>
+          <p class="muted small" data-i18n="svAlignHint">Turn and move the map until the corridors sit inside the building.</p>
+          <div class="sv-align-map"><div id="svAlignMap"></div></div>
+          <div class="sv-align-ctl" role="group" data-i18n-aria="svAlign">
+            <button class="pill" type="button" data-al="rot:-5" data-i18n-aria="alRotL5">⟲ 5°</button><button class="pill" type="button" data-al="rot:-1" data-i18n-aria="alRotL1">⟲ 1°</button><button class="pill" type="button" data-al="rot:1" data-i18n-aria="alRotR1">⟳ 1°</button><button class="pill" type="button" data-al="rot:5" data-i18n-aria="alRotR5">⟳ 5°</button>
+            <button class="pill" type="button" data-al="dy:1" data-i18n-aria="alN">↑ 1 m</button><button class="pill" type="button" data-al="dy:-1" data-i18n-aria="alS">↓ 1 m</button><button class="pill" type="button" data-al="dx:-1" data-i18n-aria="alW">← 1 m</button><button class="pill" type="button" data-al="dx:1" data-i18n-aria="alE">→ 1 m</button>
+            <button class="pill" type="button" data-al="scale:-0.02" data-i18n-aria="alSmaller">− 2%</button><button class="pill" type="button" data-al="scale:0.02" data-i18n-aria="alBigger">+ 2%</button>
+          </div>
+        </section>
+        <h3 data-i18n="svNames">Places: give them their sign names</h3>
+        <ul id="svNameList" class="sv-names"></ul>
+        <button id="btnSvSaveMap" class="btn primary xl" type="button" data-i18n="svSaveMap">Save the map</button>
+        <button id="btnSvKeepWalking" class="btn secondary" type="button" data-i18n="svKeepWalking">Keep walking</button>
+      </div>
+      <div id="svDone" hidden>
+        <span class="sv-done-ico"><span class="ico" data-ico="check"></span></span>
+        <h2 data-i18n="svDoneTitle">Your map is ready</h2>
+        <p id="svDoneText"></p>
+        <button id="btnSvOpen" class="btn primary xl" type="button" data-i18n="svOpen">Open it</button>
+        <button id="btnSvShare" class="btn secondary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="svShare">Share the map file</span></button>
+        <p class="muted small" data-i18n="svShareNote">Send the file to the DALIL team to publish it for everyone.</p>
+      </div>
+    </main>
+  </section>
+
+  <dialog id="dlgSvPlace" class="sheet-dlg" aria-labelledby="svPlaceTitle">
+    <div class="dlg-head"><h2 id="svPlaceTitle" data-i18n="svAddPlace">Add place here</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div class="sv-form">
+      <div id="svCats" class="sv-cats" role="radiogroup" data-i18n-aria="svWhat"></div>
+      <label class="field"><span data-i18n="svPlaceName">Name (as on the sign)</span><input id="svName" type="text" autocomplete="off"></label>
+      <label class="field"><span data-i18n="svPlaceNameAr">Arabic name (optional)</span><input id="svNameAr" type="text" dir="rtl" lang="ar" autocomplete="off"></label>
+      <button id="btnSvSave" class="btn primary xl" type="button" data-i18n="save">Save</button>
+    </div>
+  </dialog>
+  <dialog id="dlgSvPick" class="sheet-dlg" aria-labelledby="svPickTitle">
+    <div class="dlg-head"><h2 id="svPickTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div class="sv-form">
+      <label class="field" id="svNewFloorWrap" hidden><span data-i18n="svNewFloor">New floor name</span><input id="svNewFloor" type="text" autocomplete="off"></label>
+      <ul id="svPickList" class="rows"></ul>
+    </div>
+  </dialog>
+
+  <!-- ================= SEARCH ================= -->
+  <section id="pgSearch" class="page" data-page="search" hidden>
+    <header class="bar search-bar">
+      <button id="btnSearchBack" class="icon-btn" type="button" data-i18n-aria="back" data-back><span class="ico flip-rtl" data-ico="back"></span></button>
+      <div class="search-field">
+        <span class="ico" data-ico="search" aria-hidden="true"></span>
+        <label for="search" class="sr-only" data-i18n="searchLabel">Search places</label>
+        <input id="search" type="search" autocomplete="off" enterkeyhint="search" data-i18n-ph="searchPh" placeholder="Room number, name or service" aria-controls="results" aria-describedby="resultsStatus">
+        <button id="btnSearchClear" class="icon-btn sm" type="button" data-i18n-aria="clearSearch" hidden><span class="ico" data-ico="close"></span></button>
+      </div>
+    </header>
+    <main class="page-body">
+      <div id="searchFilters" class="chips" role="group" data-i18n-aria="filtersLabel"></div>
+      <p id="resultsStatus" class="sr-only" role="status"></p>
+      <section id="secSearches" class="sec" hidden>
+        <div class="sec-head"><h2 class="sec-title" data-i18n="recentSearches">Recent searches</h2><button id="btnClearSearches" class="link-btn" type="button" data-i18n="clear">Clear</button></div>
+        <ul id="recentSearches" class="rows"></ul>
+      </section>
+      <p id="searchHint" class="hint" data-i18n="searchHint">Type a room number, a name or a service.</p>
+      <ul id="results" class="rows"></ul>
+      <div id="noResults" class="empty" hidden><p id="noResultsTitle" class="empty-title"></p><p class="muted" data-i18n="noResultsHint">Try a room number such as 104.</p><div class="empty-actions"><button id="btnNoResHelpDesk" class="btn secondary" type="button" data-i18n="noResAskDesk">Ask at the help desk</button><button id="btnNoResHelp" class="btn secondary" type="button"><span class="ico" data-ico="help"></span><span data-i18n="noResGetHelp">Get help</span></button></div></div>
+    </main>
+  </section>
+
+  <!-- ================= ROUTE READY ================= -->
+  <section id="pgRoute" class="page" data-page="route" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <div class="bar-end">
+        <button class="pill help-btn" type="button" data-help><span class="ico" data-ico="help"></span><span data-i18n="help">Help</span></button>
+      </div>
+    </header>
+    <main class="page-body">
+      <div class="dest-head">
+        <span id="placeIco" class="dest-ico" aria-hidden="true"></span>
+        <div class="dest-text"><h1 id="destName" class="dest-name" tabindex="-1"></h1><p id="destMeta" class="dest-meta"></p></div>
+      </div>
+      <div class="holo route-holo"><div id="routeMap" class="map-view holo-map" role="img"></div></div>
+      <div id="routeStats" class="route-sum" hidden>
+        <p class="rs-line"><span class="ico" data-ico="walk"></span><span><strong id="statEta" class="num"></strong> <span data-i18n="sumMin">min walk</span></span><span class="rs-sep" aria-hidden="true">·</span><span><strong id="statDist" class="num"></strong> <span data-i18n="sumM">m</span></span></p>
+        <p id="routeVia" class="via" hidden></p>
+      </div>
+      <div id="routeMsg" class="route-msg" role="status"></div>
+      <ul id="placeFacts" class="facts"></ul>
+      <label class="switch-row" for="optStepFree">
+        <span class="sw-ico"><span class="ico" data-ico="wheel"></span></span>
+        <span class="sw-text"><strong data-i18n="stepFree">Avoid stairs</strong><small data-i18n="stepFreeHint">Step-free route: lifts and wide doors only</small></span>
+        <input id="optStepFree" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span>
+      </label>
+      <div class="pair">
+        <button id="btnFav" class="btn tertiary" type="button" aria-pressed="false"><span class="ico" data-ico="heart"></span><span id="favText" data-i18n="save">Save</span></button>
+        <button id="btnShare" class="btn tertiary" type="button"><span class="ico" data-ico="share"></span><span data-i18n="share">Share</span></button>
+      </div>
+      <button id="btnEditPlace" class="btn tertiary" type="button" hidden><span class="ico" data-ico="edit"></span><span data-i18n="placeEditBtn">Edit this place (added by you)</span></button>
+      <details id="secPreview" class="steps-box" hidden><summary id="stepsSummary"></summary><ol id="previewSteps" class="step-rows"></ol></details>
+      <div id="kioskQR" class="kiosk-qr" hidden><div class="qr"></div><p data-i18n="kioskQR">Scan to take these directions on your phone</p></div>
+    </main>
+    <div class="cta-bar">
+      <button id="btnStart" class="btn primary xl" type="button"><span class="ico" data-ico="nav"></span><span id="startText" data-i18n="start">Start</span></button>
+      <button id="btnStartCam" class="btn secondary cam-btn" type="button" data-i18n-aria="startCamAria"><span class="ico" data-ico="camera"></span><span data-i18n="camShort">Camera</span></button>
+    </div>
+  </section>
+
+  <!-- ================= WHERE AM I ================= -->
+  <section id="pgWhere" class="page" data-page="where" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+    </header>
+    <main class="page-body">
+      <h1 class="page-title" data-i18n="whereTitle">Where are you?</h1>
+      <div class="scan-card">
+        <h2 class="card-title"><span class="ico" data-ico="qr"></span><span data-i18n="whereScan">Scan the code on a DALIL sign</span></h2>
+        <div id="scanView" class="scan-view" hidden><video id="scanVideo" playsinline muted autoplay></video><span class="scan-frame" aria-hidden="true"></span></div>
+        <p id="scanStatus" class="muted" role="status"></p>
+        <button id="btnScanStart" class="btn primary" type="button"><span class="ico" data-ico="camera"></span><span data-i18n="whereScanBtn">Open the camera</span></button>
+      </div>
+      <p id="nfcLine" class="nfc-line" hidden><span class="ico" data-ico="nfc"></span><span id="nfcStatus" data-i18n="whereNfc">Or hold the top of your phone on the DALIL tag</span></p>
+      <h2 class="sec-title" data-i18n="whereList">Or choose where you are</h2>
+      <div class="search-field small"><span class="ico" data-ico="search" aria-hidden="true"></span><label for="whereFilter" class="sr-only" data-i18n="whereFilter">Type to find a place</label><input id="whereFilter" type="search" autocomplete="off" data-i18n-ph="whereFilter"></div>
+      <ul id="tagList" class="rows"></ul>
+    </main>
+  </section>
+
+  <!-- ================= FLOOR MAP ================= -->
+  <section id="pgMap" class="page page-full" data-page="map" hidden>
+    <div id="mainMap" class="map-view main-map holo-map" role="region"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="mapTitle" class="map-title"></p>
+      <button id="btnRealMap" class="pill solid" type="button" hidden><span class="ico" data-ico="layers"></span><span data-i18n="realMap">Real map</span></button>
+    </header>
+    <div class="map-ctrls">
+      <div id="floorRail" class="floor-switch" role="group"></div>
+      <div class="zoom-group">
+        <button id="btnZoomIn" class="ctrl" type="button" data-i18n-aria="zoomIn"><span class="ico" data-ico="plus"></span></button>
+        <button id="btnZoomOut" class="ctrl" type="button" data-i18n-aria="zoomOut"><span class="ico" data-ico="minus"></span></button>
+      </div>
+      <button id="btnRecenter" class="ctrl solo" type="button" data-i18n-aria="recenter"><span class="ico" data-ico="locate"></span></button>
+    </div>
+    <div class="map-foot">
+      <div id="pinCard" class="pin-card" hidden>
+        <div class="pin-head"><span class="ico" data-ico="pin"></span><strong id="pinText"></strong><button id="btnClosePin" class="icon-btn sm" type="button" data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+        <div class="pair"><button id="btnPinGo" class="btn primary" type="button" data-i18n="pinGo">Directions here</button><button id="btnPinSave" class="btn secondary" type="button" data-i18n="pinSave">Save as my spot</button></div>
+        <button id="btnPinAdd" class="btn tertiary" type="button"><span class="ico" data-ico="plus"></span><span data-i18n="pinAdd">Add a place here</span></button>
+      </div>
+      <p id="mapTip" class="map-tip" data-i18n="mapTip">Tap a place for directions, or tap the floor to drop a pin.</p>
+    </div>
+  </section>
+
+  <!-- ================= SETTINGS ================= -->
+  <section id="pgSettings" class="page" data-page="settings" hidden>
+    <header class="bar">
+      <button class="pill back-btn" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <h1 class="bar-title" data-i18n="settings">Settings</h1>
+    </header>
+    <main class="page-body settings">
+      <fieldset class="set-group"><legend data-i18n="language">Language</legend>
+        <div class="choice">
+          <label><input type="radio" name="lang" value="en"><span>English</span></label>
+          <label><input type="radio" name="lang" value="ar"><span lang="ar">العربية</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="set-group"><legend data-i18n="textSize">Text size</legend>
+        <div class="choice three">
+          <label><input type="radio" name="textSize" value="normal"><span class="ts ts1">A</span><small data-i18n="size_normal">Normal</small></label>
+          <label><input type="radio" name="textSize" value="large"><span class="ts ts2">A</span><small data-i18n="size_large">Large</small></label>
+          <label><input type="radio" name="textSize" value="xl"><span class="ts ts3">A</span><small data-i18n="size_xl">Extra large</small></label>
+        </div>
+      </fieldset>
+      <fieldset class="set-group"><legend data-i18n="appearance">Look</legend>
+        <div class="choice three">
+          <label><input type="radio" name="theme" value="dark"><span data-i18n="theme_dark">Night</span></label>
+          <label><input type="radio" name="theme" value="light"><span data-i18n="theme_light">Day</span></label>
+          <label><input type="radio" name="theme" value="system"><span data-i18n="theme_system">Same as phone</span></label>
+        </div>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_contrast">High contrast</strong><small data-i18n="set_contrastHint">Black, white and yellow only</small></span><input id="setContrast" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_motion">Reduce motion</strong><small data-i18n="set_motionHint">No moving animations</small></span><input id="setMotion" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+      </fieldset>
+      <fieldset class="set-group"><legend data-i18n="directions">Directions</legend>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_gps">Use my location (GPS)</strong><small data-i18n="set_gpsHint">Blends your phone’s location with your steps. It stays on your phone.</small></span><input id="setGps" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_voice">Speak the directions</strong><small data-i18n="set_voiceHint">Reads each step aloud</small></span><input id="setVoice" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_vibrate">Vibrate on turns</strong><small data-i18n="set_vibrateHint">A short buzz before each turn</small></span><input id="setVibrate" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_stepfree">Always avoid stairs</strong><small data-i18n="set_stepfreeHint">Start every route as step-free</small></span><input id="setStepFree" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <label class="switch-row"><span class="sw-text"><strong data-i18n="set_clock">Clock directions</strong><small data-i18n="set_clockHint">Also say the turn as a clock, like “3 o’clock” for right. Some blind people find this easier.</small></span><input id="setClock" type="checkbox" role="switch"><span class="switch" aria-hidden="true"></span></label>
+        <p class="set-label" id="genderLabel" data-i18n="genderFor">Restrooms and prayer rooms</p>
+        <div class="choice three" role="radiogroup" aria-labelledby="genderLabel">
+          <label><input type="radio" name="gender" value="m"><span data-i18n="gender_m">Men</span></label>
+          <label><input type="radio" name="gender" value="f"><span data-i18n="gender_f">Women</span></label>
+          <label><input type="radio" name="gender" value="any"><span data-i18n="gender_any">Everyone</span></label>
+        </div>
+        <p class="set-label" id="paceLabel" data-i18n="pace">Walking pace</p>
+        <div class="choice three" role="radiogroup" aria-labelledby="paceLabel">
+          <label><input type="radio" name="pace" value="slow"><span data-i18n="pace_slow">Slow</span></label>
+          <label><input type="radio" name="pace" value="normal"><span data-i18n="pace_normal">Normal</span></label>
+          <label><input type="radio" name="pace" value="fast"><span data-i18n="pace_fast">Fast</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="set-group" id="setMapSec"><legend data-i18n="mapData">Building map</legend>
+        <label class="field"><span data-i18n="building">Building</span><select id="setBuilding"></select></label>
+        <label class="field"><span data-i18n="mapStyle">Street map</span><select id="setProvider"></select></label>
+        <button id="btnMakeSet" class="btn secondary" type="button"><span class="ico" data-ico="building"></span><span data-i18n="mkSetBtn">Add a building · manage maps</span></button>
+        <p id="addedInfo" class="muted"></p>
+        <button id="btnExportPlaces" class="btn secondary" type="button" hidden><span class="ico" data-ico="share"></span><span data-i18n="exportPlaces">Export places you added</span></button>
+      </fieldset>
+      <section class="set-group about"><h2 class="legend" data-i18n="about">About</h2>
+        <p data-i18n="aboutText">DALIL is a supplementary wayfinding aid.</p>
+        <p class="warn-note"><span class="ico" data-ico="alert"></span><span data-i18n="notEmergency">Not for emergencies.</span></p>
+        <p class="muted" data-i18n="privacyLocal">Your saved places and history stay on this phone.</p>
+        <p id="privacyStats" class="muted" data-i18n="privacyStats" hidden></p>
+        <p class="muted small">Maps: MapLibre (BSD-3), OpenFreeMap, VersaTiles, OpenStreetMap contributors (ODbL), Overture Maps (ODbL). QR: jsQR (Apache-2.0), qrcode-generator (MIT). Fonts: Geist, Geist Mono, IBM Plex Sans Arabic (OFL).</p>
+      </section>
+    </main>
+  </section>
+
+  <!-- ================= GETTING HERE ================= -->
+  <section id="pgOutdoor" class="page page-full outdoor" data-page="outdoor" hidden>
+    <div id="outMap" class="out-map" role="region"></div>
+    <header class="bar float">
+      <button class="pill back-btn solid" type="button" data-back><span class="ico flip-rtl" data-ico="back"></span><span data-i18n="back">Back</span></button>
+      <p id="outBuilding" class="map-title"></p>
+    </header>
+    <div class="out-panel">
+      <p id="outStatus" class="out-status" role="status"></p>
+      <button id="btnMyLoc" class="btn secondary" type="button"><span class="ico" data-ico="locate"></span><span data-i18n="showMyLocation">Show my location</span></button>
+      <div class="pair">
+        <a id="lnkGmaps" class="btn primary" href="#" target="_blank" rel="noopener" data-i18n="dirGoogle">Directions in Google Maps</a>
+        <a id="lnkAmaps" class="btn secondary" href="#" target="_blank" rel="noopener" data-i18n="dirApple">Apple Maps</a>
+      </div>
+      <details id="outLayers" class="out-layers">
+        <summary><span class="ico" data-ico="layers"></span><span data-i18n="mapLayers">Map and layers</span></summary>
+        <div class="out-layers-body">
+          <fieldset><legend data-i18n="baseMap">Base map</legend><div id="outBases" class="opt-list" role="radiogroup"></div><p id="outKeyNote" class="muted small" hidden></p></fieldset>
+          <fieldset><legend data-i18n="layersTitle">Layers</legend><div id="outChecks" class="opt-list"></div></fieldset>
+          <fieldset id="outFloorsSet" hidden><legend data-i18n="floorLayer">Floor shown</legend><div id="outFloors" class="opt-list" role="radiogroup"></div></fieldset>
+          <label class="field"><span data-i18n="planOpacity">Plan opacity</span><input id="outOpacity" type="range" min="20" max="100" step="5"></label>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- ================= DIRECTIONS (heads-up display) ================= -->
+  <section id="nav" class="page nav" data-page="nav" hidden>
+    <div class="nav-view">
+      <div id="navMap" class="map-view nav-map holo-map" aria-hidden="true"></div>
+      <div id="navCam" class="nav-cam" hidden></div>
+      <div class="nav-shade" aria-hidden="true"></div>
+    </div>
+
+    <div class="hud-top">
+      <div id="hudCard" class="hud-card">
+        <div id="navArrow" class="hud-arrow" aria-hidden="true">
+          <svg class="arrow-big" viewBox="0 0 100 100">
+            <defs><linearGradient id="arrowFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DCE8FF"/></linearGradient></defs>
+            <path class="arrow-shape" d="M50 7 87 51H63.5v40h-27V51H13z"/>
+            <path class="arrow-shine" d="M50 7 87 51H63.5v40h-13.5V7z"/>
+          </svg>
+          <span id="navIco" class="hud-ico"></span>
+        </div>
+        <div class="hud-text">
+          <p class="hud-head"><span id="hudDist" class="hud-dist num"></span><span id="navStepNum" class="eyebrow"></span></p>
+          <p id="navStepText" class="hud-main" tabindex="-1"></p>
+          <p id="navStepSub" class="hud-sub"></p>
+        </div>
+      </div>
+      <div class="hud-status-row"><p id="navMode" class="hud-status"><span class="status-dot" aria-hidden="true"></span><span id="navModeText"></span></p><button id="btnNotHere" class="hud-nothere" type="button" data-i18n="notHere">Not here?</button><button id="btnImHere" class="hud-nothere hud-here" type="button" hidden><span class="ico" data-ico="check"></span><span data-i18n="imHere">I’m here</span></button></div>
+    </div>
+
+    <p id="camHint" class="cam-hint" role="status" hidden></p>
+    <p id="camNote" class="cam-note" hidden></p>
+
+    <!-- Motion is off: explain, never fake it -->
+    <div id="motionCard" class="center-card" hidden>
+      <span class="cc-ico"><span class="ico" data-ico="motion"></span></span>
+      <h2 class="cc-title" id="motionTitle" data-i18n="motionTitle">Turn on motion</h2>
+      <p class="cc-body" id="motionBody" data-i18n="motionBody">DALIL follows you with your phone’s compass and step counter.</p>
+      <button id="btnAllowMotion" class="btn primary" type="button"><span class="ico" data-ico="motion"></span><span data-i18n="allowMotion">Allow motion</span></button>
+      <button id="btnPreview" class="btn secondary" type="button"><span class="ico" data-ico="play"></span><span data-i18n="watchPreview">Watch a preview</span></button>
+      <p class="cc-small" data-i18n="orScan">You can also scan DALIL signs as you walk.</p>
+      <button id="btnSignsOnly" class="link-btn" type="button" data-i18n="signsOnly">Continue with signs only</button>
+    </div>
+
+    <!-- Floor change: happens on its own (lift ride or stairs), shown here -->
+    <div id="floorCard" class="center-card floor-card" hidden>
+      <span class="cc-ico" id="floorIco"></span>
+      <h2 class="cc-title" id="floorTitle"></h2>
+      <p class="cc-body" id="floorBody"></p>
+      <div id="floorMeter" class="meter" hidden><span></span></div>
+    </div>
+
+    <div class="hud-bottom">
+      <div id="arriveAsk" class="arrive-ask" role="alertdialog" aria-labelledby="arriveAskText" hidden>
+        <p id="arriveAskText" class="arrive-ask-q"></p>
+        <div class="pair"><button id="btnAskYes" class="btn primary" type="button"><span class="ico" data-ico="check"></span><span data-i18n="askYes">Yes, I’m here</span></button><button id="btnAskNo" class="btn secondary" type="button" data-i18n="askNo">Not yet</button></div>
+      </div>
+      <div class="hud-route">
+        <p class="nav-dest"><span id="navDest"></span><span id="navRemain" class="nav-remain num"></span></p>
+        <div id="navProgress" class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" data-i18n-aria="progressLabel"><span></span></div>
+      </div>
+      <div class="hud-actions">
+        <button id="btnEndNav" class="hud-btn end" type="button"><span class="ico" data-ico="close"></span><span data-i18n="end">End</span></button>
+        <button id="btnRepeat" class="hud-btn" type="button"><span class="ico" data-ico="volume"></span><span data-i18n="repeat">Repeat</span></button>
+        <button id="btnView" class="hud-btn" type="button" aria-pressed="false"><span class="ico" id="viewIco" data-ico="camera"></span><span id="viewText" data-i18n="viewCam">Camera</span></button>
+        <button id="btnSteps" class="hud-btn" type="button"><span class="ico" data-ico="list"></span><span data-i18n="stepsBtn">Steps</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Arrived -->
+  <div id="arrived" class="overlay arrived" hidden>
+    <div class="arrived-card" role="dialog" aria-modal="true" aria-labelledby="arrivedTitle">
+      <div class="arrived-mark" aria-hidden="true"><span class="ring r1"></span><span class="ring r2"></span><svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="29"/><path d="m19 33 9 9 17-19"/></svg></div>
+      <h2 id="arrivedTitle" tabindex="-1" data-i18n="arrived">You have arrived</h2>
+      <p id="arrivedName" class="arrived-name"></p>
+      <p id="arrivedStats" class="muted num"></p>
+      <div id="qibla" class="qibla" hidden><span id="qiblaArrow" class="qibla-arrow" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 2 18 14h-4v8h-4v-8H6z"/></svg></span><span><strong data-i18n="qiblaTitle">Qibla</strong><small id="qiblaText"></small></span></div>
+      <p class="muted" data-i18n="arrivedHint">Look for the sign to make sure.</p>
+      <button id="btnArrivedDone" class="btn primary xl" type="button" data-i18n="done">Done</button>
+      <button id="btnArrivedSave" class="btn secondary" type="button" data-i18n="savePlace">Save this place</button>
+    </div>
+  </div>
+
+  <!-- All steps (an overview; the steps move on by themselves) -->
+  <dialog id="dlgPlace" class="sheet-dlg" aria-labelledby="placeDlgTitle">
+    <div class="dlg-head"><h2 id="placeDlgTitle">Add a place</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="placeFloor" class="muted"></p>
+    <form id="formPlace" class="sv-form place-form">
+      <label class="field"><span data-i18n="placeNameEn">Name (English)</span><input id="placeEn" type="text" maxlength="60" autocomplete="off" dir="ltr"></label>
+      <label class="field"><span data-i18n="placeNameAr">Name (Arabic)</span><input id="placeAr" type="text" maxlength="60" autocomplete="off" dir="rtl" lang="ar"></label>
+      <label class="field"><span data-i18n="placeType">Type</span><select id="placeCat"></select></label>
+      <label id="placeGenderRow" class="field" hidden><span data-i18n="placeFor">For</span><select id="placeGender"><option value="" data-i18n="gender_any">Everyone</option><option value="m" data-i18n="gender_m">Men</option><option value="f" data-i18n="gender_f">Women</option></select></label>
+      <label class="field"><span data-i18n="placeDoor">Door or room number (optional)</span><input id="placeDoor" type="text" maxlength="20" autocomplete="off" dir="ltr"></label>
+      <p id="placeMsg" class="route-msg" role="status"></p>
+      <p class="muted small" data-i18n="placeNote">Saved on this phone. Export it from Settings to add it to the building’s official map.</p>
+      <div class="pair"><button class="btn primary" type="submit" data-i18n="placeSave">Save place</button><button id="btnPlaceCancel" class="btn secondary" type="button" data-i18n="cancel">Cancel</button></div>
+      <button id="btnPlaceDel" class="btn tertiary danger" type="button" hidden><span class="ico" data-ico="close"></span><span data-i18n="placeDelete">Remove this place</span></button>
+    </form>
+  </dialog>
+  <dialog id="dlgWhereNow" class="sheet-dlg" aria-labelledby="whereNowTitle">
+    <div class="dlg-head"><h2 id="whereNowTitle" data-i18n="whereNowTitle">Where are you now?</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="whereNowHint" class="muted"></p>
+    <ul id="whereNowList" class="rows"></ul>
+    <button id="btnWhereNowScan" class="btn secondary" type="button"><span class="ico" data-ico="qr"></span><span data-i18n="scanSign">Scan a DALIL sign</span></button>
+  </dialog>
+  <dialog id="dlgOutside" class="sheet-dlg" aria-labelledby="outDlgTitle">
+    <div class="dlg-head"><h2 id="outDlgTitle"></h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <p id="outDlgBody"></p>
+    <a id="btnOutWalk" class="btn primary xl" href="#" target="_blank" rel="noopener"><span class="ico" data-ico="walk"></span><span data-i18n="outDirections">Walking directions to the entrance</span></a>
+    <button id="btnOutMap" class="btn secondary" type="button"><span class="ico" data-ico="map"></span><span data-i18n="outShowMap">Show the way on the map</span></button>
+    <button id="btnOutAtDoor" class="btn secondary" type="button" data-i18n="outAtDoor">I’m at the entrance now</button>
+  </dialog>
+  <dialog id="dlgSteps" class="sheet-dlg" aria-labelledby="stepsTitle">
+    <div class="dlg-head"><h2 id="stepsTitle" data-i18n="stepsTitle">All steps</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <ol id="stepList" class="step-rows"></ol>
+    <button id="btnSim" class="btn secondary" type="button" aria-pressed="false"><span class="ico" data-ico="play"></span><span class="ctrl-txt" data-i18n="previewWalk">Watch a preview walk</span></button>
+    <p class="muted small" data-i18n="previewNote">The preview walks the route for you. It is not your real position.</p>
+  </dialog>
+
+  <!-- Help -->
+  <dialog id="dlgHelp" class="sheet-dlg" aria-labelledby="helpTitle">
+    <div class="dlg-head"><h2 id="helpTitle" data-i18n="helpTitle">Need help?</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <a id="helpCall" class="btn primary" href="#" hidden><span class="ico" data-ico="phone"></span><span id="helpCallText"></span></a>
+    <button id="helpDesk" class="btn secondary" type="button" hidden><span class="ico" data-ico="info"></span><span data-i18n="helpDesk">Take me to the help desk</span></button>
+    <button id="helpScan" class="btn secondary" type="button"><span class="ico" data-ico="qr"></span><span data-i18n="helpScan">Scan a DALIL sign</span></button>
+    <button id="helpShow" class="btn secondary" type="button" aria-expanded="false" aria-controls="staffCard"><span class="ico" data-ico="staff"></span><span data-i18n="helpShow">Show this to a member of staff</span></button>
+    <div id="staffCard" class="staff-card" hidden></div>
+    <p class="muted" data-i18n="helpAsk">Any member of staff can help you find your way.</p>
+  </dialog>
+
+  <!-- Share -->
+  <dialog id="dlgShare" class="sheet-dlg" aria-labelledby="shareTitle">
+    <div class="dlg-head"><h2 id="shareTitle" data-i18n="shareTitle">Share these directions</h2><button class="icon-btn" type="button" data-close data-i18n-aria="close"><span class="ico" data-ico="close"></span></button></div>
+    <div id="shareQR" class="qr big"></div>
+    <p class="muted" data-i18n="shareHint">Scan with a phone camera, or send the link.</p>
+    <input id="shareUrl" class="share-url" type="text" readonly aria-label="Link">
+    <div class="pair">
+      <button id="btnShareCopy" class="btn secondary" type="button" data-i18n="copy">Copy link</button>
+      <button id="btnShareNative" class="btn primary" type="button" data-i18n="shareNative">Share…</button>
+    </div>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" hidden></div>
+</div>
+
+<script src="vendor/qrcode.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

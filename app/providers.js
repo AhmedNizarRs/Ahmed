@@ -1,0 +1,119 @@
+// Street and satellite maps for "Getting here". The app tries them in order and moves on when one fails
+// (style can't be fetched, or its tiles keep failing), and ends on a plain map that needs no internet.
+// Free providers need no key. Keyed ones use the building's own account key from config.json. Keys in a
+// web app are visible to anyone, so restrict each key to the building's web address in the provider's dashboard.
+// Terms checked 2026-11-14 on each provider's site (docs/data-providers.md). Re-check before launch.
+
+export const PROVIDERS = [
+  { id: 'openfreemap', name: 'OpenFreeMap', kind: 'streets', terms: 'Free, commercial use allowed, no key. Attribution required.',
+    style: dark => `https://tiles.openfreemap.org/styles/${dark ? 'positron' : 'liberty'}`, darken: true },
+  { id: 'versatiles', name: 'VersaTiles', kind: 'streets', terms: 'Free and open (public tile server), no key. Attribution required.',
+    style: dark => `https://tiles.versatiles.org/assets/styles/${dark ? 'colorful-dark' : 'colorful'}/style.json` },
+  // Keyless raster tiles from the leaflet-providers catalogue. Free with attribution, but meant for light use and
+  // testing: OSM's tile policy forbids heavy app traffic, Esri's public services need an ArcGIS account for commercial
+  // use, CARTO is free for non-commercial use. Turn them off for a production site with config.maps.testTiles = false.
+  { id: 'esri-imagery', name: 'Esri World Imagery', kind: 'satellite', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    attribution: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics, GIS User Community', terms: 'Public Esri service: attribution required; commercial use needs an ArcGIS account.' },
+  { id: 'esri-imagery-labels', name: 'Esri World Imagery + labels', kind: 'satellite', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'],
+    overlays: ['https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}'],
+    attribution: 'Tiles © Esri — Esri, Maxar, Earthstar Geographics, GIS User Community', terms: 'As above.' },
+  { id: 'esri-street', name: 'Esri World Street Map', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}'], attribution: 'Tiles © Esri — Esri, HERE, Garmin, OpenStreetMap contributors', terms: 'As above.' },
+  { id: 'esri-topo', name: 'Esri World Topographic', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}'], attribution: 'Tiles © Esri — Esri, HERE, Garmin, OpenStreetMap contributors', terms: 'As above.' },
+  { id: 'osm', name: 'OpenStreetMap', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 19,
+    tiles: () => ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'], attribution: '© OpenStreetMap contributors', terms: 'Free with attribution; light use only (OSM tile usage policy).' },
+  { id: 'carto', name: 'CARTO', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 20,
+    tiles: dark => ['a', 'b', 'c'].map(s => `https://${s}.basemaps.cartocdn.com/${dark ? 'dark_all' : 'light_all'}/{z}/{x}/{y}@2x.png`), attribution: '© OpenStreetMap contributors © CARTO', terms: 'Free for non-commercial use; commercial needs a CARTO plan.' },
+  { id: 'opentopomap', name: 'OpenTopoMap', kind: 'streets', raster: true, test: true, tileSize: 256, maxzoom: 17,
+    tiles: () => ['a', 'b', 'c'].map(s => `https://${s}.tile.opentopomap.org/{z}/{x}/{y}.png`), attribution: '© OpenStreetMap contributors, SRTM · © OpenTopoMap (CC-BY-SA)', terms: 'Free with attribution, light use.' },
+  // Google: only through the official Map Tiles API (a Google Maps Platform key with Map Tiles API enabled, billing
+  // account, free monthly quota). Raw google.com tile URLs are against Google's terms, so they are never used.
+  { id: 'google', name: 'Google', kind: 'streets', key: 'google', google: { mapType: 'roadmap' }, attribution: 'Map data © Google', logo: 'Google',
+    terms: 'Google Maps Platform Map Tiles API: key + billing account, free monthly quota. The Google logo and data attribution must show.' },
+  { id: 'google-satellite', name: 'Google', kind: 'satellite', key: 'google', google: { mapType: 'satellite' }, attribution: 'Imagery © Google', logo: 'Google', terms: 'As above.' },
+  { id: 'google-hybrid', name: 'Google + labels', kind: 'satellite', key: 'google', google: { mapType: 'satellite', layerTypes: ['layerRoadmap'] }, attribution: 'Imagery and map data © Google', logo: 'Google', terms: 'As above.' },
+  { id: 'esri', name: 'Esri', kind: 'satellite', key: 'esri', terms: 'ArcGIS Location Platform account (free tier for basemap tiles). “Powered by Esri” must show.',
+    style: (dark, k) => `https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/arcgis/imagery?token=${encodeURIComponent(k)}`, attribution: 'Powered by Esri' },
+  { id: 'esri-streets', name: 'Esri', kind: 'streets', key: 'esri', terms: 'As above.',
+    style: (dark, k) => `https://basemapstyles-api.arcgis.com/arcgis/rest/services/styles/v2/styles/arcgis/${dark ? 'navigation-night' : 'navigation'}?token=${encodeURIComponent(k)}`, attribution: 'Powered by Esri' },
+  { id: 'maptiler', name: 'MapTiler', kind: 'streets', key: 'maptiler', terms: 'Commercial use needs a paid plan (the free plan is non-commercial).',
+    style: (dark, k) => `https://api.maptiler.com/maps/${dark ? 'streets-v2-dark' : 'streets-v2'}/style.json?key=${encodeURIComponent(k)}` },
+  { id: 'maptiler-satellite', name: 'MapTiler', kind: 'satellite', key: 'maptiler', terms: 'As above.',
+    style: (dark, k) => `https://api.maptiler.com/maps/hybrid/style.json?key=${encodeURIComponent(k)}` },
+  { id: 'stadia', name: 'Stadia Maps', kind: 'streets', key: 'stadia', terms: 'Commercial use needs a paid plan (Starter or above). Key, or the site’s domain registered with Stadia.',
+    style: (dark, k) => `https://tiles.stadiamaps.com/styles/${dark ? 'alidade_smooth_dark' : 'alidade_smooth'}.json${k && k !== 'domain' ? `?api_key=${encodeURIComponent(k)}` : ''}` },
+  { id: 'mapbox', name: 'Mapbox', kind: 'streets', key: 'mapbox', raster: true, terms: 'Free tier, then pay as you go (Static Tiles API).', attribution: '© Mapbox © OpenStreetMap',
+    tiles: (dark, k) => [`https://api.mapbox.com/styles/v1/mapbox/${dark ? 'dark-v11' : 'streets-v12'}/tiles/512/{z}/{x}/{y}@2x?access_token=${encodeURIComponent(k)}`] },
+  { id: 'mapbox-satellite', name: 'Mapbox', kind: 'satellite', key: 'mapbox', raster: true, terms: 'As above.', attribution: '© Mapbox © OpenStreetMap © Maxar',
+    tiles: (dark, k) => [`https://api.mapbox.com/styles/v1/mapbox/satellite-streets-v12/tiles/512/{z}/{x}/{y}@2x?access_token=${encodeURIComponent(k)}`] },
+];
+export const PLAIN = { id: 'plain', name: 'Plain', kind: 'plain' };
+
+const keyFor = (p, cfg) => !p.key ? '' : (cfg?.keys?.[p.key] || (p.key === 'stadia' && cfg?.stadiaDomainAuth ? 'domain' : ''));
+const usable = (p, cfg) => p.key ? !!keyFor(p, cfg) : !(p.test && cfg?.testTiles === false);
+/** Providers this building can use (free ones, plus keyed ones whose key is in config.json). */
+export function availableProviders(cfg = {}) { return PROVIDERS.filter(p => usable(p, cfg)); }
+/** The order to try. choice = a provider id, or 'auto' (config order first, then the other street maps). */
+export function providerOrder(choice = 'auto', cfg = {}) {
+  const avail = availableProviders(cfg);
+  if (choice === 'plain') return [];
+  const picked = avail.find(p => p.id === choice);
+  const pref = (cfg.order || ['openfreemap', 'versatiles']).map(id => avail.find(p => p.id === id)).filter(Boolean);
+  const head = picked ? [picked] : pref;
+  const sameKind = avail.filter(p => !head.includes(p) && p.kind === (picked?.kind || 'streets'));
+  const streets = avail.filter(p => !head.includes(p) && !sameKind.includes(p) && p.kind === 'streets');
+  return [...head, ...sameKind, ...streets];
+}
+
+/** Recolour a light vector style for the dark theme (no second tile source needed). */
+export function darken(style) {
+  const fill = id => /water/.test(id) ? '#16222E' : /park|grass|wood|landcover|landuse/.test(id) ? '#171C19' : /building/.test(id) ? '#22262C' : '#14161A';
+  for (const l of style.layers || []) {
+    const p = l.paint ||= {};
+    if (l.type === 'background') p['background-color'] = '#0F1114';
+    else if (l.type === 'fill') { p['fill-color'] = fill(l.id); delete p['fill-pattern']; p['fill-outline-color'] = '#2A2E35'; }
+    else if (l.type === 'line') p['line-color'] = /water|river/.test(l.id) ? '#1E3042' : /boundary|admin/.test(l.id) ? '#3A3F47' : '#2C3036';
+    else if (l.type === 'symbol' && l.layout?.['text-field']) { p['text-color'] = '#8A919B'; p['text-halo-color'] = '#0F1114'; }
+  }
+  return style;
+}
+export const plainStyle = dark => ({ version: 8, sources: {}, layers: [{ id: 'bg', type: 'background', paint: { 'background-color': dark ? '#0F1114' : '#EEEDE8' } }] });
+
+/** A provider's MapLibre style. Vector styles are fetched first, so a provider that is down fails here. */
+export async function loadStyle(p, { dark = false, cfg = {}, timeout = 7000 } = {}) {
+  const k = keyFor(p, cfg);
+  if (p.google) return googleStyle(p, k, cfg, timeout);
+  if (p.raster) {
+    const src = (tiles, attribution) => ({ type: 'raster', tiles, tileSize: p.tileSize || 512, maxzoom: p.maxzoom || 22, ...(attribution ? { attribution } : {}) });
+    const sources = { base: src(p.tiles(dark, k), p.attribution) }, layers = [{ id: 'base', type: 'raster', source: 'base' }];
+    (p.overlays || []).forEach((u, i) => { sources['ov' + i] = src([u]); layers.push({ id: 'ov' + i, type: 'raster', source: 'ov' + i }); });
+    return { version: 8, sources, layers };
+  }
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), timeout);
+  try {
+    const r = await fetch(p.style(dark, k), { signal: ctl.signal });
+    if (!r.ok) throw new Error(`${p.id} ${r.status}`);
+    const s = await r.json();
+    if (!s || s.version !== 8 || !Array.isArray(s.layers)) throw new Error(`${p.id} bad style`);
+    return dark && p.darken ? darken(s) : s;
+  } finally { clearTimeout(tm); }
+}
+
+// Google Map Tiles API: a session (map type, language, region), then 2D tiles for that session.
+async function googleStyle(p, k, cfg, timeout) {
+  const ctl = new AbortController(), tm = setTimeout(() => ctl.abort(), timeout);
+  try {
+    const r = await fetch(`https://tile.googleapis.com/v1/createSession?key=${encodeURIComponent(k)}`, { method: 'POST', signal: ctl.signal, headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...p.google, language: cfg.language || 'en-US', region: cfg.region || 'AE', scale: 'scaleFactor2x', highDpi: true }) });
+    if (!r.ok) throw new Error(`google ${r.status}`);
+    const { session } = await r.json(); if (!session) throw new Error('google no session');
+    return { version: 8, sources: { base: { type: 'raster', tileSize: 256, maxzoom: 22, attribution: p.attribution,
+      tiles: [`https://tile.googleapis.com/v1/2dtiles/{z}/{x}/{y}?session=${encodeURIComponent(session)}&key=${encodeURIComponent(k)}`] } },
+      layers: [{ id: 'base', type: 'raster', source: 'base' }] };
+  } finally { clearTimeout(tm); }
+}
+/** Every provider (also those without a key yet), for the base-map list. */
+export function allProviders(cfg = {}) { return PROVIDERS.filter(p => !(p.test && cfg?.testTiles === false)).map(p => ({ ...p, available: usable(p, cfg) })); }

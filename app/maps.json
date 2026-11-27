@@ -1,0 +1,12 @@
+{
+  "maps": [
+    "../data/dalil-map_sample-hospital_ground.json",
+    "../data/dalil-map_hospital-building-1000_ground.json",
+    "../data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-1.json",
+    "../data/test-calpoly-library/dalil-map_kennedy-library-cal-poly-test_level-2.json",
+    "../data/test-house-of-wisdom/dalil-map_house-of-wisdom-test_ground-floor.json",
+    "../data/test-house-of-wisdom/dalil-map_house-of-wisdom-test_mezzanine.json",
+    "../data/test-uos-b3/dalil-map_uos-central-labs-b3-test_ground-floor.json",
+    "../data/test-uos-fine-arts/dalil-map_uos-fine-arts-and-design-test_ground-floor.json"
+  ]
+}
