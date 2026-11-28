@@ -28,6 +28,10 @@ export function projectOnPath(path, cum, x, y) {
   return best;
 }
 
+/** A position worse than this many metres is only a rough area (Wi-Fi, mobile masts, or the phone's "Precise
+    Location" switched off): it is drawn as an area, never as "you are exactly here". */
+export const ROUGH_ACC = 100;
+
 /** Watches the position. onFix({ lng, lat, acc, t }); onError('denied' | 'unavailable'). */
 export class Locator {
   constructor() { this.watch = null; this.fix = null; this.state = 'idle'; }
@@ -38,7 +42,11 @@ export class Locator {
     this.state = 'asking';
     this.watch = navigator.geolocation.watchPosition(p => {
       this.state = 'on';
-      this.fix = { lng: p.coords.longitude, lat: p.coords.latitude, acc: p.coords.accuracy || 999, t: Date.now() };
+      const fix = { lng: p.coords.longitude, lat: p.coords.latitude, acc: p.coords.accuracy || 999, t: Date.now() };
+      // A phone sometimes follows a good GPS fix with a rough Wi-Fi or mobile-mast one: keep the good one while it is fresh.
+      const last = this.fix;
+      if (last && fix.t - last.t < 15000 && fix.acc > ROUGH_ACC && fix.acc > 3 * last.acc) return;
+      this.fix = fix;
       onFix?.(this.fix);
     }, e => {
       this.state = e.code === 1 ? 'denied' : 'unavailable';

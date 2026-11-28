@@ -561,6 +561,8 @@ html.reduce-motion .you-pulse, html.reduce-motion .holo::after, html.reduce-moti
 .hm-fab.sm { width: 3rem; height: 3rem; border-radius: 50%; }
 .hm-fab .ico svg { width: 1.5rem; height: 1.5rem; }
 .hm-fab.primary { background: linear-gradient(180deg, var(--brand-2), var(--brand) 60%, var(--brand-3)) var(--brand); color: var(--on-brand); border-color: transparent; }
+.hm-fab.live { color: #2F7BFF; }   /* the location button turns blue while the phone has an exact position */
+html.contrast .hm-fab.live { color: #FFC700; }
 .hm-fab[hidden], .hm-floors[hidden] { display: none; }
 .hm-floors { display: grid; border-radius: 1.5rem; overflow: hidden; border: 1px solid var(--line); background: var(--glass-2); box-shadow: 0 6px 20px rgba(0, 0, 0, .3); -webkit-backdrop-filter: blur(18px); backdrop-filter: blur(18px); }
 .hm-floor { width: 3rem; height: 3rem; border: 0; background: none; color: var(--ink-2); font: 650 1rem var(--mono); cursor: pointer; }
@@ -607,6 +609,9 @@ html.reduce-motion .you-pulse, html.reduce-motion .holo::after, html.reduce-moti
 .oy-pulse { position: absolute; inset: -.5rem; border-radius: 50%; background: rgba(47, 123, 255, .25); animation: pulse 2.4s var(--ease) infinite; }
 .oy-cone { position: absolute; left: 50%; top: 50%; width: 4.5rem; height: 4.5rem; margin: -4.5rem 0 0 -2.25rem; transform-origin: 50% 100%; background: conic-gradient(from -30deg at 50% 100%, rgba(47, 123, 255, .45), rgba(47, 123, 255, 0) 60deg, transparent 0); clip-path: polygon(50% 100%, 0 0, 100% 0); }
 .oy-cone[hidden] { display: none; }
+/* A rough position (an area, not a spot): hollow dot, no pulse, no direction cone. The shaded circle shows the area. */
+.out-you.rough .oy-dot { background: #fff; border-color: #2F7BFF; border-style: dashed; }
+.out-you.rough .oy-pulse, .out-you.rough .oy-cone { display: none; }
 html.reduce-motion .oy-pulse { display: none; }
 #homeGL .maplibregl-ctrl-bottom-right { bottom: calc(var(--tabs-h) + var(--peek) + .25rem); }
 #homeGL[data-logo="Google"]::after { content: "Google"; position: absolute; z-index: 2; inset-inline-start: .875rem; bottom: calc(var(--tabs-h) + var(--peek) + .5rem); font: 600 1rem/1 Arial, sans-serif; color: #fff; text-shadow: 0 0 3px rgba(0, 0, 0, .8); pointer-events: none; }

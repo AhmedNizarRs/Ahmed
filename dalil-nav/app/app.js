@@ -8,7 +8,7 @@ import { geoTransform, haversine } from './outdoor.js';
 import { Tracker, Follower, wrap180 } from './tracker.js';
 import { CameraGuide, QRScanner, openCamera, closeCamera, cameraError } from './camera.js';
 import { availableProviders, allProviders } from './providers.js';
-import { Locator, planFromGeo, locationGranted } from './locate.js';
+import { Locator, planFromGeo, locationGranted, ROUGH_ACC } from './locate.js';
 import { Survey, strideFromHeight } from './survey.js';
 import { warp, warpSize, traceWalls, combine, maskToMap } from './snapplan.js';
 import { fitGeo, planBox as geoBox, planToWorld, carryGeo, moveRing } from './georef.js';
@@ -458,12 +458,17 @@ async function renderHomeMap(from = pt(state.fromId)) {
   homeCtl.resize();
   homeYou(from);
 }
-// The blue dot: GPS when it is live, otherwise the place you said you are at (on the floor shown).
+// The blue dot: GPS when it is live, otherwise the place you confirmed you are at (a sign, a link, or picked by hand),
+// on the floor shown. Never the building's default starting point: a blue dot there told people far from the
+// building that they were standing in it (founder's report, 28 Nov 2026: "it's placing me somewhere completely
+// different than where I am"). A rough fix (worse than ROUGH_ACC) is drawn as an area, without a direction.
 function homeYou(from = pt(state.fromId)) {
   if (!homeCtl || !state.map?.geo) return;
   const f = locator.fresh(60000);
-  if (f) { homeCtl.setYou([f.lng, f.lat], tracker.heading ?? null); homeCtl.setMe(f.lng, f.lat, f.acc); return; }
-  if (from && homeFloor === state.map) homeCtl.setYou(geoTransform(state.map.geo)(from.x, from.y), null); else homeCtl.setYou(null);
+  if (f) { const rough = f.acc > ROUGH_ACC; homeCtl.setYou([f.lng, f.lat], rough ? null : tracker.heading ?? null, { rough }); homeCtl.setMe(f.lng, f.lat, f.acc); return; }
+  homeCtl.setMe(null);
+  const sure = state.fromManual || !!state.kiosk;
+  if (sure && from && homeFloor === state.map) homeCtl.setYou(geoTransform(state.map.geo)(from.x, from.y), null); else homeCtl.setYou(null);
 }
 function setHomeFloor(m) { if (!m || m === homeFloor) return; homeFloor = m; announce(t('viewFloor', floorName(m.floor))); renderHomeMap(); }
 // The Home sheet follows your finger like a phone maps app: drag the handle or the building name up to open it,
@@ -528,7 +533,7 @@ function homeFrame() {
 // Which building is near you (GPS), and what to offer: open it, or nothing.
 function nearCheck() {
   const f = locator.fresh(60000); const card = $('#nearCard');
-  if (!f || pageNow !== 'home') { card.hidden = true; return; }
+  if (!f || f.acc > 500 || pageNow !== 'home') { card.hidden = true; return; }   // a position good to ±500 m or worse cannot say which building you are near
   let best = null;
   for (const b of buildingsList()) if (b.at) { const d = haversine([f.lng, f.lat], b.at); if (!best || d < best.d) best = { b, d }; }
   if (!best || best.d > 400 + best.b.radius) { card.hidden = true; return; }
@@ -1460,9 +1465,44 @@ const gpsMapHere = () => state.maps.some(m => m.geo);   // any DALIL building on
 const gpsLive = () => gps.used && Date.now() - gps.at < 60000;   // phones report again when you move
 function gpsStart() { if (gpsAllowed() && gpsMapHere()) { locator.start(onFix, onGpsError); renderGpsBits(); } }
 function gpsStop() { locator.stop(); gps.used = false; gps.fromId = null; navMap?.setAccuracy(null); homeMap?.setAccuracy(null); renderGpsBits(); }
-function onGpsError(kind) { gps.used = false; if (kind === 'denied' && gps.userAsked) toast(t('gpsDenied')); renderGpsBits(); if (nav.active) { renderMode(); showMotionCard(); } }
+const IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+function onGpsError(kind) {
+  gps.used = false;
+  if (kind === 'denied') store.set('dalil.locOk', false);
+  if (gps.userAsked && (kind === 'denied' || gps.wantMe)) toast(t(kind === 'denied' ? (IOS ? 'gpsDeniedIos' : 'gpsDenied') : 'locNoFix'), 9000);
+  if (kind === 'denied') gps.wantMe = 0;
+  homeYou(); renderGpsBits(); if (nav.active) { renderMode(); showMotionCard(); }
+}
+/* The location button (founder's report, 28 Nov 2026: the button flew to the building's entrance and showed a blue dot
+   there when the phone had no position). It now waits for a real position and goes there; it never shows a place as
+   "you". If the phone has no position it says why; a rough position is shown as an area, with how to make it exact;
+   and far from the building it says how far. */
+const WANT_ME_MS = 30000;
+function locateMe() {
+  gps.userAsked = true;
+  if (!gpsAllowed()) { toast(t(navigator.geolocation && !state.kiosk ? 'gpsSettingOff' : 'locUnavailable'), 7000); return; }
+  state.fromManual = false; gps.wantMe = Date.now(); gps.toldRough = false;
+  gpsStart();
+  const f = locator.fresh(20000);
+  if (f) showMe(f); else { homeYou(); toast(t('mkLocating'), 8000); clearTimeout(gps.wantT); gps.wantT = setTimeout(() => { if (gps.wantMe && !locator.fresh(WANT_ME_MS)) { gps.wantMe = 0; toast(t('locNoFix'), 8000); } }, 15000); }
+}
+function showMe(f) {
+  const rough = f.acc > ROUGH_ACC;
+  if (!rough) gps.wantMe = 0;                               // a rough fix first: keep following until an exact one arrives
+  if (homeCtl && state.map?.geo && pageNow === 'home') homeCtl.flyToFix([f.lng, f.lat], f.acc);
+  if (rough) { if (!gps.toldRough) { gps.toldRough = true; toast(t(IOS ? 'locRoughIos' : 'locRough', fmtDist(f.acc)), 10000); } return; }
+  const list = buildingsList().filter(b => b.at).map(b => ({ b, d: edgeDist(b, f) })).sort((x, y) => x.d - y.d);
+  const cur = list.find(r => r.b.id === state.map.building.id), near = list[0];
+  if (cur && cur.d > 150) toast(t('locFarFrom', fmtDist(cur.d), cur.b.name), 6000);
+  else if (!cur && near && near.d > 400) toast(t('locNoNear', near.b.name, fmtDist(near.d)), 7000);
+}
+function onFix(f) {
+  if (!store.get('dalil.locOk', false)) store.set('dalil.locOk', true);   // remembered: iPhones don't tell a page that location is allowed
+  if (nav.active) { fuseFix(f); return; }
+  homeFix(f);
+  if (gps.wantMe && Date.now() - gps.wantMe < WANT_ME_MS) showMe(f); else gps.wantMe = 0;
+}
 function fixOn(map, f) { if (!map?.geo) return null; const p = planFromGeo(map.geo)(f.lng, f.lat); return { x: p.x, y: p.y, acc: f.acc }; }
-function onFix(f) { if (nav.active) fuseFix(f); else homeFix(f); }
 function fuseFix(f) {
   const s = nav.steps[nav.i]; if (!s || nav.sim) return;
   const leg = nav.legs[s.leg], q = fixOn(leg.map, f);
@@ -1528,6 +1568,7 @@ function renderGpsBits() {
   const near = gps.fromId && gps.fromId === state.fromId && Date.now() - gps.at < 60000 && gps.acc != null;
   $('#fromEyebrow').textContent = outsideNow() ? t('outsideEyebrow') : near ? t('youAreHereGps', Math.round(gps.acc)) : state.fromManual ? t('youAreHere') : t('startPoint');
   $('#btnLocate').hidden = !(gpsAllowed() && state.map?.geo) || locator.on;
+  const live = locator.fresh(60000); $('#btnLocateMe').classList.toggle('live', !!live && live.acc <= ROUGH_ACC);   // blue = the phone knows where you are
 }
 function navTag(link) {
   const li = nav.steps[nav.i].leg, leg = nav.legs[li];
@@ -2483,7 +2524,7 @@ function bind() {
   toggle('#setVibrate', 'vibrate');
   toggle('#setClock', 'clock');
   toggle('#setGps', 'gps', () => settings.gps ? gpsStart() : gpsStop());
-  $('#btnLocate').onclick = () => { state.fromManual = false; gps.userAsked = true; gpsStart(); };
+  $('#btnLocate').onclick = locateMe;
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') { gps.paused = locator.on; locator.stop(); } else if (gps.paused) { gps.paused = false; gpsStart(); } });
   $('#setStepFree').addEventListener('change', e => setStepFree(e.target.checked));
   toggle('#setContrast', 'contrast', rerenderAll); toggle('#setMotion', 'motion', rerenderAll);
@@ -2523,9 +2564,8 @@ function bind() {
   $('#btnScanTop').onclick = () => { go('where'); startWhereScan(); };
   $('#btnDirections').onclick = () => go('search');
   $('#btnLocateMe').onclick = () => {
-    gps.userAsked = true;
-    if (state.map?.geo) { state.fromManual = false; gpsStart(); const f = locator.fresh(60000); if (f && homeCtl) homeCtl.flyTo([f.lng, f.lat]); else if (homeCtl) { const p = pt(state.fromId); if (p) homeCtl.flyTo(geoTransform(state.map.geo)(p.x, p.y)); } }
-    else { setHomeFloor(state.map); renderHomeMap(); }
+    if (!state.map?.geo) { setHomeFloor(state.map); renderHomeMap(); }   // a building not placed on Earth: back to the floor you are on
+    locateMe();
   };
   $('#btnLayers').onclick = () => { renderLayerControls('home'); $('#dlgLayers').showModal(); };
   $('#homeBases').addEventListener('change', e => { settings.mapProvider = e.target.value; saveSettings(); homeCtl?.setBase(e.target.value); });
@@ -2579,7 +2619,9 @@ async function init() {
   const r = await boot();
   // Location: on if already allowed; otherwise asked once on the first visit (like a maps app), so the app can
   // tell when you are at a building with an indoor map.
-  if (await locationGranted()) gpsStart();
+  // An iPhone never says "granted" to a page, so a visit after the first one used to start without GPS and showed
+  // no real position: location that worked here before (dalil.locOk) is started again.
+  if (await locationGranted() || (store.get('dalil.locOk', false) && !state.kiosk)) gpsStart();
   else if (!store.get('dalil.locAsked', false) && !state.kiosk) { store.set('dalil.locAsked', true); gpsStart(); }
   return r;
 }

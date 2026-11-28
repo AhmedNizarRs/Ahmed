@@ -551,6 +551,52 @@ test('indoor maps find you: near a DALIL building the app offers it; inside one 
   await ctx.close();
 });
 
+test('the blue dot is only ever a real position: none without one, the location button goes to you, a rough fix is an area', async () => {
+  const FA = '#b=uos-fine-arts-and-design-test', FAR = { latitude: 25.2048, longitude: 55.2708 };   // about 24 km from the building
+  const stub = page => page.route(/^https:\/\//, r => r.fulfill({ status: 503 }));
+  const view = page => page.evaluate(() => {
+    const h = window.DALIL_APP.homeMap(), you = document.querySelector('#homeGL .out-you'), c = h.map.getCenter(), toast = document.querySelector('#toast');
+    let at = null; if (you) { const r = you.getBoundingClientRect(), b = h.map.getContainer().getBoundingClientRect(), ll = h.map.unproject([r.left + r.width / 2 - b.left, r.top + r.height / 2 - b.top]); at = [ll.lng, ll.lat]; }
+    return { at, rough: !!you?.classList.contains('rough'), center: [c.lng, c.lat], zoom: h.map.getZoom(), toast: toast.hidden ? '' : toast.textContent, live: document.querySelector('#btnLocateMe').classList.contains('live') };
+  });
+  const near = (a, b) => a && Math.abs(a[0] - b.longitude) < 1e-3 && Math.abs(a[1] - b.latitude) < 1e-3;
+  const ready = async page => { await page.waitForFunction(() => window.DALIL_APP.homeMap()); await page.waitForTimeout(600); };
+  // Location not allowed: no dot at the building's entrance, and the button says why instead of flying there
+  let { ctx, page, errors } = await open(FA); await stub(page); await ready(page);
+  let v = await view(page);
+  assert.equal(v.at, null, 'no blue dot without a position (it used to sit at the starting point)');
+  await page.click('#btnLocateMe'); await page.waitForTimeout(800); v = await view(page);
+  assert.equal(v.at, null); assert.match(v.toast, /Location is off for this site/); assert.equal(v.live, false);
+  assert.deepEqual(errors, []); await ctx.close();
+  // A place confirmed by a link is still shown
+  ({ ctx, page, errors } = await open(FA + '&at-P002')); await stub(page); await ready(page);
+  assert.ok((await view(page)).at, 'the place you confirmed keeps its dot');
+  assert.deepEqual(errors, []); await ctx.close();
+  // Far from the building: the dot is where you are, and the button takes the map there and says how far
+  ({ ctx, page, errors } = await open(FA, { permissions: ['geolocation'], geolocation: { ...FAR, accuracy: 12 } })); await stub(page); await ready(page);
+  await page.waitForSelector('#homeGL .out-you'); v = await view(page);
+  assert.ok(near(v.at, FAR), 'dot at the real position'); assert.equal(v.live, true);
+  await page.click('#btnLocateMe'); await page.waitForTimeout(1200); v = await view(page);
+  assert.ok(near(v.center, FAR), 'the map goes to you, not to the building'); assert.match(v.toast, /You are about 2\d km from UoS Fine Arts/);
+  assert.equal(await page.evaluate(() => localStorage.getItem('dalil.locOk')), 'true', 'remembered for the next visit (an iPhone never reports "granted")');
+  assert.deepEqual(errors, []); await ctx.close();
+  // A browser that never reports "granted" (iPhone) on a later visit: location that worked before starts again
+  ({ ctx, page, errors } = await open(FA, { permissions: ['geolocation'], geolocation: { ...FAR, accuracy: 12 } }));
+  await page.addInitScript(() => { localStorage.setItem('dalil.locAsked', 'true'); localStorage.setItem('dalil.locOk', 'true'); Object.defineProperty(navigator.permissions, 'query', { value: async () => ({ state: 'prompt' }) }); });
+  await stub(page); await page.reload(); await page.evaluate(() => window.DALIL_APP.ready); await ready(page);
+  await page.waitForSelector('#homeGL .out-you'); assert.ok(near((await view(page)).at, FAR));
+  assert.deepEqual(errors, []); await ctx.close();
+  // A rough position (±3 km: Wi-Fi or mobile masts, or Precise Location off): an area, never a building or a place
+  ({ ctx, page, errors } = await open(FA, { permissions: ['geolocation'], geolocation: { latitude: 25.30, longitude: 55.47, accuracy: 3000 } })); await stub(page); await ready(page);
+  await page.waitForSelector('#homeGL .out-you.rough'); v = await view(page);
+  assert.equal(v.live, false); assert.equal(await page.textContent('#fromEyebrow'), 'Starting point');
+  await page.click('#btnLocateMe'); await page.waitForTimeout(1200); v = await view(page);
+  assert.match(v.toast, /rough position \(±3\.0 km\)/); assert.ok(v.zoom < 15, 'the whole area is shown');
+  await ctx.setGeolocation({ ...FAR, accuracy: 8 }); await page.waitForFunction(() => !document.querySelector('#homeGL .out-you.rough')); await page.waitForTimeout(1200);
+  assert.ok(near((await view(page)).center, FAR), 'the exact position, when it comes, is followed');
+  assert.deepEqual(errors, []); await ctx.close();
+});
+
 test('floor map: tap anywhere for directions, and save it as My spot', async () => {
   const { ctx, page, errors } = await open(KENNEDY);
   await page.click('#btnFloorMap');

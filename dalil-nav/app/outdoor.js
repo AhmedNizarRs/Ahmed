@@ -81,6 +81,7 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
   m.on('resize', () => setTimeout(() => el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'), 0));   // MapLibre re-opens the credits on a resize
   const accent = '#FFC700', ink = dark ? '#E9E7E1' : '#2B2E33', OURS = new Set(['outline', 'walls', 'doors', 'corridors', 'entrances', 'me', 'route']);
   let meData = { type: 'FeatureCollection', features: [] };
+  let meLast = null;   // the last GPS position drawn: [lng, lat, acc]
   // DALIL's own layers go on top of whichever street map is showing (again after every style switch).
   const addOverlays = () => {
     if (m.getSource('outline')) return;
@@ -176,6 +177,8 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     /** The planned route on this floor, as [lng, lat] points, or null. */
     setRoute(coords) { routeData = { type: 'FeatureCollection', features: coords?.length > 1 ? [{ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: coords } }] : [] }; m.getSource('route')?.setData(routeData); },
     setMe(lng, lat, acc) {
+      meLast = lng == null ? null : [lng, lat, acc];
+      if (lng == null) { meData = { type: 'FeatureCollection', features: [] }; m.getSource('me')?.setData(meData); return; }
       const mpp = 156543.03 * Math.cos(lat * Math.PI / 180) / 2 ** m.getZoom();
       meData = { type: 'FeatureCollection', features: [
         { type: 'Feature', properties: { kind: 'acc', r: Math.max(8, acc / mpp) }, geometry: { type: 'Point', coordinates: [lng, lat] } },
@@ -194,10 +197,10 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
       }, err => onStatus?.(err.code === 1 ? 'denied' : 'unavailable'), { enableHighAccuracy: true, maximumAge: 10000, timeout: 20000 });
     },
     /** "You are here" (a place, or a GPS position): the blue dot, with a cone when the heading is known. */
-    setYou(lngLat, heading = null) {
+    setYou(lngLat, heading = null, { rough = false } = {}) {
       if (!lngLat) { youMk?.remove(); youMk = null; return; }
       if (!youMk) { const e = document.createElement('div'); e.className = 'out-you'; e.innerHTML = '<span class="oy-cone"></span><span class="oy-pulse"></span><span class="oy-dot"></span>'; youMk = new maplibregl.Marker({ element: e, rotationAlignment: 'map' }).setLngLat(lngLat).addTo(m); }
-      youMk.setLngLat(lngLat); const cone = youMk.getElement().querySelector('.oy-cone');
+      youMk.setLngLat(lngLat); youMk.getElement().classList.toggle('rough', rough); const cone = youMk.getElement().querySelector('.oy-cone');
       cone.hidden = heading == null; if (heading != null) cone.style.transform = `rotate(${heading}deg)`;
     },
     /** Show the building (or a point) with room left for the panels around the map. */
@@ -207,6 +210,12 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
       m.fitBounds(b, { padding: pad, maxZoom: 18.6, duration: 0 });
     },
     flyTo(lngLat, zoom = 19) { m.easeTo({ center: lngLat, zoom: Math.max(m.getZoom(), zoom), duration: 600 }); },
+    /** Go to a GPS position. A rough one (acc metres) is shown as its whole area, not zoomed into as if it were exact. */
+    flyToFix(lngLat, acc = 0) {
+      if (acc <= 60) { m.easeTo({ center: lngLat, zoom: Math.max(m.getZoom(), 18.5), duration: 600 }); return; }
+      const dLat = acc * 1.6 / 111132, dLng = dLat / Math.cos(lngLat[1] * Math.PI / 180);
+      m.fitBounds([[lngLat[0] - dLng, lngLat[1] - dLat], [lngLat[0] + dLng, lngLat[1] + dLat]], { padding: 40, maxZoom: 18, duration: 600 });
+    },
     resize() { m.resize(); },
     /** Every building with a DALIL indoor map, as a marker you can tap: [{ id, name, lngLat, current }]. */
     setBuildings(list, onBuilding) {
@@ -224,5 +233,6 @@ export async function createOutdoorMap(el, { map, dark, lang, onStatus, onProvid
     show(points, pad = padding) { if (!points.length) return; const bb = new maplibregl.LngLatBounds(points[0], points[0]); points.forEach(p => bb.extend(p)); m.fitBounds(bb, { padding: pad, maxZoom: 18.6, duration: 600 }); },
     destroy() { if (watch != null) navigator.geolocation.clearWatch(watch); for (const mk of [...placeMarkers, ...bldMks]) mk.remove(); youMk?.remove(); m.remove(); },
   };
+  m.on('zoomend', () => { if (meLast) ctl.setMe(...meLast); });   // the accuracy circle is in pixels: redo it for the new zoom
   return ctl;
 }
